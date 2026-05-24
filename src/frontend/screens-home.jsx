@@ -6,6 +6,7 @@ function HomeScreen({ navigate, query, setQuery }) {
   const CabinetCmp = window.SOL_COMPS.DomainCabinet;
   const InstrumentCmp = window.SOL_COMPS.DailyInstrument;
   const DailyCmp = window.SOL_COMPS.DailySection;
+  const ChangelogCmp = window.SOL_COMPS.HomeChangelog;
 
   return (
     <div className="celestial">
@@ -25,6 +26,8 @@ function HomeScreen({ navigate, query, setQuery }) {
         <SoftRule />
 
         {DailyCmp && <DailyCmp navigate={navigate} />}
+
+        {ChangelogCmp && <ChangelogCmp />}
       </div>
     </div>
   );
