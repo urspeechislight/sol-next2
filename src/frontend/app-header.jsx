@@ -237,16 +237,18 @@ function BrowseMenu({ navigate, onClose }) {
           boxShadow: 'var(--shadow-lg)',
           padding: 24,
           zIndex: 51,
-          width: 760,
+          width: 840,
           maxHeight: '80vh',
           overflowY: 'auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 28,
+          columnCount: 2,
+          columnGap: 36,
         }}
       >
         {DOMAINS.map((d) => (
-          <div key={d.id}>
+          <div
+            key={d.id}
+            style={{ breakInside: 'avoid', marginBottom: 28, WebkitColumnBreakInside: 'avoid' }}
+          >
             <div
               style={{
                 fontSize: 'var(--text-xs)',
