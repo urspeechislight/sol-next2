@@ -238,6 +238,8 @@ function BrowseMenu({ navigate, onClose }) {
           padding: 24,
           zIndex: 51,
           width: 760,
+          maxHeight: '80vh',
+          overflowY: 'auto',
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
           gap: 28,
@@ -272,7 +274,7 @@ function BrowseMenu({ navigate, onClose }) {
               </span>
             </div>
             <Stack gap={1}>
-              {d.categories.slice(0, 5).map((c) => (
+              {d.categories.map((c) => (
                 <button
                   key={c.slug}
                   onClick={() => navigate({ route: 'library', cat: c.slug })}
@@ -296,18 +298,6 @@ function BrowseMenu({ navigate, onClose }) {
                   </span>
                 </button>
               ))}
-              {d.categories.length > 5 && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--color-fg-3)',
-                    marginTop: 4,
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                >
-                  + {d.categories.length - 5} more
-                </span>
-              )}
             </Stack>
           </div>
         ))}
