@@ -12,14 +12,7 @@ function DailySection({ navigate }) {
   }, []);
 
   return (
-    <section className="daily" aria-labelledby="daily-head">
-      <header className="daily__head">
-        <span className="daily__eyebrow">§ II · Today</span>
-        <h2 id="daily-head" className="daily__title">
-          The <em>Daily Pair</em>
-        </h2>
-      </header>
-
+    <section className="daily" aria-label="Today">
       <div className="daily__pair">
         <VerseSide verse={daily.verse} navigate={navigate} />
         <HadithSide hadith={daily.hadith} navigate={navigate} />

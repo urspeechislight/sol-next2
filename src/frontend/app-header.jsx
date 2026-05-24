@@ -1,11 +1,9 @@
 /* global React */
-// App-level header + footer + browse menu, extracted from app.jsx
-// so app.jsx itself stays focused on the root + routing.
 
 const { useState: _useStateAH } = React;
 const { useEffect: _useEffectAH, useRef: _useRefAH } = React;
 
-function AppHeader({ navigate, query, setQuery, route }) {
+function AppHeader({ navigate, query, setQuery, theme, onToggleTheme }) {
   const { Text, Icon } = window.SOL_PRIMS;
   const [browseOpen, setBrowseOpen] = useState(false);
   const headerSearchRef = _useRefAH(null);
@@ -90,13 +88,6 @@ function AppHeader({ navigate, query, setQuery, route }) {
           )}
         </div>
 
-        <button
-          style={navLink(route.name === 'search')}
-          onClick={() => navigate({ route: 'search', q: '' })}
-        >
-          Search
-        </button>
-
         <div style={{ flex: 1 }} />
 
         <form
@@ -150,33 +141,68 @@ function AppHeader({ navigate, query, setQuery, route }) {
           </label>
         </form>
 
-        <div
-          title="Pipeline status"
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          aria-label={theme === 'day' ? 'Switch to night theme' : 'Switch to day theme'}
+          title={theme === 'day' ? 'Switch to night theme' : 'Switch to day theme'}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 6,
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-full)',
-            background: 'var(--color-success-soft)',
-            color: 'var(--color-success)',
-            fontSize: 'var(--text-xs)',
-            fontFamily: 'var(--font-mono)',
+            justifyContent: 'center',
+            width: 36,
+            height: 36,
+            padding: 0,
+            background: 'transparent',
+            border: '1px solid var(--color-border-2)',
+            borderRadius: 6,
+            color: 'var(--color-fg-2)',
+            cursor: 'pointer',
+            transition:
+              'color 200ms var(--ease-out-strong), border-color 200ms var(--ease-out-strong)',
           }}
         >
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'currentColor',
-              boxShadow: '0 0 6px currentColor',
-            }}
-          />
-          online
-        </div>
+          {theme === 'day' ? <SunGlyph /> : <MoonGlyph />}
+        </button>
       </div>
     </header>
+  );
+}
+
+function SunGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="3" />
+      <path d="M8 1.5V3M8 13v1.5M14.5 8H13M3 8H1.5M12.6 3.4 11.5 4.5M4.5 11.5 3.4 12.6M12.6 12.6 11.5 11.5M4.5 4.5 3.4 3.4" />
+    </svg>
+  );
+}
+
+function MoonGlyph() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M14 9.5A5.5 5.5 0 1 1 6.5 2 4.5 4.5 0 0 0 14 9.5Z" />
+    </svg>
   );
 }
 

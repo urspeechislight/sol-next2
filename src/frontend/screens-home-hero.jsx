@@ -51,8 +51,6 @@ function HomeHero({ navigate, query, setQuery }) {
   return (
     <section className="primary" aria-label="Search the corpus">
       <div className="primary__inner">
-        <p className="primary__lede">Eighteen thousand books. Search any line.</p>
-
         {resume ? (
           <ResumeCard
             resume={resume}
@@ -87,7 +85,9 @@ function SearchCard({ query, setQuery, onSubmit, onPick, inputRef }) {
           onChange={(e) => setQuery(e.target.value)}
           aria-label="Search any line in any book"
         />
-        <kbd className="search-card__kbd" aria-hidden="true">⌘K</kbd>
+        <kbd className="search-card__kbd" aria-hidden="true">
+          ⌘K
+        </kbd>
       </label>
 
       <div className="search-card__suggestions">
