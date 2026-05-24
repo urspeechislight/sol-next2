@@ -56,7 +56,7 @@ function AppHeader({ navigate, query, setQuery, theme, onToggleTheme }) {
           }}
         >
           <img
-            src="logo-dark.png"
+            src={theme === 'night' ? 'logo-dark.png' : 'logo-bright.png'}
             alt="Shia Online Library"
             style={{ height: 44, width: 'auto', display: 'block', objectFit: 'contain' }}
           />
