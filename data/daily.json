@@ -1,0 +1,82 @@
+{
+  "date": {
+    "hijri": "15 Jumādā al-Ūlā 1446",
+    "hijri_short": "15 / V / 1446",
+    "gregorian": "17 November 2024"
+  },
+  "verse": {
+    "surah": "al-Mulk",
+    "surah_ar": "الملك",
+    "surah_n": 67,
+    "ayah_n": 2,
+    "ayah_ar": "الَّذِي خَلَقَ الْمَوْتَ وَالْحَيَاةَ لِيَبْلُوَكُمْ أَيُّكُمْ أَحْسَنُ عَمَلًا ۚ وَهُوَ الْعَزِيزُ الْغَفُورُ",
+    "ayah_en": "He who created death and life to test which of you is best in deed. And He is the Mighty, the Forgiving.",
+    "tafsirs": [
+      {
+        "book": "al-Mizan fi Tafsir al-Qurʾan",
+        "book_ar": "الميزان في تفسير القرآن",
+        "author": "al-Tabatabaʾi",
+        "urn": "MizanQM",
+        "excerpt_en": "\"Best in deed\" is not measured by abundance but by sincerity and conformity to what is right. Death is mentioned before life because the test demands awareness of finitude before living rightly within it.",
+        "excerpt_ar": "«أحسن عملا» لا يقاس بالكثرة بل بالإخلاص والانطباق على الحق؛ وقُدّم ذكر الموت لأن الاختبار يستدعي الوعي بالفناء قبل العيش في حدوده."
+      },
+      {
+        "book": "Jamiʿ al-Bayan",
+        "book_ar": "جامع البيان",
+        "author": "al-Tabari",
+        "urn": "TafsTab",
+        "excerpt_en": "The created order — its mortality and its quickening — is itself the apparatus of the trial. The verse closes on al-ʿAzīz al-Ghafūr to anchor accountability between power and pardon.",
+        "excerpt_ar": "الخَلق بفنائه وحياته هو ذاته آلة الاختبار، وقد ختمت الآية بـ«العزيز الغفور» لتثبت المحاسبة بين القدرة والمغفرة."
+      }
+    ]
+  },
+  "hadith": {
+    "matn_ar": "إنما الأعمال بالنيات",
+    "matn_en": "Actions are but by intentions.",
+    "isnad_ar": "عَنْ عُمَرَ بْنِ الْخَطَّابِ، عَنِ النَّبِيِّ ﷺ",
+    "source": {
+      "book": "Bukhārī",
+      "book_ar": "صحيح البخاري",
+      "n": "1.1.1",
+      "urn": "BukhJam2",
+      "sect": "Sunni"
+    },
+    "parallels": [
+      {
+        "book": "Muslim",
+        "book_ar": "صحيح مسلم",
+        "n": "1907",
+        "urn": null,
+        "sect": "Sunni"
+      },
+      {
+        "book": "al-Kāfī",
+        "book_ar": "الكافي",
+        "n": "2/16/h.4",
+        "urn": "KafSlm32",
+        "sect": "Imami"
+      }
+    ],
+    "grade": "sahih",
+    "grade_label": "Ṣaḥīḥ",
+    "note": "The opening hadith of Ṣaḥīḥ al-Bukhārī, transmitted from ʿUmar ibn al-Khaṭṭāb."
+  },
+  "book": {
+    "urn": "KafSlm32",
+    "rationale": "The earliest of the Four Books — read today for its opening Kitāb al-ʿAql wa-l-Jahl, the intellect as the first of God's creations.",
+    "open_to": {
+      "page": 109,
+      "chapter_en": "Kitāb al-Tawḥīd"
+    }
+  },
+  "rotation": [
+    "MizanQM",
+    "KafSlm32",
+    "BukhJam2",
+    "WasShia",
+    "TafsTab",
+    "FathBari",
+    "OXlyzwsl",
+    "TaqTah52"
+  ]
+}
