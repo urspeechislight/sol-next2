@@ -33,6 +33,7 @@ function AppRoot() {
 
   return (
     <div data-screen-label={routeLabel(route)} style={{ minHeight: '100vh' }}>
+      <SkyBackdrop active={tweaks.appTheme === 'night'} />
       {!isReader && (
         <AppHeader
           navigate={navigate}
@@ -84,6 +85,7 @@ function routeLabel(r) {
 }
 
 const AppHeader = window.SOL_APP_HEADER.AppHeader;
+const SkyBackdrop = window.SOL_COMPS.SkyBackdrop;
 const AppFooter = window.SOL_APP_HEADER.AppFooter;
 
 function useAppTheme(tweaks) {

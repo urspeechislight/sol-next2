@@ -161,23 +161,23 @@
 
 [data-theme='dark'],
 [data-theme='night'] {
-  --color-bg-0: oklch(0.18 0.012 250);
-  --color-bg-1: oklch(0.22 0.012 250);
-  --color-bg-2: oklch(0.27 0.012 250);
-  --color-bg-3: oklch(0.32 0.012 250);
+  --color-bg-0: oklch(0.13 0.012 270);
+  --color-bg-1: oklch(0.18 0.012 270);
+  --color-bg-2: oklch(0.22 0.012 270);
+  --color-bg-3: oklch(0.27 0.012 270);
 
   --color-fg-1: oklch(0.96 0 0);
-  --color-fg-2: oklch(0.74 0 0);
-  --color-fg-3: oklch(0.55 0 0);
-  --color-fg-on-accent: oklch(0.18 0.012 250);
+  --color-fg-2: oklch(0.74 0.02 80);
+  --color-fg-3: oklch(0.55 0.02 80);
+  --color-fg-on-accent: oklch(0.18 0.012 270);
 
-  --accent-h: 195;
+  --accent-h: 80;
   --color-accent: oklch(0.78 0.14 var(--accent-h));
-  --color-accent-strong: oklch(0.68 0.16 var(--accent-h));
-  --color-accent-soft: oklch(0.78 0.14 var(--accent-h) / 0.16);
-  --color-accent-border: oklch(0.78 0.14 var(--accent-h) / 0.36);
+  --color-accent-strong: oklch(0.92 0.1 var(--accent-h));
+  --color-accent-soft: oklch(0.78 0.14 var(--accent-h) / 0.18);
+  --color-accent-border: oklch(0.78 0.14 var(--accent-h) / 0.42);
 
-  --color-marginalia: oklch(0.74 0.1 195);
+  --color-marginalia: oklch(0.78 0.1 80);
 
   --color-success: oklch(0.78 0.18 155);
   --color-success-soft: oklch(0.78 0.18 155 / 0.18);
@@ -187,19 +187,26 @@
   --color-danger-soft: oklch(0.7 0.2 25 / 0.18);
   --color-info: oklch(0.75 0.14 240);
   --color-info-soft: oklch(0.75 0.14 240 / 0.18);
-  --color-muted: oklch(0.65 0.02 250);
-  --color-muted-soft: oklch(0.65 0.02 250 / 0.16);
+  --color-muted: oklch(0.65 0.02 80);
+  --color-muted-soft: oklch(0.65 0.02 80 / 0.16);
 
-  --color-border-1: oklch(1 0 0 / 0.08);
-  --color-border-2: oklch(1 0 0 / 0.14);
-  --color-border-strong: oklch(1 0 0 / 0.24);
-  --color-rule-sepia: oklch(0.42 0.04 195);
+  --color-border-1: oklch(0.78 0.12 80 / 0.1);
+  --color-border-2: oklch(0.78 0.12 80 / 0.18);
+  --color-border-strong: oklch(0.78 0.12 80 / 0.32);
+  --color-rule-sepia: oklch(0.42 0.05 80);
 
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.4);
   --shadow-md: 0 4px 12px oklch(0 0 0 / 0.5);
   --shadow-lg: 0 16px 48px oklch(0 0 0 / 0.6);
-  --shadow-glow-accent: 0 0 24px oklch(0.78 0.14 195 / 0.35);
+  --shadow-glow-accent: 0 0 24px oklch(0.78 0.14 80 / 0.35);
   --shadow-1: oklch(0 0 0 / 0.5);
+
+  --color-sky-warm-core: oklch(0.26 0.05 75 / 0.55);
+  --color-sky-halo-n-1: oklch(0.78 0.14 80 / 0.18);
+  --color-sky-halo-n-2: oklch(0.78 0.14 80 / 0.06);
+  --color-sky-halo-s-1: oklch(0.65 0.14 30 / 0.12);
+  --color-sky-halo-s-2: oklch(0.65 0.14 30 / 0.04);
+  --color-sky-grid: oklch(0.78 0.12 80 / 0.05);
 }
 
 [data-theme='light'] {
