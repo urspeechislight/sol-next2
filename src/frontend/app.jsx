@@ -5,7 +5,7 @@ function AppRoot() {
   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/ {
     appTheme: 'day',
     readerTheme: 'classical',
-    arabicFont: 'amiri',
+    arabicFont: 'scheherazade',
     langMode: 'ar',
     fontSize: 20,
     isnadStyle: 'tree',
@@ -89,7 +89,6 @@ const AppFooter = window.SOL_APP_HEADER.AppFooter;
 function useAppTheme(tweaks) {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', tweaks.appTheme);
-    document.documentElement.style.setProperty('--accent-h', String(tweaks.accentHue));
     const fontMap = {
       scheherazade: "'Scheherazade New','Amiri',serif",
       amiri: "'Amiri','Scheherazade New',serif",
@@ -101,7 +100,7 @@ function useAppTheme(tweaks) {
       '--font-arabic-display',
       tweaks.arabicFont === 'reem' ? fontMap.reem : "'Amiri','Scheherazade New',serif",
     );
-  }, [tweaks.appTheme, tweaks.accentHue, tweaks.arabicFont]);
+  }, [tweaks.appTheme, tweaks.arabicFont]);
 
   useEffect(() => {
     window.SOL_BOOK_PATTERN = tweaks.bookPattern;
