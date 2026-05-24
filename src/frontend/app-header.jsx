@@ -96,24 +96,6 @@ function AppHeader({ navigate, query, setQuery, route }) {
         >
           Search
         </button>
-        <button
-          style={navLink(false)}
-          onClick={() => navigate({ route: 'library', cat: 'shia-tafsir' })}
-        >
-          Qurʾan
-        </button>
-        <button
-          style={navLink(false)}
-          onClick={() => navigate({ route: 'library', cat: 'shia-hadith-general' })}
-        >
-          Hadith
-        </button>
-        <button
-          style={navLink(false)}
-          onClick={() => navigate({ route: 'library', cat: 'shia-fiqh-principles' })}
-        >
-          Fiqh
-        </button>
 
         <div style={{ flex: 1 }} />
 

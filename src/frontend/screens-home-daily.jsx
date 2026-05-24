@@ -38,9 +38,7 @@ function VerseCard({ verse, navigate, index }) {
         <span className="mono-eyebrow">§ Verse of the day</span>
         <span className="mono-cite">{cite}</span>
       </header>
-      <p className="ar-display" lang="ar" dir="rtl">
-        {verse.ayah_ar}
-      </p>
+      <AyahReveal text={verse.ayah_ar} />
       {verse.ayah_en && <p className="en-body">{verse.ayah_en}</p>}
       {tafsirUrn && (
         <button
@@ -64,9 +62,7 @@ function HadithCard({ hadith, navigate, index }) {
         <span className="mono-eyebrow">§ Hadith of the day</span>
         <span className="mono-cite">{cite}</span>
       </header>
-      <p className="ar-display" lang="ar" dir="rtl">
-        {hadith.matn_ar}
-      </p>
+      <AyahReveal text={hadith.matn_ar} />
       {hadith.matn_en && <p className="en-body">{hadith.matn_en}</p>}
       {hadith.source.urn && (
         <button
@@ -78,6 +74,29 @@ function HadithCard({ hadith, navigate, index }) {
         </button>
       )}
     </article>
+  );
+}
+
+/* Reading-cursor reveal — each word is wrapped in a span carrying its
+   index. CSS staggers an animation that brightens each word in turn,
+   gives it an accent glow at peak, then settles. The whole sequence
+   loops with a pause so the surface keeps quietly breathing. */
+function AyahReveal({ text }) {
+  const words = (text || '').split(/\s+/).filter(Boolean);
+  return (
+    <p
+      className="ar-display ar-reveal"
+      lang="ar"
+      dir="rtl"
+      style={{ '--word-count': words.length }}
+    >
+      {words.map((w, i) => (
+        <span key={i} className="ar-reveal__word" style={{ '--i': i }}>
+          {w}
+          {i < words.length - 1 ? ' ' : ''}
+        </span>
+      ))}
+    </p>
   );
 }
 

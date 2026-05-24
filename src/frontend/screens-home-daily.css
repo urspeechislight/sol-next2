@@ -33,7 +33,6 @@
   color: var(--color-accent);
 }
 
-/* Asymmetric bento — 7fr / 5fr */
 .daily__pair {
   display: grid;
   grid-template-columns: 7fr 5fr;
@@ -46,10 +45,6 @@
   }
 }
 
-/* ── Editorial card ───────────────────────────────────────────
-   Layered surface: warm radial wash on bg-1, hairline edge, soft
-   layered drop shadow + warm inset highlight to suggest depth.
-   Bracket cornerpieces give a manuscript-folio mark. */
 .daily__card {
   position: relative;
   display: flex;
@@ -73,7 +68,6 @@
   isolation: isolate;
 }
 
-/* Bracket cornerpieces — top-left + bottom-right L-shape */
 .daily__card::before,
 .daily__card::after {
   content: '';
@@ -170,6 +164,39 @@
   text-shadow: 0 1px 0 var(--color-accent-soft);
 }
 
+/* Word-by-word reading cursor — each span's animation is offset by its
+   index, so the glow appears to advance across the line at a quiet,
+   readerly pace. The whole sequence loops with a pause at the end. */
+.ar-reveal__word {
+  display: inline;
+  opacity: 0.38;
+  color: var(--color-fg-2);
+  text-shadow: none;
+  animation: arRead calc(var(--word-count, 1) * 0.55s + 5s) cubic-bezier(0.23, 1, 0.32, 1) infinite
+    both;
+  animation-delay: calc(var(--i, 0) * 0.55s);
+  will-change: opacity, color, text-shadow;
+}
+
+@keyframes arRead {
+  0% {
+    opacity: 0.38;
+    color: var(--color-fg-2);
+    text-shadow: none;
+  }
+  3% {
+    opacity: 1;
+    color: var(--color-accent-strong);
+    text-shadow: 0 0 18px var(--color-accent-soft);
+  }
+  10%,
+  100% {
+    opacity: 1;
+    color: var(--color-fg-1);
+    text-shadow: 0 1px 0 var(--color-accent-soft);
+  }
+}
+
 .en-body {
   margin: 16px 0 0;
   font-family: var(--font-display);
@@ -227,5 +254,11 @@
   }
   .quiet-link {
     transition: none;
+  }
+  .ar-reveal__word {
+    opacity: 1;
+    color: var(--color-fg-1);
+    text-shadow: 0 1px 0 var(--color-accent-soft);
+    animation: none;
   }
 }
