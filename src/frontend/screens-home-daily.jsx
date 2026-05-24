@@ -21,25 +21,46 @@ function DailySection({ navigate }) {
       </header>
 
       <div className="daily__pair">
-        <VerseCard verse={daily.verse} navigate={navigate} index={0} />
-        <HadithCard hadith={daily.hadith} navigate={navigate} index={1} />
+        <VerseSide verse={daily.verse} navigate={navigate} />
+        <HadithSide hadith={daily.hadith} navigate={navigate} />
       </div>
     </section>
   );
 }
 
-function VerseCard({ verse, navigate, index }) {
+function VerseSide({ verse, navigate }) {
   if (!verse) return null;
   const cite = `Q ${verse.surah_n}:${verse.ayah_n}`;
   const tafsirUrn = verse.tafsirs && verse.tafsirs[0] ? verse.tafsirs[0].urn : null;
   return (
-    <article className="daily__card" style={{ '--index': index }}>
-      <header className="daily__card-head">
-        <span className="mono-eyebrow">§ Verse of the day</span>
+    <section className="daily__col daily__verse" aria-label="Verse of the day">
+      <header className="daily__col-head">
+        <span className="mono-eyebrow">§ I · Verse of the day</span>
         <span className="mono-cite">{cite}</span>
       </header>
-      <AyahReveal text={verse.ayah_ar} />
-      {verse.ayah_en && <p className="en-body">{verse.ayah_en}</p>}
+
+      <p className="ar-display ar-glow" lang="ar" dir="rtl" data-text={verse.ayah_ar}>
+        {verse.ayah_ar}
+      </p>
+
+      {verse.ayah_en && <p className="en-translation">{verse.ayah_en}</p>}
+
+      {verse.tafsirs && verse.tafsirs.length > 0 && (
+        <div className="tafsir">
+          <h3 className="meta-head">§ Tafsīr</h3>
+          {verse.tafsirs.slice(0, 2).map((t, i) => (
+            <article key={t.urn || i} className="tafsir__entry">
+              <header className="tafsir__src">
+                <em>{t.book}</em>
+                <span className="meta-sep"> · </span>
+                <span>{t.author}</span>
+              </header>
+              <p className="tafsir__excerpt">{t.excerpt_en}</p>
+            </article>
+          ))}
+        </div>
+      )}
+
       {tafsirUrn && (
         <button
           type="button"
@@ -49,21 +70,34 @@ function VerseCard({ verse, navigate, index }) {
           Read full sūrah →
         </button>
       )}
-    </article>
+    </section>
   );
 }
 
-function HadithCard({ hadith, navigate, index }) {
+function HadithSide({ hadith, navigate }) {
   if (!hadith) return null;
   const cite = `${hadith.source.book} ${hadith.source.n}`;
   return (
-    <article className="daily__card" style={{ '--index': index }}>
-      <header className="daily__card-head">
-        <span className="mono-eyebrow">§ Hadith of the day</span>
+    <section className="daily__col daily__hadith" aria-label="Hadith of the day">
+      <header className="daily__col-head">
+        <span className="mono-eyebrow">§ II · Hadith of the day</span>
         <span className="mono-cite">{cite}</span>
       </header>
-      <AyahReveal text={hadith.matn_ar} />
-      {hadith.matn_en && <p className="en-body">{hadith.matn_en}</p>}
+
+      <p className="ar-display ar-glow" lang="ar" dir="rtl" data-text={hadith.matn_ar}>
+        {hadith.matn_ar}
+      </p>
+
+      {hadith.matn_en && <p className="en-translation">{hadith.matn_en}</p>}
+
+      <div className="hadith-meta">
+        <h3 className="meta-head">§ Chain</h3>
+        <p className="hadith-isnad" lang="ar" dir="rtl">
+          {hadith.isnad_ar}
+        </p>
+        {hadith.note && <p className="tafsir__excerpt">{hadith.note}</p>}
+      </div>
+
       {hadith.source.urn && (
         <button
           type="button"
@@ -73,30 +107,7 @@ function HadithCard({ hadith, navigate, index }) {
           Read in context →
         </button>
       )}
-    </article>
-  );
-}
-
-/* Reading-cursor reveal — each word is wrapped in a span carrying its
-   index. CSS staggers an animation that brightens each word in turn,
-   gives it an accent glow at peak, then settles. The whole sequence
-   loops with a pause so the surface keeps quietly breathing. */
-function AyahReveal({ text }) {
-  const words = (text || '').split(/\s+/).filter(Boolean);
-  return (
-    <p
-      className="ar-display ar-reveal"
-      lang="ar"
-      dir="rtl"
-      style={{ '--word-count': words.length }}
-    >
-      {words.map((w, i) => (
-        <span key={i} className="ar-reveal__word" style={{ '--i': i }}>
-          {w}
-          {i < words.length - 1 ? ' ' : ''}
-        </span>
-      ))}
-    </p>
+    </section>
   );
 }
 
