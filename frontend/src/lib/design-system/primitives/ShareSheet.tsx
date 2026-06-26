@@ -1,12 +1,12 @@
-import { useState } from "react";
-import type { ShareContent, ShareFormat, ShareResponse } from "../../types";
-import { SHARE_FORMATS, SHARE_PLATFORMS } from "../../constants";
-import type { IconName } from "../internal/icons";
-import { Button } from "./Button";
-import { Segmented } from "./Segmented";
-import { Icon } from "./Icon";
-import { ShareCard } from "./ShareCard";
-import "./ShareSheet.css";
+import { useState } from 'react';
+import type { ShareContent, ShareFormat, ShareResponse } from '../../types';
+import { SHARE_FORMATS, SHARE_PLATFORMS } from '../../constants';
+import type { IconName } from '../internal/icons';
+import { Button } from './Button';
+import { Segmented } from './Segmented';
+import { Icon } from './Icon';
+import { ShareCard } from './ShareCard';
+import './ShareSheet.css';
 
 export interface ShareSheetProps {
   content: ShareContent;
@@ -17,7 +17,7 @@ export interface ShareSheetProps {
 /** Share popover: live card preview, format switch, platform row, copy/download/QR.
     Presentational: the feature supplies content plus the resolved share response. */
 export function ShareSheet({ content, response, onClose }: ShareSheetProps) {
-  const [format, setFormat] = useState<ShareFormat>("square");
+  const [format, setFormat] = useState<ShareFormat>('square');
   const [showQr, setShowQr] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -29,46 +29,92 @@ export function ShareSheet({ content, response, onClose }: ShareSheetProps) {
   const openIntent = (id: string) => {
     const url = encodeURIComponent(link);
     const text = encodeURIComponent(response.caption);
-    if (id === "x") window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank", "noopener");
-    else if (id === "facebook") window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, "_blank", "noopener");
-    else if (response.image_url) window.open(response.image_url, "_blank", "noopener");
+    if (id === 'x')
+      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'noopener');
+    else if (id === 'facebook')
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'noopener');
+    else if (response.image_url) window.open(response.image_url, '_blank', 'noopener');
   };
 
   return (
     <div className="ds-sheet-scrim" onClick={onClose}>
-      <div className="ds-sheet" role="dialog" aria-label="Share" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="ds-sheet"
+        role="dialog"
+        aria-label="Share"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="ds-sheet__head">
           <span className="ds-sheet__title">Share</span>
-          <Button variant="ghost" size="sm" iconBefore="close" ariaLabel="Close" onClick={onClose} />
+          <Button
+            variant="ghost"
+            size="sm"
+            iconBefore="close"
+            ariaLabel="Close"
+            onClick={onClose}
+          />
         </div>
         <div className="ds-sheet__preview">
           <ShareCard
-            kicker={content.kicker} arabic={content.arabic} latin={content.latin} source={content.source}
-            format={format} shortUrl={response.short_url} qr={showQr ? response.qr : undefined}
+            kicker={content.kicker}
+            arabic={content.arabic}
+            latin={content.latin}
+            source={content.source}
+            format={format}
+            shortUrl={response.short_url}
+            qr={showQr ? response.qr : undefined}
           />
         </div>
         <Segmented
-          label="Card format" value={format}
+          label="Card format"
+          value={format}
           options={SHARE_FORMATS.map((f) => ({ value: f.value, label: f.label }))}
           onChange={(v) => setFormat(v as ShareFormat)}
         />
         <div className="ds-sheet__platforms">
           {SHARE_PLATFORMS.map((p) => (
-            <button key={p.id} type="button" className="ds-sheet__platform"
-              aria-label={`Share to ${p.label}`} onClick={() => openIntent(p.id)}>
+            <button
+              key={p.id}
+              type="button"
+              className="ds-sheet__platform"
+              aria-label={`Share to ${p.label}`}
+              onClick={() => openIntent(p.id)}
+            >
               <Icon name={p.icon as IconName} size="md" />
               <span>{p.label}</span>
             </button>
           ))}
         </div>
         <div className="ds-sheet__actions">
-          <Button variant="secondary" size="sm" iconBefore={copied ? "check" : "copy"} onClick={copy}>
-            {copied ? "Copied" : response.short_url}
+          <Button
+            variant="secondary"
+            size="sm"
+            iconBefore={copied ? 'check' : 'copy'}
+            onClick={copy}
+          >
+            {copied ? 'Copied' : response.short_url}
           </Button>
-          <Button variant="secondary" size="sm" iconBefore="download" onClick={() => openIntent("download")}>Image</Button>
-          <Button variant={showQr ? "secondary" : "ghost"} size="sm" iconBefore="qr" ariaPressed={showQr} onClick={() => setShowQr((v) => !v)}>QR</Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            iconBefore="download"
+            onClick={() => openIntent('download')}
+          >
+            Image
+          </Button>
+          <Button
+            variant={showQr ? 'secondary' : 'ghost'}
+            size="sm"
+            iconBefore="qr"
+            ariaPressed={showQr}
+            onClick={() => setShowQr((v) => !v)}
+          >
+            QR
+          </Button>
         </div>
-        <p className="ds-sheet__note">Instagram and TikTok have no web-post API. "Image" downloads the card to post in-app.</p>
+        <p className="ds-sheet__note">
+          Instagram and TikTok have no web-post API. "Image" downloads the card to post in-app.
+        </p>
       </div>
     </div>
   );

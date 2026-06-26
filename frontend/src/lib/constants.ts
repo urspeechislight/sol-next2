@@ -1,4 +1,4 @@
-// constants.ts — non-design, non-path literals. SCREAMING_SNAKE_CASE, grouped.
+// constants.ts:non-design, non-path literals. SCREAMING_SNAKE_CASE, grouped.
 // Path / URL constants (API, ROUTES, ASSETS) live in routes.ts (CENTRAL-006).
 
 export const PAGE = {
@@ -6,11 +6,11 @@ export const PAGE = {
   defaultPerPage: 24,
 } as const;
 
-// the three graph registries — drives nav + screen config
+// the three graph registries:drives nav + screen config
 export const REGISTRY = {
-  RIJAL: "rijal",
-  CANONICAL: "canonical",
-  HISTORY: "history",
+  RIJAL: 'rijal',
+  CANONICAL: 'canonical',
+  HISTORY: 'history',
 } as const;
 
 export type RegistryKey = (typeof REGISTRY)[keyof typeof REGISTRY];
@@ -22,23 +22,23 @@ export const BREAKPOINTS = { SM: 640, MD: 880, LG: 1080, XL: 1320 } as const;
 export const DURATION_MS = { FAST: 120, BASE: 200, SLOW: 340 } as const;
 
 export const THEME = {
-  ATTR: "data-theme",
-  LIGHT: "light",
-  DARK: "dark",
-  STORAGE_KEY: "sol-theme",
+  ATTR: 'data-theme',
+  LIGHT: 'light',
+  DARK: 'dark',
+  STORAGE_KEY: 'sol-theme',
 } as const;
 
 export const DENSITY = {
-  ATTR: "data-density",
-  COMFORTABLE: "comfortable",
-  COMPACT: "compact",
+  ATTR: 'data-density',
+  COMFORTABLE: 'comfortable',
+  COMPACT: 'compact',
 } as const;
 
 // reader surface controls. SIZE_DEFAULT mirrors tokens.css --reader-size (19px);
 // keep them equal across the JS/CSS boundary.
 export const READER = {
-  THEME_ATTR: "data-reader-theme",
-  LANG_ATTR: "data-lang",
+  THEME_ATTR: 'data-reader-theme',
+  LANG_ATTR: 'data-lang',
   SIZE_MIN: 15,
   SIZE_MAX: 28,
   SIZE_STEP: 1,
@@ -46,30 +46,30 @@ export const READER = {
 } as const;
 
 export const READER_THEMES = [
-  { value: "bright", label: "Bright" },
-  { value: "dark", label: "Dark" },
-  { value: "classical", label: "Classical" },
+  { value: 'bright', label: 'Bright' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'classical', label: 'Classical' },
 ] as const;
 
-// reader shows AR / EN / both — English-primary ordering
+// reader shows AR / EN / both:English-primary ordering
 export const LANG_MODES = [
-  { value: "en", label: "EN" },
-  { value: "both", label: "EN | AR" },
-  { value: "ar", label: "AR" },
+  { value: 'en', label: 'EN' },
+  { value: 'both', label: 'EN | AR' },
+  { value: 'ar', label: 'AR' },
 ] as const;
 
 // Share card formats + platform targets (consumed by ShareSheet). Stage-2
 // reconstruction: these were referenced by ShareSheet but absent from source;
 // rebuilt from the ShareFormat union + the platform icons + openIntent() logic.
 export const SHARE_FORMATS = [
-  { value: "square", label: "Square" },
-  { value: "story", label: "Story" },
-  { value: "link", label: "Link" },
+  { value: 'square', label: 'Square' },
+  { value: 'story', label: 'Story' },
+  { value: 'link', label: 'Link' },
 ] as const;
 
 export const SHARE_PLATFORMS = [
-  { id: "x", label: "X", icon: "x" },
-  { id: "facebook", label: "Facebook", icon: "facebook" },
-  { id: "instagram", label: "Instagram", icon: "instagram" },
-  { id: "tiktok", label: "TikTok", icon: "tiktok" },
+  { id: 'x', label: 'X', icon: 'x' },
+  { id: 'facebook', label: 'Facebook', icon: 'facebook' },
+  { id: 'instagram', label: 'Instagram', icon: 'instagram' },
+  { id: 'tiktok', label: 'TikTok', icon: 'tiktok' },
 ] as const;

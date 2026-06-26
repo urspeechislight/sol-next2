@@ -1,21 +1,28 @@
-// client.ts — the only data path. Real sol-next endpoints, fail loud, no fallback.
-// Stage-2 reconciliation: import depth corrected (../constants, ../types — this
+// client.ts:the only data path. Real sol-next endpoints, fail loud, no fallback.
+// Stage-2 reconciliation: import depth corrected (../constants, ../types:this
 // file lives in lib/api/); API now comes from routes.ts (CENTRAL-006 split); and
 // the paginated getters annotate params as `number` so the `as const` PAGE
 // defaults don't narrow them to literal types (breaks the collect() signature).
-import { PAGE } from "../constants";
-import { API } from "../routes";
+import { PAGE } from '../constants';
+import { API } from '../routes';
 import type {
-  BookData, BookGenre, CanonicalEntry, HistoryEntry, NarratorRecord, Paginated, ReaderPage, RijalEntry,
-} from "../types";
-import { canonicalToRecord, mergeNarrators, rijalToRecord } from "../narrators";
+  BookData,
+  BookGenre,
+  CanonicalEntry,
+  HistoryEntry,
+  NarratorRecord,
+  Paginated,
+  ReaderPage,
+  RijalEntry,
+} from '../types';
+import { canonicalToRecord, mergeNarrators, rijalToRecord } from '../narrators';
 
 export class ApiError extends Error {
   status: number;
   url: string;
   constructor(status: number, url: string) {
     super(`API ${status}: ${url}`);
-    this.name = "ApiError";
+    this.name = 'ApiError';
     this.status = status;
     this.url = url;
   }
@@ -32,15 +39,24 @@ function paged(path: string, page: number, perPage: number): string {
   return `${path}?page=${page}&per_page=${perPage}`;
 }
 
-export function getRijal(page: number = PAGE.defaultPage, perPage: number = PAGE.defaultPerPage): Promise<Paginated<RijalEntry>> {
+export function getRijal(
+  page: number = PAGE.defaultPage,
+  perPage: number = PAGE.defaultPerPage,
+): Promise<Paginated<RijalEntry>> {
   return get<Paginated<RijalEntry>>(paged(API.RIJAL, page, perPage));
 }
 
-export function getCanonical(page: number = PAGE.defaultPage, perPage: number = PAGE.defaultPerPage): Promise<Paginated<CanonicalEntry>> {
+export function getCanonical(
+  page: number = PAGE.defaultPage,
+  perPage: number = PAGE.defaultPerPage,
+): Promise<Paginated<CanonicalEntry>> {
   return get<Paginated<CanonicalEntry>>(paged(API.CANONICAL, page, perPage));
 }
 
-export function getHistory(page: number = PAGE.defaultPage, perPage: number = PAGE.defaultPerPage): Promise<Paginated<HistoryEntry>> {
+export function getHistory(
+  page: number = PAGE.defaultPage,
+  perPage: number = PAGE.defaultPerPage,
+): Promise<Paginated<HistoryEntry>> {
   return get<Paginated<HistoryEntry>>(paged(API.HISTORY, page, perPage));
 }
 

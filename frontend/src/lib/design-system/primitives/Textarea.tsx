@@ -1,5 +1,5 @@
-import { cx } from "../../utils";
-import "./Textarea.css";
+import { cx } from '../../utils';
+import './Textarea.css';
 
 export interface TextareaProps {
   id: string;
@@ -8,17 +8,25 @@ export interface TextareaProps {
   onChange: (value: string) => void;
   rows?: number;
   placeholder?: string;
-  dir?: "rtl" | "ltr";
+  dir?: 'rtl' | 'ltr';
   hideLabel?: boolean;
   className?: string;
 }
 
 export function Textarea({
-  id, label, value, onChange, rows = 2, placeholder, dir, hideLabel = false, className,
+  id,
+  label,
+  value,
+  onChange,
+  rows = 2,
+  placeholder,
+  dir,
+  hideLabel = false,
+  className,
 }: TextareaProps) {
   return (
-    <div className={cx("ds-field", className)}>
-      <label htmlFor={id} className={cx("ds-field__label", hideLabel && "ds-field__label--hidden")}>
+    <div className={cx('ds-field', className)}>
+      <label htmlFor={id} className={cx('ds-field__label', hideLabel && 'ds-field__label--hidden')}>
         {label}
       </label>
       <textarea

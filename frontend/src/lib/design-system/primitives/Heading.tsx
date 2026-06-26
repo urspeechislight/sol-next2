@@ -1,14 +1,14 @@
-import type { ReactNode } from "react";
-import { Text, type TextWeight } from "./Text";
+import type { ReactNode } from 'react';
+import { Text, type TextWeight } from './Text';
 
 export type HeadingLevel = 1 | 2 | 3;
 
-const LEVEL_AS = { 1: "h1", 2: "h2", 3: "h3" } as const;
+const LEVEL_AS = { 1: 'h1', 2: 'h2', 3: 'h3' } as const;
 
 export interface HeadingProps {
   level: HeadingLevel;
   weight?: TextWeight;
-  dir?: "rtl" | "ltr";
+  dir?: 'rtl' | 'ltr';
   className?: string;
   id?: string;
   children: ReactNode;

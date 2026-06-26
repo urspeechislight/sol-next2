@@ -1,13 +1,13 @@
 /* =============================================================================
-   tokens.css — THE single source of truth for every design value.
-   Two layers: primitive palette → semantic tokens. Antique-gold / neutral-
+   tokens.css : THE single source of truth for every design value.
+   Two layers: primitive palette -> semantic tokens. Antique-gold / neutral-
    parchment palette. Reader-theme layer preserved below.
    ============================================================================= */
 
 :root {
   /* ---- LAYER 1 · PRIMITIVE PALETTE ------------------------------------- */
 
-  /* warm paper / ink neutrals — neutral-warm ivory (calm, not peachy) */
+  /* warm paper / ink neutrals: neutral-warm ivory (calm, not peachy) */
   --palette-paper-0: #ffffff;
   --palette-paper-50: #faf8f2;
   --palette-paper-100: #f3f0e7;
@@ -23,7 +23,7 @@
   --palette-ink-500: #8a8072;
   --palette-ink-400: #b3ac99;
 
-  /* gold accent family — antique gold leaf (refined, less orange) */
+  /* gold accent family: antique gold leaf (refined, less orange) */
   --palette-gold-700: #6a5320;
   --palette-gold-600: #836a2c;
   --palette-gold-500: #9b7d36;
@@ -130,7 +130,7 @@
   --color-success: var(--palette-green-500);
   --color-warning: var(--palette-amber-500);
 
-  /* QR — fixed ink-on-paper for scannability */
+  /* QR : fixed ink-on-paper for scannability */
   --color-qr-fg: var(--palette-ink-900);
   --color-qr-bg: var(--palette-paper-0);
   --color-scrim: color-mix(in oklch, var(--palette-night-900) 46%, transparent);
@@ -256,7 +256,7 @@
   color-scheme: dark;
 }
 
-/* compact reading density — opt-in via data-density on <html> */
+/* compact reading density : opt-in via data-density on <html> */
 [data-density='compact'] {
   --space-lg: var(--scale-5);
   --space-xl: var(--scale-7);

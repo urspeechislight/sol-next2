@@ -1,7 +1,7 @@
-import { useState } from "react";
-import type { ShareContent, ShareResponse } from "../../types";
-import { Button, type ButtonVariant, type ButtonSize } from "./Button";
-import { ShareSheet } from "./ShareSheet";
+import { useState } from 'react';
+import type { ShareContent, ShareResponse } from '../../types';
+import { Button, type ButtonVariant, type ButtonSize } from './Button';
+import { ShareSheet } from './ShareSheet';
 
 export interface ShareButtonProps {
   content: ShareContent;
@@ -13,7 +13,13 @@ export interface ShareButtonProps {
 }
 
 /** The single, low-noise share affordance: opens the ShareSheet on demand. */
-export function ShareButton({ content, requestShare, variant = "ghost", size = "sm", label = "Share" }: ShareButtonProps) {
+export function ShareButton({
+  content,
+  requestShare,
+  variant = 'ghost',
+  size = 'sm',
+  label = 'Share',
+}: ShareButtonProps) {
   const [response, setResponse] = useState<ShareResponse | null>(null);
 
   const open = async () => {
@@ -23,8 +29,12 @@ export function ShareButton({ content, requestShare, variant = "ghost", size = "
 
   return (
     <>
-      <Button variant={variant} size={size} iconBefore="share" ariaLabel="Share" onClick={open}>{label}</Button>
-      {response ? <ShareSheet content={content} response={response} onClose={() => setResponse(null)} /> : null}
+      <Button variant={variant} size={size} iconBefore="share" ariaLabel="Share" onClick={open}>
+        {label}
+      </Button>
+      {response ? (
+        <ShareSheet content={content} response={response} onClose={() => setResponse(null)} />
+      ) : null}
     </>
   );
 }

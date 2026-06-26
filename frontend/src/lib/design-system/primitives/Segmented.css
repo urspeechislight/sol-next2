@@ -25,7 +25,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* reader-surface variant — themes with [data-reader-theme] */
+/* reader-surface variant:themes with [data-reader-theme] */
 .ds-seg--reader {
   background: var(--color-reader-pill-bg);
   border-color: var(--color-reader-rule);

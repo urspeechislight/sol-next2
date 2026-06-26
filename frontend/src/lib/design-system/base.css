@@ -1,4 +1,4 @@
-/* base.css — global reset + element defaults. Consumes semantic tokens only.
+/* base.css:global reset + element defaults. Consumes semantic tokens only.
    Imported once by the app root. Ports verbatim (app.css / :global in Svelte). */
 
 *,

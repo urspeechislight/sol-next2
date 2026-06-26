@@ -1,11 +1,11 @@
-import { cx } from "../../utils";
-import "./Spinner.css";
+import { cx } from '../../utils';
+import './Spinner.css';
 
-export type SpinnerSize = "sm" | "md";
+export type SpinnerSize = 'sm' | 'md';
 
 const SIZE_CLASS: Record<SpinnerSize, string> = {
-  sm: "ds-spinner--sm",
-  md: "ds-spinner--md",
+  sm: 'ds-spinner--sm',
+  md: 'ds-spinner--md',
 };
 
 export interface SpinnerProps {
@@ -14,8 +14,12 @@ export interface SpinnerProps {
   className?: string;
 }
 
-export function Spinner({ size = "md", label = "Loading", className }: SpinnerProps) {
+export function Spinner({ size = 'md', label = 'Loading', className }: SpinnerProps) {
   return (
-    <span role="status" aria-label={label} className={cx("ds-spinner", SIZE_CLASS[size], className)} />
+    <span
+      role="status"
+      aria-label={label}
+      className={cx('ds-spinner', SIZE_CLASS[size], className)}
+    />
   );
 }

@@ -1,4 +1,4 @@
-// types.ts — real sol-next API contract (Part F). Fixed interface; copied verbatim.
+// types.ts:real sol-next API contract (Part F). Fixed interface; copied verbatim.
 // All list endpoints return Paginated<T> with ?page=&per_page=.
 
 export interface Paginated<T> {
@@ -92,7 +92,7 @@ export interface BookGenre {
   books: BookCatalogEntry[];
 }
 
-// PROVISIONAL reading shape — bind the reader to THIS, nothing richer.
+// PROVISIONAL reading shape:bind the reader to THIS, nothing richer.
 export interface ReaderPage {
   book_slug: string;
   page_number: number;
@@ -108,10 +108,10 @@ export interface ReaderUnit {
   kind?: string | null; // free string; NOT a hadith taxonomy
 }
 
-// Share is PROVISIONAL — keep the Share UI; ShareContent stays generic.
+// Share is PROVISIONAL:keep the Share UI; ShareContent stays generic.
 // Stage-2 reconciliation: ShareFormat was referenced by ShareCard/ShareSheet but
 // missing from the source; restored here as the three card aspect-ratios.
-export type ShareFormat = "link" | "square" | "story";
+export type ShareFormat = 'link' | 'square' | 'story';
 
 export interface ShareContent {
   kicker: string;
@@ -147,5 +147,5 @@ export interface NarratorRecord {
   evaluator?: string | null;
   source_label?: string | null;
   merge_confidence?: number | null;
-  origin: "rijal" | "canonical";
+  origin: 'rijal' | 'canonical';
 }

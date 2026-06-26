@@ -1,19 +1,41 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
-import "../lib/design-system/tokens.css";
-import "../lib/design-system/base.css";
+import { useState } from 'react';
+import type { ReactNode } from 'react';
+import '../lib/design-system/tokens.css';
+import '../lib/design-system/base.css';
 import {
-  Badge, Button, Card, Divider, Heading, Icon, Inline, Input, Link,
-  Logo, Pager, QRCode, Segmented, Select, Spinner, Stack, Text,
-} from "../lib/design-system";
-import type { IconName } from "../lib/design-system";
-import { THEME } from "../lib/constants";
-import "./DesignSystem.css";
+  Badge,
+  Button,
+  Card,
+  Divider,
+  Heading,
+  Icon,
+  Inline,
+  Input,
+  Link,
+  Logo,
+  Pager,
+  QRCode,
+  Segmented,
+  Select,
+  Spinner,
+  Stack,
+  Text,
+} from '../lib/design-system';
+import type { IconName } from '../lib/design-system';
+import { THEME } from '../lib/constants';
+import './DesignSystem.css';
 
 const ICONS: IconName[] = [
-  "library", "reader", "graph", "search", "book", "star", "share", "settings",
+  'library',
+  'reader',
+  'graph',
+  'search',
+  'book',
+  'star',
+  'share',
+  'settings',
 ];
-const SWATCHES = ["--color-surface", "--color-accent", "--color-success", "--color-danger"];
+const SWATCHES = ['--color-surface', '--color-accent', '--color-success', '--color-danger'];
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -37,7 +59,9 @@ function ButtonsSection() {
       <Inline gap={2} align="center">
         <Button size="sm">Small</Button>
         <Button size="md">Medium</Button>
-        <Button size="lg" iconBefore="star">Large</Button>
+        <Button size="lg" iconBefore="star">
+          Large
+        </Button>
       </Inline>
     </Section>
   );
@@ -50,8 +74,12 @@ function TypeSection() {
       <Text as="h2">Heading two</Text>
       <Text as="body">Body copy in the parchment surface.</Text>
       <Text as="muted">Muted secondary text.</Text>
-      <Text as="arabic" dir="rtl">بسم الله الرحمن الرحيم</Text>
-      <Link href="#" variant="accent">An accent link</Link>
+      <Text as="arabic" dir="rtl">
+        بسم الله الرحمن الرحيم
+      </Text>
+      <Link href="#" variant="accent">
+        An accent link
+      </Link>
     </Section>
   );
 }
@@ -74,20 +102,28 @@ function BadgesSection() {
 }
 
 function FormsSection() {
-  const [text, setText] = useState("");
-  const [sel, setSel] = useState("en");
-  const [seg, setSeg] = useState("both");
+  const [text, setText] = useState('');
+  const [sel, setSel] = useState('en');
+  const [seg, setSeg] = useState('both');
   return (
     <Section title="Forms">
       <Input value={text} placeholder="Search the corpus…" type="search" onInput={setText} />
       <Select
         value={sel}
-        options={[{ value: "en", label: "English" }, { value: "ar", label: "Arabic" }]}
+        options={[
+          { value: 'en', label: 'English' },
+          { value: 'ar', label: 'Arabic' },
+        ]}
         onChange={setSel}
       />
       <Segmented
-        label="Language" value={seg}
-        options={[{ value: "en", label: "EN" }, { value: "both", label: "EN | AR" }, { value: "ar", label: "AR" }]}
+        label="Language"
+        value={seg}
+        options={[
+          { value: 'en', label: 'EN' },
+          { value: 'both', label: 'EN | AR' },
+          { value: 'ar', label: 'AR' },
+        ]}
         onChange={setSeg}
       />
     </Section>
@@ -96,7 +132,9 @@ function FormsSection() {
 
 function DataSection() {
   const [page, setPage] = useState(3);
-  const qr = Array.from({ length: 9 }, (_, r) => Array.from({ length: 9 }, (_, c) => (r + c) % 2 === 0));
+  const qr = Array.from({ length: 9 }, (_, r) =>
+    Array.from({ length: 9 }, (_, c) => (r + c) % 2 === 0),
+  );
   return (
     <Section title="Data & Navigation">
       <Pager page={page} totalPages={12} onPage={setPage} />
@@ -104,7 +142,9 @@ function DataSection() {
       <Inline gap={4} align="center">
         <QRCode matrix={qr} />
         <div className="ds-demo__icons">
-          {ICONS.map((n) => <Icon key={n} name={n} size="md" title={n} />)}
+          {ICONS.map((n) => (
+            <Icon key={n} name={n} size="md" title={n} />
+          ))}
         </div>
       </Inline>
     </Section>
@@ -135,8 +175,8 @@ export function DesignSystem() {
     <div className="ds-demo">
       <div className="ds-demo__bar">
         <Logo size="md" />
-        <Button variant="ghost" size="sm" iconBefore={dark ? "sun" : "moon"} onClick={toggle}>
-          {dark ? "Light" : "Dark"}
+        <Button variant="ghost" size="sm" iconBefore={dark ? 'sun' : 'moon'} onClick={toggle}>
+          {dark ? 'Light' : 'Dark'}
         </Button>
       </div>
       <div className="ds-demo__grid">
