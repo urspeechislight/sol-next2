@@ -17,7 +17,9 @@ export type RegistryKey = (typeof REGISTRY)[keyof typeof REGISTRY];
 
 export const BREAKPOINTS = { SM: 640, MD: 880, LG: 1080, XL: 1320 } as const;
 
-export const DURATION_MS = { FAST: 120, BASE: 200, SLOW: 320 } as const;
+// Motion durations in ms for JS-driven timing. MUST mirror tokens.css
+// --dur-raw-fast/base/slow (the motion SSOT); keep the two in lockstep.
+export const DURATION_MS = { FAST: 120, BASE: 200, SLOW: 340 } as const;
 
 export const THEME = {
   ATTR: "data-theme",
@@ -32,7 +34,8 @@ export const DENSITY = {
   COMPACT: "compact",
 } as const;
 
-// reader surface controls
+// reader surface controls. SIZE_DEFAULT mirrors tokens.css --reader-size (19px);
+// keep them equal across the JS/CSS boundary.
 export const READER = {
   THEME_ATTR: "data-reader-theme",
   LANG_ATTR: "data-lang",

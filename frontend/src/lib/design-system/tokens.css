@@ -155,6 +155,12 @@
   --radius-lg: var(--radius-raw-lg);
   --radius-pill: var(--radius-raw-pill);
 
+  /* control heights (buttons / inputs / selects) + hairline border width */
+  --control-height-sm: 30px;
+  --control-height-md: 36px;
+  --control-height-lg: 42px;
+  --border-width: 1px;
+
   /* typography */
   --font-sans: var(--type-raw-sans);
   --font-serif: var(--type-raw-serif);
@@ -259,6 +265,7 @@
 
 /* =============================================================================
    READER THEME LAYER  ([data-reader-theme] on the reader root)
+   --reader-size is defined once on :root above; reader themes set colors only.
    ============================================================================= */
 :root,
 [data-reader-theme='classical'] {
@@ -277,7 +284,6 @@
   --color-reader-progress: #997b34;
   --color-reader-match: #f1d27a;
   --color-reader-rule: #d9ccac;
-  --reader-size: 19px;
 }
 [data-reader-theme='bright'] {
   --color-reader-bg: #ffffff;

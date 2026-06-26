@@ -32,5 +32,5 @@
 .ds-demo__swatch {
   height: 40px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
+  border: var(--border-width) solid var(--color-border);
 }
