@@ -1,0 +1,40 @@
+/* Re-authored (Stage 1): variants aligned to Badge.tsx's API + variants.ts SSOT
+   (default/success/warning/danger). The stale neutral/gold/sect/grade classes
+   were dropped. */
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: 22px;
+  padding: 0 var(--space-sm);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.ds-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+}
+
+.ds-badge--default {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+.ds-badge--success {
+  background: color-mix(in oklch, var(--color-success) 14%, var(--color-surface));
+  color: color-mix(in oklch, var(--color-success) 80%, var(--color-text));
+}
+.ds-badge--warning {
+  background: color-mix(in oklch, var(--color-warning) 16%, var(--color-surface));
+  color: color-mix(in oklch, var(--color-warning) 78%, var(--color-text));
+}
+.ds-badge--danger {
+  background: color-mix(in oklch, var(--color-danger) 14%, var(--color-surface));
+  color: color-mix(in oklch, var(--color-danger) 80%, var(--color-text));
+}

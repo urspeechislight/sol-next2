@@ -1,0 +1,14 @@
+.ds-divider {
+  border: 0;
+  background: var(--color-border);
+  margin: 0;
+}
+.ds-divider--horizontal {
+  width: 100%;
+  height: 1px;
+}
+.ds-divider--vertical {
+  width: 1px;
+  align-self: stretch;
+  min-height: var(--space-md);
+}

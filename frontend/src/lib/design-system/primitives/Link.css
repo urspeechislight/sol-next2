@@ -1,0 +1,26 @@
+.ds-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.ds-link--default {
+  color: var(--color-text);
+}
+.ds-link--default:hover {
+  color: var(--color-accent-deep);
+}
+.ds-link--quiet {
+  color: var(--color-text-muted);
+}
+.ds-link--quiet:hover {
+  color: var(--color-text);
+}
+.ds-link--accent {
+  color: var(--color-accent-deep);
+  font-weight: var(--weight-medium);
+}
+.ds-link--accent:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

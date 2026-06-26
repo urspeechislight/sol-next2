@@ -1,0 +1,31 @@
+/* Re-authored (Stage 1): Input.tsx renders a single <input class="ds-input">,
+   so .ds-input styles the element directly (the old composite wrapper +
+   __field/__icon was dropped). Added --invalid / :disabled / ::placeholder.
+   The shared .ds-field* label classes moved to Textarea.css (their consumer). */
+.ds-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+.ds-input::placeholder {
+  color: var(--color-text-ghost);
+}
+.ds-input:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+.ds-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ds-input--invalid,
+.ds-input--invalid:focus-visible {
+  border-color: var(--color-danger);
+}

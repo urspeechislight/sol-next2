@@ -1,0 +1,349 @@
+# Centralization rules: "this pattern may only appear in these locations."
+#
+# The `centralization` handler reads this file and applies each rule to
+# every Write/Edit. A rule has:
+#   id          — short stable id used in block messages (CENTRAL-***)
+#   description — one-line summary for the block message
+#   kind        — `regex` (string literal pattern) or `ast` (AST-level)
+#   pattern     — for `regex`, a Python regex applied to source after
+#                 stripping comments
+#   ast_match   — for `ast`, the qualified name(s) to detect (e.g.
+#                 `os.getenv`, `re.compile`)
+#   suffixes    — file extensions to apply to (without the leading dot)
+#   allowed_in  — globs (repo-relative) where this pattern is allowed.
+#                 Anywhere else triggers a block.
+#   fix         — message shown in the block to tell the agent where to
+#                 move the literal.
+#
+# Adding a new centralization rule is YAML, not Python — that's the point.
+
+version: 1
+
+rules:
+  - id: CENTRAL-001-env
+    description: Environment-variable reads must come from a settings module.
+    kind: ast
+    ast_match:
+      - os.getenv
+      - os.environ.__getitem__ # os.environ["X"]
+      - os.environ.get
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/core/config.py'
+      - 'src/backend/core/settings.py'
+      - 'src/backend/config/*.py'
+      # The harness itself inspects a handful of env vars
+      # (CLAUDE_PROJECT_DIR, CLAUDE_HARNESS_INTERNAL, CLAUDE_SESSION_ID).
+      # The "settings module" rationale doesn't apply to hook scripts —
+      # they ARE the settings layer for the harness.
+      - '.claude/**/*.py'
+    fix: |
+      Read environment variables only in `src/backend/core/settings.py`.
+      Define a typed Settings (pydantic-settings) field there and import the
+      value from the Settings singleton. Don't sprinkle `os.getenv` across
+      the codebase — env values get stale or inconsistent that way.
+
+  - id: CENTRAL-002-regex
+    description: Regex compilation/use must come from a patterns module.
+    kind: ast
+    ast_match:
+      - re.compile
+      - re.search
+      - re.match
+      - re.fullmatch
+      - re.findall
+      - re.finditer
+      - re.sub
+      - re.split
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/patterns.py'
+      - 'src/backend/**/patterns.py'
+      # Pattern matching IS the harness's job — handlers are inherently
+      # regex-heavy. The patterns-module rule is for application code so
+      # one team can't drift regex semantics across services.
+      - '.claude/**/*.py'
+      # One-off scripts (ingest helpers, migration tools, screenshot
+      # automation). Each script is a single-purpose tool; the SSOT
+      # rationale (multiple services drifting) doesn't apply.
+      - 'scripts/**/*.py'
+    fix: |
+      Define the regex once in `src/backend/patterns.py` (or a
+      service-local `patterns.py`) as a compiled module-level
+      `Pattern[str]` and import it. Regexes scattered across the codebase
+      drift and silently disagree on what they match.
+
+  - id: CENTRAL-003-http-status
+    description: HTTP status codes must be named, not bare integers.
+    kind: regex
+    pattern: '\b(status_code|status)\s*=\s*(200|201|202|204|301|302|304|400|401|403|404|405|409|410|422|429|500|502|503|504)\b'
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/core/constants.py'
+      - 'src/backend/core/http.py'
+    fix: |
+      Use `status.HTTP_200_OK` / `status.HTTP_404_NOT_FOUND` etc. from
+      `starlette.status` (or `fastapi.status`). Or define a named
+      constant in `src/backend/core/http.py` if a stack-specific name is
+      needed. Bare numeric codes can't be searched for or refactored.
+
+  - id: CENTRAL-004-routes
+    description: HTTP route decorators belong in a routes module.
+    kind: regex
+    pattern: '^\s*@(router|app)\.(get|post|put|patch|delete|options|head)\s*\('
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/api/**/*.py'
+      - 'src/backend/routes/**/*.py'
+      - 'src/backend/main.py'
+    fix: |
+      Define routes only under `src/backend/api/` (or `src/backend/routes/`).
+      Putting `@router.get(...)` in arbitrary modules splits the URL
+      namespace across the codebase and makes the API surface impossible
+      to audit from one place.
+
+  - id: CENTRAL-005-sql
+    description: Raw SQL strings belong in repositories / migrations.
+    kind: regex
+    # Match SQL keywords at start of a string literal, allowing common
+    # leading whitespace and the string-prefix forms (r, b, f, plain).
+    pattern: '["\x27](?:\s*--[^\n]*\n)?\s*(SELECT|INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|CREATE\s+TABLE|ALTER\s+TABLE|DROP\s+TABLE)\b'
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/repositories/**/*.py'
+      - 'src/backend/queries/**/*.py'
+      - 'src/backend/migrations/**/*.py'
+      - 'alembic/versions/**/*.py'
+    fix: |
+      Raw SQL belongs in the repository layer (`src/backend/repositories/`)
+      or in Alembic migrations. Application code uses repository
+      functions, not handwritten SQL. If the ORM truly can't express the
+      query, write a typed function in a repository module that does.
+
+  # ---- Frontend route constants (CENTRAL-006) --------------------------------
+  - id: CENTRAL-006-frontend-routes
+    description: Frontend route paths must come from a routes module.
+    kind: regex
+    # Path-like string literals: leading '/', then a lowercase letter or
+    # path segment with a ':' (parameter). Excludes asset paths (/assets/,
+    # /static/) and the bare '/' root that's commonly used as a default.
+    pattern: '["\x27]/(?!assets/|static/|images/|fonts/)([a-z][a-z0-9_-]*|:[a-z])'
+    suffixes: [jsx, tsx, ts, js]
+    allowed_in:
+      - 'src/frontend/lib/routes.ts'
+      - 'src/frontend/lib/routes.js'
+      - 'src/frontend/lib/api/**/*'
+      - 'frontend/src/lib/routes.ts'
+      - 'frontend/src/lib/api/**/*'
+    fix: |
+      Define routes in `src/frontend/lib/routes.{ts,js}` as a typed map
+      (`{ users: '/users/:id' }`) and import the constant or a helper
+      (`routes.users(id)`). Hardcoding `/users/${id}` in components means
+      the URL shape is duplicated across the app and impossible to refactor.
+
+  # ---- Frontend API client (CENTRAL-007) -------------------------------------
+  - id: CENTRAL-007-frontend-api
+    description: HTTP calls must go through the shared API client.
+    kind: regex
+    # Bare `fetch(` or `axios.<method>(` outside the api/ layer. Matches
+    # the call site, not type imports.
+    pattern: '\b(fetch\s*\(|axios\.(get|post|put|patch|delete|request)\s*\()'
+    suffixes: [jsx, tsx, ts, js]
+    allowed_in:
+      - 'src/frontend/lib/api/**/*'
+    fix: |
+      Use the shared API client (`import { api } from '@/lib/api'`) instead
+      of raw `fetch(...)` or `axios.*(...)`. One wrapper handles auth
+      headers, retries, base URL, and error envelope — bare calls bypass
+      all of that and drift over time.
+
+  # ---- Auth (CENTRAL-008/009) ------------------------------------------------
+  - id: CENTRAL-008-auth-checks
+    description: Authentication checks live only in the auth module.
+    kind: ast
+    ast_match:
+      - require_user
+      - require_role
+      - require_permission
+      - verify_token
+      - check_permission
+      - has_role
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/auth/**/*.py'
+    fix: |
+      Auth checks (`require_user`, `verify_token`, `check_permission`, ...)
+      may only be **defined** in `src/backend/auth/`. Route handlers
+      *invoke* them via dependency injection (FastAPI `Depends(require_user)`)
+      but should not implement the check itself.
+
+  - id: CENTRAL-009-jwt
+    description: JWT encode/decode lives only in the auth module.
+    kind: ast
+    ast_match:
+      - jwt.encode
+      - jwt.decode
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/auth/**/*.py'
+    fix: |
+      JWT operations belong to the auth layer. Issuing or verifying tokens
+      in route handlers or services means signing keys leak into more
+      places than they should.
+
+  # ---- Password hashing (CENTRAL-010) ---------------------------------------
+  - id: CENTRAL-010-password-hashing
+    description: Password hashing lives only in the security module.
+    kind: ast
+    ast_match:
+      - bcrypt.hashpw
+      - bcrypt.checkpw
+      - argon2.PasswordHasher
+      - passlib.hash
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/security/**/*.py'
+    fix: |
+      Hash/verify passwords only in `src/backend/security/passwords.py`.
+      Centralizing the algorithm choice + work factor in one place is
+      what lets us upgrade hash parameters without combing the codebase.
+
+  # ---- Cache (CENTRAL-011) ---------------------------------------------------
+  - id: CENTRAL-011-cache
+    description: Cache reads/writes go through the cache layer.
+    kind: ast
+    ast_match:
+      - redis.set
+      - redis.get
+      - redis.delete
+      - cache.set
+      - cache.get
+      - cache.delete
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/cache/**/*.py'
+    fix: |
+      Cache operations belong in `src/backend/cache/`. The cache module
+      owns key naming, TTLs, and backend choice — direct `redis.set(...)`
+      calls in services means each service invents its own key scheme and
+      they collide.
+
+  # ---- Observability (CENTRAL-012/013) --------------------------------------
+  - id: CENTRAL-012-metrics
+    description: Metric emission goes through observability/.
+    kind: ast
+    ast_match:
+      - metrics.increment
+      - metrics.gauge
+      - metrics.histogram
+      - statsd.increment
+      - counter.inc
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/observability/**/*.py'
+    fix: |
+      Metric names and labels live in `src/backend/observability/metrics.py`.
+      Services call named helpers (`record_request_duration(...)`), they
+      don't construct metric calls inline.
+
+  - id: CENTRAL-013-trace-spans
+    description: Trace span creation goes through observability/.
+    kind: ast
+    ast_match:
+      - tracer.start_span
+      - tracer.start_as_current_span
+      - opentelemetry.trace.get_tracer
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/observability/**/*.py'
+    fix: |
+      Span creation belongs in observability helpers. Inline span work
+      in business code makes naming inconsistent across services.
+
+  # ---- Cron expressions (CENTRAL-014) ---------------------------------------
+  - id: CENTRAL-014-cron
+    description: Cron expressions live in a schedules module.
+    kind: regex
+    # Match common cron-string shapes: 5 or 6 space-separated fields where
+    # each field is digits, *, comma-list, or step. Conservative on width
+    # to avoid catching natural-language strings.
+    pattern: '["\x27]\s*([0-9*,/-]+\s+){4,5}[0-9*,/-]+\s*["\x27]'
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/schedules.py'
+      - 'src/backend/schedules/**/*.py'
+    fix: |
+      Cron schedules belong in `src/backend/schedules.py` as named
+      constants (`HOURLY = "0 * * * *"`). Inline cron strings are
+      impossible to audit at a glance.
+
+  # ---- UUID / ULID generation (CENTRAL-015) ---------------------------------
+  - id: CENTRAL-015-ids
+    description: ID generation goes through an ids module.
+    kind: ast
+    ast_match:
+      - uuid.uuid4
+      - uuid.uuid1
+      - ulid.new
+      - ulid.ULID
+      - secrets.token_urlsafe
+      - secrets.token_hex
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/core/ids.py'
+      - 'src/backend/ids/**/*.py'
+    fix: |
+      Generate IDs only in `src/backend/core/ids.py`. Centralizing keeps
+      ID format consistent (`user_abc123` vs raw uuid) and lets us swap
+      uuid4 → ulid in one place when the time comes.
+
+  # ---- Feature flags (CENTRAL-016) ------------------------------------------
+  - id: CENTRAL-016-flags
+    description: Feature flag reads go through a single flags module.
+    kind: ast
+    ast_match:
+      - flags.get
+      - flags.is_enabled
+      - flagsmith.get_value
+      - launchdarkly.variation
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/feature_flags.py'
+      - 'src/backend/feature_flags/**/*.py'
+    fix: |
+      Feature flag reads live in `src/backend/feature_flags.py`. Reading
+      flags directly from the SDK across services makes flag inventory
+      impossible to track.
+
+  # ---- Health-check endpoints (CENTRAL-017) ---------------------------------
+  - id: CENTRAL-017-health
+    description: Health/liveness/readiness endpoints belong in main.py.
+    kind: regex
+    pattern: '["\x27]/(health|healthz|livez|readyz|status)["\x27]'
+    suffixes: [py]
+    allowed_in:
+      - 'src/backend/main.py'
+      - 'src/backend/health.py'
+      # Tests legitimately CALL these endpoints — they don't define
+      # competing health probes.
+      - 'tests/**/*.py'
+    fix: |
+      Health endpoints live in `src/backend/main.py` (or `health.py`)
+      only. One liveness probe is correct; many liveness probes drift
+      and the orchestrator can't tell which is authoritative.
+
+  # ---- Secret-store path references (CENTRAL-018) ---------------------------
+  - id: CENTRAL-018-secret-paths
+    description: Secret-store path references must come from the settings module.
+    kind: regex
+    # Match scheme-style paths used by REDACTED / Vault / AWS SM ARNs.
+    pattern: '["\x27](REDACTED://|vault://|arn:aws:secretsmanager:|gcp-secrets://|secret/)\S'
+    suffixes: [py, ts, tsx, js, jsx, yaml, yml]
+    allowed_in:
+      - 'src/backend/core/settings.py'
+      - 'src/backend/core/config.py'
+      - 'src/backend/secrets/**/*'
+    fix: |
+      Secret-store paths belong in `src/backend/core/settings.py` (or
+      `src/backend/secrets/`). Sprinkling REDACTED/Vault paths into
+      services means rotation requires a code search across the repo.

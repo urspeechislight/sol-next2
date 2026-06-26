@@ -1,0 +1,50 @@
+/* Re-authored (Stage 1) to match the classes Text.tsx emits. Type scale ported
+   from the dropped Heading.css; headings inherit --font-sans (serif was a
+   modifier not exposed by Text's API); --w-bold maps to --weight-semibold
+   (no bold weight token exists). */
+.ds-text {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.ds-text--h1 {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+}
+.ds-text--h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+}
+.ds-text--h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+.ds-text--body {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}
+.ds-text--muted {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text-muted);
+}
+.ds-text--arabic {
+  font-family: var(--font-ar);
+  font-size: var(--text-md);
+  line-height: var(--leading-arabic);
+}
+
+.ds-text--w-regular {
+  font-weight: var(--weight-regular);
+}
+.ds-text--w-medium {
+  font-weight: var(--weight-medium);
+}
+.ds-text--w-bold {
+  font-weight: var(--weight-semibold);
+}

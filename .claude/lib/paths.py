@@ -83,10 +83,38 @@ def relpath(path: Path | None) -> str:
         return str(path)
 
 
+# Frontend source roots. Both are live during the design-system migration: the
+# legacy Babel-in-browser prototype under ``src/frontend/`` and the new Vite + TS
+# package under ``frontend/src/``. Drop the legacy entry at cutover (Stage 4).
+_FRONTEND_ROOTS: tuple[str, ...] = ("src/frontend", "frontend/src")
+
+# The design-system package within each frontend (the primitives layer, where
+# raw HTML tags and design-vocabulary maps are allowed because it IS the system).
+_DESIGN_SYSTEM_ROOTS: tuple[str, ...] = (
+    "src/frontend/lib/design-system",
+    "frontend/src/lib/design-system",
+)
+
+# The token SSOT files, the one place raw color/value literals are defined.
+_DESIGN_TOKEN_FILES: tuple[str, ...] = (
+    "src/frontend/tokens.css",
+    "src/frontend/lib/design-system/tokens.css",
+    "src/frontend/lib/design-system/internal",
+    "frontend/src/lib/design-system/tokens.css",
+    "frontend/src/lib/design-system/internal",
+)
+
+
+def is_in_frontend(path: Path | None) -> bool:
+    """True if ``path`` is inside any frontend source root (legacy or new)."""
+    return is_in(path, *_FRONTEND_ROOTS)
+
+
+def is_design_system_file(path: Path | None) -> bool:
+    """True if ``path`` is inside the design-system package (the primitives layer)."""
+    return is_in(path, *_DESIGN_SYSTEM_ROOTS)
+
+
 def is_design_token_file(path: Path | None) -> bool:
     """True if this path is the design tokens SSOT — these files may use raw colors."""
-    return (
-        is_in(path, "src/frontend/tokens.css")
-        or is_in(path, "src/frontend/lib/design-system/tokens.css")
-        or is_in(path, "src/frontend/lib/design-system/internal")
-    )
+    return is_in(path, *_DESIGN_TOKEN_FILES)

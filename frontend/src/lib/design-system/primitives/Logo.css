@@ -1,0 +1,44 @@
+.ds-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.ds-logo__mark {
+  display: block;
+  flex: none;
+  width: auto;
+  object-fit: contain;
+  /* Stage 1: raw rgba(40,26,6,0.28) tokenised to a palette-based mix (DS-001). */
+  filter: drop-shadow(0 1px 2px color-mix(in oklch, var(--palette-night-900) 28%, transparent));
+}
+.ds-logo--sm .ds-logo__mark {
+  height: 26px;
+}
+.ds-logo--md .ds-logo__mark {
+  height: 34px;
+}
+.ds-logo--lg .ds-logo__mark {
+  height: 64px;
+}
+.ds-logo--xl .ds-logo__mark {
+  height: 112px;
+}
+
+.ds-logo__word {
+  font-family: var(--font-serif);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.16em;
+  color: var(--color-text);
+}
+.ds-logo--sm .ds-logo__word {
+  font-size: var(--text-base);
+}
+.ds-logo--md .ds-logo__word {
+  font-size: var(--text-lg);
+}
+.ds-logo--lg .ds-logo__word {
+  font-size: var(--text-2xl);
+}
+.ds-logo--xl .ds-logo__word {
+  font-size: var(--text-3xl);
+}

@@ -1,0 +1,74 @@
+/* Re-authored (Stage 1) to match Button.tsx: added --lg size and --danger
+   variant; dropped the unused --secondary / --gold classes. */
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+.ds-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ds-btn--block {
+  width: 100%;
+}
+
+.ds-btn--sm {
+  height: 30px;
+  padding: 0 var(--space-sm);
+  font-size: var(--text-sm);
+}
+.ds-btn--md {
+  height: 36px;
+  padding: 0 var(--space-md);
+  font-size: var(--text-sm);
+}
+.ds-btn--lg {
+  height: 42px;
+  padding: 0 var(--space-lg);
+  font-size: var(--text-md);
+}
+
+.ds-btn--primary {
+  background: var(--color-text);
+  color: var(--color-surface);
+  border-color: var(--color-text);
+}
+.ds-btn--primary:hover:not(:disabled) {
+  background: var(--color-text-muted);
+  border-color: var(--color-text-muted);
+}
+
+.ds-btn--ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+.ds-btn--ghost:hover:not(:disabled) {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+.ds-btn--danger {
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+  border-color: var(--color-danger);
+}
+.ds-btn--danger:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--color-danger) 82%, var(--color-text));
+  border-color: color-mix(in oklch, var(--color-danger) 82%, var(--color-text));
+}
+
+.ds-btn__label {
+  display: inline-block;
+}

@@ -1,0 +1,29 @@
+.ds-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.ds-pager__page {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.ds-pager__page:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+.ds-pager__page--on {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.ds-pager__gap {
+  color: var(--color-text-ghost);
+  padding: 0 var(--space-xs);
+}
