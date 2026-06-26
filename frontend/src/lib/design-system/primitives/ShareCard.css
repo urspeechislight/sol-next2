@@ -1,0 +1,100 @@
+.ds-sharecard {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 4cqi;
+  padding: 6cqi;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 120% at 100% 0%, var(--color-accent-wash), transparent 55%),
+    var(--color-surface-raised);
+  border: var(--border-width) solid var(--color-border);
+  color: var(--color-text);
+  overflow: hidden;
+}
+.ds-sharecard--link {
+  aspect-ratio: 1.91 / 1;
+}
+.ds-sharecard--square {
+  aspect-ratio: 1 / 1;
+}
+.ds-sharecard--story {
+  aspect-ratio: 9 / 16;
+}
+
+.ds-sharecard__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3cqi;
+}
+.ds-sharecard__head .ds-logo__mark {
+  height: 9cqi;
+  width: auto;
+}
+.ds-sharecard__head .ds-logo__word {
+  font-size: 4.6cqi;
+  letter-spacing: 0.16em;
+}
+.ds-sharecard__kicker {
+  font-family: var(--font-mono);
+  font-size: 2.7cqi;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+  text-align: right;
+  white-space: nowrap;
+}
+.ds-sharecard__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3.5cqi;
+}
+.ds-sharecard__ar {
+  font-family: var(--font-ar-display);
+  direction: rtl;
+  text-align: center;
+  font-size: 6cqi;
+  line-height: 1.75;
+  color: var(--color-text);
+}
+.ds-sharecard__en {
+  font-family: var(--font-serif);
+  font-style: italic;
+  text-align: center;
+  font-size: 3.5cqi;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.ds-sharecard__foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 3cqi;
+  border-top: var(--border-width) solid var(--color-border-hair);
+  padding-top: 4cqi;
+}
+.ds-sharecard__src {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1cqi;
+}
+.ds-sharecard__source {
+  font-family: var(--font-ar);
+  font-size: 4cqi;
+  color: var(--color-text);
+}
+.ds-sharecard__url {
+  font-family: var(--font-mono);
+  font-size: 2.7cqi;
+  color: var(--color-accent-deep);
+}
+.ds-sharecard__foot .ds-qr {
+  width: 22cqi;
+  height: 22cqi;
+  padding: 1.6cqi;
+}

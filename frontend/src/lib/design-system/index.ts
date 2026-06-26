@@ -1,7 +1,4 @@
 // design-system/index.ts — PUBLIC barrel. Feature code imports ONLY from here.
-// NOTE (Stage 1): ShareCard / ShareSheet / ShareButton are intentionally NOT
-// exported yet — they depend on lib/types.ts (ShareContent/ShareResponse) and
-// share constants that land in Stage 2. Re-add their exports there.
 
 export { Icon } from "./primitives/Icon";
 export type { IconProps, IconSize } from "./primitives/Icon";
@@ -57,3 +54,12 @@ export type { LogoProps, LogoSize } from "./primitives/Logo";
 
 export { QRCode } from "./primitives/QRCode";
 export type { QRCodeProps } from "./primitives/QRCode";
+
+export { ShareCard } from "./primitives/ShareCard";
+export type { ShareCardProps } from "./primitives/ShareCard";
+
+export { ShareSheet } from "./primitives/ShareSheet";
+export type { ShareSheetProps } from "./primitives/ShareSheet";
+
+export { ShareButton } from "./primitives/ShareButton";
+export type { ShareButtonProps } from "./primitives/ShareButton";

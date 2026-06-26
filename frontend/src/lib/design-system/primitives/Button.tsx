@@ -4,11 +4,12 @@ import { Icon } from "./Icon";
 import type { IconName } from "../internal/icons";
 import "./Button.css";
 
-export type ButtonVariant = "primary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
   primary: "ds-btn--primary",
+  secondary: "ds-btn--secondary",
   ghost: "ds-btn--ghost",
   danger: "ds-btn--danger",
 };

@@ -151,6 +151,7 @@ rules:
     suffixes: [jsx, tsx, ts, js]
     allowed_in:
       - 'src/frontend/lib/api/**/*'
+      - 'frontend/src/lib/api/**/*'
     fix: |
       Use the shared API client (`import { api } from '@/lib/api'`) instead
       of raw `fetch(...)` or `axios.*(...)`. One wrapper handles auth

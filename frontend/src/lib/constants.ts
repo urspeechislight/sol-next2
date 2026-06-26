@@ -57,3 +57,19 @@ export const LANG_MODES = [
   { value: "both", label: "EN | AR" },
   { value: "ar", label: "AR" },
 ] as const;
+
+// Share card formats + platform targets (consumed by ShareSheet). Stage-2
+// reconstruction: these were referenced by ShareSheet but absent from source;
+// rebuilt from the ShareFormat union + the platform icons + openIntent() logic.
+export const SHARE_FORMATS = [
+  { value: "square", label: "Square" },
+  { value: "story", label: "Story" },
+  { value: "link", label: "Link" },
+] as const;
+
+export const SHARE_PLATFORMS = [
+  { id: "x", label: "X", icon: "x" },
+  { id: "facebook", label: "Facebook", icon: "facebook" },
+  { id: "instagram", label: "Instagram", icon: "instagram" },
+  { id: "tiktok", label: "TikTok", icon: "tiktok" },
+] as const;

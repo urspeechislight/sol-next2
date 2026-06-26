@@ -1,5 +1,5 @@
 /* Re-authored (Stage 1) to match Button.tsx: added --lg size and --danger
-   variant; dropped the unused --secondary / --gold classes. Heights and the
+   variant. Stage 2 restored --secondary (used by ShareSheet). Heights and the
    hairline border reference the shared control tokens. */
 .ds-btn {
   display: inline-flex;
@@ -49,6 +49,16 @@
 .ds-btn--primary:hover:not(:disabled) {
   background: var(--color-text-muted);
   border-color: var(--color-text-muted);
+}
+
+.ds-btn--secondary {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+.ds-btn--secondary:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent-deep);
 }
 
 .ds-btn--ghost {
