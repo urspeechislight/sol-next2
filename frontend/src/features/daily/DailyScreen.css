@@ -1,0 +1,65 @@
+.daily__grid {
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: 1.2fr 1fr;
+  align-items: start;
+}
+.daily__pick {
+  grid-column: 1 / -1;
+}
+@media (max-width: 880px) {
+  .daily__grid {
+    grid-template-columns: 1fr;
+  }
+}
+.daily__label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.daily__ayah {
+  font-family: var(--font-ar-display);
+  direction: rtl;
+  text-align: center;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-arabic);
+  color: var(--color-text);
+  margin: var(--space-sm) 0;
+}
+.daily__ayah-en {
+  text-align: center;
+  font-style: italic;
+  margin-bottom: var(--space-md);
+}
+.daily__hadith-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+.daily__matn {
+  font-family: var(--font-ar);
+  direction: rtl;
+  font-size: var(--text-xl);
+  line-height: var(--leading-arabic);
+  color: var(--color-text);
+  margin-bottom: var(--space-sm);
+}
+.daily__matn-en {
+  margin-bottom: var(--space-sm);
+}
+.daily__sources {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+.daily__src {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.daily__rationale {
+  margin: var(--space-sm) 0 var(--space-md);
+}

@@ -1,9 +1,8 @@
-// main.tsx:React mount glue. Stage 1 mounts the design-system preview;
-// Stage 3 repoints this at ./app/App (the real shell).
-import { createRoot } from 'react-dom/client';
-import { DesignSystem } from './preview/DesignSystem';
+// main.tsx — React mount glue. Mounts the SOL app (home / library / daily / graph).
+import { createRoot } from "react-dom/client";
+import { App } from "./app/App";
 
-const container = document.getElementById('root');
+const container = document.getElementById("root");
 if (container) {
-  createRoot(container).render(<DesignSystem />);
+  createRoot(container).render(<App />);
 }

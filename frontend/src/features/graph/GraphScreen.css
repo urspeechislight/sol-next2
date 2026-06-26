@@ -1,0 +1,54 @@
+.graph {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--space-lg);
+}
+@media (max-width: 880px) {
+  .graph {
+    grid-template-columns: 1fr;
+  }
+}
+.graph__canvas {
+  position: relative;
+  min-height: 68vh;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(circle at 50% 38%, var(--color-surface), var(--color-bg));
+  display: grid;
+  place-items: center;
+}
+.graph__scaffold {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--color-border-strong);
+  opacity: 0.5;
+}
+.graph__placeholder {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  text-align: center;
+  color: var(--color-accent);
+  padding: var(--space-xl);
+}
+.graph__hint {
+  max-width: 36ch;
+}
+.graph__panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: var(--space-lg);
+}
+.graph__label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
