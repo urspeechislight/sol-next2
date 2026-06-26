@@ -1,12 +1,9 @@
-/* Re-authored (Stage 1) to match Button.tsx: added --lg size and --danger
-   variant. Stage 2 restored --secondary (used by ShareSheet). Heights and the
-   hairline border reference the shared control tokens. */
 .ds-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-xs);
-  border: var(--border-width) solid transparent;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   font-family: var(--font-sans);
   font-weight: var(--weight-medium);
@@ -26,19 +23,14 @@
 }
 
 .ds-btn--sm {
-  height: var(--control-height-sm);
+  height: 30px;
   padding: 0 var(--space-sm);
   font-size: var(--text-sm);
 }
 .ds-btn--md {
-  height: var(--control-height-md);
+  height: 36px;
   padding: 0 var(--space-md);
   font-size: var(--text-sm);
-}
-.ds-btn--lg {
-  height: var(--control-height-lg);
-  padding: 0 var(--space-lg);
-  font-size: var(--text-md);
 }
 
 .ds-btn--primary {
@@ -70,14 +62,14 @@
   color: var(--color-text);
 }
 
-.ds-btn--danger {
-  background: var(--color-danger);
+.ds-btn--gold {
+  background: var(--color-accent);
   color: var(--color-on-accent);
-  border-color: var(--color-danger);
+  border-color: var(--color-accent);
 }
-.ds-btn--danger:hover:not(:disabled) {
-  background: color-mix(in oklch, var(--color-danger) 82%, var(--color-text));
-  border-color: color-mix(in oklch, var(--color-danger) 82%, var(--color-text));
+.ds-btn--gold:hover:not(:disabled) {
+  background: var(--color-accent-deep);
+  border-color: var(--color-accent-deep);
 }
 
 .ds-btn__label {

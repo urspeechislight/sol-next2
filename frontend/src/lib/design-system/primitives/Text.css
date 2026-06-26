@@ -1,42 +1,43 @@
-/* Re-authored (Stage 1) to match the classes Text.tsx emits. Type scale ported
-   from the dropped Heading.css; headings inherit --font-sans (serif was a
-   modifier not exposed by Text's API); --w-bold maps to --weight-semibold
-   (no bold weight token exists). */
 .ds-text {
   margin: 0;
-  color: var(--color-text);
 }
 
-.ds-text--h1 {
-  font-size: var(--text-3xl);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-tight);
-  letter-spacing: -0.01em;
+.ds-text--xs {
+  font-size: var(--text-xs);
 }
-.ds-text--h2 {
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-tight);
-  letter-spacing: -0.01em;
+.ds-text--sm {
+  font-size: var(--text-sm);
 }
-.ds-text--h3 {
+.ds-text--base {
+  font-size: var(--text-base);
+}
+.ds-text--md {
+  font-size: var(--text-md);
+}
+.ds-text--lg {
+  font-size: var(--text-lg);
+}
+.ds-text--xl {
   font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-snug);
 }
-.ds-text--body {
-  font-size: var(--text-base);
-  line-height: var(--leading-normal);
+
+.ds-text--tone-default {
+  color: var(--color-text);
 }
-.ds-text--muted {
-  font-size: var(--text-base);
-  line-height: var(--leading-normal);
+.ds-text--tone-muted {
   color: var(--color-text-muted);
 }
-.ds-text--arabic {
-  font-family: var(--font-ar);
-  font-size: var(--text-md);
-  line-height: var(--leading-arabic);
+.ds-text--tone-faint {
+  color: var(--color-text-faint);
+}
+.ds-text--tone-ghost {
+  color: var(--color-text-ghost);
+}
+.ds-text--tone-accent {
+  color: var(--color-accent-deep);
+}
+.ds-text--tone-danger {
+  color: var(--color-danger);
 }
 
 .ds-text--w-regular {
@@ -45,6 +46,24 @@
 .ds-text--w-medium {
   font-weight: var(--weight-medium);
 }
-.ds-text--w-bold {
+.ds-text--w-semibold {
   font-weight: var(--weight-semibold);
+}
+
+.ds-text--f-sans {
+  font-family: var(--font-sans);
+}
+.ds-text--f-serif {
+  font-family: var(--font-serif);
+}
+.ds-text--f-mono {
+  font-family: var(--font-mono);
+}
+.ds-text--f-arabic {
+  font-family: var(--font-ar);
+  line-height: var(--leading-snug);
+}
+
+.ds-text--numeric {
+  font-variant-numeric: tabular-nums;
 }

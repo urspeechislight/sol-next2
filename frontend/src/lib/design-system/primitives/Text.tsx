@@ -1,48 +1,42 @@
-import type { ElementType, ReactNode } from 'react';
-import { cx } from '../../utils';
-import './Text.css';
+import type { ElementType, ReactNode } from "react";
+import { cx } from "../../utils";
+import "./Text.css";
 
-export type TextAs = 'h1' | 'h2' | 'h3' | 'body' | 'muted' | 'arabic';
-export type TextWeight = 'regular' | 'medium' | 'bold';
-
-const AS_TAG: Record<TextAs, ElementType> = {
-  h1: 'h1',
-  h2: 'h2',
-  h3: 'h3',
-  body: 'p',
-  muted: 'p',
-  arabic: 'p',
-};
-const AS_CLASS: Record<TextAs, string> = {
-  h1: 'ds-text--h1',
-  h2: 'ds-text--h2',
-  h3: 'ds-text--h3',
-  body: 'ds-text--body',
-  muted: 'ds-text--muted',
-  arabic: 'ds-text--arabic',
-};
-const WEIGHT_CLASS: Record<TextWeight, string> = {
-  regular: 'ds-text--w-regular',
-  medium: 'ds-text--w-medium',
-  bold: 'ds-text--w-bold',
-};
+export type TextSize = "xs" | "sm" | "base" | "md" | "lg" | "xl";
+export type TextTone = "default" | "muted" | "faint" | "ghost" | "accent" | "danger";
+export type TextWeight = "regular" | "medium" | "semibold";
+export type TextFont = "sans" | "serif" | "mono" | "arabic";
 
 export interface TextProps {
-  as?: TextAs;
+  as?: ElementType;
+  size?: TextSize;
+  tone?: TextTone;
   weight?: TextWeight;
-  dir?: 'rtl' | 'ltr';
-  className?: string;
+  font?: TextFont;
+  numeric?: boolean;
+  dir?: "rtl" | "ltr";
   id?: string;
+  className?: string;
   children: ReactNode;
 }
 
-export function Text({ as = 'body', weight, dir, className, id, children }: TextProps) {
-  const Tag = AS_TAG[as];
+/** Orthogonal text primitive: size x tone x weight x font, matching Text.css. */
+export function Text({
+  as: Tag = "span", size = "base", tone = "default", weight, font, numeric, dir, id, className, children,
+}: TextProps) {
   return (
     <Tag
       id={id}
       dir={dir}
-      className={cx('ds-text', AS_CLASS[as], weight && WEIGHT_CLASS[weight], className)}
+      className={cx(
+        "ds-text",
+        `ds-text--${size}`,
+        `ds-text--tone-${tone}`,
+        weight && `ds-text--w-${weight}`,
+        font && `ds-text--f-${font}`,
+        numeric && "ds-text--numeric",
+        className,
+      )}
     >
       {children}
     </Tag>

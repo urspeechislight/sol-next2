@@ -1,28 +1,21 @@
-import type { ReactNode } from 'react';
-import { cx } from '../../utils';
-import { Icon } from './Icon';
-import type { IconName } from '../internal/icons';
-import './Button.css';
+import type { ReactNode } from "react";
+import { cx } from "../../utils";
+import { Icon } from "./Icon";
+import type { IconName } from "../internal/icons";
+import "./Button.css";
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = "primary" | "secondary" | "gold" | "ghost";
+export type ButtonSize = "sm" | "md";
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  primary: 'ds-btn--primary',
-  secondary: 'ds-btn--secondary',
-  ghost: 'ds-btn--ghost',
-  danger: 'ds-btn--danger',
+  primary: "ds-btn--primary", secondary: "ds-btn--secondary", gold: "ds-btn--gold", ghost: "ds-btn--ghost",
 };
-const SIZE_CLASS: Record<ButtonSize, string> = {
-  sm: 'ds-btn--sm',
-  md: 'ds-btn--md',
-  lg: 'ds-btn--lg',
-};
+const SIZE_CLASS: Record<ButtonSize, string> = { sm: "ds-btn--sm", md: "ds-btn--md" };
 
 export interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  type?: 'button' | 'submit';
+  type?: "button" | "submit";
   disabled?: boolean;
   block?: boolean;
   iconBefore?: IconName;
@@ -34,17 +27,8 @@ export interface ButtonProps {
 }
 
 export function Button({
-  variant = 'primary',
-  size = 'md',
-  type = 'button',
-  disabled = false,
-  block = false,
-  iconBefore,
-  iconAfter,
-  ariaLabel,
-  ariaPressed,
-  onClick,
-  children,
+  variant = "primary", size = "md", type = "button", disabled = false,
+  block = false, iconBefore, iconAfter, ariaLabel, ariaPressed, onClick, children,
 }: ButtonProps) {
   return (
     <button
@@ -53,7 +37,7 @@ export function Button({
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}
       onClick={onClick}
-      className={cx('ds-btn', VARIANT_CLASS[variant], SIZE_CLASS[size], block && 'ds-btn--block')}
+      className={cx("ds-btn", VARIANT_CLASS[variant], SIZE_CLASS[size], block && "ds-btn--block")}
     >
       {iconBefore ? <Icon name={iconBefore} size="sm" /> : null}
       {children ? <span className="ds-btn__label">{children}</span> : null}

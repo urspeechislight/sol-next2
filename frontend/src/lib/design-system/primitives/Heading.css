@@ -1,0 +1,35 @@
+.ds-heading {
+  margin: 0;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  line-height: var(--leading-tight);
+}
+
+.ds-heading--1 {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+}
+.ds-heading--2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+}
+.ds-heading--3 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+.ds-heading--4 {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+}
+
+.ds-heading--serif {
+  font-family: var(--font-serif);
+}
+.ds-heading--sans {
+  font-family: var(--font-sans);
+}
+.ds-heading--arabic {
+  font-family: var(--font-ar-display);
+  line-height: var(--leading-snug);
+  letter-spacing: 0;
+}

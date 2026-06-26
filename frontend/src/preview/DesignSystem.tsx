@@ -1,164 +1,196 @@
-import { useState } from 'react';
-import type { ReactNode } from 'react';
-import '../lib/design-system/tokens.css';
-import '../lib/design-system/base.css';
+import { useState } from "react";
+import type { ReactNode } from "react";
+import "../lib/design-system/tokens.css";
+import "../lib/design-system/base.css";
 import {
-  Badge,
-  Button,
-  Card,
-  Divider,
-  Heading,
-  Icon,
-  Inline,
-  Input,
-  Link,
-  Logo,
-  Pager,
-  QRCode,
-  Segmented,
-  Select,
-  Spinner,
-  Stack,
-  Text,
-} from '../lib/design-system';
-import type { IconName } from '../lib/design-system';
-import { THEME } from '../lib/constants';
-import './DesignSystem.css';
+  Badge, Button, Card, Divider, Heading, Icon, Input, Link, Logo,
+  Select, Spinner, Text, Textarea,
+} from "../lib/design-system";
+import type { IconName } from "../lib/design-system";
+import { THEME } from "../lib/constants";
+import "./DesignSystem.css";
 
-const ICONS: IconName[] = [
-  'library',
-  'reader',
-  'graph',
-  'search',
-  'book',
-  'star',
-  'share',
-  'settings',
+type Swatch = [string, string];
+const SURFACE: Swatch[] = [
+  ["Background", "--color-bg"], ["Surface", "--color-surface"],
+  ["Raised", "--color-surface-raised"], ["Sunken", "--color-surface-sunken"],
 ];
-const SWATCHES = ['--color-surface', '--color-accent', '--color-success', '--color-danger'];
+const ACCENT: Swatch[] = [
+  ["Accent", "--color-accent"], ["Strong", "--color-accent-strong"],
+  ["Deep", "--color-accent-deep"], ["Tint", "--color-accent-tint"],
+];
+const SECT: Swatch[] = [
+  ["Sunni", "--color-sunni"], ["Shia", "--color-shia"],
+  ["Isnad", "--color-isnad"], ["Matn", "--color-matn"],
+];
+const ICONS: IconName[] = [
+  "library", "reader", "graph", "search", "book", "scroll", "star", "quote",
+  "filter", "compass", "share", "qr", "bookmark", "users", "globe", "settings",
+];
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
   return (
-    <Card variant="raised" className="ds-demo__section">
-      <Stack gap={4}>
-        <Heading level={3}>{title}</Heading>
-        {children}
-      </Stack>
-    </Card>
+    <section className="pv-sec">
+      <div className="pv-eyebrow">{eyebrow}</div>
+      <Heading level={2}>{title}</Heading>
+      {children}
+    </section>
   );
 }
 
-function ButtonsSection() {
+function Swatches({ items }: { items: Swatch[] }) {
   return (
-    <Section title="Buttons">
-      <Inline gap={2}>
-        <Button variant="primary">Primary</Button>
-        <Button variant="ghost">Ghost</Button>
-        <Button variant="danger">Danger</Button>
-      </Inline>
-      <Inline gap={2} align="center">
-        <Button size="sm">Small</Button>
-        <Button size="md">Medium</Button>
-        <Button size="lg" iconBefore="star">
-          Large
-        </Button>
-      </Inline>
+    <div className="pv-grid-4">
+      {items.map(([name, tok]) => (
+        <div key={tok} className="pv-swatch">
+          <div className="pv-swatch__chip" style={{ background: `var(${tok})` }} />
+          <div className="pv-swatch__meta">
+            <Text size="xs" weight="medium">{name}</Text>
+            <div className="pv-swatch__tok">{tok}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TypeRow({ tk, children }: { tk: string; children: ReactNode }) {
+  return (
+    <div className="pv-type-row">
+      <span className="pv-type-row__tk">{tk}</span>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function ColorSection() {
+  return (
+    <Section eyebrow="Foundations" title="Color">
+      <Text as="p" size="sm" tone="muted">
+        A private palette feeds a semantic layer; dark mode re-points the same names.
+      </Text>
+      <div className="pv-lbl">Surfaces &amp; text</div>
+      <Swatches items={SURFACE} />
+      <div className="pv-lbl">Accent · gold</div>
+      <Swatches items={ACCENT} />
+      <div className="pv-lbl">Sect &amp; grade</div>
+      <Swatches items={SECT} />
     </Section>
   );
 }
 
 function TypeSection() {
   return (
-    <Section title="Type">
-      <Text as="h1">Heading one</Text>
-      <Text as="h2">Heading two</Text>
-      <Text as="body">Body copy in the parchment surface.</Text>
-      <Text as="muted">Muted secondary text.</Text>
-      <Text as="arabic" dir="rtl">
-        بسم الله الرحمن الرحيم
-      </Text>
-      <Link href="#" variant="accent">
-        An accent link
-      </Link>
+    <Section eyebrow="Foundations" title="Typography">
+      <TypeRow tk="3xl · 40"><Heading level={1}>A manuscript, made legible</Heading></TypeRow>
+      <TypeRow tk="2xl · 30"><Heading level={2}>The Book of Purification</Heading></TypeRow>
+      <TypeRow tk="xl · 24"><Heading level={3}>Water and its categories</Heading></TypeRow>
+      <TypeRow tk="md · 16"><Text size="md">Body: narration-based interpretation.</Text></TypeRow>
+      <TypeRow tk="sm · 13"><Text size="sm" tone="muted">Secondary: chain of transmission</Text></TypeRow>
+      <TypeRow tk="mono"><Text size="sm" font="mono" tone="faint">urn:sol:book:muslim · p.1</Text></TypeRow>
+      <div className="pv-lbl">Arabic · Amiri display + naskh body</div>
+      <Card variant="flat" pad="lg">
+        <div className="pv-ar-d">كِتَابُ الطَّهَارَةِ</div>
+        <div className="pv-ar-b">الطَّهَارَةُ فِي اللُّغَةِ النَّظَافَةُ وَالنَّزَاهَةُ عَنِ الْأَقْذَارِ.</div>
+      </Card>
     </Section>
   );
 }
 
-function BadgesSection() {
+function ButtonSection() {
   return (
-    <Section title="Badges & Status">
-      <Inline gap={2}>
-        <Badge>Default</Badge>
-        <Badge variant="success">Success</Badge>
-        <Badge variant="warning">Warning</Badge>
-        <Badge variant="danger">Danger</Badge>
-      </Inline>
-      <Inline gap={3} align="center">
+    <Section eyebrow="Primitives" title="Buttons">
+      <div className="pv-row">
+        <Button variant="primary">Primary</Button>
+        <Button variant="secondary">Secondary</Button>
+        <Button variant="gold">Gold</Button>
+        <Button variant="ghost">Ghost</Button>
+        <Button variant="secondary" disabled>Disabled</Button>
+      </div>
+      <div className="pv-lbl">With icons · small</div>
+      <div className="pv-row">
+        <Button variant="gold" size="sm" iconBefore="reader">Open reader</Button>
+        <Button variant="secondary" size="sm" iconBefore="graph">Transmission graph</Button>
+        <Button variant="ghost" size="sm" iconBefore="filter">Filter</Button>
+      </div>
+    </Section>
+  );
+}
+
+function BadgeSection() {
+  return (
+    <Section eyebrow="Primitives" title="Badges &amp; feedback">
+      <div className="pv-row">
+        <Badge>default</Badge>
+        <Badge variant="success">success · ثقة</Badge>
+        <Badge variant="warning">warning · صدوق</Badge>
+        <Badge variant="danger">danger · ضعيف</Badge>
         <Spinner size="sm" />
         <Spinner size="md" />
-      </Inline>
+      </div>
     </Section>
   );
 }
 
-function FormsSection() {
-  const [text, setText] = useState('');
-  const [sel, setSel] = useState('en');
-  const [seg, setSeg] = useState('both');
+function FormSection() {
+  const [q, setQ] = useState("");
+  const [domain, setDomain] = useState("hadith");
+  const [note, setNote] = useState("");
   return (
-    <Section title="Forms">
-      <Input value={text} placeholder="Search the corpus…" type="search" onInput={setText} />
-      <Select
-        value={sel}
-        options={[
-          { value: 'en', label: 'English' },
-          { value: 'ar', label: 'Arabic' },
-        ]}
-        onChange={setSel}
-      />
-      <Segmented
-        label="Language"
-        value={seg}
-        options={[
-          { value: 'en', label: 'EN' },
-          { value: 'both', label: 'EN | AR' },
-          { value: 'ar', label: 'AR' },
-        ]}
-        onChange={setSeg}
-      />
+    <Section eyebrow="Primitives" title="Forms">
+      <div className="pv-row" style={{ alignItems: "flex-end" }}>
+        <Input value={q} label="Search" id="pv-q" icon="search" type="search" placeholder="Search narrators, books…" onInput={setQ} />
+        <Select
+          value={domain} ariaLabel="Domain"
+          options={[{ value: "hadith", label: "Hadith" }, { value: "fiqh", label: "Jurisprudence" }, { value: "tafsir", label: "Exegesis" }]}
+          onChange={setDomain}
+        />
+        <Textarea id="pv-note" label="Note" value={note} rows={2} placeholder="A short note…" onChange={setNote} />
+      </div>
     </Section>
   );
 }
 
-function DataSection() {
-  const [page, setPage] = useState(3);
-  const qr = Array.from({ length: 9 }, (_, r) =>
-    Array.from({ length: 9 }, (_, c) => (r + c) % 2 === 0),
-  );
+function CardSection() {
   return (
-    <Section title="Data & Navigation">
-      <Pager page={page} totalPages={12} onPage={setPage} />
+    <Section eyebrow="Primitives" title="Cards &amp; links">
+      <div className="pv-row">
+        <Card variant="flat" pad="md"><Text weight="semibold">Flat</Text></Card>
+        <Card variant="raised" pad="md"><Text weight="semibold">Raised</Text></Card>
+        <Card variant="sunken" pad="md"><Text weight="semibold">Sunken</Text></Card>
+      </div>
+      <div className="pv-row">
+        <Link href="#" variant="default">Default link</Link>
+        <Link href="#" variant="quiet">Quiet link</Link>
+        <Link href="#" variant="accent">Accent link</Link>
+      </div>
       <Divider />
-      <Inline gap={4} align="center">
-        <QRCode matrix={qr} />
-        <div className="ds-demo__icons">
-          {ICONS.map((n) => (
-            <Icon key={n} name={n} size="md" title={n} />
-          ))}
-        </div>
-      </Inline>
+    </Section>
+  );
+}
+
+function IconSection() {
+  return (
+    <Section eyebrow="Primitives" title="Icons">
+      <div className="pv-icons">
+        {ICONS.map((n) => (
+          <div key={n} className="pv-icon-cell">
+            <Icon name={n} size="lg" title={n} />
+            <span className="pv-icon-cell__n">{n}</span>
+          </div>
+        ))}
+      </div>
     </Section>
   );
 }
 
 function BrandSection() {
   return (
-    <Section title="Brand & Color">
-      <Logo size="lg" />
-      <div className="ds-demo__swatches">
-        {SWATCHES.map((v) => (
-          <div key={v} className="ds-demo__swatch" data-token={v} title={v} />
-        ))}
+    <Section eyebrow="Primitives" title="Brand">
+      <div className="pv-row">
+        <Logo size="lg" />
+        <Logo size="md" />
+        <Logo size="sm" wordmark={false} />
       </div>
     </Section>
   );
@@ -172,21 +204,26 @@ export function DesignSystem() {
     document.documentElement.setAttribute(THEME.ATTR, next ? THEME.DARK : THEME.LIGHT);
   };
   return (
-    <div className="ds-demo">
-      <div className="ds-demo__bar">
-        <Logo size="md" />
-        <Button variant="ghost" size="sm" iconBefore={dark ? 'sun' : 'moon'} onClick={toggle}>
-          {dark ? 'Light' : 'Dark'}
-        </Button>
+    <>
+      <div className="pv-top">
+        <Logo size="sm" />
+        <div className="pv-top__sub">Design System · tokens &amp; primitives</div>
+        <div className="pv-top__actions">
+          <Button variant="gold" size="sm" iconBefore={dark ? "sun" : "moon"} onClick={toggle}>
+            {dark ? "Light" : "Dark"}
+          </Button>
+        </div>
       </div>
-      <div className="ds-demo__grid">
-        <ButtonsSection />
+      <main className="pv">
+        <ColorSection />
         <TypeSection />
-        <BadgesSection />
-        <FormsSection />
-        <DataSection />
+        <ButtonSection />
+        <BadgeSection />
+        <FormSection />
+        <CardSection />
+        <IconSection />
         <BrandSection />
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

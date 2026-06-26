@@ -1,50 +1,26 @@
-/* Re-authored (Stage 1): numeric gap scale to match `ds-gap-${gap}` (Gap 0..8);
-   added ds-align-baseline; merged the dropped Cluster.css row rules in as
-   .ds-inline* (Inline.tsx imports this file). */
 .ds-stack {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
-.ds-inline {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  min-width: 0;
-}
-.ds-inline--wrap {
-  flex-wrap: wrap;
-}
-.ds-inline--nowrap {
-  flex-wrap: nowrap;
-}
 
-.ds-gap-0 {
+.ds-gap-none {
   gap: var(--space-0);
 }
-.ds-gap-1 {
-  gap: var(--space-2xs);
-}
-.ds-gap-2 {
+.ds-gap-xs {
   gap: var(--space-xs);
 }
-.ds-gap-3 {
+.ds-gap-sm {
   gap: var(--space-sm);
 }
-.ds-gap-4 {
-  gap: var(--space-gutter);
-}
-.ds-gap-5 {
+.ds-gap-md {
   gap: var(--space-md);
 }
-.ds-gap-6 {
+.ds-gap-lg {
   gap: var(--space-lg);
 }
-.ds-gap-7 {
+.ds-gap-xl {
   gap: var(--space-xl);
-}
-.ds-gap-8 {
-  gap: var(--space-2xl);
 }
 
 .ds-align-start {
@@ -58,9 +34,6 @@
 }
 .ds-align-stretch {
   align-items: stretch;
-}
-.ds-align-baseline {
-  align-items: baseline;
 }
 
 .ds-justify-start {
