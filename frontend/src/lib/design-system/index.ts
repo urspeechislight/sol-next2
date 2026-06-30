@@ -21,7 +21,8 @@ export { Button } from "./primitives/Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./primitives/Button";
 
 export { IconButton } from "./primitives/IconButton";
-export type { IconButtonProps, IconButtonSize, Surface } from "./primitives/IconButton";
+export type { IconButtonProps, IconButtonSize } from "./primitives/IconButton";
+export type { Surface } from "./surfaces";
 
 export { Pill } from "./primitives/Pill";
 export type { PillProps } from "./primitives/Pill";

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { cx } from '../../utils';
-import type { Surface } from './IconButton';
+import type { Surface } from '../surfaces';
 import './Badge.css';
 
 export type BadgeVariant = 'default' | 'success' | 'warning' | 'danger';

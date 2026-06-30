@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cx } from '../../utils';
 import { Icon } from './Icon';
 import type { IconName } from '../internal/icons';
-import type { Surface } from './IconButton';
+import type { Surface } from '../surfaces';
 import './Input.css';
 
 export interface InputProps {

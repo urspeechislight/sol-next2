@@ -4,8 +4,8 @@
   gap: var(--space-xs);
 }
 .ds-pager__page {
-  min-width: 32px;
-  height: 32px;
+  min-width: var(--control-height-sm);
+  height: var(--control-height-sm);
   padding: 0 var(--space-sm);
   border: var(--border-width) solid transparent;
   border-radius: var(--radius-control);

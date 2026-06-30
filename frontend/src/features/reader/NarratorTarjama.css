@@ -36,7 +36,7 @@
   margin: var(--space-xs) 0 var(--space-gutter);
 }
 
-/* Appearance is the GradeBadge component; the panel owns only where it sits. */
+/* Appearance is the Badge component; the panel owns only where it sits. */
 .narrator__grade {
   margin-bottom: var(--space-md);
 }

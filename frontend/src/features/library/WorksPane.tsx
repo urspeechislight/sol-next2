@@ -63,9 +63,6 @@ export function WorksPane({
   onOpen,
 }: WorksPaneProps) {
   const total = works?.total ?? 0;
-  const items = works?.items ?? [];
-  const from = Math.min((page - 1) * perPage + 1, total);
-  const to = Math.min(page * perPage, total);
   return (
     <section className="works">
       <header className="works__head">
@@ -90,21 +87,25 @@ export function WorksPane({
         isEmpty={(w) => w.items.length === 0}
         emptyText="No works in this scope."
       >
-        {() => (
-          <>
-            <div className="works__toolbar">
-              <Text size="xs" tone="faint" font="mono">
-                {from.toLocaleString()}–{to.toLocaleString()} of {total.toLocaleString()}
-              </Text>
-            </div>
-            <div className="ds-records">
-              {items.map((w) => (
-                <WorkRecord key={w.stem} work={w} section={labelFor(w.category)} onOpen={onOpen} />
-              ))}
-            </div>
-            <Pager page={page} totalPages={pageCount(total, perPage)} onPage={onPage} />
-          </>
-        )}
+        {(data) => {
+          const from = Math.min((page - 1) * perPage + 1, data.total);
+          const to = Math.min(page * perPage, data.total);
+          return (
+            <>
+              <div className="works__toolbar">
+                <Text size="xs" tone="faint" font="mono">
+                  {from.toLocaleString()}–{to.toLocaleString()} of {data.total.toLocaleString()}
+                </Text>
+              </div>
+              <div className="ds-records">
+                {data.items.map((w) => (
+                  <WorkRecord key={w.stem} work={w} section={labelFor(w.category)} onOpen={onOpen} />
+                ))}
+              </div>
+              <Pager page={page} totalPages={pageCount(data.total, perPage)} onPage={onPage} />
+            </>
+          );
+        }}
       </DataView>
     </section>
   );

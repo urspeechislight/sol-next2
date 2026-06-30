@@ -2,10 +2,10 @@ import type { ReactNode } from "react";
 import { cx } from "../../utils";
 import { Icon } from "./Icon";
 import type { IconName } from "../internal/icons";
+import type { Surface } from "../surfaces";
 import "./IconButton.css";
 
 export type IconButtonSize = "sm" | "md";
-export type Surface = "app" | "reader";
 
 export interface IconButtonProps {
   /** Accessible name (the button is icon/glyph-only). */

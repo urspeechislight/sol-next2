@@ -2,11 +2,11 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  height: 32px;
+  height: var(--control-height-sm);
   padding: 0 var(--space-sm);
   background: transparent;
   color: inherit;
-  border: 1px solid transparent;
+  border: var(--border-width) solid transparent;
   border-radius: var(--radius-control);
   font-family: var(--font-sans);
   font-size: var(--text-sm);

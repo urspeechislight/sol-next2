@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cx } from '../../utils';
 import { Icon } from './Icon';
-import type { Surface } from './IconButton';
+import type { Surface } from '../surfaces';
 import './NavArrow.css';
 
 export type NavArrowDirection = 'back' | 'forward';
