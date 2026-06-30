@@ -11,8 +11,8 @@
   cursor: pointer;
 }
 .ds-iconbtn--sm {
-  width: 22px;
-  height: 22px;
+  width: var(--control-height-xs);
+  height: var(--control-height-xs);
   border-radius: var(--radius-control);
 }
 .ds-iconbtn--reader:hover {

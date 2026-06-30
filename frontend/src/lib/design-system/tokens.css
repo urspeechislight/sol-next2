@@ -173,6 +173,7 @@
   --radius-control: var(--radius-sm);
 
   /* control heights (buttons / inputs / selects) + hairline border width */
+  --control-height-xs: 22px;
   --control-height-sm: 30px;
   --control-height-md: 36px;
   --control-height-lg: 42px;
