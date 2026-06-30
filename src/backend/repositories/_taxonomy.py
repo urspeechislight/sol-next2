@@ -8,6 +8,8 @@ slug, so client and server never diverge on the sectarian axis.
 
 from __future__ import annotations
 
+from typing import get_args
+
 from backend.models.domain import Domain, Tradition
 from backend.repositories._data_loader import load_json
 
@@ -50,7 +52,23 @@ def categories_in(domain_id: str) -> tuple[str, ...]:
     return _CATEGORIES_IN.get(domain_id, ())
 
 
+_VALID_TRADITIONS: frozenset[str] = frozenset(get_args(Tradition))
+
+
 def is_known_domain(domain_id: str) -> bool:
     """True if ``domain_id`` is a real domain in the taxonomy. Lets the API reject
-    an unknown ``?domain=`` with 400 instead of silently returning an empty list."""
+    an unknown ``?domain=`` with 422 instead of silently returning an empty list."""
     return domain_id in _CATEGORIES_IN
+
+
+def is_known_category(slug: str) -> bool:
+    """True if ``slug`` is a real category in the taxonomy. Lets the API reject an
+    unknown ``?category=`` with 422 instead of silently filtering to an empty list."""
+    return slug in DOMAIN_OF
+
+
+def is_known_tradition(tradition: str) -> bool:
+    """True if ``tradition`` is one of the taxonomy's Tradition values (sunni, shia,
+    shared), derived from the Literal so the two stacks can't drift. Lets the API
+    reject an unknown ``?tradition=`` with 422."""
+    return tradition in _VALID_TRADITIONS
