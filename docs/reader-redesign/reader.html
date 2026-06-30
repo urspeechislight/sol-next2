@@ -1,0 +1,1271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reader redesign — full interactive reader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Scheherazade+New:wght@400;500;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ============================================================
+         THEME TOKENS — copied verbatim from the real reader tokens.css
+         (light = "classical", dark = "dark"). The reader defaults to
+         classical, both languages, contents drawer open — same as the app.
+         ============================================================ */
+      :root {
+        /* palette (dark side) */
+        --night-900: #100d08;
+        --night-800: #15110b;
+        --night-700: #1a1610;
+        --night-600: #221c14;
+        --night-500: #2c2519;
+        --sand-100: #ede5d2;
+        --sand-300: #b6ab94;
+        --gold-300: #cba955;
+        --gold-400: #b39140;
+        --gold-500: #8a6e2c;
+        /* fonts */
+        --ar-display: 'Amiri', serif;
+        --ar-body: 'Scheherazade New', 'Amiri', serif;
+        --en: 'IBM Plex Sans', system-ui, sans-serif;
+        --reader-size: 19px;
+        --ctl-h: 32px;
+        --radius-control: 5px; /* was 9px — your "too rounded" fix */
+        --radius-chip: 6px;
+      }
+
+      /* classical (light) reader surface */
+      [data-theme='classical'] {
+        --rd-bg: #faf7ef;
+        --rd-fg: #342d20;
+        --rd-muted: #877c67;
+        --rd-border: rgba(52, 45, 32, 0.13);
+        --rd-toolbar-bg: #f2ecdd;
+        --rd-pill-bg: #e8dec8;
+        --rd-card: #f5efe1;
+        --rd-card-active: #efe7d3;
+        --rd-quote-bg: #efe7d3;
+        --rd-accent: #997b34;
+        --rd-rule: #d9ccac;
+        --rd-match: #f1d27a;
+        --rd-field-bg: #fbf8f0;
+        --rd-starfield: none;
+      }
+      /* dark reader surface */
+      [data-theme='dark'] {
+        --rd-bg: var(--night-900);
+        --rd-fg: var(--sand-100);
+        --rd-muted: var(--sand-300);
+        --rd-border: var(--night-500);
+        --rd-toolbar-bg: var(--night-700);
+        --rd-pill-bg: var(--night-600);
+        --rd-card: var(--night-800);
+        --rd-card-active: var(--night-700);
+        --rd-quote-bg: var(--night-800);
+        --rd-accent: var(--gold-300);
+        --rd-rule: var(--night-500);
+        --rd-match: rgba(203, 169, 85, 0.34);
+        --rd-field-bg: var(--night-600);
+        --rd-starfield:
+          radial-gradient(1px 1px at 18% 22%, rgba(237, 229, 210, 0.5), transparent),
+          radial-gradient(1px 1px at 72% 14%, rgba(203, 169, 85, 0.45), transparent),
+          radial-gradient(1.3px 1.3px at 41% 64%, rgba(237, 229, 210, 0.35), transparent),
+          radial-gradient(1.2px 1.2px at 88% 48%, rgba(237, 229, 210, 0.4), transparent),
+          radial-gradient(1px 1px at 9% 80%, rgba(203, 169, 85, 0.4), transparent);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        font-family: var(--en);
+        background: #07060a;
+        color: var(--rd-fg);
+      }
+
+      /* ---- mockup-only control strip (clearly NOT part of the reader) ---- */
+      .demobar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px;
+        padding: 9px 16px;
+        background: #07060a;
+        border-bottom: 1px solid #211c2b;
+        color: #b9b2c8;
+        font-size: 12px;
+      }
+      .demobar strong {
+        color: #efeaf6;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .demobar .seg {
+        display: inline-flex;
+        border: 1px solid #2c2738;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .demobar .seg button {
+        border: 0;
+        background: transparent;
+        color: #b9b2c8;
+        font: inherit;
+        padding: 5px 11px;
+        cursor: pointer;
+      }
+      .demobar .seg button[aria-pressed='true'] {
+        background: #6d5bd0;
+        color: #fff;
+      }
+      .demobar .hint {
+        color: #6f6885;
+      }
+
+      /* ============================================================
+         READER
+         ============================================================ */
+      .reader-root {
+        height: calc(100vh - 41px);
+        display: flex;
+        flex-direction: column;
+        background: var(--rd-bg);
+        background-image: var(--rd-starfield);
+        font-size: var(--reader-size);
+        transition:
+          background 0.2s,
+          color 0.2s;
+      }
+
+      /* ---- TOOLBAR (3 rows, matching the real ReaderToolbar) ---- */
+      .toolbar {
+        flex: none;
+        background: var(--rd-toolbar-bg);
+        border-bottom: 1px solid var(--rd-border);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+      }
+      .row + .row {
+        border-top: 1px solid var(--rd-border);
+      }
+      .row--pager {
+        justify-content: center;
+        gap: 8px;
+      }
+      .row--settings {
+        justify-content: space-between;
+      }
+      .group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* shared rectangular control chrome — the cohesion fix: ONE shape, ONE height */
+      .ctl {
+        height: var(--ctl-h);
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 11px;
+        border: 1px solid var(--rd-border);
+        border-radius: var(--radius-control);
+        background: var(--rd-pill-bg);
+        color: var(--rd-fg);
+        font-family: var(--en);
+        font-size: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .ctl:hover {
+        border-color: var(--rd-accent);
+      }
+      .ctl svg {
+        width: 15px;
+        height: 15px;
+        stroke: var(--rd-accent);
+        fill: none;
+        flex: none;
+      }
+      .ctl--ghost {
+        background: transparent;
+      }
+      .ctl[aria-pressed='true'] {
+        border-color: var(--rd-accent);
+        background: var(--rd-card-active);
+        color: var(--rd-fg);
+      }
+      .ctl[disabled] {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* Catalog: rectangular (radius 5px), carries the curved back arrow */
+      .btn-catalog {
+        flex: none;
+      }
+      .vrule {
+        width: 1px;
+        align-self: stretch;
+        background: var(--rd-border);
+        margin: 5px 0;
+      }
+
+      /* segmented (theme + language) */
+      .segmented {
+        display: inline-flex;
+        height: var(--ctl-h);
+        border: 1px solid var(--rd-border);
+        border-radius: var(--radius-control);
+        overflow: hidden;
+        background: var(--rd-pill-bg);
+      }
+      .segmented button {
+        border: 0;
+        background: transparent;
+        color: var(--rd-muted);
+        font: inherit;
+        font-size: 12.5px;
+        padding: 0 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .segmented button svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        fill: none;
+      }
+      .segmented button[aria-pressed='true'] {
+        background: var(--rd-card-active);
+        color: var(--rd-fg);
+        box-shadow: inset 0 0 0 1px var(--rd-accent);
+      }
+      .segmented button + button {
+        border-left: 1px solid var(--rd-border);
+      }
+
+      /* stepper (font size) */
+      .stepper {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: var(--ctl-h);
+        padding: 0 6px;
+        border: 1px solid var(--rd-border);
+        border-radius: var(--radius-control);
+        background: var(--rd-pill-bg);
+        font-size: 12.5px;
+        color: var(--rd-muted);
+      }
+      .stepper button {
+        width: 22px;
+        height: 22px;
+        border: 0;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--rd-fg);
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .stepper button:hover {
+        background: var(--rd-card-active);
+      }
+
+      /* ---- MASTHEAD (the title block — the heart of the redesign) ---- */
+      .masthead {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      /* EDITORIAL: left-anchored lockup, title + badges share one rhythm */
+      [data-masthead='editorial'] .masthead {
+        text-align: start;
+      }
+      [data-masthead='editorial'] .mh-ar {
+        font-family: var(--ar-display);
+        font-weight: 700;
+        font-size: 22px;
+        line-height: 1.2;
+        color: var(--rd-fg);
+        direction: rtl;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      [data-masthead='editorial'] .mh-line2 {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+      [data-masthead='editorial'] .mh-en {
+        font-family: var(--en);
+        font-weight: 500;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--rd-accent);
+      }
+      [data-masthead='editorial'] .mh-author {
+        font-family: var(--ar-body);
+        font-size: 15px;
+        color: var(--rd-muted);
+        direction: rtl;
+      }
+
+      /* HERO: title becomes a centered band BELOW the control row; search and
+         Catalog stay exactly where they were (top row). English = Amiri italic,
+         the same family as the Arabic — the strongest fix for the font mismatch. */
+      [data-masthead='hero'] .masthead {
+        display: none; /* in hero mode the title lives in its own band, not row 1 */
+      }
+      .hero-band {
+        display: none;
+        position: relative;
+        text-align: center;
+        padding: 20px 24px 18px;
+        border-top: 1px solid var(--rd-border);
+        background: var(--rd-toolbar-bg);
+      }
+      [data-masthead='hero'] .hero-band {
+        display: block;
+      }
+      .hero-band::before {
+        content: '';
+        position: absolute;
+        inset: -30% 25% auto 25%;
+        height: 150px;
+        background: radial-gradient(
+          60% 100% at 50% 0%,
+          color-mix(in oklab, var(--rd-accent) 22%, transparent),
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+      .hero-ar {
+        position: relative;
+        font-family: var(--ar-display);
+        font-weight: 700;
+        font-size: clamp(26px, 3.6vw, 38px);
+        line-height: 1.25;
+        color: var(--rd-fg);
+        direction: rtl;
+        margin: 0 auto;
+        max-width: 22ch;
+      }
+      .hero-en {
+        position: relative;
+        font-family: var(--ar-display);
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(15px, 1.7vw, 19px);
+        color: var(--rd-accent);
+        margin-top: 6px;
+      }
+      .hero-author {
+        position: relative;
+        font-family: var(--ar-body);
+        font-size: 16px;
+        color: var(--rd-muted);
+        direction: rtl;
+        margin-top: 8px;
+      }
+      .hero-badges {
+        position: relative;
+        margin-top: 12px;
+      }
+
+      /* ---- BADGES (category / death-year / volume) ---- */
+      .badges {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 22px;
+        padding: 0 9px;
+        border-radius: var(--radius-chip);
+        font-family: var(--en);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        border: 1px solid var(--rd-border);
+        color: var(--rd-muted);
+        background: var(--rd-card);
+      }
+      .badge svg {
+        width: 12px;
+        height: 12px;
+        stroke: currentColor;
+        fill: none;
+      }
+      .badge--cat {
+        color: var(--rd-accent);
+        border-color: color-mix(in oklab, var(--rd-accent) 45%, var(--rd-border));
+      }
+      .badge--vol {
+        color: var(--rd-fg);
+        background: var(--rd-card-active);
+        border-color: color-mix(in oklab, var(--rd-accent) 35%, var(--rd-border));
+      }
+
+      /* ---- SEARCH (stays in row 1, right; gains an X clear button) ---- */
+      .search {
+        flex: none;
+        position: relative;
+        height: var(--ctl-h);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 9px;
+        width: 248px;
+        border: 1px solid var(--rd-border);
+        border-radius: var(--radius-control);
+        background: var(--rd-field-bg);
+      }
+      .search svg.glass {
+        width: 15px;
+        height: 15px;
+        stroke: var(--rd-muted);
+        fill: none;
+        flex: none;
+      }
+      .search input {
+        direction: rtl;
+        text-align: right;
+        background: none;
+        border: 0;
+        outline: 0;
+        color: var(--rd-fg);
+        font-family: var(--ar-body);
+        font-size: 16px;
+        width: 100%;
+      }
+      .search input::placeholder {
+        color: var(--rd-muted);
+      }
+      .search .clear {
+        display: none;
+        flex: none;
+        width: 18px;
+        height: 18px;
+        border: 0;
+        border-radius: 50%;
+        background: var(--rd-pill-bg);
+        color: var(--rd-fg);
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .search.has-text .clear {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* pager */
+      .page-pill {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        height: var(--ctl-h);
+        padding: 0 14px;
+        border-radius: var(--radius-control);
+        border: 1px solid var(--rd-accent);
+        background: var(--rd-card-active);
+        color: var(--rd-fg);
+        font-size: 13px;
+      }
+      .page-pill .total {
+        color: var(--rd-muted);
+        font-size: 11px;
+      }
+      .iconbtn {
+        width: var(--ctl-h);
+        height: var(--ctl-h);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--rd-border);
+        border-radius: var(--radius-control);
+        background: var(--rd-pill-bg);
+        color: var(--rd-fg);
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .iconbtn:hover {
+        border-color: var(--rd-accent);
+      }
+
+      /* ---- BODY: drawer | main | panel ---- */
+      .body {
+        flex: 1 1 auto;
+        display: flex;
+        min-height: 0;
+      }
+      .drawer {
+        flex: none;
+        width: 264px;
+        border-right: 1px solid var(--rd-border);
+        background: color-mix(in oklab, var(--rd-toolbar-bg) 60%, var(--rd-bg));
+        overflow-y: auto;
+        padding: 16px 14px;
+      }
+      .drawer[hidden] {
+        display: none;
+      }
+      .drawer h3 {
+        font-family: var(--en);
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--rd-muted);
+        margin: 0 0 12px;
+      }
+      .toc-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--rd-fg);
+      }
+      .toc-item .t {
+        font-family: var(--ar-body);
+        font-size: 16px;
+        direction: rtl;
+      }
+      .toc-item .p {
+        font-family: var(--en);
+        font-size: 12px;
+        color: var(--rd-muted);
+      }
+      .toc-item:hover {
+        background: var(--rd-card);
+      }
+      .toc-item.active {
+        background: var(--rd-card-active);
+        box-shadow: inset 2px 0 0 var(--rd-accent);
+      }
+      .match {
+        padding: 10px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .match:hover {
+        background: var(--rd-card);
+      }
+      .match .pg {
+        font-family: var(--en);
+        font-size: 11px;
+        color: var(--rd-accent);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .match .snip {
+        font-family: var(--ar-body);
+        font-size: 15px;
+        direction: rtl;
+        color: var(--rd-fg);
+        margin-top: 3px;
+      }
+      mark {
+        background: var(--rd-match);
+        color: inherit;
+        border-radius: 2px;
+        padding: 0 1px;
+      }
+
+      .main {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 34px 40px 90px;
+      }
+      .pagehead {
+        text-align: center;
+        margin-bottom: 26px;
+      }
+      .pagehead .eyebrow {
+        font-family: var(--en);
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--rd-muted);
+      }
+      .pagehead .chapter {
+        font-family: var(--ar-display);
+        font-weight: 700;
+        font-size: 1.4em;
+        direction: rtl;
+        color: var(--rd-accent);
+        margin: 8px 0 0;
+      }
+      .article {
+        max-width: 760px;
+        margin: 0 auto;
+      }
+
+      /* raw text */
+      .rawtext {
+        font-family: var(--ar-body);
+        font-size: 1.25em;
+        line-height: 2.05;
+        direction: rtl;
+        text-align: justify;
+        color: var(--rd-fg);
+      }
+      .pending {
+        margin: 18px 0;
+        padding: 14px 16px;
+        border: 1px dashed var(--rd-border);
+        border-radius: 8px;
+        color: var(--rd-muted);
+        font-size: 14px;
+        text-align: center;
+      }
+
+      /* hadith unit */
+      .hadith {
+        border: 1px solid var(--rd-border);
+        border-radius: 12px;
+        background: var(--rd-card);
+        padding: 20px 22px;
+      }
+      .hadith__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .hadith__id {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .hadith__num {
+        font-family: var(--ar-display);
+        font-size: 20px;
+        color: var(--rd-accent);
+      }
+      .hadith__meta {
+        font-family: var(--en);
+        font-size: 12px;
+        color: var(--rd-muted);
+      }
+      .grade {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 23px;
+        padding: 0 10px;
+        border-radius: 999px;
+        font-family: var(--ar-body);
+        font-size: 14px;
+        color: #1f6b3b;
+        background: color-mix(in oklab, #2f9e5e 22%, transparent);
+        border: 1px solid color-mix(in oklab, #2f9e5e 45%, transparent);
+        direction: rtl;
+      }
+      [data-theme='dark'] .grade {
+        color: #7bd6a0;
+      }
+      .grade .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .isnad {
+        font-family: var(--ar-body);
+        font-size: 1.05em;
+        line-height: 1.9;
+        direction: rtl;
+        color: var(--rd-muted);
+        margin: 0 0 14px;
+      }
+      .isnad .narr {
+        color: var(--rd-accent);
+        border-bottom: 1px dotted var(--rd-accent);
+        cursor: pointer;
+      }
+      .matn-grid {
+        display: grid;
+        gap: 22px;
+      }
+      .matn-grid.both {
+        grid-template-columns: 1fr 1fr;
+      }
+      .matn-en {
+        font-family: var(--en);
+        font-size: 1em;
+        line-height: 1.7;
+        color: var(--rd-fg);
+      }
+      .matn-ar {
+        font-family: var(--ar-body);
+        font-size: 1.2em;
+        line-height: 2;
+        direction: rtl;
+        text-align: justify;
+        color: var(--rd-fg);
+      }
+
+      /* isnad panel (right) */
+      .panel {
+        flex: none;
+        width: 290px;
+        border-left: 1px solid var(--rd-border);
+        background: color-mix(in oklab, var(--rd-toolbar-bg) 60%, var(--rd-bg));
+        overflow-y: auto;
+        padding: 18px 16px;
+      }
+      .panel[hidden] {
+        display: none;
+      }
+      .panel h3 {
+        font-family: var(--en);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--rd-muted);
+        margin: 0 0 4px;
+      }
+      .panel .sub {
+        font-size: 12px;
+        color: var(--rd-muted);
+        margin-bottom: 16px;
+      }
+      .node {
+        position: relative;
+        padding: 0 0 18px 26px;
+      }
+      .node::before {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 4px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--rd-accent);
+      }
+      .node::after {
+        content: '';
+        position: absolute;
+        left: 11px;
+        top: 14px;
+        bottom: 0;
+        width: 1px;
+        background: var(--rd-border);
+      }
+      .node:last-child::after {
+        display: none;
+      }
+      .node .nm {
+        font-family: var(--ar-body);
+        font-size: 16px;
+        direction: rtl;
+        color: var(--rd-fg);
+      }
+      .node .rl {
+        font-family: var(--en);
+        font-size: 11px;
+        color: var(--rd-muted);
+      }
+      .node .gr {
+        font-family: var(--ar-body);
+        font-size: 13px;
+        color: var(--rd-accent);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- mockup-only switchers (NOT part of the reader chrome) -->
+    <div class="demobar">
+      <strong>Mockup controls</strong>
+      <span>Book</span>
+      <span class="seg" id="bookSeg">
+        <button data-book="grammar" aria-pressed="true">Your book (real)</button>
+        <button data-book="hadith" aria-pressed="false">Multi-volume + isnād</button>
+      </span>
+      <span>Masthead</span>
+      <span class="seg" id="mhSeg">
+        <button data-mh="editorial" aria-pressed="true">Editorial</button>
+        <button data-mh="hero" aria-pressed="false">Hero</button>
+      </span>
+      <span class="hint"
+        >Everything below is live — click the theme, language, Contents, Isnād, page arrows, type in
+        search.</span
+      >
+    </div>
+
+    <div
+      class="reader-root"
+      data-theme="classical"
+      data-lang="both"
+      data-masthead="editorial"
+      id="root"
+    >
+      <header class="toolbar">
+        <!-- ROW 1: Catalog | masthead (editorial) | search.  No urn. -->
+        <div class="row">
+          <button class="ctl btn-catalog ctl--ghost" title="Back to catalog">
+            <svg viewBox="0 0 24 24" stroke-width="1.7">
+              <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+            </svg>
+            Catalog
+          </button>
+          <span class="vrule"></span>
+          <div class="masthead" id="masthead"><!-- filled by JS (editorial) --></div>
+          <div class="search" id="search">
+            <svg class="glass" viewBox="0 0 24 24" stroke-width="1.7">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input id="searchInput" dir="rtl" placeholder="ابحث في الكتاب…" />
+            <button class="clear" id="searchClear" title="Clear search" aria-label="Clear search">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- HERO band (shown only in hero masthead mode) -->
+        <div class="hero-band" id="heroBand"><!-- filled by JS (hero) --></div>
+
+        <!-- ROW 2: pager -->
+        <div class="row row--pager">
+          <button class="iconbtn" id="pgBack10" title="Back ten pages">«</button>
+          <button class="iconbtn" id="pgPrev" title="Previous page">‹</button>
+          <span class="page-pill"
+            ><span id="pgNum">1</span><span>/</span
+            ><span class="total" id="pgTotal">336</span></span
+          >
+          <button class="iconbtn" id="pgNext" title="Next page">›</button>
+          <button class="iconbtn" id="pgFwd10" title="Forward ten pages">»</button>
+        </div>
+
+        <!-- ROW 3: theme + size | language + Contents + Isnād -->
+        <div class="row row--settings">
+          <div class="group">
+            <span class="segmented" id="themeSeg">
+              <button data-theme="dark" aria-pressed="false">
+                <svg viewBox="0 0 24 24" stroke-width="1.7">
+                  <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+                </svg>
+                Dark
+              </button>
+              <button data-theme="classical" aria-pressed="true">
+                <svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M4 5h16v14H4zM12 5v14" /></svg>
+                Classical
+              </button>
+            </span>
+            <span class="stepper">
+              <button id="sizeDown" aria-label="Smaller">−</button>
+              <span id="sizeVal">19px</span>
+              <button id="sizeUp" aria-label="Larger">+</button>
+            </span>
+          </div>
+          <div class="group">
+            <span class="segmented" id="langSeg">
+              <button data-lang="en" aria-pressed="false">EN</button>
+              <button data-lang="both" aria-pressed="true">EN | AR</button>
+              <button data-lang="ar" aria-pressed="false">AR</button>
+            </span>
+            <button class="ctl" id="contentsBtn" aria-pressed="true">
+              <svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+              Contents
+            </button>
+            <button class="ctl" id="isnadBtn" aria-pressed="false">
+              <svg viewBox="0 0 24 24" stroke-width="1.7">
+                <circle cx="6" cy="6" r="2.5" />
+                <circle cx="18" cy="6" r="2.5" />
+                <circle cx="12" cy="18" r="2.5" />
+                <path d="M6 8.5v3l6 4 6-4v-3" />
+              </svg>
+              Isnād
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="body">
+        <aside class="drawer" id="drawer"></aside>
+        <main class="main" id="main"></main>
+        <aside class="panel" id="panel" hidden></aside>
+      </div>
+    </div>
+
+    <script>
+      // ---- real metadata, two books ----------------------------------------
+      const BOOKS = {
+        grammar: {
+          titleAr: 'تطوُّر المصطلح النحوي البصري من سيبويه حتى الزمخشري',
+          titleEn: 'The Evolution of Basran Grammatical Terminology',
+          authorAr: 'يحيى عبابنة',
+          category: 'Arabic Language Sciences',
+          deathAh: null, // modern author — no death-year badge
+          volume: null,
+          volumeCount: 1, // single volume — no volume badge
+          totalPages: 336,
+          hasTranslation: false, // raw corpus text, no English yet
+          toc: [
+            { p: 1, t: 'المقدمة' },
+            { p: 14, t: 'نشأة النحو في البصرة' },
+            { p: 47, t: 'المصطلح عند الخليل وسيبويه' },
+            { p: 119, t: 'تطور المصطلح بعد سيبويه' },
+            { p: 208, t: 'المصطلح عند الزمخشري' },
+            { p: 296, t: 'الخاتمة والنتائج' },
+          ],
+          rawAr:
+            'الحمدُ لله الذي علَّم بالقلم، علَّم الإنسانَ ما لم يعلم، والصلاةُ والسلامُ على من أُوتيَ جوامعَ الكلم. أمّا بعد، فإنَّ علم النحو قد نشأ في البصرة على يد الخليل بن أحمد وتلميذه سيبويه، ثم تطوَّرت مصطلحاته جيلًا بعد جيل حتى استوت على سُوقها عند الزمخشري في مفصَّله. وغرضُنا في هذا الكتاب تتبُّعُ هذا المصطلح في نشأته وانتقاله، وبيانُ ما طرأ عليه من توسعٍ في الدلالة وتضييق، اعتمادًا على النصوص الأولى لا على ما شاع عند المتأخرين.',
+        },
+        hadith: {
+          titleAr: 'صحيح البخاري',
+          titleEn: 'Ṣaḥīḥ al-Bukhārī',
+          authorAr: 'محمد بن إسماعيل البخاري',
+          category: 'Hadith',
+          deathAh: 256,
+          volume: 1,
+          volumeCount: 9, // multi-volume — shows "Volume 1 of 9"
+          totalPages: 612,
+          hasTranslation: true,
+          toc: [
+            { p: 1, t: 'بدء الوحي' },
+            { p: 6, t: 'كتاب الإيمان' },
+            { p: 28, t: 'كتاب العلم' },
+            { p: 61, t: 'كتاب الوضوء' },
+            { p: 104, t: 'كتاب الصلاة' },
+          ],
+          hadith: {
+            n: 1,
+            grade: 'صحيح',
+            gradeEn: 'Authentic',
+            isnadSegs: [
+              { v: 'حَدَّثَنَا ' },
+              { v: 'الحُمَيْدِيُّ عبدُ الله بنُ الزُّبير', narr: 5 },
+              { v: '، قال حَدَّثَنا ' },
+              { v: 'سُفيانُ', narr: 4 },
+              { v: '، قال حَدَّثَنا ' },
+              { v: 'يَحيى بنُ سعيدٍ الأنصاريُّ', narr: 3 },
+              { v: '، قال أخبَرني ' },
+              { v: 'محمدُ بنُ إبراهيمَ التَّيميُّ', narr: 2 },
+              { v: '، أنه سَمِعَ ' },
+              { v: 'عَلْقَمةَ بنَ وقّاصٍ اللَّيثيَّ', narr: 1 },
+              { v: '، يقول سَمِعتُ ' },
+              { v: 'عُمَرَ بنَ الخطّابِ', narr: 0 },
+              { v: ' رضي الله عنه على المنبر قال:' },
+            ],
+            matnAr:
+              '«إنَّما الأعمالُ بالنِّيّاتِ، وإنَّما لكلِّ امرئٍ ما نَوى، فمَن كانت هِجرتُه إلى دُنيا يُصيبُها أو إلى امرأةٍ يَنكِحُها فهِجرتُه إلى ما هاجَر إليه».',
+            matnEn:
+              '“Actions are judged only by intentions, and every person shall have only what they intended. So whoever emigrated for a worldly gain or to marry a woman, his emigration was for that which he emigrated to.”',
+            narrators: [
+              { nm: 'عُمَر بن الخطّاب', rl: 'Companion · صحابي', gr: 'صحابي' },
+              { nm: 'عَلْقَمة بن وقّاص اللَّيثي', rl: 'Successor · d. 80 AH', gr: 'ثقة' },
+              { nm: 'محمد بن إبراهيم التَّيمي', rl: 'd. 120 AH', gr: 'ثقة' },
+              { nm: 'يحيى بن سعيد الأنصاري', rl: 'd. 143 AH', gr: 'ثقة ثبت' },
+              { nm: 'سُفيان بن عُيَينة', rl: 'd. 198 AH', gr: 'ثقة حافظ' },
+              { nm: 'الحُمَيْدي عبد الله بن الزُّبير', rl: 'd. 219 AH', gr: 'ثقة حافظ' },
+            ],
+          },
+        },
+      };
+
+      const SIZE = { min: 16, max: 26, step: 1 };
+      const state = {
+        book: 'grammar',
+        masthead: 'editorial',
+        theme: 'classical',
+        lang: 'both',
+        size: 19,
+        page: 1,
+        contents: true,
+        isnad: false,
+        search: '',
+      };
+
+      const root = document.getElementById('root');
+      const esc = (s) =>
+        s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+
+      function metaBadges() {
+        const b = BOOKS[state.book];
+        const out = [
+          `<span class="badge badge--cat"><svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M4 7h16M4 12h16M4 17h10"/></svg>${esc(b.category)}</span>`,
+        ];
+        if (b.deathAh) {
+          out.push(`<span class="badge">d. ${b.deathAh} AH</span>`);
+        }
+        if (b.volumeCount > 1) {
+          out.push(
+            `<span class="badge badge--vol"><svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"/><path d="M9 4v16"/></svg>Volume ${b.volume} of ${b.volumeCount}</span>`,
+          );
+        }
+        return `<span class="badges">${out.join('')}</span>`;
+      }
+
+      function renderMasthead() {
+        const b = BOOKS[state.book];
+        // editorial — lives in row 1
+        document.getElementById('masthead').innerHTML = `
+          <div class="mh-ar">${esc(b.titleAr)}</div>
+          <div class="mh-line2">
+            <span class="mh-en">${esc(b.titleEn)}</span>
+            <span class="mh-author">${esc(b.authorAr)}</span>
+            ${metaBadges()}
+          </div>`;
+        // hero — lives in its own band
+        document.getElementById('heroBand').innerHTML = `
+          <div class="hero-ar">${esc(b.titleAr)}</div>
+          <div class="hero-en">${esc(b.titleEn)}</div>
+          <div class="hero-author">${esc(b.authorAr)}</div>
+          <div class="hero-badges">${metaBadges()}</div>`;
+      }
+
+      function highlight(text) {
+        const q = state.search.trim();
+        if (q.length < 2) return esc(text);
+        return esc(text).replace(
+          new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g'),
+          '<mark>$1</mark>',
+        );
+      }
+
+      function renderDrawer() {
+        const drawer = document.getElementById('drawer');
+        const q = state.search.trim();
+        if (q.length >= 2) {
+          // searching → match list replaces the TOC
+          drawer.hidden = false;
+          const b = BOOKS[state.book];
+          const hay = b.hasTranslation ? b.hadith.matnAr : b.rawAr;
+          const hit = hay.includes(q);
+          drawer.innerHTML =
+            `<h3>Results · “${esc(q)}”</h3>` +
+            (hit
+              ? `<div class="match"><div class="pg">Page ${state.page}</div><div class="snip">${highlight(hay.slice(0, 90))}…</div></div>`
+              : `<div class="pending">No matches on the sample page. (Search runs across the whole book in the app.)</div>`);
+          return;
+        }
+        if (!state.contents) {
+          drawer.hidden = true;
+          return;
+        }
+        drawer.hidden = false;
+        const b = BOOKS[state.book];
+        drawer.innerHTML =
+          `<h3>Contents</h3>` +
+          b.toc
+            .map(
+              (e) =>
+                `<div class="toc-item ${e.p === 1 ? 'active' : ''}"><span class="t">${esc(e.t)}</span><span class="p">${e.p}</span></div>`,
+            )
+            .join('');
+      }
+
+      function renderMain() {
+        const b = BOOKS[state.book];
+        const main = document.getElementById('main');
+        const head = `
+          <div class="pagehead">
+            <div class="eyebrow">Page ${state.page} of ${b.totalPages}</div>
+            <div class="chapter">${esc(b.toc[0].t)}</div>
+          </div>`;
+
+        if (!b.hasTranslation) {
+          // raw Arabic corpus text — language modes honestly reflect "no translation yet"
+          let body;
+          if (state.lang === 'en') {
+            body = `<div class="pending">No English translation in the corpus yet — this work is raw Arabic text. The pipeline emits a translation later; this mode lights up then.</div>`;
+          } else if (state.lang === 'both') {
+            body = `
+              <div class="matn-grid both">
+                <div class="pending" style="margin:0">English translation pending</div>
+                <div class="rawtext">${highlight(b.rawAr)}</div>
+              </div>`;
+          } else {
+            body = `<div class="rawtext">${highlight(b.rawAr)}</div>`;
+          }
+          main.innerHTML = `<article class="article">${head}${body}</article>`;
+          return;
+        }
+
+        // hadith content — full language modes + isnad
+        const h = b.hadith;
+        const isnad =
+          state.lang !== 'en'
+            ? `<p class="isnad" dir="rtl">${h.isnadSegs
+                .map((s) =>
+                  s.narr != null
+                    ? `<span class="narr" data-narr="${s.narr}">${esc(s.v)}</span>`
+                    : esc(s.v),
+                )
+                .join('')}</p>`
+            : '';
+        const en = state.lang !== 'ar' ? `<div class="matn-en">${highlight(h.matnEn)}</div>` : '';
+        const ar = state.lang !== 'en' ? `<div class="matn-ar">${highlight(h.matnAr)}</div>` : '';
+        const gridClass = state.lang === 'both' ? 'matn-grid both' : 'matn-grid';
+        main.innerHTML = `
+          <article class="article">
+            ${head}
+            <section class="hadith">
+              <header class="hadith__head">
+                <span class="hadith__id">
+                  <span class="hadith__num">١</span>
+                  <span class="hadith__meta">Hadith ${h.n} · ${h.narrators.length} narrators</span>
+                </span>
+                <span class="grade"><span class="dot"></span>${esc(h.grade)} · ${esc(h.gradeEn)}</span>
+              </header>
+              ${isnad}
+              <div class="${gridClass}">${en}${ar}</div>
+            </section>
+          </article>`;
+      }
+
+      function renderPanel() {
+        const panel = document.getElementById('panel');
+        const b = BOOKS[state.book];
+        if (!state.isnad) {
+          panel.hidden = true;
+          return;
+        }
+        if (!b.hasTranslation) {
+          panel.hidden = false;
+          panel.innerHTML = `<h3>Isnād · transmission chain</h3><div class="pending">No isnād for raw-text works. Open the multi-volume hadith book to see a live chain.</div>`;
+          return;
+        }
+        panel.hidden = false;
+        const h = b.hadith;
+        panel.innerHTML =
+          `<h3>Isnād · transmission chain</h3><div class="sub">${h.narrators.length} narrators · ${esc(h.grade)}</div>` +
+          h.narrators
+            .map(
+              (n) =>
+                `<div class="node"><div class="nm">${esc(n.nm)}</div><div class="rl">${esc(n.rl)}</div><div class="gr">${esc(n.gr)}</div></div>`,
+            )
+            .join('');
+      }
+
+      function syncControls() {
+        root.dataset.theme = state.theme;
+        root.dataset.lang = state.lang;
+        root.dataset.masthead = state.masthead;
+        root.style.setProperty('--reader-size', state.size + 'px');
+        document.getElementById('sizeVal').textContent = state.size + 'px';
+        document.getElementById('pgNum').textContent = state.page;
+        document.getElementById('pgTotal').textContent = BOOKS[state.book].totalPages;
+        // isnad button is disabled for raw-text works (honest: no isnad to show)
+        document.getElementById('isnadBtn').disabled = !BOOKS[state.book].hasTranslation;
+        document.getElementById('contentsBtn').setAttribute('aria-pressed', String(state.contents));
+        document.getElementById('isnadBtn').setAttribute('aria-pressed', String(state.isnad));
+        document
+          .querySelectorAll('#themeSeg button')
+          .forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.theme === state.theme)));
+        document
+          .querySelectorAll('#langSeg button')
+          .forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.lang === state.lang)));
+        document
+          .querySelectorAll('#bookSeg button')
+          .forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.book === state.book)));
+        document
+          .querySelectorAll('#mhSeg button')
+          .forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.mh === state.masthead)));
+        document.getElementById('search').classList.toggle('has-text', state.search.length > 0);
+      }
+
+      function renderAll() {
+        syncControls();
+        renderMasthead();
+        renderDrawer();
+        renderMain();
+        renderPanel();
+      }
+
+      // ---- wiring ----------------------------------------------------------
+      document.getElementById('bookSeg').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        state.book = btn.dataset.book;
+        state.page = 1;
+        if (!BOOKS[state.book].hasTranslation) state.isnad = false;
+        renderAll();
+      });
+      document.getElementById('mhSeg').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (btn) ((state.masthead = btn.dataset.mh), renderAll());
+      });
+      document.getElementById('themeSeg').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (btn) ((state.theme = btn.dataset.theme), renderAll());
+      });
+      document.getElementById('langSeg').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (btn) ((state.lang = btn.dataset.lang), renderAll());
+      });
+      document.getElementById('contentsBtn').addEventListener('click', () => {
+        state.contents = !state.contents;
+        renderAll();
+      });
+      document.getElementById('isnadBtn').addEventListener('click', () => {
+        if (document.getElementById('isnadBtn').disabled) return;
+        state.isnad = !state.isnad;
+        renderAll();
+      });
+      document.getElementById('sizeUp').addEventListener('click', () => {
+        state.size = Math.min(SIZE.max, state.size + SIZE.step);
+        renderAll();
+      });
+      document.getElementById('sizeDown').addEventListener('click', () => {
+        state.size = Math.max(SIZE.min, state.size - SIZE.step);
+        renderAll();
+      });
+      const pg = (d) => {
+        state.page = Math.max(1, Math.min(BOOKS[state.book].totalPages, state.page + d));
+        renderAll();
+      };
+      document.getElementById('pgPrev').addEventListener('click', () => pg(-1));
+      document.getElementById('pgNext').addEventListener('click', () => pg(1));
+      document.getElementById('pgBack10').addEventListener('click', () => pg(-10));
+      document.getElementById('pgFwd10').addEventListener('click', () => pg(10));
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        state.search = e.target.value;
+        renderAll();
+      });
+      document.getElementById('searchClear').addEventListener('click', () => {
+        state.search = '';
+        document.getElementById('searchInput').value = '';
+        renderAll();
+      });
+      document.getElementById('main').addEventListener('click', (e) => {
+        const n = e.target.closest('.narr');
+        if (n) {
+          state.isnad = true;
+          renderAll();
+        }
+      });
+
+      renderAll();
+    </script>
+  </body>
+</html>
