@@ -1,0 +1,292 @@
+[
+  {
+    "id": "hadith",
+    "label": "Hadith",
+    "label_ar": "الحديث",
+    "blurb": "Foundational collections, transmission, and the science of narrators.",
+    "categories": [
+      {
+        "slug": "shia-hadith-fiqh",
+        "label": "Shia Hadith, Fiqh",
+        "label_ar": "الحديث الفقهي الشيعي",
+        "count": 12
+      },
+      {
+        "slug": "shia-hadith-general",
+        "label": "Shia Hadith, General",
+        "label_ar": "الحديث الشيعي العام",
+        "count": 28
+      },
+      {
+        "slug": "shia-hadith-narrators",
+        "label": "Shia Hadith, Narrators",
+        "label_ar": "رجال الحديث الشيعي",
+        "count": 24
+      },
+      {
+        "slug": "sunni-hadith-fiqh",
+        "label": "Sunni Hadith, Fiqh",
+        "label_ar": "الحديث الفقهي السني",
+        "count": 19
+      },
+      {
+        "slug": "sunni-hadith-general",
+        "label": "Sunni Hadith, General",
+        "label_ar": "الحديث السني العام",
+        "count": 41
+      },
+      {
+        "slug": "sunni-hadith-narrators",
+        "label": "Sunni Hadith, Narrators",
+        "label_ar": "رجال الحديث السني",
+        "count": 33
+      },
+      {
+        "slug": "fiqh-terminology",
+        "label": "Fiqh Terminology",
+        "label_ar": "مصطلح الحديث",
+        "count": 9
+      }
+    ]
+  },
+  {
+    "id": "quran",
+    "label": "Qurʾan Sciences",
+    "label_ar": "علوم القرآن",
+    "blurb": "Tafsir traditions and the disciplines surrounding the Qurʾanic text.",
+    "categories": [
+      {
+        "slug": "shia-tafsir",
+        "label": "Shia Tafsir",
+        "label_ar": "التفسير الشيعي",
+        "count": 21
+      },
+      {
+        "slug": "sunni-tafsir",
+        "label": "Sunni Tafsir",
+        "label_ar": "التفسير السني",
+        "count": 38
+      },
+      {
+        "slug": "quran-sciences",
+        "label": "Qurʾanic Sciences",
+        "label_ar": "علوم القرآن",
+        "count": 14
+      }
+    ]
+  },
+  {
+    "id": "fiqh",
+    "label": "Fiqh",
+    "label_ar": "الفقه",
+    "blurb": "Jurisprudential schools, principles, and case law across centuries.",
+    "categories": [
+      {
+        "slug": "hanafi-fiqh",
+        "label": "Hanafi Fiqh",
+        "label_ar": "الفقه الحنفي",
+        "count": 17
+      },
+      {
+        "slug": "hanbali-fiqh",
+        "label": "Hanbali Fiqh",
+        "label_ar": "الفقه الحنبلي",
+        "count": 13
+      },
+      {
+        "slug": "maliki-fiqh",
+        "label": "Maliki Fiqh",
+        "label_ar": "الفقه المالكي",
+        "count": 15
+      },
+      {
+        "slug": "shafii-fiqh",
+        "label": "Shafiʿi Fiqh",
+        "label_ar": "الفقه الشافعي",
+        "count": 18
+      },
+      {
+        "slug": "zahiri-fiqh",
+        "label": "Zahiri Fiqh",
+        "label_ar": "الفقه الظاهري",
+        "count": 4
+      },
+      {
+        "slug": "zaidi-fiqh",
+        "label": "Zaidi Fiqh",
+        "label_ar": "الفقه الزيدي",
+        "count": 6
+      },
+      {
+        "slug": "shia-fiqh-8th-century",
+        "label": "Shia Fiqh, 8th Century",
+        "label_ar": "الفقه الشيعي ق٨",
+        "count": 11
+      },
+      {
+        "slug": "shia-fiqh-fatwas",
+        "label": "Shia Fiqh, Fatwas",
+        "label_ar": "الفتاوى الشيعية",
+        "count": 8
+      },
+      {
+        "slug": "shia-fiqh-pre-8th-century",
+        "label": "Shia Fiqh, Pre-8th C.",
+        "label_ar": "الفقه الشيعي قبل ق٨",
+        "count": 9
+      },
+      {
+        "slug": "shia-fiqh-principles",
+        "label": "Shia Fiqh, Principles",
+        "label_ar": "أصول الفقه الشيعي",
+        "count": 22
+      },
+      {
+        "slug": "sunni-fiqh-principles",
+        "label": "Sunni Fiqh, Principles",
+        "label_ar": "أصول الفقه السني",
+        "count": 26
+      },
+      {
+        "slug": "independent-fiqh",
+        "label": "Independent Fiqh",
+        "label_ar": "الفقه المستقل",
+        "count": 7
+      }
+    ]
+  },
+  {
+    "id": "theology",
+    "label": "Theology & Sects",
+    "label_ar": "الكلام والفرق",
+    "blurb": "Kalam, doctrinal works, and the comparative study of schools.",
+    "categories": [
+      {
+        "slug": "shia-theology",
+        "label": "Shia Theology",
+        "label_ar": "الكلام الشيعي",
+        "count": 19
+      },
+      {
+        "slug": "sunni-theology",
+        "label": "Sunni Theology",
+        "label_ar": "الكلام السني",
+        "count": 23
+      },
+      {
+        "slug": "sects-schools",
+        "label": "Sects & Schools",
+        "label_ar": "الفرق والمذاهب",
+        "count": 11
+      }
+    ]
+  },
+  {
+    "id": "biography",
+    "label": "Biography & History",
+    "label_ar": "التراجم والتاريخ",
+    "blurb": "Genealogies, Imamate biography, geography, and chronicles.",
+    "categories": [
+      {
+        "slug": "genealogy-biography",
+        "label": "Genealogy & Biography",
+        "label_ar": "الأنساب والتراجم",
+        "count": 31
+      },
+      {
+        "slug": "prophet-imams-biography",
+        "label": "Prophet & Imams Biography",
+        "label_ar": "سيرة النبي والأئمة",
+        "count": 27
+      },
+      {
+        "slug": "history-geography",
+        "label": "History & Geography",
+        "label_ar": "التاريخ والجغرافيا",
+        "count": 24
+      }
+    ]
+  },
+  {
+    "id": "sciences",
+    "label": "Sciences",
+    "label_ar": "العلوم",
+    "blurb": "Arabic linguistics, logic, philosophy, medicine, and adjacent fields.",
+    "categories": [
+      {
+        "slug": "arabic-language-sciences",
+        "label": "Arabic Language Sciences",
+        "label_ar": "علوم اللغة العربية",
+        "count": 35
+      },
+      {
+        "slug": "logic-philosophy",
+        "label": "Logic & Philosophy",
+        "label_ar": "المنطق والفلسفة",
+        "count": 16
+      },
+      {
+        "slug": "medicine",
+        "label": "Medicine",
+        "label_ar": "الطب",
+        "count": 8
+      },
+      {
+        "slug": "other-sciences",
+        "label": "Other Sciences",
+        "label_ar": "علوم أخرى",
+        "count": 12
+      }
+    ]
+  },
+  {
+    "id": "devotional",
+    "label": "Devotional & Other",
+    "label_ar": "الأخلاق والأدعية وغيرها",
+    "blurb": "Ethics, supplications, poetry, contemporary issues, manuscripts.",
+    "categories": [
+      {
+        "slug": "ethics-mysticism",
+        "label": "Ethics & Mysticism",
+        "label_ar": "الأخلاق والعرفان",
+        "count": 18
+      },
+      {
+        "slug": "supplications-visitations",
+        "label": "Supplications & Visitations",
+        "label_ar": "الأدعية والزيارات",
+        "count": 22
+      },
+      {
+        "slug": "poetry-collections",
+        "label": "Poetry Collections",
+        "label_ar": "الدواوين الشعرية",
+        "count": 14
+      },
+      {
+        "slug": "contemporary-islamic-issues",
+        "label": "Contemporary Islamic Issues",
+        "label_ar": "القضايا الإسلامية المعاصرة",
+        "count": 10
+      },
+      {
+        "slug": "journals-miscellaneous",
+        "label": "Journals & Miscellaneous",
+        "label_ar": "مجلات ومتفرقات",
+        "count": 7
+      },
+      {
+        "slug": "bibliographies-indexes",
+        "label": "Bibliographies & Indexes",
+        "label_ar": "الفهارس والببليوغرافيات",
+        "count": 9
+      },
+      {
+        "slug": "manuscripts",
+        "label": "Manuscripts",
+        "label_ar": "المخطوطات",
+        "count": 6
+      }
+    ]
+  }
+]

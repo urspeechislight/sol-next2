@@ -1,0 +1,51 @@
+{
+  "book_urn": "KafSlm32",
+  "entries": [
+    {
+      "page": 1,
+      "title": "مقدمة المؤلف",
+      "title_en": "Author's Introduction"
+    },
+    {
+      "page": 11,
+      "title": "كتاب العقل والجهل",
+      "title_en": "The Book of Intellect and Ignorance"
+    },
+    {
+      "page": 47,
+      "title": "كتاب فضل العلم",
+      "title_en": "The Book of the Excellence of Knowledge"
+    },
+    {
+      "page": 109,
+      "title": "كتاب التوحيد",
+      "title_en": "The Book of Divine Unity",
+      "active": true
+    },
+    {
+      "page": 184,
+      "title": "كتاب الحجة",
+      "title_en": "The Book of Proof"
+    },
+    {
+      "page": 421,
+      "title": "كتاب الإيمان والكفر",
+      "title_en": "The Book of Faith and Disbelief"
+    },
+    {
+      "page": 612,
+      "title": "كتاب الدعاء",
+      "title_en": "The Book of Supplication"
+    },
+    {
+      "page": 738,
+      "title": "كتاب فضل القرآن",
+      "title_en": "The Book of the Excellence of the Qurʾan"
+    },
+    {
+      "page": 791,
+      "title": "كتاب العشرة",
+      "title_en": "The Book of Social Conduct"
+    }
+  ]
+}

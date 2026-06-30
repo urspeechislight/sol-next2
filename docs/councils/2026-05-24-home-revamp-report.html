@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Council Verdict — Home Revamp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500;1,6..72,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f7f1e7;
+    --bg-2: #efe7d6;
+    --ink: #1f1a14;
+    --ink-2: #4a3f30;
+    --ink-3: #8a7d68;
+    --rule: rgba(31,26,20,0.12);
+    --rule-2: rgba(31,26,20,0.22);
+    --brick: #8c3b2a;
+    --brick-soft: rgba(140,59,42,0.10);
+    --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 64px 28px 96px; }
+  header.report-head { padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--brick); margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--serif); font-weight: 500;
+    font-size: clamp(28px, 4.2vw, 40px); line-height: 1.1;
+    letter-spacing: -0.02em; margin: 0 0 8px;
+  }
+  h1 em { font-style: italic; color: var(--brick); font-weight: 500; }
+  .sub { font-size: 16px; color: var(--ink-2); font-style: italic; margin: 0; }
+  .question {
+    background: var(--bg-2);
+    border-left: 2px solid var(--brick);
+    padding: 18px 22px; margin: 0 0 48px;
+    font-size: 16px; color: var(--ink-2);
+  }
+  h2 {
+    font-family: var(--serif); font-weight: 500;
+    font-size: 22px; letter-spacing: -0.01em;
+    margin: 48px 0 16px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  h3 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: 17px; margin: 24px 0 8px;
+  }
+  p { margin: 0 0 14px; }
+  strong { font-weight: 600; color: var(--ink); }
+  em { font-style: italic; }
+  code, .urn {
+    font-family: var(--mono); font-size: 0.86em;
+    background: var(--bg-2); padding: 1px 5px; border-radius: 3px;
+  }
+
+  .verdict {
+    background: linear-gradient(180deg, #fdf9ef 0%, #f5edd9 100%);
+    border: 1px solid var(--rule-2);
+    border-radius: 4px;
+    padding: 32px 32px 8px;
+    margin: 0 0 56px;
+  }
+  .verdict h2 { margin-top: 0; border: 0; padding: 0; font-size: 14px;
+    font-family: var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--brick); }
+  .verdict h2:first-child { margin-bottom: 4px; }
+  .verdict h3 { font-style: italic; font-weight: 500; font-size: 19px; margin-top: 28px; }
+  .verdict ul { margin: 4px 0 14px; padding-left: 22px; }
+  .verdict ul li { margin-bottom: 4px; }
+  .one-thing {
+    margin-top: 28px; padding: 18px 22px;
+    background: var(--brick); color: #fdf3e1;
+    border-radius: 3px;
+  }
+  .one-thing h3 {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; font-weight: 600; color: #fdf3e1;
+    margin: 0 0 6px;
+  }
+  .one-thing p { margin: 0; font-style: italic; }
+
+  /* Alignment table */
+  .matrix {
+    width: 100%; border-collapse: collapse; margin: 16px 0 32px;
+    font-size: 14px;
+  }
+  .matrix th, .matrix td {
+    text-align: left; padding: 10px 12px; vertical-align: top;
+    border-bottom: 1px solid var(--rule);
+  }
+  .matrix th {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 600;
+    border-bottom: 1px solid var(--rule-2);
+  }
+  .matrix td:first-child {
+    font-weight: 600; white-space: nowrap; padding-right: 18px;
+  }
+  .pip {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; vertical-align: middle; margin-right: 6px;
+  }
+  .pip.yes { background: var(--brick); }
+  .pip.no  { background: transparent; border: 1px solid var(--rule-2); }
+  .pip.mid { background: var(--ink-3); }
+
+  details {
+    border-top: 1px solid var(--rule);
+    padding: 14px 0;
+  }
+  details[open] { padding-bottom: 22px; }
+  summary {
+    cursor: pointer; list-style: none; outline: none;
+    display: flex; align-items: baseline; gap: 12px;
+    font-family: var(--serif); font-weight: 500; font-size: 18px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: '+'; font-family: var(--mono); font-size: 16px;
+    color: var(--brick); width: 14px; display: inline-block;
+  }
+  details[open] summary::before { content: '−'; }
+  summary .role {
+    font-style: italic; color: var(--ink-2); font-weight: 400;
+  }
+  summary .pick {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--ink-3); margin-left: auto;
+  }
+  details .body { padding: 16px 0 0 26px; color: var(--ink-2); font-size: 16px; }
+  details .body p:first-child { margin-top: 0; }
+  details .self-flag {
+    margin-top: 14px; padding: 10px 14px;
+    background: var(--brick-soft); border-left: 2px solid var(--brick);
+    font-size: 14px; color: var(--ink-2);
+  }
+  details .self-flag::before {
+    content: 'self-flag'; display: block;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--brick); margin-bottom: 4px;
+  }
+
+  footer {
+    margin-top: 64px; padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.06em; color: var(--ink-3);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="report-head">
+  <div class="eyebrow">§ Council Verdict · 2026-05-24</div>
+  <h1>Home page revamp, <em>from first principles</em></h1>
+  <p class="sub">Five advisors, one peer-review round, one chairman synthesis. Foundation: Emil Kowalski's design philosophy.</p>
+</header>
+
+<div class="question">
+  <strong>The question:</strong> What should the home page of the Shia Online Library (sol-next2, a knowledge-graph reader for 18,691 classical Arabic manuscripts) actually <em>do</em>? Then derive a structure. Each advisor was bound to emil's axioms — purpose-driven motion under 300ms, restraint as editorial voice, unseen details compound, Newsreader + Amiri typography, beauty as leverage — and had to discriminate among six audience candidates: scholars, students, casual daily readers, isnad researchers, devotional users, translators.
+</div>
+
+<section class="verdict">
+  <h2>Chairman's verdict</h2>
+
+  <h3>Where the council agrees</h3>
+  <ul>
+    <li>Four of five advisors converge on the <strong>returning reader arriving via deeplink or wanting to resume a specific text</strong> as the load-bearing user.</li>
+    <li>All five agree the current composition is doing too much. The Domain Cabinet, the click-to-expand tray, the hero CTA — sitemap furniture pretending to be features.</li>
+    <li>Four of five agree on a <strong>single search/command input as the page's center of gravity</strong>, accepting citations, titles, authors, and Arabic phrases — routing directly to the page, not to a gallery.</li>
+    <li>Four of five demote the <strong>verse-of-the-day</strong> off the home. The Contrarian names it as imported Christian-devotional UX (Bible.com).</li>
+    <li>All five agree the home should be radically smaller. The disagreements are about what occupies the silence.</li>
+  </ul>
+
+  <h3>Where the council clashes</h3>
+  <ul>
+    <li><strong>Destination or vestigial surface?</strong> The Contrarian says vestigial — bravest move is the empty page. The Expansionist inverts it: home as the Open Graph card factory for the tradition. First Principles + Executor: small functional desk (Resume + Locate). The Outsider: first-impression onboarding moment.</li>
+    <li><strong>Who is it for?</strong> Four say returning readers and citation-seekers. The Outsider says cold first-timers. Four reviewers rejected that framing.</li>
+    <li><strong>Resume reading: localStorage or auth?</strong> Executor proposes localStorage; Reviewer 3 correctly flags it as silently broken across devices, where scholars actually work. Unresolved.</li>
+  </ul>
+
+  <h3>Blind spots the peer review caught</h3>
+  <ul>
+    <li><strong>Unanimous miss across all five reviewers:</strong> Arabic-first, RTL-native composition. Every advisor described structure in English reading order with Arabic as ornament — salawat "at top," translation "beside," cmd-K input in Latin ergonomics, citations like <code>Bukhari 1.1.2</code> instead of <code>البخاري ١.١.٢</code>. For a Shia turath corpus serving Iran, Iraq, Lebanon, Pakistan, directionality is probably the single most editorial decision on the page.</li>
+    <li><strong>URL permanence as the actual product.</strong> Canonical URN design, slug stability, redirect policy across re-indexes. For a knowledge graph cited for decades, URL permanence dwarfs home-page composition.</li>
+    <li><strong>The telemetry vacuum.</strong> The entire persona list is a wishlist. Only the Contrarian refused to design on unverified personas.</li>
+    <li><strong>Offline / low-bandwidth realities</strong> for the actual global Shia readership.</li>
+  </ul>
+
+  <h3>The recommendation</h3>
+  <p>Take the Contrarian's frame, First Principles' structural primitives, the Expansionist's one insight that survives review, and resolve the RTL miss.</p>
+  <p>The home does <strong>two things</strong> in priority order: <strong>Resume</strong> and <strong>Locate</strong>. Nothing else earns the silence.</p>
+  <p>Compose it <strong>RTL-native</strong>. Arabic anchors the page; Latin is the secondary surface, swapped on language-of-entry detection. Salawat set once, small, top-of-page (right side in RTL). One search input, autofocused only on <code>pointer: fine</code> + viewport &gt; 768px, accepting Arabic phrases, transliteration, and citations in both <code>البخاري ١.١.٢</code> and <code>Bukhari 1.1.2</code> form. Below: <em>Continue reading: [book, page]</em> if a session exists (server-side from a lightweight identity token, <em>not</em> localStorage). First visit: three editorially-chosen starting texts, not seven domain tiles. One quiet text link: <em>Browse the full library</em>. Footer.</p>
+  <p>Kill the Domain Cabinet. Move the daily verse to <code>/daily</code>. Cut the "now indexing" pill — keep it on <code>/changelog</code> as the Expansionist's <em>"Arxiv for the turath"</em> signal.</p>
+  <p>The Expansionist's insight actually lives on every <code>/book/{urn}/page/{n}</code> — perfect Open Graph cards, stable URNs, citation-grade preview. <em>That</em> is the compounding surface. Treat URL permanence as a first-class product decision before shipping anything else.</p>
+  <p>The Outsider's instinct to explain <code>isnad</code> belongs in a glossary on the book page, not in the home's chrome. A library does not apologize for its vocabulary.</p>
+
+  <div class="one-thing">
+    <h3>One thing to do first</h3>
+    <p>Before redesigning the home, <strong>instrument the current site for one week</strong> and answer one question: what fraction of sessions begin on <code>/</code> versus on a deeplinked book page, and what's the language of the first interaction? Every structural choice collapses into a guess until that data exists.</p>
+  </div>
+</section>
+
+<h2>Alignment matrix</h2>
+<table class="matrix">
+  <thead>
+    <tr>
+      <th>Decision</th>
+      <th>Contrarian</th>
+      <th>1st Principles</th>
+      <th>Expansionist</th>
+      <th>Outsider</th>
+      <th>Executor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Kill Domain Cabinet</td>
+      <td><span class="pip yes"></span>yes</td>
+      <td><span class="pip yes"></span>moves</td>
+      <td><span class="pip mid"></span>shrinks to link</td>
+      <td><span class="pip mid"></span>demotes to ToC</td>
+      <td><span class="pip yes"></span>flat list</td></tr>
+    <tr><td>Daily verse off home</td>
+      <td><span class="pip yes"></span>yes</td>
+      <td><span class="pip yes"></span>moves to <code>/today</code></td>
+      <td><span class="pip no"></span>keeps as anchor</td>
+      <td><span class="pip mid"></span>passage stays</td>
+      <td><span class="pip no"></span>static, kept</td></tr>
+    <tr><td>Search as center</td>
+      <td><span class="pip yes"></span>yes</td>
+      <td><span class="pip yes"></span>yes (cmd-K)</td>
+      <td><span class="pip yes"></span>yes (cmd-K)</td>
+      <td><span class="pip mid"></span>below passage</td>
+      <td><span class="pip yes"></span>autofocused</td></tr>
+    <tr><td>Resume reading</td>
+      <td><span class="pip yes"></span>yes</td>
+      <td><span class="pip yes"></span>yes (#1)</td>
+      <td><span class="pip no"></span>not addressed</td>
+      <td><span class="pip no"></span>no</td>
+      <td><span class="pip yes"></span>localStorage</td></tr>
+    <tr><td>Primary audience</td>
+      <td>citation-seeker</td>
+      <td>returning + citation</td>
+      <td>daily reader</td>
+      <td>cold first-timer</td>
+      <td>returning scholar</td></tr>
+    <tr><td>RTL-native composition</td>
+      <td><span class="pip no"></span>missed</td>
+      <td><span class="pip no"></span>missed</td>
+      <td><span class="pip no"></span>missed</td>
+      <td><span class="pip no"></span>missed</td>
+      <td><span class="pip no"></span>missed</td></tr>
+  </tbody>
+</table>
+
+<h2>Individual advisor responses</h2>
+
+<details>
+  <summary>The Contrarian <span class="role">— the bravest move is the empty page</span> <span class="pick">5/5 picked strongest</span></summary>
+  <div class="body">
+    <p><strong>Fatal flaw in framing:</strong> you are debating the shape of a home page before evidence that the home page is the actual entry point. It almost certainly isn't. An 18,691-book classical Arabic corpus gets discovered through Google, a friend's WhatsApp link to a specific hadith, a citation in a paper, or a deeplink from a sermon footnote. The home is the page real users see <em>least</em>. You are spending craft budget on a lobby nobody walks through.</p>
+    <p><strong>Second flaw:</strong> the persona list is a wishlist disguised as research — you have no telemetry. "Verse-of-the-day" on a <em>Shia</em> library? Imported from Christian-devotional UX (Bible.com). Interrogate whether it belongs at all.</p>
+    <p><strong>What the home should DO:</strong> one job — get the user into a specific text in under 3 seconds, or admit they didn't know what they wanted and offer one honest path in.</p>
+    <p><strong>Structure:</strong> salawat small at top (set once); search autofocused, Arabic + Latin — the whole page IS this field; below it, <em>"Continue reading: [last book, last page]"</em> or, for first visit, three hand-picked starting texts; one quiet link <em>"Browse the full library"</em>; footer. Kill the Daily Instrument on the home. Kill the Domain Cabinet — sitemap pretending to be a feature.</p>
+    <div class="self-flag">None. Removes motion, removes chrome, lets typography and a single input carry the page. The bravest move is the empty page.</div>
+  </div>
+</details>
+
+<details>
+  <summary>The First Principles Thinker <span class="role">— a library has an entrance, a catalog, a reading desk; this conflates all three</span></summary>
+  <div class="body">
+    <p><strong>"Home page" is the wrong unit.</strong> A library doesn't have a home page — it has an entrance, a catalog, and a reading desk. The conflation is the original sin of the current composition.</p>
+    <p>Strip the UI: the user is either returning to a text, looking up a known citation, or arriving cold needing to know what 18,691 books even contain. Load-bearing audience: returning reader + citation-seeker.</p>
+    <p><strong>The home does two things in priority order:</strong> <strong>Resume</strong> (last text touched, one keystroke) and <strong>Locate</strong> (search field accepting citations like <code>Bukhari 1.1.2</code>, titles, authors, Arabic phrases — direct to the page, not a gallery).</p>
+    <p><strong>Structure:</strong> single ~640px column on cream. Library name in Newsreader. Single cmd-K search input, placeholder cycles citation/title/Arabic phrase (swap on focus, no transition). <em>Continue: al-Kafi, vol. 1, p. 47</em> if returning. Three plain text links — <em>Browse · Today · Index</em>. Daily verse, cabinet, curated row → <code>/today</code>, <code>/browse</code>, <code>/curated</code>.</p>
+    <div class="self-flag">Cycling placeholder technically violates axiom 1 (motion without explaining state). Mitigate by swap-on-focus only, no transition. If still uncomfortable, ship static.</div>
+  </div>
+</details>
+
+<details>
+  <summary>The Expansionist <span class="role">— the home is the citation surface for the whole tradition</span></summary>
+  <div class="body">
+    <p><strong>Biggest opportunity nobody's naming:</strong> this is not a library home — it's the <em>front matter</em> of a living manuscript that 18,691 books deep-link into. Stop thinking of the home as a destination. Start thinking of it as a <strong>citation surface</strong>. Every scholar, translator, tafsir-tweeter quoting a passage needs a canonical URL with a beautiful preview. If the home is also the default Open Graph card factory for the entire Shia textual tradition, this becomes the substrate underneath every WhatsApp share, every Substack footnote, every Wikipedia citation, every X post for the next twenty years. Infrastructure.</p>
+    <p><strong>Adjacent upside:</strong> the "now indexing" pill = public progress signal → living changelog → <em>Arxiv for the turath</em>.</p>
+    <p><strong>Structure (restraint <em>is</em> the leverage):</strong> one Arabic line centered, Amiri, large — the salawat or daily ayah. One search field beneath, cmd-K. One quiet line: <em>"18,691 books. 7 domains. Indexing today: Bihar al-Anwar vol. 42."</em> Cabinet collapses to italic link <em>"Browse the cabinet →"</em>. Every book page = a perfect citation card.</p>
+    <div class="self-flag">None. Leverage is what was removed.</div>
+  </div>
+</details>
+
+<details>
+  <summary>The Outsider <span class="role">— prove there is something worth reading in 5 seconds</span> <span class="pick">3/5 flagged biggest blind spot</span></summary>
+  <div class="body">
+    <p><strong>What's confusing as a first-timer:</strong> I landed from a link. Arabic calligraphy I can't read, "salawat" (no idea), a "now indexing" pill (indexing what? is the site broken?), tiles labeled "Hadith, Fiqh, Isnad" I'd need to Google. The frame says: <em>if you have to ask, you don't belong here</em>. Unforced error.</p>
+    <p><strong>What it must DO in 5 seconds:</strong> prove there is something here worth reading, right now, in a language I understand. Not orient me to the corpus. Not show me 7 domains.</p>
+    <p><strong>Structure:</strong> single passage centered, Arabic + translation side by side, source line in mono. One sentence of plain-English context above (italic Newsreader, no jargon). Search below with a real example query as placeholder. Quiet second screen: cabinet as a table of contents, not a hero. Footer explains what the library is and for whom.</p>
+    <div class="self-flag">Fade-in tooltip glossing "isnad" must stay ≤200ms ease-out-strong, no scale-from-zero. Risk on axiom 4 if the plain-English gloss reads marketing rather than editorial italic.</div>
+  </div>
+</details>
+
+<details>
+  <summary>The Executor <span class="role">— resume reading via localStorage, ship Monday</span></summary>
+  <div class="body">
+    <p><strong>Smallest shippable change next week:</strong> kill the Domain Cabinet's click-to-expand tray, replace with a server-rendered flat list of domains with category counts inline, each row a real <code>&lt;a&gt;</code>. One commit, no JS.</p>
+    <p><strong>Monday-morning new behavior:</strong> resume reading. Backend already serves <code>/api/books/{urn}/pages/N</code>; add <code>localStorage</code> for last-read URN + page, surface as top block — <em>"Continue: Sahih al-Bukhari, page 47."</em></p>
+    <p><strong>Structure:</strong> search bar (autofocused on desktop, not mobile) → Continue block (only if localStorage hit) → daily verse (static, server-rendered, no carousel) → domains as flat <code>&lt;ul&gt;</code> with counts → footer. No hero, no tray, no "open library" CTA — the whole page IS the library. Cut the "now indexing" pill.</p>
+    <p>Primary user: scholars + students returning to a text. Casual/devotional users get the daily verse as a courtesy, not the centerpiece.</p>
+    <div class="self-flag">Autofocus violates axiom 1 (shifts focus state without user input). Mitigate: gate on <code>pointer: fine</code> + no <code>#hash</code> + viewport &gt; 768px.</div>
+  </div>
+</details>
+
+<h2>Peer review highlights</h2>
+
+<details>
+  <summary>5 reviewers, anonymized A–E <span class="role">— unanimous on strongest (E = Contrarian) and on the universal miss (RTL)</span></summary>
+  <div class="body">
+    <p><strong>Anonymization mapping:</strong> A = First Principles, B = Executor, C = Expansionist, D = Outsider, E = Contrarian.</p>
+
+    <h3>Strongest (unanimous: E)</h3>
+    <p>Every reviewer picked the Contrarian: the only response that interrogates the question itself, names the telemetry vacuum, calls out the verse-of-the-day as imported Christian-devotional UX, and lands the bravest structural call.</p>
+
+    <h3>Biggest blind spot</h3>
+    <ul>
+      <li><strong>D (Outsider)</strong> — 3/5 reviewers. Optimizes for the cold first-timer without evidence that audience matters more than returning readers. A library that apologizes for its vocabulary in the chrome stops being a library.</li>
+      <li><strong>C (Expansionist)</strong> — 1/5. Citation-surface thesis is good but its actual prescription doesn't deliver the 10× move it pitched. Compounding happens at <code>/book/{urn}/page/{n}</code>, not <code>/</code>.</li>
+      <li><strong>B (Executor)</strong> — 1/5. Treats the question as a frontend ticket. Accepts every premise and just rearranges. localStorage-based resume silently fails across devices, where scholars actually work.</li>
+    </ul>
+
+    <h3>What all five missed</h3>
+    <ul>
+      <li><strong>5/5 reviewers:</strong> Arabic-first, RTL-native composition. Every proposed structure described in LTR Western reading order with Arabic as ornament.</li>
+      <li><strong>Reviewer 2:</strong> the URL itself is the product. Canonical URN design, slug stability, redirect policy.</li>
+      <li><strong>Reviewer 3:</strong> auth/personalization (Continue assumes identity); the 18,691 number is the brand and only C treated it as load-bearing copy.</li>
+      <li><strong>Reviewer 4:</strong> offline / low-bandwidth realities for the actual global Shia readership (Iran, Iraq, Lebanon, Pakistan).</li>
+    </ul>
+  </div>
+</details>
+
+<footer>
+  <span>Council ran 2026-05-24 · sol-next2 · home-revamp brief</span>
+  <span>Full transcript: <code>docs/councils/2026-05-24-home-revamp-transcript.md</code></span>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Council Verdict — sol-next2 storage stack</title>
+    <style>
+      :root {
+        --bg: #f6f5f1;
+        --paper: #fffefb;
+        --ink-1: #1a1814;
+        --ink-2: #3a352d;
+        --ink-3: #6a6358;
+        --rule: #d8d3c6;
+        --accent: #8c5a2b;
+        --accent-soft: #f0e8d8;
+        --green: #3f6d4a;
+        --red: #a8443a;
+        --amber: #b07a1f;
+        --indigo: #3f4a78;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink-1);
+        font:
+          16px/1.6 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Helvetica,
+          Arial,
+          sans-serif;
+      }
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 48px 32px 96px;
+      }
+      header {
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 24px;
+        margin-bottom: 32px;
+      }
+      .eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+      h1 {
+        margin: 8px 0 4px;
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .sub {
+        color: var(--ink-3);
+        font-size: 15px;
+      }
+      .verdict {
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        border-left: 3px solid var(--accent);
+        padding: 24px 28px;
+        margin: 32px 0;
+        border-radius: 4px;
+      }
+      .verdict h2 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .verdict h3 {
+        margin: 24px 0 8px;
+        font-size: 17px;
+      }
+      .verdict h3:first-of-type {
+        margin-top: 8px;
+      }
+      .verdict p {
+        margin: 0 0 12px;
+        color: var(--ink-2);
+      }
+      .verdict .do-first {
+        margin-top: 28px;
+        padding: 16px 18px;
+        background: var(--accent-soft);
+        border-radius: 4px;
+      }
+      .verdict .do-first strong {
+        display: block;
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 6px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        margin: 32px 0;
+      }
+      .pos {
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        padding: 14px 12px;
+        border-radius: 4px;
+      }
+      .pos .who {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        margin-bottom: 6px;
+      }
+      .pos .stance {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-1);
+      }
+      .pos.strongest {
+        border-color: var(--green);
+        background: #f0f4ef;
+      }
+      .pos.blindspot {
+        border-color: var(--red);
+        background: #f7eded;
+      }
+      .pos .tag {
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+      .pos.strongest .tag {
+        background: var(--green);
+        color: white;
+      }
+      .pos.blindspot .tag {
+        background: var(--red);
+        color: white;
+      }
+      details {
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        background: var(--paper);
+        margin: 12px 0;
+        padding: 0;
+      }
+      details > summary {
+        cursor: pointer;
+        padding: 14px 18px;
+        font-weight: 600;
+        font-size: 15px;
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      details > summary::-webkit-details-marker {
+        display: none;
+      }
+      details > summary::after {
+        content: '+';
+        color: var(--ink-3);
+        font-weight: 400;
+      }
+      details[open] > summary::after {
+        content: '−';
+      }
+      details > .body {
+        padding: 0 18px 18px;
+        color: var(--ink-2);
+        font-size: 15px;
+      }
+      details > .body p {
+        margin: 8px 0;
+      }
+      .who-line {
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      h2.section {
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        margin: 48px 0 16px;
+        font-weight: 600;
+      }
+      footer {
+        border-top: 1px solid var(--rule);
+        margin-top: 64px;
+        padding-top: 24px;
+        font-size: 13px;
+        color: var(--ink-3);
+      }
+      blockquote {
+        margin: 12px 0;
+        padding: 0 0 0 14px;
+        border-left: 2px solid var(--rule);
+        color: var(--ink-3);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="eyebrow">Council verdict · 2026-05-23</div>
+        <h1>sol-next2 storage stack</h1>
+        <p class="sub">
+          Five advisors. Five peer reviews. One chairman. Question: Postgres + pgvector vs Neo4j vs
+          SQLite vs the proposed four-store stack for a read-only reader over the sol-next
+          pipeline's output.
+        </p>
+      </header>
+
+      <h2 class="section">Advisor positions at a glance</h2>
+      <div class="grid">
+        <div class="pos blindspot">
+          <div class="who">Expansionist</div>
+          <div class="stance">Postgres + pgvector + AGE — one DB, unlock product moves</div>
+          <span class="tag">Biggest blind spot</span>
+        </div>
+        <div class="pos">
+          <div class="who">Contrarian</div>
+          <div class="stance">
+            Postgres + Neo4j + Meilisearch — three stores doing what each is good at
+          </div>
+        </div>
+        <div class="pos">
+          <div class="who">Executor</div>
+          <div class="stance">
+            Keep JSON now; one Postgres later via docker-compose, CTEs for graph
+          </div>
+        </div>
+        <div class="pos strongest">
+          <div class="who">First Principles</div>
+          <div class="stance">
+            It's a build-artifact problem. SQLite file with FTS5 + sqlite-vec.
+          </div>
+          <span class="tag">Strongest (5/5 reviewers)</span>
+        </div>
+        <div class="pos">
+          <div class="who">Outsider</div>
+          <div class="stance">"Eventually" is doing all the work. Postgres, defer the rest.</div>
+        </div>
+      </div>
+
+      <div class="verdict">
+        <h2>Chairman's verdict</h2>
+
+        <h3>Where the council agrees</h3>
+        <p>
+          Four of five advisors reject the proposed four-store stack (Postgres + Neo4j + Qdrant +
+          Redis) as operational overkill for a single-dev, self-hosted, read-mostly workload against
+          a corpus that doesn't yet exist in materialized form. Only the Expansionist defends
+          complexity, and that defence is product vision dressed as architecture.
+        </p>
+        <p>
+          On the graph side, three independent lines of attack reach the same destination: AGE's
+          planner is unreliable for variable-length paths (Contrarian); recursive CTEs run in
+          milliseconds at this scale (Executor); the workload isn't graph-shaped at query time —
+          isnad chains are pre-materialized paths inside each hadith document (First Principles).
+        </p>
+        <p>
+          On vectors: defer until a real user complains; pgvector is sufficient until it isn't.
+          Qdrant has no organic advocates.
+        </p>
+
+        <h3>Where the council clashes</h3>
+        <p>
+          <strong>SQLite vs Postgres in production.</strong> First Principles says SQLite read-only
+          is correct because the workload is artifact distribution. Executor says skip SQLite —
+          pgvector and proper FTS push you to Postgres and you'd migrate twice. Contrarian dismisses
+          SQLite as "suicidal at thousands of books." The disagreement is real because they're
+          sizing for different futures.
+        </p>
+        <p>
+          <strong>Arabic FTS in Postgres.</strong> Contrarian is the only advisor who treats
+          classical-Arabic tokenization (tashkeel, ta marbuta, root stemming) as a first-class
+          concern and concludes Postgres tsvector is inadequate without significant custom work. Two
+          reviewers caught this gap in the others.
+        </p>
+        <p>
+          <strong>Whether to plan for scale at all.</strong> Outsider and First Principles say no —
+          working set is ~100k rows, "eventually" is hypothetical, ship for what exists. Executor
+          says ship Postgres now because migration cost beats premature optimization. Expansionist
+          says scale is the point. The data is on the no-side: 30KB today, an unrun pipeline
+          upstream, zero users.
+        </p>
+
+        <h3>Blind spots only peer review caught</h3>
+        <p>
+          Four of five reviewers independently flagged the same gap no advisor addressed:
+          <strong>the upstream contract</strong>. None of the advisors asked what sol-next actually
+          <em>emits</em>. If upstream writes Postgres dumps and Neo4j exports, rejecting them means
+          maintaining an ETL layer forever. If it emits Parquet or JSONL, First Principles' artifact
+          model is trivial. The SSOT question isn't "which database" — it's whether sol-next2's
+          store is the SSOT or a derived view.
+        </p>
+        <p>Reviewers also flagged:</p>
+        <ul>
+          <li>
+            <strong>Embedding pipeline lifecycle</strong> — model choice owns re-embedding millions
+            of records on every swap.
+          </li>
+          <li>
+            <strong>Arabic-specific normalization</strong> — narrator name variants
+            (kunya/nasab/laqab) belong to sol-next, not sol-next2.
+          </li>
+          <li>
+            <strong>Citation stability</strong> — Bukhari numbering, Shamela vs printed editions:
+            the real SSOT problem hiding behind the storage question.
+          </li>
+        </ul>
+
+        <h3>Recommendation</h3>
+        <p>Adopt the First Principles architecture, modified by the reviewer-caught blind spot.</p>
+        <p>
+          <strong>Concretely:</strong> sol-next2 reads a single canonical artifact emitted by
+          sol-next. Default to SQLite with FTS5 + sqlite-vec + JSON1, opened read-only by FastAPI,
+          with NetworkX in-process for the rare narrator-traversal. The artifact is versioned,
+          immutable, atomically swapped on republish.
+        </p>
+        <p>
+          <strong>Carve-outs:</strong>
+        </p>
+        <ul>
+          <li>
+            Validate SQLite FTS5 with a custom classical-Arabic tokenizer against real queries. If
+            it fails the Contrarian's tashkeel/root-stem test, add Meilisearch as a
+            <em>derived</em> index — rebuilt from the canonical artifact, never a second SSOT.
+          </li>
+          <li>
+            Postgres is the escape hatch, not the default. The day a user complains about something
+            SQLite + adjacency lists can't do, swap. Migration from a versioned read-only artifact
+            to Postgres is a day's work, not a rewrite.
+          </li>
+        </ul>
+        <p>
+          Executor's "just ship Postgres" is the acceptable second-best if there's zero appetite for
+          the artifact model. Expansionist's stack is wrong for the stated problem.
+        </p>
+
+        <div class="do-first">
+          <strong>The one thing to do first</strong>
+          Negotiate the sol-next output contract. Define one canonical, versioned artifact (SQLite
+          file or Parquet bundle) that sol-next2 consumes as immutable input. Every downstream
+          storage decision becomes a derived-view problem instead of an SSOT problem. Do this before
+          writing a line of sol-next2 storage code.
+        </div>
+      </div>
+
+      <h2 class="section">Advisor responses (full)</h2>
+
+      <details>
+        <summary>The First Principles Thinker (chairman's pick)</summary>
+        <div class="body">
+          <p class="who-line">It's a build-artifact problem, not a database problem.</p>
+          <p>
+            sol-next2 serves an immutable, append-rarely, read-mostly corpus that another pipeline
+            has already computed. That is not a database problem; it is a build-artifact
+            distribution problem.
+          </p>
+          <p>
+            Is the graph actually graph-shaped? No. Narrator chains are paths already materialized
+            inside each hadith document — you read them, you don't traverse them. "Commentaries
+            citing a hadith" is a reverse-index dict. "Parallels" is the same. 1–5 hop narrator
+            traversal at tens of thousands of nodes fits in RAM as an adjacency list — NetworkX
+            in-process beats Neo4j over the network.
+          </p>
+          <p>
+            The 8 access patterns collapse to 3 primitives: key/ordered lookup, inverted indexes,
+            vector ANN.
+          </p>
+          <p>
+            Minimum stack: a single SQLite file with FTS5 + sqlite-vec + JSON1. FastAPI opens it
+            read-only. Postgres/Neo4j/Qdrant/Redis assume mutability and concurrent writers you
+            don't have — they are correct for sol-next (the pipeline), wrong for sol-next2.
+          </p>
+          <p>
+            The real question isn't "which 4 stores" — it's "why are you running any servers for a
+            read-only artifact?" Ship a file. Version it. Mount it.
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>The Contrarian</summary>
+        <div class="body">
+          <p class="who-line">Three stores. Each doing what it's good at.</p>
+          <p>
+            Apache AGE is a trap. Slow releases, uncertain PG18 story, partial openCypher, planner
+            that doesn't understand graph cardinality. For 1–5 hop traversal at scale you'll hit
+            planner pathologies on variable-length paths. Write CTEs from day one, or use Neo4j —
+            don't pretend AGE is real.
+          </p>
+          <p>
+            pgvector at millions with multilingual embeddings: HNSW build on 5M × 1024-dim is hours;
+            no zero-downtime rebuild without orchestration. Filtered vector search scoped by
+            book/grade — pgvector's pre/post-filter behaviour is ugly. Qdrant handles payload
+            filtering natively.
+          </p>
+          <p>
+            Postgres tsvector default Arabic is mediocre — no root-based stemming, no tashkeel
+            handling, no ta marbuta normalization. Pattern 5 will feel broken to Arabic readers.
+            Custom dictionary, pg_trgm gymnastics, or OpenSearch/Meilisearch.
+          </p>
+          <p>SQLite as read-mirror: fine for 8 books, suicidal at thousands. Skip.</p>
+          <p>
+            <strong>Position:</strong> Postgres + Neo4j + Meilisearch/ OpenSearch. Defer vectors
+            until pattern 6 has a real user.
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>The Executor</summary>
+        <div class="body">
+          <p class="who-line">Keep JSON. Postgres later. Docker-compose, one service.</p>
+          <p>
+            Monday morning, nothing new. Keep shipping JSON. The upstream pipeline hasn't been run
+            on the full corpus. You don't have a Postgres dump, a Neo4j export, or a Qdrant
+            collection. Picking a stack now is choosing furniture for a house that hasn't been
+            built.
+          </p>
+          <p>
+            When sol-next produces real output: <code>docker compose up postgres</code>. One
+            container, one backup (<code>pg_dump | zstd | rclone</code>), one CVE channel.
+          </p>
+          <ul>
+            <li>
+              pgvector over Qdrant — until >10M vectors, separate vector DB is a second daemon at
+              2am.
+            </li>
+            <li>
+              Recursive CTEs — not Neo4j/AGE/Memgraph. 1–5 hops on tens of thousands of nodes is
+              <code>WITH RECURSIVE</code> in ms.
+            </li>
+            <li>
+              One store: Postgres. tsvector, pgvector, CTEs, UNLOGGED tables (or skip Redis entirely
+              until cache misses matter).
+            </li>
+            <li>
+              Skip SQLite — pgvector and proper FTS push you to Postgres anyway. Don't migrate
+              twice.
+            </li>
+          </ul>
+          <p>One service. One cron. One apt. Ship.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>The Outsider</summary>
+        <div class="body">
+          <p class="who-line">"Eventually" is doing all the work.</p>
+          <p>
+            The gap between "today: 8 books, 1 sample page, 30KB of JSON" and the elaborate
+            four-database stack being proposed is the actual story. Thirty kilobytes. You're picking
+            a five-engine setup for a go-kart.
+          </p>
+          <p>
+            The classical hadith corpus across all major collections is roughly 50,000–100,000
+            unique narrations. Where are the millions coming from? Translations and variants —
+            that's denormalization you're choosing.
+          </p>
+          <p>
+            Does a human user actually traverse 5 hops of narrator chains? 95% never click past hop
+            1 or 2. Recursive descent is still a tree — Postgres recursive CTEs eat it.
+          </p>
+          <p>
+            Vector "related" — has anyone clicked it? Nobody has used this product. You're sizing
+            infrastructure for hypothetical usage.
+          </p>
+          <p>
+            Ship Postgres. One database. Add pgvector when a user complains. Add graph the day a
+            real query needs it. You will almost certainly never reach that day.
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>The Expansionist</summary>
+        <div class="body">
+          <p class="who-line">Consolidation unlocks compounding moves.</p>
+          <p>
+            Postgres + pgvector + Apache AGE. One database — not for "fewer moving parts" but
+            because consolidation is what unlocks the compounding moves. You're building the first
+            queryable graph-vector index of the classical hadith corpus in English.
+          </p>
+          <p>What one Postgres unlocks:</p>
+          <ul>
+            <li>
+              Hybrid queries in single SQL — "semantically similar to X, through Bukhari's teachers
+              within 2 hops, sahih, ≥3 citations" — one CTE + AGE traversal + pgvector + FTS.
+            </li>
+            <li>
+              Isnad-aware retrieval API — chain credibility weighted by narrator graph centrality.
+            </li>
+            <li>Narrator disambiguation as a service.</li>
+            <li>Provenance-traced LLM grounding (MCP server).</li>
+            <li>Parallel-hadith discovery as research contribution.</li>
+          </ul>
+          <p>
+            Skip SQLite, Neo4j licensing tax, Qdrant duplication. The constraint isn't operational —
+            it's imaginative.
+          </p>
+          <blockquote>
+            Reviewer consensus marked this as the council's biggest blind spot: a startup pitch, not
+            an engineering answer. Hand-waves AGE's planner immaturity (Contrarian's substantive
+            concern) and Arabic FTS quality. Builds for users that don't exist.
+          </blockquote>
+        </div>
+      </details>
+
+      <h2 class="section">Peer-review highlights</h2>
+
+      <details>
+        <summary>What every reviewer agreed on</summary>
+        <div class="body">
+          <p>
+            All 5 reviewers independently ranked the First Principles response strongest, citing the
+            same three reasons:
+          </p>
+          <ul>
+            <li>
+              It was the only response that interrogated the <em>shape</em>
+              of the workload instead of pattern-matching on "graph + vector + multilingual."
+            </li>
+            <li>
+              Correctly identified sol-next2 as a build-artifact distribution problem, not a
+              database problem.
+            </li>
+            <li>
+              The collapse of 8 access patterns into 3 primitives (key/ordered lookup, inverted
+              indexes, vector ANN) is the kind of reduction that prevents months of wasted ops work.
+            </li>
+          </ul>
+          <p>
+            All 5 reviewers flagged the Expansionist response as the biggest blind spot — selling a
+            vision rather than answering the question, hand-waving the Contrarian's substantive
+            technical objections (AGE planner, Arabic FTS quality), building for users that don't
+            yet exist.
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>What every advisor missed (caught only in peer review)</summary>
+        <div class="body">
+          <p>
+            <strong>The upstream contract.</strong> Four of five reviewers independently flagged
+            that no advisor asked what sol-next actually <em>emits</em>. If sol-next writes
+            Postgres/Neo4j/Qdrant snapshots, rejecting them means maintaining an ETL layer forever.
+            The SSOT question isn't "which database" — it's whether sol-next2's store is the SSOT or
+            a derived view.
+          </p>
+          <p>
+            <strong>Embedding pipeline lifecycle.</strong> Whoever picks the multilingual
+            classical-Arabic embedding model owns re-embedding millions of records on every model
+            swap. That belongs upstream.
+          </p>
+          <p>
+            <strong>Narrator-name normalization.</strong> Kunya/nasab/laqab variants are a
+            data-quality concern that constrains every downstream store choice. Belongs to sol-next.
+          </p>
+          <p>
+            <strong>Citation stability.</strong> Bukhari numbering, Shamela vs printed editions —
+            the real SSOT problem hiding behind the storage question.
+          </p>
+        </div>
+      </details>
+
+      <footer>
+        Counciled 2026-05-23 · 5 advisors, 5 anonymous peer reviews, 1 chairman synthesis ·
+        Workspace
+        <code>/home/dev/code/sol-next2/</code> · Full transcript at
+        <code>docs/councils/2026-05-23-storage-stack-transcript.md</code>
+      </footer>
+    </main>
+  </body>
+</html>
