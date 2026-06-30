@@ -1,18 +1,18 @@
 ---
 name: serve-book
 description: >-
-  Preview ONE book from the corpus in sol-next2's single-book demo runner (buildhost
-  port 8766). Use when the user asks to "preview", "demo", "open", or "look at"
-  a specific book by slug/URN before it ships. Not for the full catalog — that
-  is the main frontend on :8765.
+  Preview ONE book from the corpus in sol-next2's single-book demo runner
+  (buildhost port 8766). Use when the user asks to "preview", "demo", "open", or
+  "look at" a specific book by slug/URN before it ships. Not for the full
+  catalog — that is the main frontend on :8765.
 allowed-tools: Bash(ssh:*), Bash(curl:*), Read
 ---
 
 # Serve a single book (demo runner)
 
-The demo runner is `scripts/serve` on buildhost, listening on **:8766**. It renders
-exactly one book, chosen by the `SOL_DEMO_BOOK` environment variable (a book
-slug/URN). This skill (re)points it at a book and confirms it renders.
+The demo runner is `scripts/serve` on buildhost, listening on **:8766**. It
+renders exactly one book, chosen by the `SOL_DEMO_BOOK` environment variable (a
+book slug/URN). This skill (re)points it at a book and confirms it renders.
 
 > Tools are restricted (`allowed-tools`) to ssh + curl + Read: this skill
 > inspects and restarts a known process, it must never edit source.
