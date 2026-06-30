@@ -34,9 +34,15 @@ def test_should_block_when_jsx_object_style_present() -> None:
     assert decision.severity == "block"
 
 
-def test_should_block_when_dynamic_style_attr_present() -> None:
-    """style={expr} dynamic also blocks."""
-    assert no_inline_styles.check(_ctx("<div style={dynamic}>y</div>")).severity == "block"
+def test_should_allow_when_style_passes_a_variable() -> None:
+    """A single-brace style={expr} (a variable or a cssVar() helper) is allowed."""
+    assert no_inline_styles.check(_ctx("<div style={rootStyle}>y</div>")).severity == "allow"
+
+
+def test_should_allow_when_inline_style_sets_a_css_var() -> None:
+    """The escape hatch: a --keyed object literal feeds a design token dynamically."""
+    code = "<div style={{ '--reader-size': sizePx }}>y</div>"
+    assert no_inline_styles.check(_ctx(code)).severity == "allow"
 
 
 def test_should_allow_when_style_is_a_spaced_variable() -> None:

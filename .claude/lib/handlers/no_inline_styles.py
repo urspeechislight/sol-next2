@@ -1,14 +1,16 @@
 """Block inline style escapes in React/JSX (.tsx, .jsx) files.
 
 Catches the inline-style patterns the design system forbids:
-  • ``style={{ ... }}`` and ``style={expr}`` (the JSX inline-style prop)
   • ``style="..."`` (string style prop)
+  • a hardcoded object literal such as ``style={{ color: 'red' }}``
   • ``el.style.color = ...`` and ``el.style.cssText = ...`` in component code
 
-The JSX attribute forms are matched only when ``style`` is written tight
-against ``=`` (``style={`` / ``style="``), which is how Prettier formats a
-JSX prop; a spaced ``const style = {...}`` variable is deliberately not a
-match.
+The sanctioned escape hatch is setting a CSS custom property dynamically:
+``style={{ '--token': value }}``, or through a variable or helper such as
+``style={cssVar('--token', t)}``. That feeds the token system instead of
+bypassing it, so a single-brace ``style={expr}`` and a ``--``-keyed object
+literal are both allowed. A spaced ``const style = {...}`` variable is not a
+match either, since Prettier keeps a real JSX prop tight against ``=``.
 """
 
 from __future__ import annotations
@@ -22,10 +24,12 @@ HANDLER = "no_inline_styles"
 RULE_ID = "DS-002"
 DOC = "docs/design-system.md#hard-rules"
 
-# JSX inline-style prop: `style` tight against `=` (no spaces, as Prettier
-# formats a JSX attribute), then `{` (object/expr) or a quote. A spaced
-# `style = {...}` variable declaration is intentionally not matched.
-_ATTRIBUTE = re.compile(r"""(?:^|[\s'"({\[])style=(?:"[^"]*"|'[^']*'|\{)""")
+# JSX inline-style prop, `style` tight against `=` (Prettier keeps it so).
+# Flag a string style and a hardcoded object literal `style={{ color: ... }}`,
+# but allow the CSS-custom-property escape hatch: the lookahead lets a `{{`
+# whose first key is a quoted-or-backticked `--name` through, and a single
+# brace `style={expr}` (a variable or a cssVar() helper) is not matched.
+_ATTRIBUTE = re.compile(r"""(?:^|[\s'"({\[])style=(?:"[^"]*"|'[^']*'|\{\{(?!\s*['"\x60]?--))""")
 
 # DOM API in component code: el.style.color = ..., el.style.cssText = ...
 _DOM_STYLE_WRITE = re.compile(r"\.style(?:\.\w+|\.cssText)\s*=")
@@ -55,7 +59,9 @@ def check(ctx: HookContext) -> Decision:
         why="Found " + " and ".join(why_parts) + ". Inline styles bypass the design system.",
         fix=(
             "Use design-system tokens through Tailwind utilities (text-accent, p-4) "
-            "or a className. Toggle classes (`el.classList.toggle(...)`), never `.style`."
+            "or a className. For a dynamic value set a CSS custom property, "
+            "style={{ '--token': value }} or the cssVar() helper. Toggle classes "
+            "(`el.classList.toggle(...)`), never `.style`."
         ),
         doc=DOC,
     )
