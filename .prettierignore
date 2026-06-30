@@ -2,6 +2,12 @@ node_modules
 .svelte-kit
 build
 dist
+
+# Per-machine local Claude Code settings + transient harness output: not
+# project-owned source. settings.local.json is regenerated as permissions change.
+.claude/settings.local.json
+.claude/state/**
+.claude/audit/**
 .venv
 .pnpm-store
 coverage
