@@ -20,6 +20,13 @@ if ! command -v claude >/dev/null 2>&1; then
 fi
 
 if [[ -n "$base" ]]; then
+  # No remote baseline yet (e.g. the first push to a fresh remote) means there
+  # is nothing to review against, so skip cleanly instead of crashing on an
+  # unknown revision.
+  if ! git rev-parse --verify --quiet "origin/${base}" >/dev/null; then
+    echo "cca_review: no 'origin/${base}' baseline yet — skipping."
+    exit 0
+  fi
   diff="$(git diff "origin/${base}...HEAD")"
 else
   diff="$(git diff --staged)"
