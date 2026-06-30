@@ -1,0 +1,104 @@
+# Node / pnpm
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+.npm/
+
+# SvelteKit
+.svelte-kit/
+build/
+.vercel/
+.netlify/
+.output/
+
+# Vite
+.vite/
+
+# Storybook
+storybook-static/
+storybook.log
+
+# Test artifacts
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+.last-run.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+.venv-shot/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+.tox/
+
+# uv
+.uv/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.recommended.json
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Harness state (audit logs are local; tracked rotation snapshots may be committed)
+.claude/state/*
+!.claude/state/.gitkeep
+.claude/audit/*
+!.claude/audit/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Pipeline data — manuscript corpus is bulk and reproducible from the canonical
+# source. The local subset under data/books/ is for development only; the full
+# corpus is loaded at runtime from the path configured in config/sol.yaml.
+# Never commit either.
+data/books/
+data/embeddings/
+data/cache/
+
+# Built SQLite artifacts + the generated catalogue index: large (corpus.db is
+# tens of GB) and fully reproducible by the build scripts (build_corpus_index.py,
+# build_registry.py, ingest_books.py). The small curated JSON in data/ stays
+# tracked; only these generated/bulk artifacts are ignored. Never commit them.
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/*.db.bak
+data/books_index.json
+
+# Design handoff scraps: kept on disk for reference but not tracked. The React
+# prototype that we serve lives at src/frontend/{index.html,app.jsx,*.css}.
+src/frontend/handoff/
+src/frontend/src/
+src/frontend/scraps/
+src/frontend/screenshots/
+src/frontend/uploads/
