@@ -1,0 +1,9 @@
+{
+  "path": ["src", "frontend/src", "scripts"],
+  "pattern": "**/*.{py,ts,tsx}",
+  "minTokens": 60,
+  "threshold": 0,
+  "gitignore": true,
+  "reporters": ["consoleFull"],
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/.venv/**", "**/*.test.ts", "**/tests/**"]
+}

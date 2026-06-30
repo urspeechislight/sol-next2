@@ -1,0 +1,44 @@
+node_modules
+.svelte-kit
+build
+dist
+.venv
+.pnpm-store
+coverage
+playwright-report
+test-results
+**/*.lock
+**/*.lockb
+pnpm-lock.yaml
+package-lock.json
+
+# ADRs are historical snapshots where layout intent matters
+# (e.g. metadata-line breaks, identifier underscores like text_en that
+# prettier ambiguously interprets as italic). Excluded from autofix.
+docs/adr/**
+
+# Council reviews and handoff notes are historical snapshots too (transcripts,
+# point-in-time HTML reports). Same rationale as ADRs — excluded from autofix.
+docs/councils/**
+docs/handoff/**
+
+# Design handoff bundle: Svelte components from a prior export, kept on disk
+# for reference but not used by the React prototype that lives at
+# src/frontend/. Excluded from formatting and from harness lint.
+src/frontend/handoff/**
+src/frontend/src/**
+src/frontend/scraps/**
+src/frontend/screenshots/**
+src/frontend/uploads/**
+
+# Generated index of the upstream book corpus — produced by
+# scripts/ingest_books.py. Not hand-edited; formatting is irrelevant.
+data/books_index.json
+
+# Qurʾān verse text, vendored verbatim from the upstream sol-next pipeline
+# (data/quran/quran_clearquran.json). Not hand-edited; formatting is irrelevant.
+data/quran.json
+
+# Vendored/shared agent skills, symlinked in from the global skills library.
+# They are not project-owned source; don't reformat them.
+.agents/skills/**

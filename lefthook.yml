@@ -1,0 +1,52 @@
+# Developer-machine git hooks. Defense-in-depth pair to the agent guardrails in .claude/.
+# pre-commit runs fast per-file checks + the whole-repo SSOT/DRY rules; pre-push
+# runs the full CI matrix (which includes the full repo:audit: rules + jscpd + knip).
+
+pre-commit:
+  parallel: true
+  commands:
+    prettier:
+      glob: '*.{json,md,yaml,yml,css,html}'
+      run: pnpm prettier --check {staged_files}
+    ruff-lint:
+      glob: '*.py'
+      run: uv run ruff check {staged_files}
+    ruff-format:
+      glob: '*.py'
+      run: uv run ruff format --check {staged_files}
+    pyright:
+      glob: '*.py'
+      run: uv run pyright {staged_files}
+    harness-self-test:
+      glob: '.claude/**/*.py'
+      run: uv run pytest .claude/tests -q
+    harness-rules:
+      glob: '*.{py,ts,tsx,js,jsx,svelte,css,md,html}'
+      run: uv run --quiet python .claude/hooks/lint_staged.py {staged_files}
+    repo-audit-rules:
+      # Whole-repo SSOT/DRY rules (canonical modules, single-definition
+      # capabilities, suppression budget, sys.path). Fast; runs on every commit.
+      run: pnpm repo:audit:rules
+
+pre-push:
+  commands:
+    full-ci:
+      run: pnpm run ci
+    cca-review:
+      # Headless second-opinion review of the branch vs origin/main. Runs only
+      # when the `claude` CLI is installed, so it skips cleanly on machines that
+      # lack it (e.g. buildhost) instead of blocking the push. Exits non-zero only on
+      # a genuine "fail" verdict from the review.
+      run: |
+        if command -v claude >/dev/null 2>&1; then
+          scripts/cca_review.sh main
+        else
+          echo "cca-review: skipped (claude CLI not installed)"
+        fi
+
+commit-msg:
+  commands:
+    conventional:
+      run: |
+        head -1 "{1}" | grep -qE '^(feat|fix|chore|docs|refactor|perf|test|build|ci|style|revert)(\(.+\))?(!)?: .+' \
+          || (echo "Commit message must follow Conventional Commits (feat: ..., fix: ..., etc.)" && exit 1)

@@ -1,0 +1,32 @@
+{
+  "name": "sol-next2",
+  "version": "0.0.0",
+  "private": true,
+  "description": "sol-next2 — knowledge-graph reader for classical Arabic manuscripts. React 18 + TypeScript (Vite) frontend and a FastAPI backend over self-built read-only SQLite artifacts. Agent guardrail harness installed.",
+  "type": "module",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "format": "prettier --write \"**/*.{json,md,yaml,yml,css,html}\" --ignore-path .gitignore --ignore-path .prettierignore",
+    "format:check": "prettier --check \"**/*.{json,md,yaml,yml,css,html}\" --ignore-path .gitignore --ignore-path .prettierignore",
+    "py:check": "uv run ruff check src tests && uv run ruff format --check src tests && uv run pyright",
+    "py:fix": "uv run ruff format src tests && uv run ruff check --fix src tests",
+    "py:test": "uv run pytest tests",
+    "harness:test": "uv run pytest .claude/tests",
+    "repo:audit": "uv run python .claude/lib/repo_audit.py && pnpm exec jscpd --config .jscpd.json && pnpm exec knip --config knip.json",
+    "repo:audit:rules": "uv run python .claude/lib/repo_audit.py",
+    "fe:test": "pnpm --filter @sol-next2/frontend test",
+    "fe:build": "pnpm --filter @sol-next2/frontend build",
+    "ci": "pnpm format:check && pnpm py:check && pnpm py:test && pnpm harness:test && pnpm repo:audit && pnpm fe:test && pnpm fe:build",
+    "prepare": "lefthook install || true"
+  },
+  "devDependencies": {
+    "jscpd": "^5.0.11",
+    "knip": "^6.22.0",
+    "lefthook": "^1.8.0",
+    "prettier": "^3.5.3"
+  }
+}

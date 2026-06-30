@@ -1,0 +1,148 @@
+# Single workspace pyproject for the entire repo. Every Python package under
+# src/ shares this dep set; tests live in tests/ mirroring src/.
+# Rationale: see docs/repo-layout.md.
+
+[project]
+name = "sol-next2"
+version = "0.0.0"
+description = "sol-next2 — knowledge graph reader: React frontend (handed off from claude.ai/design) + FastAPI backend serving sol-next-shaped data."
+requires-python = ">=3.12"
+readme = "README.md"
+
+# Application dependencies. Add here as services need them.
+#
+# sol-next2 has no database. Per docs/adr/0001-storage-contract.md the
+# upstream sol-next pipeline (when Phase 5 is built) will emit a single
+# SQLite artifact that sol-next2 opens read-only. Until then we serve
+# the curated JSON in data/. SQL deps (sqlalchemy, alembic, asyncpg,
+# aiosqlite) intentionally absent.
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.10",
+  "pydantic-settings>=2.6",
+  "httpx>=0.28",
+  "structlog>=24.4",
+  "tenacity>=9.0",
+  "pyyaml>=6.0",
+  "mcp>=1.27.2",
+]
+
+[dependency-groups]
+# uv dependency groups (PEP 735). `uv sync --group dev` to install.
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.25",
+  "pytest-cov>=6.0",
+  "ruff>=0.8",
+  "pyright>=1.1.390",
+  "pyyaml>=6.0",
+  "types-pyyaml>=6.0",
+  "freezegun>=1.5",
+]
+
+# ---------- Build / packaging --------------------------------------------------
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Treat the repo as a meta-package that vendors every src/ Python service.
+# We don't publish this; we only need it editable-installable for tests.
+packages = ["src/backend"]
+
+# ---------- Tooling configuration ----------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv", "build", "dist", "node_modules", ".svelte-kit"]
+
+[tool.ruff.lint]
+# Curated, opinionated rule set. Keep it strict — the harness reinforces this.
+select = [
+  "E", "W",   # pycodestyle
+  "F",        # pyflakes
+  "I",        # isort
+  "N",        # pep8-naming
+  "UP",       # pyupgrade
+  "B",        # bugbear
+  "A",        # builtins shadowing
+  "C4",       # comprehensions
+  "DTZ",      # tz-naive datetime ban
+  "PIE",      # pieces
+  "SIM",      # simplify
+  "RET",      # return
+  "RSE",      # raise
+  "ARG",      # unused args
+  "PTH",      # use pathlib
+  "ERA",      # eradicate commented-out code
+  "PGH",      # pygrep-hooks
+  "PL",       # pylint
+  "TRY",      # tryceratops
+  "RUF",      # ruff-specific
+  "S",        # bandit (security)
+]
+ignore = [
+  "PLR0913",  # too many args (we'll judge by case)
+  "TRY003",   # long exception messages are fine
+  # Arabic-aware: this project legitimately contains Arabic text in
+  # docstrings, comments, and string literals (vocabulary registries,
+  # lexicons, narrator names). Ruff's "ambiguous unicode" rules flag
+  # Arabic letters that share glyphs with Latin (ا ↔ l, ه ↔ o, etc.) —
+  # all false positives here.
+  "RUF001",   # ambiguous unicode in strings
+  "RUF002",   # ambiguous unicode in docstrings
+  "RUF003",   # ambiguous unicode in comments
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "PLR2004", "S108"]   # asserts and magic numbers ok in tests
+".claude/tests/**/*.py" = ["S101", "PLR2004", "S108"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.pyright]
+include = ["src", "tests", ".claude/lib", ".claude/hooks", ".claude/tests"]
+exclude = ["**/__pycache__", "**/.venv", "**/node_modules", "**/.svelte-kit"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnknownMemberType = "warning"
+reportUnknownVariableType = "warning"
+reportUnknownArgumentType = "warning"
+
+# Tests legitimately exercise module internals (private helpers, lru_cache
+# clearing) to pin fail-loud behavior; reportPrivateUsage is meant for
+# production code, not the suite that probes it.
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+reportPrivateUsage = false
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests", ".claude/tests"]
+pythonpath = ["src", ".claude"]
+asyncio_mode = "auto"
+addopts = [
+  "-ra",
+  "--strict-markers",
+  "--strict-config",
+]
+markers = [
+  "slow: marks tests as slow",
+  "integration: marks integration tests",
+]
+
+[tool.coverage.run]
+source = ["src", ".claude/lib"]
+omit = ["**/__init__.py", "**/tests/*"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 0  # raise as the codebase grows
+show_missing = true

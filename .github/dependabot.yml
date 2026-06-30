@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /src/frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      sveltekit:
+        patterns: ['@sveltejs/*', 'svelte', 'svelte-*']
+      tooling:
+        patterns: ['eslint*', 'prettier*', 'vitest*', 'playwright*']
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
