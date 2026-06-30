@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reader redesign — 3 directions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --night-900: #100d08;
+        --night-700: #1a1610;
+        --night-500: #2c2519;
+        --sand-100: #ede5d2;
+        --sand-300: #b6ab94;
+        --gold-500: #8a6e2c;
+        --gold-300: #cba955;
+        --gold-200: #e4d3a0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--night-900);
+        color: var(--sand-100);
+        font-family: 'IBM Plex Sans', system-ui, sans-serif;
+        line-height: 1.55;
+      }
+      .wrap {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 56px 24px 90px;
+      }
+      .eyebrow {
+        color: var(--gold-300);
+        font-size: 12px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-family: 'Amiri', serif;
+        font-weight: 700;
+        font-size: 34px;
+        margin: 10px 0 6px;
+      }
+      .lede {
+        color: var(--sand-300);
+        max-width: 60ch;
+      }
+      .lede b {
+        color: var(--sand-100);
+        font-weight: 500;
+      }
+      .grid {
+        margin-top: 34px;
+        display: grid;
+        gap: 16px;
+      }
+      .card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid var(--night-500);
+        border-radius: 14px;
+        background: linear-gradient(180deg, var(--night-700), #15110b);
+        padding: 22px 24px;
+        transition:
+          border-color 0.15s,
+          transform 0.15s;
+      }
+      .card:hover {
+        border-color: var(--gold-500);
+        transform: translateY(-2px);
+      }
+      .card__k {
+        color: var(--gold-300);
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .card__t {
+        font-size: 19px;
+        font-weight: 600;
+        margin: 6px 0 8px;
+      }
+      .card__d {
+        color: var(--sand-300);
+        font-size: 14px;
+        margin: 0;
+      }
+      .card__go {
+        color: var(--gold-200);
+        font-size: 13px;
+        margin-top: 14px;
+        display: inline-block;
+      }
+      .note {
+        margin-top: 38px;
+        padding: 18px 20px;
+        border: 1px solid var(--night-500);
+        border-radius: 12px;
+        color: var(--sand-300);
+        font-size: 13px;
+      }
+      .note b {
+        color: var(--sand-100);
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="eyebrow">Reader · header redesign</div>
+      <h1>Three directions for the reader header</h1>
+      <p class="lede">
+        All three fix the same root causes you named: the title floating in a centered void, the
+        Arabic/English type reading as two unrelated systems, and Catalog/title/search styled in
+        isolation. <b>The search field stays in place in every direction</b> — the title and Catalog
+        are what move to harmonize with it. The body (which you liked) is untouched.
+      </p>
+
+      <div class="grid">
+        <a class="card" href="mockup-a.html">
+          <div class="card__k">Direction A</div>
+          <div class="card__t">Balanced bilingual masthead</div>
+          <p class="card__d">
+            Title becomes a true centered masthead; English is promoted from a light caption to a
+            tracked, gold-ruled companion with matched optical weight. Catalog and search become
+            symmetric flanks of equal weight.
+          </p>
+          <span class="card__go">View mockup A →</span>
+        </a>
+        <a class="card" href="mockup-b.html">
+          <div class="card__k">Direction B</div>
+          <div class="card__t">Editorial left-anchored toolbar</div>
+          <p class="card__d">
+            One cohesive bar: Catalog → left-anchored title lockup → search. Reads like a newspaper
+            masthead, anchored rather than floating. Cohesion enforced by one shared control height
+            and a single bar treatment.
+          </p>
+          <span class="card__go">View mockup B →</span>
+        </a>
+        <a class="card" href="mockup-c.html">
+          <div class="card__t">Title as hero</div>
+          <div class="card__k">Direction C</div>
+          <p class="card__d">
+            The title is the star — large and centered, with the English set in
+            <b>Amiri italic, the same type family as the Arabic</b> (the strongest cure for the font
+            mismatch). A thin row keeps the search field in place; Catalog recedes to a quiet
+            affordance.
+          </p>
+          <span class="card__go">View mockup C →</span>
+        </a>
+      </div>
+
+      <div class="note">
+        <b>Heads up:</b> these are static HTML mockups (real fonts, real palette, real title), not
+        the live app. Open each to compare. Tell me which direction wins — or mix elements — and
+        I'll build it into the reader on this branch.
+      </div>
+    </div>
+  </body>
+</html>

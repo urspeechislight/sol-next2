@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reader redesign · C — Title as hero</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Scheherazade+New:wght@400;500;700&family=IBM+Plex+Sans:wght@0,400;0,500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --night-900: #100d08;
+        --night-700: #1a1610;
+        --night-600: #221c14;
+        --night-500: #2c2519;
+        --sand-100: #ede5d2;
+        --sand-300: #b6ab94;
+        --gold-500: #8a6e2c;
+        --gold-400: #b39140;
+        --gold-300: #cba955;
+        --gold-200: #e4d3a0;
+        --ar: 'Amiri', serif;
+        --ar-body: 'Scheherazade New', serif;
+        --en: 'IBM Plex Sans', system-ui, sans-serif;
+        --ctl-h: 36px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background: var(--night-900);
+        color: var(--sand-100);
+        font-family: var(--en);
+        position: relative;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background:
+          radial-gradient(1px 1px at 22% 26%, rgba(237, 229, 210, 0.45), transparent),
+          radial-gradient(1px 1px at 70% 16%, rgba(203, 169, 85, 0.45), transparent),
+          radial-gradient(1.3px 1.3px at 84% 40%, rgba(237, 229, 210, 0.4), transparent),
+          radial-gradient(1px 1px at 14% 70%, rgba(203, 169, 85, 0.4), transparent),
+          radial-gradient(1px 1px at 58% 82%, rgba(237, 229, 210, 0.3), transparent);
+      }
+      .reader {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      /* ---- thin control row: Catalog recedes, search stays a field in place ---- */
+      .controls {
+        direction: ltr;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 24px 0;
+      }
+      .btn-catalog {
+        height: var(--ctl-h);
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 12px 0 9px;
+        border: 1px solid var(--night-500);
+        border-radius: 9px;
+        background: transparent;
+        color: var(--sand-300);
+        font-size: 12.5px;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+      }
+      .btn-catalog svg {
+        width: 15px;
+        height: 15px;
+        stroke: var(--gold-300);
+      }
+      .btn-catalog:hover {
+        color: var(--sand-100);
+        border-color: var(--gold-500);
+      }
+      .spacer {
+        flex: 1;
+      }
+      .field-search {
+        height: var(--ctl-h);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        width: 252px;
+        border: 1px solid var(--night-500);
+        border-radius: 9px;
+        background: var(--night-700);
+      }
+      .field-search svg {
+        width: 15px;
+        height: 15px;
+        stroke: var(--sand-300);
+        flex: none;
+      }
+      .field-search input {
+        direction: rtl;
+        text-align: right;
+        background: none;
+        border: 0;
+        outline: 0;
+        color: var(--sand-100);
+        font-family: var(--ar-body);
+        font-size: 16px;
+        width: 100%;
+      }
+      .field-search input::placeholder {
+        color: var(--sand-300);
+      }
+      .urn {
+        font-size: 11px;
+        color: var(--sand-300);
+        letter-spacing: 0.04em;
+      }
+
+      /* ---- the title is the hero. English = Amiri italic = SAME family as the Arabic ---- */
+      .hero {
+        position: relative;
+        text-align: center;
+        padding: 30px 24px 30px;
+        border-bottom: 1px solid var(--night-500);
+      }
+      .hero::before {
+        content: '';
+        position: absolute;
+        inset: -10% 20% auto 20%;
+        height: 200px;
+        background: radial-gradient(60% 100% at 50% 0%, rgba(179, 145, 64, 0.2), transparent 70%);
+        pointer-events: none;
+      }
+      .hero__ornament {
+        position: relative;
+        color: var(--gold-400);
+        font-size: 15px;
+        letter-spacing: 0.6em;
+        opacity: 0.85;
+      }
+      .hero__ar {
+        position: relative;
+        font-family: var(--ar);
+        font-weight: 700;
+        font-size: clamp(30px, 5.2vw, 52px);
+        line-height: 1.22;
+        color: var(--sand-100);
+        margin: 14px auto 12px;
+        max-width: 14ch;
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+      }
+      .hero__en {
+        position: relative;
+        font-family: var(--ar);
+        font-style: italic;
+        font-weight: 400;
+        font-size: clamp(16px, 2.1vw, 22px);
+        color: var(--gold-200);
+        letter-spacing: 0.01em;
+      }
+      .hero__author {
+        position: relative;
+        margin-top: 14px;
+        font-family: var(--ar-body);
+        font-size: 17px;
+        color: var(--sand-300);
+      }
+
+      /* ---- BODY ---- */
+      .page {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+        text-align: center;
+      }
+      .page__num {
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--sand-300);
+        margin-bottom: 26px;
+      }
+      .page__body {
+        font-family: var(--ar-body);
+        font-size: 22px;
+        line-height: 2.05;
+        text-align: justify;
+        color: var(--sand-100);
+      }
+      .caption {
+        position: fixed;
+        bottom: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        font-family: var(--en);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--gold-300);
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reader">
+      <div class="controls">
+        <button class="btn-catalog">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7">
+            <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+          </svg>
+          Catalog
+        </button>
+        <span class="spacer"></span>
+        <div class="field-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input dir="rtl" placeholder="ابحث في الكتاب…" />
+        </div>
+        <span class="urn">⌗ sY-50TSO</span>
+      </div>
+
+      <header class="hero">
+        <div class="hero__ornament">✦ ✦ ✦</div>
+        <h1 class="hero__ar">تطوُّر المصطلح النحوي البصري</h1>
+        <div class="hero__en">
+          The Evolution of Basran Grammatical Terminology · from Sībawayh to al-Zamakhsharī
+        </div>
+        <div class="hero__author">يحيى عبابنة</div>
+      </header>
+
+      <main class="page">
+        <div class="page__num">Page 1 of 312</div>
+        <p class="page__body">
+          الحمد لله الذي علَّم بالقلم، علَّم الإنسان ما لم يعلم، والصلاة والسلام على من أُوتيَ جوامع
+          الكلم. أمّا بعد، فإنَّ علم النحو قد نشأ في البصرة على يد الخليل بن أحمد وتلميذه سيبويه، ثم
+          تطوَّرت مصطلحاته جيلًا بعد جيل حتى استوت على سُوقها عند الزمخشري في مفصَّله.
+        </p>
+      </main>
+    </div>
+    <div class="caption">Mockup C — Title as hero (English in matching Amiri italic)</div>
+  </body>
+</html>
