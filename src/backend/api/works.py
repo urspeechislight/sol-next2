@@ -28,8 +28,11 @@ async def _list_works(
 ) -> Page[Work]:
     """Wrap the repo's (slice, total) of works into a Page[Work] envelope."""
     if domain is not None and not _taxonomy.is_known_domain(domain):
+        # 422 (not 400) to match the Literal mode/field params: every invalid query
+        # value rejects with one status, the FastAPI validation-error convention.
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unknown domain: {domain!r}."
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Unknown domain: {domain!r}.",
         )
     items, total = books_repo.list_works(
         category=category,

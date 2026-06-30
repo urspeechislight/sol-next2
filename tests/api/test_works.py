@@ -1,5 +1,5 @@
 """Tests for ``GET /api/works`` (the volume-folded Library listing) + its input
-validation: an unknown ``?domain=`` is a 400, not a silently-empty 200.
+validation: an unknown ``?domain=`` is a 422, not a silently-empty 200.
 """
 
 from __future__ import annotations
@@ -19,10 +19,10 @@ def test_should_return_the_paginated_envelope_when_listing_works(client: TestCli
     assert payload["total"] > 0
 
 
-def test_should_reject_an_unknown_domain_with_400(client: TestClient) -> None:
+def test_should_reject_an_unknown_domain_with_422(client: TestClient) -> None:
     """An unknown ?domain= is a client error, never a silent empty list."""
     response = client.get("/api/works", params={"domain": "definitely-not-a-domain"})
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_should_accept_a_known_domain_when_filtering(client: TestClient) -> None:
