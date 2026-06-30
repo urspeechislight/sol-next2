@@ -335,7 +335,7 @@ rules:
   - id: CENTRAL-018-secret-paths
     description: Secret-store path references must come from the settings module.
     kind: regex
-    # Match scheme-style paths used by REDACTED / Vault / AWS SM ARNs.
+    # Match scheme-style paths used by common secret stores: Vault, AWS SM ARNs, GCP.
     pattern: '["\x27](vault://|arn:aws:secretsmanager:|gcp-secrets://|secret/)\S'
     suffixes: [py, ts, tsx, js, jsx, yaml, yml]
     allowed_in:
@@ -344,5 +344,5 @@ rules:
       - 'src/backend/secrets/**/*'
     fix: |
       Secret-store paths belong in `src/backend/core/settings.py` (or
-      `src/backend/secrets/`). Sprinkling REDACTED/Vault paths into
+      `src/backend/secrets/`). Sprinkling secret-store paths into
       services means rotation requires a code search across the repo.
