@@ -103,7 +103,7 @@ rules:
       to audit from one place.
 
   - id: CENTRAL-005-sql
-    description: Raw SQL strings belong in repositories / migrations.
+    description: Raw SQL belongs in repositories (read), the build layer (write), or migrations.
     kind: regex
     # Match SQL keywords at start of a string literal, allowing common
     # leading whitespace and the string-prefix forms (r, b, f, plain).
@@ -111,14 +111,15 @@ rules:
     suffixes: [py]
     allowed_in:
       - 'src/backend/repositories/**/*.py'
+      - 'src/backend/build/**/*.py'
       - 'src/backend/queries/**/*.py'
       - 'src/backend/migrations/**/*.py'
       - 'alembic/versions/**/*.py'
     fix: |
-      Raw SQL belongs in the repository layer (`src/backend/repositories/`)
-      or in Alembic migrations. Application code uses repository
-      functions, not handwritten SQL. If the ORM truly can't express the
-      query, write a typed function in a repository module that does.
+      Raw SQL belongs in the repository layer (`src/backend/repositories/`,
+      read-only serving) or the build layer (`src/backend/build/`, artifact
+      materialization), or in Alembic migrations. Application code uses
+      repository functions, not handwritten SQL.
 
   # ---- Frontend route constants (CENTRAL-006) --------------------------------
   - id: CENTRAL-006-frontend-routes

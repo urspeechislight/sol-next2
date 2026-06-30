@@ -46,6 +46,11 @@ build/
 dist/
 .tox/
 
+# src/backend/build/ is the sanctioned write-side source package (M2,
+# CENTRAL-005), not build output. Re-include it despite the build/ pattern.
+!src/backend/build/
+!src/backend/build/**
+
 # uv
 .uv/
 

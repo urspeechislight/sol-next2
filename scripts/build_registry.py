@@ -7,7 +7,7 @@ database under sol-next2's ``data/``. The backend opens this artifact
 read-only and serves ``/api/rijal`` + ``/api/canonical`` from it with
 near-zero resident memory, instead of holding ~900 MB of JSON in RAM.
 
-All SQL lives in ``backend.repositories.registry``; this script only shapes
+All SQL lives in ``backend.build.rijal``; this script only shapes
 data (the project layout permits regex + one-off projection in ``scripts/``).
 Pass 1 covers rijal + canonical; the 3.3 GB history corpus is a later pass.
 
@@ -26,8 +26,8 @@ import time
 from pathlib import Path
 from typing import Any, Final
 
+from backend.build import rijal
 from backend.core.paths import data_path
-from backend.repositories import registry
 
 _SOLNEXT_RIJAL: Final[Path] = Path.home() / "code" / "sol-next" / "data" / "rijal"
 _DEFAULT_CORPUS: Final[Path] = _SOLNEXT_RIJAL / "corpus.json"
@@ -125,19 +125,19 @@ def _load_array(path: Path) -> list[Any]:
 def build(corpus_path: Path, canonical_path: Path, out_path: Path) -> tuple[int, int]:
     """Materialize ``out_path`` from the corpus files; return ``(n_rijal, n_canon)``."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    con = registry.create_artifact(out_path)
+    con = rijal.create_artifact(out_path)
     try:
         rijal_rows = [_rijal_row(i, e) for i, e in enumerate(_load_array(corpus_path))]
         with con:
-            registry.insert_rijal(con, rijal_rows)
+            rijal.insert_rijal(con, rijal_rows)
         canon_rows = [
             _canonical_row(e)
             for e in _load_array(canonical_path)
             if e.get("canonical_id") is not None
         ]
         with con:
-            registry.insert_canonical(con, canon_rows)
-        registry.finalize(con)
+            rijal.insert_canonical(con, canon_rows)
+        rijal.finalize(con)
     finally:
         con.close()
     return len(rijal_rows), len(canon_rows)

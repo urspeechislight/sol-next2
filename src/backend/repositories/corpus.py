@@ -1,26 +1,23 @@
-"""Repository for the corpus full-text index — backed by ``data/corpus.db``.
+"""Read-only repository for the corpus full-text index — backed by ``data/corpus.db``.
 
-All SQL for cross-corpus content search lives here (CENTRAL-005). The FTS5 index
-stores each page TWICE: a ``fold`` column (the text put through
-``patterns.fold_search`` — diacritics + annotation signs removed and the
-alef/yaa/taa letter variants folded) which is the matched column, and an
-UNINDEXED ``content`` column holding the original text for display. The query is
-folded the same way, so a search is insensitive to diacritics AND letter-variant
-spelling; snippets are then built from the original ``content`` (fold-aware), so
-results keep true manuscript orthography. A small ``book(urn, category, title,
-volume)`` table (joined by URN) backs the category -> book -> volume filters.
-Two match modes: ``exact`` (the whole phrase) and ``broad`` (OR of the query's
-overlapping fixed-width word windows — finds sub-phrases; a 4-word window stays
-distinctive so even a long, common-worded verse resolves in well under a second).
-``scripts/build_corpus_index.py`` writes it (no FTS ``optimize`` pass); opened
-read-only + immutable at serve.
+The served cross-corpus content search (CENTRAL-005). The FTS5 index stores each
+page TWICE: a ``fold`` column (text put through ``patterns.fold_search`` —
+diacritics + annotation signs removed, alef/yaa/taa letter variants folded)
+which is the matched column, and an UNINDEXED ``content`` column holding the
+original text for display. The query is folded the same way, so a search is
+insensitive to diacritics AND letter-variant spelling; snippets are then built
+from the original ``content`` (fold-aware), so results keep true manuscript
+orthography. A small ``book(urn, category, title, volume)`` table (joined by URN)
+backs the category -> book -> volume filters. Two match modes: ``exact`` (the
+whole phrase) and ``broad`` (OR of the query's overlapping fixed-width word
+windows — finds sub-phrases). Opened read-only + immutable at serve; the DDL +
+INSERT helpers that build it live in ``backend.build.corpus``.
 """
 
 from __future__ import annotations
 
 import sqlite3
 from functools import lru_cache
-from pathlib import Path
 from typing import Any, Final
 
 from backend.core.constants import (
@@ -43,34 +40,6 @@ _BROAD = "broad"
 # consecutive words stay distinctive enough that even a long, common-worded
 # verse matches only a few hundred pages (a 2-word window matched millions).
 _BROAD_WINDOW: Final[int] = 4
-
-CORPUS_SCHEMA: str = """
-CREATE VIRTUAL TABLE pages USING fts5(
-  fold,
-  content UNINDEXED,
-  urn UNINDEXED,
-  page UNINDEXED,
-  tokenize = 'unicode61 remove_diacritics 2'
-);
-"""
-
-BOOK_SCHEMA: str = """
-DROP TABLE IF EXISTS book;
-CREATE TABLE book (
-  urn      TEXT PRIMARY KEY,
-  category TEXT NOT NULL DEFAULT '',
-  title    TEXT NOT NULL DEFAULT '',
-  volume   INTEGER
-);
-CREATE INDEX idx_book_category ON book (category);
-CREATE INDEX idx_book_title ON book (title);
-"""
-
-_INSERT = "INSERT INTO pages (fold, content, urn, page) VALUES (:fold, :content, :urn, :page)"
-_BOOK_INSERT = (
-    "INSERT OR REPLACE INTO book (urn, category, title, volume) "
-    "VALUES (:urn, :category, :title, :volume)"
-)
 
 _FILTER = (
     "FROM pages JOIN book ON book.urn = pages.urn "
@@ -113,36 +82,6 @@ _FACET_VOLUMES = (
     "  AND (:book = '' OR book.title = :book) AND book.volume IS NOT NULL "
     "GROUP BY book.volume ORDER BY book.volume"
 )
-
-
-def create_index(out: Path) -> sqlite3.Connection:
-    """Create a fresh corpus index at ``out`` and apply the FTS schema."""
-    if out.exists():
-        out.unlink()
-    con = sqlite3.connect(out)
-    con.executescript(CORPUS_SCHEMA)
-    return con
-
-
-def insert_pages(con: sqlite3.Connection, rows: list[dict[str, Any]]) -> None:
-    """Insert projected page rows (``fold``/``content``/``urn``/``page``)."""
-    con.executemany(_INSERT, rows)
-
-
-def book_table_rows(books: list[Book]) -> list[dict[str, Any]]:
-    """Project catalog books into ``book`` filter-table rows — the single source
-    of the URN -> (category, title, volume) projection, shared by the index
-    builder and the book-table re-migration script."""
-    return [
-        {"urn": b.urn, "category": b.category, "title": b.title_ar, "volume": b.volume}
-        for b in books
-    ]
-
-
-def build_book_table(con: sqlite3.Connection, rows: list[dict[str, Any]]) -> None:
-    """(Re)create + populate the URN -> (category, title, volume) filter table."""
-    con.executescript(BOOK_SCHEMA)
-    con.executemany(_BOOK_INSERT, rows)
 
 
 def _connect() -> sqlite3.Connection:

@@ -11,9 +11,9 @@ from __future__ import annotations
 
 import sqlite3
 
+from backend.build import corpus as corpus_build
 from backend.core.paths import data_path
 from backend.repositories import books as books_repo
-from backend.repositories import corpus as corpus_repo
 
 _DB = data_path("corpus.db")
 
@@ -23,10 +23,10 @@ def main() -> None:
     if not _DB.exists():
         raise SystemExit(f"Corpus index missing: {_DB}")
     books, _ = books_repo.list_books()
-    rows = corpus_repo.book_table_rows(books)
+    rows = corpus_build.book_table_rows(books)
     con = sqlite3.connect(_DB)
     try:
-        corpus_repo.build_book_table(con, rows)
+        corpus_build.build_book_table(con, rows)
         con.commit()
     finally:
         con.close()
