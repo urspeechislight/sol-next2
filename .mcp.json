@@ -2,16 +2,9 @@
   "mcpServers": {
     "sol-next2-corpus": {
       "command": "uv",
-      "args": [
-        "run",
-        "--project",
-        "/home/dev/code/sol-next2",
-        "python",
-        "-m",
-        "mcp_server.server"
-      ],
+      "args": ["run", "--project", "${workspaceFolder}", "python", "-m", "mcp_server.server"],
       "env": {
-        "PYTHONPATH": "/home/dev/code/sol-next2/src"
+        "PYTHONPATH": "${workspaceFolder}/src"
       }
     }
   }
