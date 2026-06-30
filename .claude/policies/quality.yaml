@@ -1,0 +1,223 @@
+# Declarative policy registry. Mirrors the handlers under .claude/lib/handlers/ for
+# documentation, tooling, and future external policy engines (OPA / Cedar). The
+# Python handlers are the source of truth for enforcement; this file is the
+# reviewable contract.
+
+version: 1
+
+rules:
+  # ---- Design system (SSOT/DRY) ----------------------------------------------
+  - id: DS-001
+    handler: no_raw_colors
+    severity: block
+    summary: Raw color literals (#hex, rgb, oklch...) only in tokens.css.
+    rationale: Single source of truth for color. Theme retuning must be one edit.
+    doc: docs/design-system.md#hard-rules
+
+  - id: DS-002
+    handler: no_inline_styles
+    severity: block
+    summary: No inline `style="..."` in .svelte files.
+    rationale: Inline styles bypass the design system and twMerge.
+    doc: docs/design-system.md#hard-rules
+
+  - id: DS-003
+    handler: primitive_usage
+    severity: block
+    summary: Routes must use design-system primitives, not raw HTML elements.
+    rationale: Raw <button>/<input> drift from the rest of the app.
+    doc: docs/design-system.md#hard-rules
+
+  - id: DS-004
+    handler: variants_only
+    severity: block
+    summary: Status → palette maps live only in variants.ts.
+    rationale: Vocabulary spread across files breaks rebrandability.
+    doc: docs/design-system.md#hard-rules
+
+  # ---- Boundaries ------------------------------------------------------------
+  - id: BND-001
+    handler: import_boundaries
+    severity: block
+    summary: $lib/design-system/internal is private.
+    rationale: Encapsulation — only the design system itself uses internal/.
+    doc: docs/quality-standards.md#imports--boundaries
+
+  - id: BND-002
+    handler: import_boundaries
+    severity: block
+    summary: Frontend may not import backend / pipeline Python packages.
+    rationale: Frontend talks to backend over HTTP, not in-process.
+    doc: docs/quality-standards.md#imports--boundaries
+
+  # ---- Code quality ----------------------------------------------------------
+  - id: QUAL-010
+    handler: file_size_cap
+    severity: warn-400/block-450
+    summary: File LOC caps. Soft 400, hard 450 — split before either is reached.
+    doc: docs/quality-standards.md#size-caps
+
+  - id: QUAL-011
+    handler: function_size_cap
+    severity: block
+    summary: Function LOC cap (80).
+    doc: docs/quality-standards.md#size-caps
+
+  - id: QUAL-012
+    handler: no_silent_except
+    severity: block
+    summary: 'No bare `except:` or `except: pass`.'
+    doc: docs/quality-standards.md#code-quality
+
+  - id: QUAL-014
+    handler: magic_numbers
+    severity: advisory
+    summary: Magic numeric literals in production Python code.
+    doc: docs/quality-standards.md#code-quality
+
+  # ---- SSOT / DRY (strict — these block) -------------------------------------
+  - id: SSOT-001
+    handler: constant_sprawl
+    severity: block
+    summary: |
+      Module-level constants live in exactly one file. Name re-declarations
+      and value re-aliasing across files are blocked.
+    rationale: |
+      "If a constant doesn't exist is the only time you can create one."
+      TIMEOUT=30 in two modules diverges silently when one gets re-tuned.
+    doc: docs/quality-standards.md#ssot-dry
+
+  - id: DRY-001
+    handler: function_duplication
+    severity: block
+    summary: |
+      Public module-level functions are defined in exactly one file under
+      src/. Re-defining the same name elsewhere is blocked.
+    rationale: |
+      Two `normalize_arabic` in two modules drift; callers pick one or the
+      other and the behaviours diverge.
+    doc: docs/quality-standards.md#ssot-dry
+
+  - id: DRY-002
+    handler: class_duplication
+    severity: block
+    summary: |
+      Public module-level classes are defined in exactly one file under
+      src/. Covers DTOs, schemas, enums, exceptions, TypedDict, NamedTuple.
+    rationale: |
+      Two `Book` Pydantic models in two modules diverge silently; two
+      `ValidationError` exceptions catch each other's instances by
+      accident.
+    doc: docs/quality-standards.md#ssot-dry
+
+  # ---- Centralization (sub-rules live in centralization.yaml) ---------------
+  - id: CENTRAL-001-env
+    handler: centralization
+    severity: block
+    summary: os.getenv / os.environ reads only in settings modules.
+    doc: docs/quality-standards.md#ssot-dry
+
+  - id: CENTRAL-002-regex
+    handler: centralization
+    severity: block
+    summary: re.compile / re.search / etc. only in patterns modules.
+    doc: docs/quality-standards.md#ssot-dry
+
+  - id: CENTRAL-003-http-status
+    handler: centralization
+    severity: block
+    summary: HTTP status codes must be named, not bare integers.
+    doc: docs/quality-standards.md#ssot-dry
+
+  - id: CENTRAL-004-routes
+    handler: centralization
+    severity: block
+    summary: HTTP route decorators only in src/backend/api/ modules.
+    doc: docs/quality-standards.md#ssot-dry
+
+  - id: CENTRAL-005-sql
+    handler: centralization
+    severity: block
+    summary: Raw SQL strings only in repositories / migrations.
+    doc: docs/quality-standards.md#ssot-dry
+
+  # ---- Build / infra ---------------------------------------------------------
+  - id: BUILD-001
+    handler: single_pyproject
+    severity: block
+    summary: |
+      pyproject.toml / package.json / lockfiles live at the repo root only;
+      Docker files at root or under deploy/.
+    rationale: |
+      Two manifests split the dep graph — upgrades to one don't reach the
+      other and behaviours drift.
+    doc: docs/quality-standards.md#ssot-dry
+
+  - id: FAILFAST-001
+    handler: fail_loud
+    severity: block
+    summary: |
+      Silent fallbacks inside `except` blocked: `return None|[]|{}|"UNKNOWN"`,
+      bare `continue`, or `pass`-only body — unless logging / raise precedes.
+    rationale: |
+      "Wrong is worse than absent." A swallowed exception that returns None
+      looks identical to a normal-empty None. The caller must be able to
+      tell a failure from data.
+    doc: docs/quality-standards.md#fail-fast
+
+  # ---- Python typing ---------------------------------------------------------
+  - id: PY-001
+    handler: typed_python
+    severity: block
+    summary: Public Python functions need return-type annotations.
+    doc: docs/quality-standards.md#code-quality
+
+  # ---- Tests -----------------------------------------------------------------
+  - id: TEST-001
+    handler: test_naming
+    severity: block
+    summary: Test names follow test_should_<verb>_<object>_<condition>.
+    doc: docs/quality-standards.md#tests
+
+  # ---- Security --------------------------------------------------------------
+  - id: SEC-001
+    handler: secret_scanner
+    severity: block
+    summary: High-confidence secret patterns blocked at write time.
+    doc: docs/quality-standards.md#security
+
+  # ---- Bash safety net -------------------------------------------------------
+  - id: BASH-001
+    handler: dangerous_bash
+    severity: block
+    summary: rm -rf at root.
+  - id: BASH-002
+    handler: dangerous_bash
+    severity: block
+    summary: git push --force to main/master.
+  - id: BASH-003
+    handler: dangerous_bash
+    severity: block
+    summary: git commit/push --no-verify.
+  - id: BASH-004
+    handler: dangerous_bash
+    severity: block
+    summary: curl | sh.
+  - id: BASH-005
+    handler: dangerous_bash
+    severity: block
+    summary: git reset --hard.
+
+  # ---- Standalone isolation --------------------------------------------------
+  - id: ISO-001
+    handler: external_refs
+    severity: block
+    summary: No references to sibling projects (sol-next, REDACTED, REDACTED...).
+    doc: docs/foundation.md#standalone-contract
+
+  # ---- Documentation discipline ---------------------------------------------
+  - id: DOC-001
+    handler: docs_location
+    severity: block
+    summary: Markdown docs live in docs/ (except root README.md, CLAUDE.md).
+    doc: docs/repo-layout.md#documentation

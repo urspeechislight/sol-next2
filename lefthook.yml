@@ -22,6 +22,13 @@ pre-commit:
       run: uv run pytest .claude/tests -q
     harness-rules:
       glob: '*.{py,ts,tsx,js,jsx,svelte,css,md,html}'
+      # The harness's own code (.claude) is validated by harness-self-test, not by
+      # the app-code rules it enforces on src/frontend/scripts. Its handlers
+      # legitimately fail open (except returning None) and its test fixtures carry
+      # bare status codes, so running those rules against the harness is a category
+      # error. Exclude it, the same boundary py:check (src tests) and ruff already use.
+      exclude:
+        - '.claude/**'
       run: uv run --quiet python .claude/hooks/lint_staged.py {staged_files}
     repo-audit-rules:
       # Whole-repo SSOT/DRY rules (canonical modules, single-definition
