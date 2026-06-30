@@ -73,7 +73,7 @@ class Hadith(BaseModel):
 
 
 class BookPage(BaseModel):
-    """One book page: hadiths under a chapter + section heading."""
+    """One book page: parsed hadiths, or raw page text when none are parsed yet."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -84,6 +84,14 @@ class BookPage(BaseModel):
     section_title: str
     section_title_en: str | None = None
     hadiths: list[Hadith]
+    text_ar: str | None = Field(
+        default=None,
+        description=(
+            "Raw page text in Arabic, present when the pipeline has not parsed the "
+            "page into structured hadiths. Mutually exclusive with a populated "
+            "hadiths list; never both."
+        ),
+    )
 
 
 class BookSearchMatch(BaseModel):

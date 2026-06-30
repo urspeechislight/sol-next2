@@ -21,7 +21,7 @@ from typing import Any, NamedTuple
 from backend.core.constants import READER__SOURCE_CACHE_MAX
 from backend.core.errors import ResourceNotFoundError
 from backend.core.logging import get_logger
-from backend.models.reader import BookPage, Hadith, Toc, TocEntry
+from backend.models.reader import BookPage, Toc, TocEntry
 from backend.repositories import books as books_repo
 
 _logger = get_logger("shia-library.reader")
@@ -163,6 +163,11 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
     match = next((r for r in rows if r.page == page_number), None)
     if match is None:
         raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
+    # The pipeline has not yet parsed pages into structured hadiths (isnad +
+    # matn + narrators + grade). Serve the raw page text honestly rather than
+    # wrapping it in a single fabricated Hadith whose isnad is empty and whose
+    # "matn" is really the whole unsegmented page. Phase 3-5 will populate
+    # hadiths; until then text_ar carries the content and hadiths stays empty.
     return BookPage(
         page_number=page_number,
         total_pages=len(rows),
@@ -170,17 +175,8 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
         chapter_title_en=None,
         section_title="",
         section_title_en=None,
-        hadiths=[
-            Hadith(
-                n=1,
-                isnad_ar="",
-                matn_ar=match.content,
-                matn_en=None,
-                narrators=[],
-                grade=None,
-                cross_refs=[],
-            )
-        ],
+        hadiths=[],
+        text_ar=match.content,
     )
 
 

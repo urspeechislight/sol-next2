@@ -114,6 +114,16 @@
   margin: 0 auto;
 }
 
+/* Raw page text, shown when the page has no parsed hadiths yet (BookPage.text_ar).
+   Scales with the reader size control; line breaks in the corpus text are kept. */
+.reader-rawtext {
+  margin: 0;
+  font-family: var(--font-ar);
+  font-size: var(--reader-size);
+  line-height: 2;
+  white-space: pre-wrap;
+}
+
 .reader-toc {
   width: 264px;
   flex: none;

@@ -32,25 +32,24 @@ def test_should_return_404_for_toc_of_unknown_urn(client: TestClient) -> None:
 
 
 def test_should_return_first_page_with_content(client: TestClient) -> None:
-    """Page 1 of a real book has Arabic content; other reader fields empty."""
+    """Page 1 of a real book serves its raw Arabic text; no parsed hadiths yet."""
     response = client.get(f"/api/books/{SAMPLE_BOOK_URN}/pages/{SAMPLE_FIRST_PAGE}")
     assert response.status_code == 200
     payload = response.json()
     assert payload["page_number"] == SAMPLE_FIRST_PAGE
-    assert len(payload["hadiths"]) == 1
-    body = payload["hadiths"][0]["matn_ar"]
+    assert payload["hadiths"] == []
+    body = payload["text_ar"]
     assert len(body) >= MIN_PAGE_BODY_CHARS
     assert any("؀" <= c <= "ۿ" for c in body)
 
 
-def test_should_leave_isnad_empty_for_corpus_sources(client: TestClient) -> None:
-    """Pre-pipeline corpus has no parsed isnad; field is empty until phase 2 runs."""
+def test_should_serve_raw_text_not_a_fabricated_hadith(client: TestClient) -> None:
+    """Pre-pipeline corpus pages carry raw text_ar, not a fabricated empty-isnad hadith."""
     response = client.get(f"/api/books/{SAMPLE_BOOK_URN}/pages/{SAMPLE_FIRST_PAGE}")
     payload = response.json()
-    first = payload["hadiths"][0]
-    assert first["isnad_ar"] == ""
-    assert first["narrators"] == []
-    assert first["cross_refs"] == []
+    assert payload["hadiths"] == []
+    assert payload["text_ar"] is not None
+    assert len(payload["text_ar"]) >= MIN_PAGE_BODY_CHARS
 
 
 def test_should_return_404_for_unknown_page(client: TestClient) -> None:

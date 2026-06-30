@@ -363,19 +363,25 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
             <article className="reader-article">
               <PageHead page={pageData} />
               <div>
-                {hadiths.map((h, i) => (
-                  <HadithUnit
-                    key={h.n}
-                    h={h}
-                    active={i === activeHadith}
-                    lang={lang}
-                    index={index}
-                    activeNarrator={narrator?.full_name ?? ''}
-                    highlight={highlight}
-                    onSelect={() => setActiveHadith(i)}
-                    onNarrator={openRecord}
-                  />
-                ))}
+                {hadiths.length > 0 ? (
+                  hadiths.map((h, i) => (
+                    <HadithUnit
+                      key={h.n}
+                      h={h}
+                      active={i === activeHadith}
+                      lang={lang}
+                      index={index}
+                      activeNarrator={narrator?.full_name ?? ''}
+                      highlight={highlight}
+                      onSelect={() => setActiveHadith(i)}
+                      onNarrator={openRecord}
+                    />
+                  ))
+                ) : pageData.text_ar ? (
+                  <p className="reader-rawtext" dir="rtl">
+                    <Highlight text={pageData.text_ar} query={highlight} />
+                  </p>
+                ) : null}
               </div>
             </article>
           ) : null}

@@ -152,6 +152,8 @@ export interface BookPage {
   section_title: string;
   section_title_en: string | null;
   hadiths: Hadith[];
+  /** Raw page text, set when the page has no parsed hadiths yet. */
+  text_ar: string | null;
 }
 
 // ---- daily editorial (GET /api/daily) ----
