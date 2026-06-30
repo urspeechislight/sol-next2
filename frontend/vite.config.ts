@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 
 import { API } from './src/lib/routes';
 
-// Dev server binds all interfaces so the laptop can reach buildhost's Vite.
+// Dev server binds all interfaces on a fixed port (:8765) so the laptop can reach buildhost's Vite.
 // The API prefix is proxied to the FastAPI backend on :8001 — the data
 // linkage. The typed client in src/lib/api fetches relative API paths
 // (mirroring sol-next's vite proxy), so no CORS rules or hardcoded host
@@ -14,6 +14,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true,
+    port: 8765,
     proxy: {
       [API.BASE]: { target: API_TARGET, changeOrigin: true },
     },

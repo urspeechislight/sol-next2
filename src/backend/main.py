@@ -3,7 +3,7 @@
 Wires up:
   * health/liveness/readiness endpoints (the only routes permitted here
     by CENTRAL-017),
-  * CORS so the static frontend on :8765 can call this API on :8000,
+  * CORS so the Vite frontend on :8765 can call this API on :8001,
   * the API router from ``src.backend.api`` once endpoints exist.
 
 Routes + the not-found handler register via ``add_api_route`` /

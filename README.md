@@ -49,7 +49,7 @@ pnpm --filter @sol-next2/frontend dev
 
 The Vite dev server binds all interfaces and proxies the `/api` prefix to the
 backend **server-side**. From a remote workstation, open the URL Vite prints for
-the host (for example `http://<host>:5173/`) — the browser never reaches the
+the host (for example `http://<host>:8765/`) — the browser never reaches the
 backend directly, so no client-side `localhost` or CORS setup is needed.
 
 ```bash
