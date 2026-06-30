@@ -57,7 +57,13 @@ packages = ["src/backend"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-extend-exclude = [".venv", "build", "dist", "node_modules", ".svelte-kit"]
+# The harness (.claude/) is self-contained with its own tooling, and py:check
+# already scopes the project lint to `src tests`. Excluding it here, with
+# force-exclude so ruff honours the exclude even when a tool such as lefthook
+# passes staged .claude files explicitly, keeps the project's lint off code it
+# does not own. Real project code (src, tests, scripts) stays fully linted.
+extend-exclude = [".venv", "build", "dist", "node_modules", ".svelte-kit", ".claude"]
+force-exclude = true
 
 [tool.ruff.lint]
 # Curated, opinionated rule set. Keep it strict — the harness reinforces this.
