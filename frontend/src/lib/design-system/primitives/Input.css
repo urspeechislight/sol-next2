@@ -25,11 +25,11 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  height: 36px;
+  height: var(--control-height-md);
   padding: 0 var(--space-sm);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
   transition: border-color var(--duration-fast) var(--ease-out);
 }
 .ds-input:focus-within {
@@ -37,6 +37,18 @@
 }
 .ds-input__icon {
   color: var(--color-text-faint);
+}
+/* When the field is a search form, the icon is the submit button. */
+.ds-input__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 .ds-input__field {
   flex: 1;
@@ -50,4 +62,33 @@
 }
 .ds-input__field::placeholder {
   color: var(--color-text-ghost);
+}
+
+/* The design supplies its own search icon, so suppress the browser native
+   search clear/decoration controls (the redundant circle that appears on
+   type="search" once text is entered). */
+.ds-input__field::-webkit-search-cancel-button,
+.ds-input__field::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Reader surface: the bordered field reskinned for the reading chrome. */
+.ds-input--reader {
+  height: auto;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-reader-bg);
+  border-color: var(--color-reader-rule);
+  border-radius: var(--radius-control);
+}
+.ds-input--reader:focus-within {
+  border-color: var(--color-reader-progress);
+}
+.ds-input--reader .ds-input__icon {
+  color: var(--color-reader-muted);
+}
+.ds-input--reader .ds-input__field {
+  font-family: var(--font-ar);
+  font-size: var(--text-base);
+  color: inherit;
 }

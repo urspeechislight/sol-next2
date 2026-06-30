@@ -1,0 +1,47 @@
+/* SearchFilters.css — one unified bar above the results: match mode, the source
+   cascade as chevron-linked chips/menus, and the promoted result count. The
+   controls are design-system primitives; this file owns only the bar layout.
+   Colors/spacing/radii/shadows come only from tokens. */
+.search-filters {
+  position: sticky;
+  top: var(--space-sm);
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-lg);
+  background: color-mix(in oklch, var(--color-surface-raised) 86%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+/* Thin rule between the match toggle and the source cascade. */
+.search-filters__sep {
+  align-self: stretch;
+  width: var(--border-width);
+  margin: 0 var(--space-2xs);
+  background: var(--color-border);
+}
+
+.search-filters__cascade {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+.search-filters__chevron {
+  display: inline-flex;
+  color: var(--color-text-faint);
+}
+
+.search-filters__count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  margin-left: auto;
+}

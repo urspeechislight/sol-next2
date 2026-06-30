@@ -1,5 +1,5 @@
 import { cx } from '../../utils';
-import type { ShareFormat } from '../../types';
+import type { ShareFormat } from '../../constants';
 import { Logo } from './Logo';
 import { QRCode } from './QRCode';
 import './ShareCard.css';
@@ -44,7 +44,7 @@ export function ShareCard({
           </span>
           {shortUrl ? <span className="ds-sharecard__url">{shortUrl}</span> : null}
         </div>
-        {qr ? <QRCode matrix={qr} /> : null}
+        {qr && qr.length > 0 ? <QRCode matrix={qr} /> : null}
       </div>
     </div>
   );

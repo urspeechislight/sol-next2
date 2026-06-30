@@ -1,0 +1,25 @@
+.ds-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: 32px;
+  padding: 0 var(--space-sm);
+  background: transparent;
+  color: inherit;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.ds-pill--reader:hover,
+.ds-pill--reader.ds-pill--on,
+.ds-pill--reader.ds-pill--raised {
+  background: var(--color-reader-pill-bg);
+  border-color: var(--color-reader-rule);
+}
+.ds-pill--app:hover,
+.ds-pill--app.ds-pill--on,
+.ds-pill--app.ds-pill--raised {
+  background: var(--color-surface-sunken);
+}

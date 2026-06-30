@@ -1,4 +1,6 @@
-/* IsnadSidebar.css — transmission-chain panel. Themes with [data-reader-theme]. */
+/* IsnadSidebar.css — transmission-chain panel. Themes with [data-reader-theme].
+   The chain node is the IsnadNode design-system component; this file owns only
+   the panel chrome and the chain container layout. */
 
 .reader-isnad {
   width: 372px;
@@ -7,7 +9,6 @@
   padding: var(--space-lg) var(--space-md);
   background: color-mix(in oklch, var(--color-reader-toolbar-bg) 60%, transparent);
   border-left: 1px solid var(--color-reader-rule);
-  --isnad-name-size: var(--text-base);
 }
 .reader-isnad__head {
   margin-bottom: var(--space-md);
@@ -24,124 +25,20 @@
   font-size: var(--text-sm);
   color: var(--color-reader-muted);
 }
-.isnad-styles {
-  margin-bottom: var(--space-lg);
-}
 
 .isnad-chain {
   display: flex;
   flex-direction: column;
-}
-.isnad-node {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  position: relative;
-  padding-bottom: var(--space-lg);
-}
-.isnad-node__line {
-  position: absolute;
-  left: 11px;
-  top: 26px;
-  bottom: -4px;
-  width: 2px;
-  background: var(--color-reader-honorific);
-  opacity: 0.45;
-}
-.isnad-node__dot {
-  width: 24px;
-  height: 24px;
-  flex: none;
-  border-radius: var(--radius-pill);
-  border: 2px solid var(--color-reader-honorific);
-  background: var(--color-reader-bg);
-  color: var(--color-reader-honorific);
-  display: grid;
-  place-items: center;
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-}
-.isnad-node__dot--origin {
-  background: var(--color-reader-honorific);
-  color: var(--color-reader-bg);
-}
-.isnad-node__body {
-  flex: 1;
-  min-width: 0;
-}
-.isnad-node__en {
-  font-size: var(--isnad-name-size);
-  font-weight: var(--weight-regular);
-  color: var(--color-reader-fg);
-  margin-top: 1px;
-}
-.isnad-node__meta {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-reader-muted);
-  margin: 2px 0 var(--space-xs);
-}
-.isnad-node__ar {
-  font-family: var(--font-ar-display);
-  font-size: var(--isnad-name-size);
-  font-weight: var(--weight-regular);
-  line-height: var(--leading-snug);
-  color: var(--color-reader-fg);
-  flex: none;
-  text-align: right;
-  max-width: 44%;
-}
-.isnad-node__grade {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 9px;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: color-mix(in oklch, var(--color-success) 16%, var(--color-reader-bg));
-  color: var(--color-success);
-}
-.isnad-node__grade--warning {
-  background: color-mix(in oklch, var(--color-warning) 18%, var(--color-reader-bg));
-  color: var(--color-warning);
-}
-.isnad-node__grade--danger {
-  background: color-mix(in oklch, var(--color-danger) 18%, var(--color-reader-bg));
-  color: var(--color-danger);
-}
-
-.isnad-chain:not(.isnad-chain--tree) .isnad-node__line {
-  display: none;
-}
-.isnad-chain--horizontal {
-  gap: var(--space-xs);
-}
-.isnad-chain--horizontal .isnad-node {
-  align-items: center;
-  padding: var(--space-sm);
-  background: var(--color-reader-pill-bg);
-  border: 1px solid var(--color-reader-rule);
-  border-radius: var(--radius-md);
-}
-.isnad-chain--horizontal .isnad-node__meta,
-.isnad-chain--horizontal .isnad-node__grade {
-  display: none;
-}
-.isnad-chain--cards .isnad-node {
-  padding: var(--space-sm) var(--space-md);
-  margin-bottom: var(--space-sm);
-  background: var(--color-reader-bg);
-  border: 1px solid color-mix(in oklch, var(--color-reader-honorific) 55%, var(--color-reader-rule));
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
 }
 
 @media (max-width: 760px) {
   .reader-isnad {
     display: none;
   }
+}
+
+.reader-isnad__empty {
+  padding: var(--space-md) 0;
+  font-size: var(--text-sm);
+  color: var(--color-reader-muted);
 }

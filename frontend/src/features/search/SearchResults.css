@@ -1,0 +1,16 @@
+/* SearchResults.css — layout for the unified search results. Colors/spacing
+   come from tokens via primitives; this file is layout + token vars only. */
+.result {
+  display: block;
+  text-decoration: none;
+}
+.result__section {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-sm);
+}
+.result__snip {
+  margin-top: var(--space-sm);
+  line-height: var(--leading-arabic);
+}

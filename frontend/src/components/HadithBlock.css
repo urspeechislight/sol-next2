@@ -44,25 +44,6 @@
   letter-spacing: 0.04em;
   color: var(--color-reader-muted);
 }
-.hadith__grade {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in oklch, var(--color-success) 18%, var(--color-reader-bg));
-  color: var(--color-success);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.hadith__grade i {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background: currentColor;
-}
 .hadith__isnad {
   font-family: var(--font-ar);
   font-size: calc(var(--reader-size) - 2px);
@@ -144,24 +125,4 @@
 .ref-pill__pg {
   color: var(--color-reader-muted);
   font-family: var(--font-mono);
-}
-
-.hadith__isnad .narrator-link {
-  font: inherit;
-  color: inherit;
-  background: transparent;
-  border: 0;
-  padding: 0 1px;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-underline-offset: 5px;
-  text-decoration-color: color-mix(in oklch, var(--color-reader-honorific) 55%, transparent);
-  transition: background var(--duration-fast) var(--ease-out);
-}
-.hadith__isnad .narrator-link:hover,
-.hadith__isnad .narrator-link[data-on] {
-  background: color-mix(in oklch, var(--color-reader-honorific) 18%, transparent);
-  text-decoration-color: var(--color-reader-honorific);
 }

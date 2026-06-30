@@ -1,239 +1,397 @@
-import { useMemo, useState } from "react";
-import type { CSSProperties } from "react";
-import { Icon } from "../../lib/design-system";
-import type { IconName } from "../../lib/design-system";
-import { annotateText, buildNarratorIndex, type NarratorIndex } from "../../lib/narrators";
-import { READER } from "../../lib/constants";
-import { ReaderToolbar } from "./ReaderToolbar";
-import type { LeftDrawer, ReaderLang, ReaderTheme, RightDrawer } from "./ReaderToolbar";
+import { useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
+
 import {
-  CHAIN_ORDER, HADITHS, MATCHES, NARRATORS, TOC,
-  engGrade, isnadTone, narratorRecords, relTone, type ReaderHadith,
-} from "./readerData";
-import "./reader.css";
-import "../../components/HadithBlock.css";
-import "./IsnadSidebar.css";
-import "./NarratorTarjama.css";
+  Badge,
+  Highlight,
+  IconButton,
+  IsnadNode,
+  NarratorLink,
+  Spinner,
+  Text,
+} from '../../lib/design-system';
+import { getBook, getNarratorIndex, getPage, getToc, searchBook } from '../../lib/api/client';
+import { READER } from '../../lib/constants';
+import { hadithBadge, reliabilityBadge } from '../../lib/variants';
+import { normalizeName } from '../../lib/arabic';
+import { annotateText, buildNarratorIndex } from '../../lib/narrators';
+import type { NarratorIndex } from '../../lib/narrators';
+import type {
+  BookPage,
+  BookSearchMatch,
+  Hadith,
+  Narrator,
+  NarratorRecord,
+  Page,
+} from '../../lib/types';
+import { useAsync } from '../../lib/useAsync';
+import { clamp, cx, toArabicDigits } from '../../lib/utils';
+import { MatchList, TocDrawer } from './ReaderDrawers';
+import { ReaderToolbar } from './ReaderToolbar';
+import type { LeftDrawer, ReaderLang, ReaderTheme, RightDrawer } from './ReaderToolbar';
+import './reader.css';
+import '../../components/HadithBlock.css';
+import './IsnadSidebar.css';
+import './NarratorTarjama.css';
 
-type IsnadStyle = "tree" | "horizontal" | "cards";
+const MIN_QUERY = 2;
+const EMPTY_MATCHES: Page<BookSearchMatch> = { items: [], total: 0, limit: 0, offset: 0 };
 
-function PageHead() {
+/** Promote a per-hadith narrator to a registry-shaped record (used when the
+    name is not present in the rijāl index). */
+function recordFromNarrator(n: Narrator): NarratorRecord {
+  return {
+    id: -1,
+    full_name: n.name_ar || n.name,
+    kunya: '',
+    nisba: '',
+    tradition: '',
+    birth_year: '',
+    death_year: n.d ? String(n.d) : '',
+    teacher_count: 0,
+    student_count: 0,
+    reliability_term: n.grade,
+    origin: 'rijal',
+  };
+}
+
+function PageHead({ page }: { page: BookPage }) {
   return (
     <header className="reader-pagehead">
-      <p className="reader-eyebrow">Page 109 · The contingency of the world and the affirmation of its Originator</p>
-      <h2 className="reader-chapter" dir="rtl">كِتَابُ التَّوْحِيد</h2>
-      <p className="reader-section-ar" dir="rtl">بَابُ حُدُوثِ الْعَالَمِ وَإِثْبَاتِ الْمُحْدِث</p>
-      <p className="reader-section-en">The Book of Divine Unity · Chapter: the contingency of the world and the affirmation of its Originator</p>
+      <p className="reader-eyebrow">
+        Page {page.page_number} of {page.total_pages}
+      </p>
+      {page.chapter_title ? (
+        <h2 className="reader-chapter" dir="rtl">
+          {page.chapter_title}
+        </h2>
+      ) : null}
+      {page.section_title ? (
+        <p className="reader-section-ar" dir="rtl">
+          {page.section_title}
+        </p>
+      ) : null}
+      {page.section_title_en ? <p className="reader-section-en">{page.section_title_en}</p> : null}
     </header>
   );
 }
 
-function TocDrawer() {
-  return (
-    <aside className="reader-toc" aria-label="Table of contents">
-      <p className="reader-toc__label">Contents</p>
-      {TOC.map((t) => (
-        <button key={t.pg} className="reader-toc__item" aria-current={t.current || undefined}>
-          <span>
-            <span className="reader-toc__ar" dir="rtl">{t.ar}</span>
-            <span className="reader-toc__en">{t.en}</span>
-          </span>
-          <span className="reader-toc__pg">{t.pg}</span>
-        </button>
-      ))}
-    </aside>
-  );
-}
-
-function SearchDrawer({ query, onQuery }: { query: string; onQuery: (q: string) => void }) {
-  const list = MATCHES.filter((m) => !query || m.ar.includes(query) || m.en.toLowerCase().includes(query.toLowerCase()));
-  return (
-    <aside className="reader-toc" aria-label="Search in book">
-      <p className="reader-toc__label">Search in book</p>
-      <div className="reader-search__field">
-        <Icon name="search" size="sm" />
-        <input value={query} placeholder="ابحث في الكتاب…" dir="rtl" aria-label="Search" onChange={(e) => onQuery(e.target.value)} />
-      </div>
-      <p className="reader-search__hint">Arabic queries are normalized (diacritics, definite article).</p>
-      {list.length ? list.map((m, i) => (
-        <button key={i} className="reader-match">
-          <div className="reader-match__pg">page {m.pg}</div>
-          <div className="reader-match__ar" dir="rtl">{m.ar}</div>
-          <div className="reader-match__en">{m.en}</div>
-        </button>
-      )) : <p className="reader-search__hint">No matches.</p>}
-    </aside>
-  );
-}
-
 interface HadithUnitProps {
-  h: ReaderHadith;
+  h: Hadith;
   active: boolean;
   lang: ReaderLang;
   index: NarratorIndex;
-  activeNarrator: string | null;
+  activeNarrator: string;
+  highlight: string;
   onSelect: () => void;
-  onNarrator: (id: string) => void;
+  onNarrator: (record: NarratorRecord) => void;
 }
 
-function HadithUnit({ h, active, lang, index, activeNarrator, onSelect, onNarrator }: HadithUnitProps) {
-  const segs = annotateText(h.isnadAr, index);
+function HadithUnit({
+  h,
+  active,
+  lang,
+  index,
+  activeNarrator,
+  highlight,
+  onSelect,
+  onNarrator,
+}: HadithUnitProps) {
+  const segs = annotateText(h.isnad_ar, index);
   return (
-    <section className={`hadith${active ? " hadith--active" : ""}`} tabIndex={0} onClick={onSelect}>
+    <section className={cx('hadith', active && 'hadith--active')} tabIndex={0} onClick={onSelect}>
       <header className="hadith__head">
         <span className="hadith__id">
-          <span className="hadith__num">{h.num}</span>
-          <span className="hadith__meta">{h.narrators} narrators</span>
+          <span className="hadith__num">{toArabicDigits(h.n)}</span>
+          <span className="hadith__meta">
+            Hadith {h.n} · {h.narrators.length} narrators
+          </span>
         </span>
-        <span className="hadith__grade" dir="rtl"><i /> {h.grade}</span>
+        {h.grade ? (
+          <Badge surface="reader" variant={hadithBadge(h.grade)} dot dir="rtl">
+            {h.grade}
+          </Badge>
+        ) : null}
       </header>
-      {lang !== "en" ? (
+      {lang !== 'en' && h.isnad_ar ? (
         <p className="hadith__isnad" dir="rtl">
-          {segs.map((s, i) => s.type === "narrator"
-            ? (
-              <button key={i} type="button" className="narrator-link" data-on={activeNarrator === s.record.id ? "" : undefined}
-                onClick={(e) => { e.stopPropagation(); onNarrator(s.record.id); }}>{s.value}</button>
-            )
-            : <span key={i}>{s.value}</span>)}
+          {segs.map((s, i) =>
+            s.type === 'narrator' ? (
+              <NarratorLink
+                key={i}
+                active={activeNarrator === s.record.full_name}
+                onActivate={() => onNarrator(s.record)}
+              >
+                {s.value}
+              </NarratorLink>
+            ) : (
+              <span key={i}>{s.value}</span>
+            ),
+          )}
         </p>
       ) : null}
-      {lang === "en" ? <p className="hadith__isnad-en">{h.isnadEn}</p> : null}
-      <div className={`hadith__body${lang === "both" ? " hadith__body--grid" : ""}`}>
-        {lang !== "ar" ? <p className="hadith__matn-en">{h.matnEn}</p> : null}
-        {lang !== "en" ? <p className="hadith__matn-ar" dir="rtl">{h.matnAr}</p> : null}
+      <div className={cx('hadith__body', lang === 'both' && 'hadith__body--grid')}>
+        {lang !== 'ar' && h.matn_en ? (
+          <p className="hadith__matn-en">
+            <Highlight text={h.matn_en} query={highlight} />
+          </p>
+        ) : null}
+        {lang !== 'en' ? (
+          <p className="hadith__matn-ar" dir="rtl">
+            <Highlight text={h.matn_ar} query={highlight} />
+          </p>
+        ) : null}
       </div>
-      <div className="hadith__refs">
-        <span className="hadith__refs-label">Parallels</span>
-        {h.refs.map((r, i) => (
-          <span key={i} className="ref-pill">
-            <span className="ref-pill__ar" dir="rtl">{r.ar}</span>
-            <span className="ref-pill__pg">{r.pg}</span>
-          </span>
-        ))}
-      </div>
+      {h.cross_refs.length ? (
+        <div className="hadith__refs">
+          <span className="hadith__refs-label">Parallels</span>
+          {h.cross_refs.map((r, i) => (
+            <span key={i} className="ref-pill">
+              <span className="ref-pill__ar" dir="rtl">
+                {r.book_ar}
+              </span>
+              {r.page ? <span className="ref-pill__pg">{r.page}</span> : null}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
 
-const ISNAD_STYLES: [IsnadStyle, string, IconName][] = [
-  ["tree", "Tree", "layers"], ["horizontal", "Flow", "menu"], ["cards", "Cards", "grid"],
-];
-
-function IsnadPanel({ activeHadith, style, onStyle }: { activeHadith: number; style: IsnadStyle; onStyle: (s: IsnadStyle) => void }) {
+function IsnadPanel({ hadith, onNarrator }: { hadith: Hadith; onNarrator: (n: Narrator) => void }) {
   return (
     <aside className="reader-isnad" aria-label="Isnād, transmission chain">
       <div className="reader-isnad__head">
         <p className="reader-isnad__label">Isnād · transmission chain</p>
-        <p className="reader-isnad__sub">Hadith {activeHadith + 1} · {CHAIN_ORDER.length} narrators · {HADITHS[activeHadith].grade}</p>
+        <p className="reader-isnad__sub">
+          {hadith.narrators.length} narrators{hadith.grade ? ` · ${hadith.grade}` : ''}
+        </p>
       </div>
-      <div className="isnad-styles">
-        <div className="reader-seg" role="radiogroup" aria-label="Chain view">
-          {ISNAD_STYLES.map(([v, label, icon]) => (
-            <button key={v} className="reader-seg__btn" aria-pressed={v === style} onClick={() => onStyle(v)}><Icon name={icon} size="sm" />{label}</button>
+      {hadith.narrators.length === 0 ? (
+        <p className="reader-isnad__empty">No transmission chain recorded for this unit.</p>
+      ) : (
+        <div className="isnad-chain">
+          {hadith.narrators.map((n, i) => (
+            <IsnadNode
+              key={i}
+              index={i}
+              showLine={i < hadith.narrators.length - 1}
+              nameEn={n.name || n.name_ar}
+              nameAr={n.name_ar}
+              died={n.d}
+              role={n.role}
+              grade={n.grade}
+              gradeVariant={reliabilityBadge(n.grade)}
+              onClick={() => onNarrator(n)}
+            />
           ))}
         </div>
-      </div>
-      <div className={`isnad-chain isnad-chain--${style}`}>
-        {CHAIN_ORDER.map((id, i) => {
-          const r = NARRATORS.find((n) => n.id === id);
-          if (!r) return null;
-          const tone = isnadTone(r.grade);
-          return (
-            <div key={id} className="isnad-node">
-              {i < CHAIN_ORDER.length - 1 ? <span className="isnad-node__line" /> : null}
-              <span className={`isnad-node__dot${i === 0 ? " isnad-node__dot--origin" : ""}`}>{i === 0 ? "★" : i}</span>
-              <div className="isnad-node__body">
-                <p className="isnad-node__en">{r.en || r.fullName}</p>
-                <p className="isnad-node__meta">d. {r.deathYear || "—"} · {r.role}</p>
-                <span className={`isnad-node__grade${tone ? ` isnad-node__grade--${tone}` : ""}`}>{engGrade(r.grade)}</span>
-              </div>
-              <p className="isnad-node__ar" dir="rtl">{r.fullName}</p>
-            </div>
-          );
-        })}
-      </div>
+      )}
     </aside>
   );
 }
 
-function TarjamaPanel({ id, onClose }: { id: string; onClose: () => void }) {
-  const r = NARRATORS.find((n) => n.id === id);
-  if (!r) return null;
-  const sub = [r.kunya, r.nisba].filter(Boolean).join(" · ");
+function TarjamaPanel({ record, onClose }: { record: NarratorRecord; onClose: () => void }) {
+  const sub = [record.kunya, record.nisba].filter(Boolean).join(' · ');
   const facts: [string, string | number][] = [
-    ["Tradition", r.tradition], ["Died", r.deathYear || "—"], ["Teachers", r.teacherCount], ["Students", r.studentCount],
-    ...(r.evaluator ? ([["Evaluator", r.evaluator]] as [string, string][]) : []), ["Role", r.role],
+    ['Tradition', record.tradition || '—'],
+    ['Died', record.death_year || '—'],
+    ['Teachers', record.teacher_count],
+    ['Students', record.student_count],
+    ...(record.evaluator ? ([['Evaluator', record.evaluator]] as [string, string][]) : []),
+    ['Source', record.source_label || '—'],
   ];
   return (
     <aside className="narrator" aria-label="Narrator biography">
       <div className="narrator__head">
         <p className="narrator__label">Tarjama · ترجمة</p>
-        <button className="reader-iconbtn reader-iconbtn--sm" aria-label="Close" onClick={onClose}><Icon name="close" size="sm" /></button>
+        <IconButton surface="reader" size="sm" label="Close" icon="close" onClick={onClose} />
       </div>
-      <p className="narrator__name" dir="rtl">{r.fullName}</p>
-      <p className="narrator__sub" dir="rtl">{sub}</p>
-      <span className={`narrator-grade narrator-grade--${relTone(r.grade)}`} dir="rtl">{r.term}</span>
+      <p className="narrator__name" dir="rtl">
+        {record.full_name}
+      </p>
+      {sub ? (
+        <p className="narrator__sub" dir="rtl">
+          {sub}
+        </p>
+      ) : null}
+      {record.reliability_term ? (
+        <div className="narrator__grade">
+          <Badge surface="reader" variant={reliabilityBadge(record.reliability_term)} dir="rtl">
+            {record.reliability_term}
+          </Badge>
+        </div>
+      ) : null}
       <dl className="narrator__facts">
-        {facts.map(([k, v]) => <div key={k} className="narrator__fact"><dt>{k}</dt><dd>{v}</dd></div>)}
+        {facts.map(([k, v]) => (
+          <div key={k} className="narrator__fact">
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
       </dl>
       <p className="narrator__source">Rijāl registry · linked by name</p>
     </aside>
   );
 }
 
+function Unavailable({ title }: { title: string }) {
+  return (
+    <div className="reader-unavailable">
+      <Text as="p" size="lg" font="serif">
+        Not available to read yet
+      </Text>
+      <Text as="p" size="sm" tone="muted">
+        {title} has catalogue metadata, but its page content has not been ingested into the corpus
+        yet.
+      </Text>
+    </div>
+  );
+}
+
 export interface ReaderScreenProps {
+  urn: string;
+  page: number;
+  initialQuery?: string;
+  onPage: (page: number) => void;
   onBack: () => void;
 }
 
-export function ReaderScreen({ onBack }: ReaderScreenProps) {
-  const [page, setPage] = useState(109);
-  const [readerTheme, setReaderTheme] = useState<ReaderTheme>("classical");
-  const [lang, setLang] = useState<ReaderLang>("both");
+export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: ReaderScreenProps) {
+  const [readerTheme, setReaderTheme] = useState<ReaderTheme>('classical');
+  const [lang, setLang] = useState<ReaderLang>('both');
   const [size, setSize] = useState<number>(READER.SIZE_DEFAULT);
-  const [left, setLeft] = useState<LeftDrawer>("contents");
+  const [left, setLeft] = useState<LeftDrawer>('contents');
   const [right, setRight] = useState<RightDrawer>(null);
   const [activeHadith, setActiveHadith] = useState(0);
-  const [narratorId, setNarratorId] = useState<string | null>(null);
-  const [isnadStyle, setIsnadStyle] = useState<IsnadStyle>("tree");
-  const [query, setQuery] = useState("");
+  const [narrator, setNarrator] = useState<NarratorRecord | null>(null);
+  const [searchQ, setSearchQ] = useState(initialQuery);
 
-  const index = useMemo(() => buildNarratorIndex(narratorRecords()), []);
-  const totalPages = 14200;
-  const rootStyle = { "--reader-size": `${size}px` } as CSSProperties;
-  const clamp = (n: number) => Math.max(READER.SIZE_MIN, Math.min(READER.SIZE_MAX, n));
-  const openNarrator = (id: string) => { setNarratorId(id); setRight("tarjama"); };
+  // App (and the URL) own the page; reset the in-page highlight when it changes.
+  useEffect(() => {
+    setActiveHadith(0);
+  }, [page]);
+
+  const bookRes = useAsync(() => getBook(urn), [urn]);
+  const tocRes = useAsync(() => getToc(urn), [urn]);
+  const indexRes = useAsync(() => getNarratorIndex(), []);
+  const pageRes = useAsync<BookPage>(() => getPage(urn, page), [urn, page]);
+  const searchRes = useAsync<Page<BookSearchMatch>>(
+    () =>
+      searchQ.trim().length >= MIN_QUERY
+        ? searchBook(urn, searchQ.trim())
+        : Promise.resolve(EMPTY_MATCHES),
+    [urn, searchQ],
+  );
+
+  const records = indexRes.data ?? [];
+  const index = useMemo(() => buildNarratorIndex(records), [records]);
+  const nameMap = useMemo(
+    () => new Map(records.map((r) => [normalizeName(r.full_name), r])),
+    [records],
+  );
+
+  const openRecord = (record: NarratorRecord) => {
+    setNarrator(record);
+    setRight('tarjama');
+  };
+  const openNarrator = (n: Narrator) =>
+    openRecord(nameMap.get(normalizeName(n.name_ar)) ?? recordFromNarrator(n));
+  const rootStyle = { '--reader-size': `${size}px` } as CSSProperties;
+
+  const book = bookRes.data;
+  const toc = tocRes.data;
+  const pageData = pageRes.data;
+  const hadiths = pageData?.hadiths ?? [];
+  const active = hadiths[activeHadith];
+  const title = book?.title_ar ?? urn;
+  const totalPages = pageData?.total_pages ?? book?.page_count ?? 1;
+  // The toolbar's in-book field drives searchQ; a live query shows results in the
+  // left drawer and highlights the page. Both read from this one flag.
+  const searchActive = searchQ.trim().length >= MIN_QUERY;
+  const highlight = searchActive ? searchQ.trim() : '';
 
   return (
     <div className="reader-root" data-reader-theme={readerTheme} data-lang={lang} style={rootStyle}>
       <ReaderToolbar
-        page={page} totalPages={totalPages} readerTheme={readerTheme} lang={lang} size={size}
-        leftDrawer={left} rightDrawer={right}
-        onBack={onBack} onPage={setPage} onTheme={setReaderTheme} onLang={setLang}
-        onSize={(s) => setSize(clamp(s))}
+        titleAr={book?.title_ar ?? '…'}
+        titleEn={book?.title_en}
+        author={book?.author ?? book?.author_ar}
+        urn={urn}
+        page={page}
+        totalPages={totalPages}
+        readerTheme={readerTheme}
+        lang={lang}
+        size={size}
+        leftDrawer={left}
+        rightDrawer={right}
+        searchQuery={searchQ}
+        onSearchQuery={setSearchQ}
+        onBack={onBack}
+        onPage={onPage}
+        onTheme={setReaderTheme}
+        onLang={setLang}
+        onSize={(s) => setSize(clamp(s, READER.SIZE_MIN, READER.SIZE_MAX))}
         onLeft={setLeft}
-        onRight={(d) => { setRight(d); if (d !== "tarjama") setNarratorId(null); }}
+        onRight={(d) => {
+          setRight(d);
+          if (d !== 'tarjama') setNarrator(null);
+        }}
       />
       <div className="reader-body">
-        {left === "contents" ? <TocDrawer /> : null}
-        {left === "search" ? <SearchDrawer query={query} onQuery={setQuery} /> : null}
+        {searchActive ? (
+          <MatchList
+            query={searchQ.trim()}
+            results={searchRes.data?.items ?? []}
+            total={searchRes.data?.total ?? 0}
+            loading={searchRes.loading}
+            onJump={onPage}
+          />
+        ) : left === 'contents' && toc ? (
+          <TocDrawer toc={toc} current={page} onJump={onPage} />
+        ) : null}
         <main className="reader-main">
-          <article className="reader-article">
-            <PageHead />
-            <div>
-              {HADITHS.map((h, i) => (
-                <HadithUnit
-                  key={i} h={h} active={i === activeHadith} lang={lang} index={index}
-                  activeNarrator={narratorId} onSelect={() => setActiveHadith(i)} onNarrator={openNarrator}
-                />
-              ))}
-            </div>
-          </article>
+          {pageRes.loading ? <Spinner label="Loading page" /> : null}
+          {pageRes.error ? <Unavailable title={title} /> : null}
+          {indexRes.error ? (
+            <Text as="p" size="sm" tone="danger">
+              Narrator linkage is unavailable; isnād names are shown as plain text.
+            </Text>
+          ) : null}
+          {pageData ? (
+            <article className="reader-article">
+              <PageHead page={pageData} />
+              <div>
+                {hadiths.map((h, i) => (
+                  <HadithUnit
+                    key={h.n}
+                    h={h}
+                    active={i === activeHadith}
+                    lang={lang}
+                    index={index}
+                    activeNarrator={narrator?.full_name ?? ''}
+                    highlight={highlight}
+                    onSelect={() => setActiveHadith(i)}
+                    onNarrator={openRecord}
+                  />
+                ))}
+              </div>
+            </article>
+          ) : null}
         </main>
-        {right === "isnad" ? <IsnadPanel activeHadith={activeHadith} style={isnadStyle} onStyle={setIsnadStyle} /> : null}
-        {right === "tarjama" && narratorId ? <TarjamaPanel id={narratorId} onClose={() => { setRight(null); setNarratorId(null); }} /> : null}
-      </div>
-      <div className="reader-progress">
-        <div className="reader-progress__fill" style={{ width: `${((page / totalPages) * 100).toFixed(1)}%` }} />
+        {right === 'isnad' && active ? (
+          <IsnadPanel hadith={active} onNarrator={openNarrator} />
+        ) : null}
+        {right === 'tarjama' && narrator ? (
+          <TarjamaPanel
+            record={narrator}
+            onClose={() => {
+              setRight(null);
+              setNarrator(null);
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -15,7 +15,7 @@
 .ds-badge--default {
   background: var(--color-surface-sunken);
   color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
+  border: var(--border-width) solid var(--color-border);
 }
 .ds-badge--success {
   background: color-mix(in oklch, var(--color-success) 14%, var(--color-surface));
@@ -28,4 +28,38 @@
 .ds-badge--danger {
   background: color-mix(in oklch, var(--color-danger) 14%, var(--color-surface));
   color: color-mix(in oklch, var(--color-danger) 80%, var(--color-text));
+}
+
+/* Reader surface: the grade chip on the reading surface, a pill with uppercase
+   text and an optional status dot. Folds the former GradeBadge into Badge so
+   there is one badge component and one tone map. */
+.ds-badge--reader {
+  height: auto;
+  padding: var(--space-2xs) 10px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ds-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+}
+.ds-badge--reader.ds-badge--default {
+  background: var(--color-reader-pill-bg);
+  color: var(--color-reader-muted);
+  border: 0;
+}
+.ds-badge--reader.ds-badge--success {
+  background: color-mix(in oklch, var(--color-success) 18%, var(--color-reader-bg));
+  color: var(--color-success);
+}
+.ds-badge--reader.ds-badge--warning {
+  background: color-mix(in oklch, var(--color-warning) 20%, var(--color-reader-bg));
+  color: var(--color-warning);
+}
+.ds-badge--reader.ds-badge--danger {
+  background: color-mix(in oklch, var(--color-danger) 20%, var(--color-reader-bg));
+  color: var(--color-danger);
 }

@@ -1,31 +1,18 @@
-// narrators.ts:narrator-name linkage SSOT. Reading units carry no narrator
-// IDs, so we join reading text to the rijāl/canonical registries BY NAME:
-//   1. normalizeArabic:strip diacritics/tatweel, fold alef/yaa/taa variants.
-//   2. buildNarratorIndex:token-keyed lookup over NarratorRecord[].
-//   3. annotateText:split a string into plain + narrator segments (longest,
+// narrators.ts:narrator-name linkage. Reading units carry no narrator IDs, so
+// we join reading text to the rijāl/canonical registries BY NAME, using the
+// name fold from lib/arabic.ts (normalizeName):
+//   1. buildNarratorIndex:token-keyed lookup over NarratorRecord[].
+//   2. annotateText:split a string into plain + narrator segments (longest,
 //      non-overlapping, >=2-token match for precision).
 // Pure functions only; no DOM, no fetch.
 
+import { normalizeName } from './arabic';
 import type { CanonicalEntry, NarratorRecord, RijalEntry } from './types';
-
-const STRIP = /[ً-ْٰـ]/g; // harakat + superscript alef + tatweel
-
-/** Fold an Arabic string to a diacritic-free, variant-normalized comparison key. */
-export function normalizeArabic(s: string): string {
-  return (s || '')
-    .replace(STRIP, '')
-    .replace(/[أإآ]/g, 'ا') // alef variants -> alef
-    .replace(/ى/g, 'ي') // alef maqsura -> yaa
-    .replace(/ة/g, 'ه') // taa marbuta -> haa
-    .replace(/[^؀-ۿ\s]/g, ' ') // drop non-Arabic marks
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
 const STOP = new Set(['بن', 'ابن', 'بنت', 'عن', 'ابي', 'ابو', 'ال', 'عبد', 'حدثنا', 'اخبرنا']);
 
 function tokens(name: string): string[] {
-  return normalizeArabic(name).split(' ').filter(Boolean);
+  return normalizeName(name).split(' ').filter(Boolean);
 }
 
 export interface NarratorIndex {
@@ -102,7 +89,7 @@ interface Match {
 }
 
 function matchAt(parts: string[], start: number, index: NarratorIndex): Match | null {
-  const firstNorm = normalizeArabic(parts[start]);
+  const firstNorm = normalizeName(parts[start]);
   const candidates = index.byFirstToken.get(firstNorm);
   if (!candidates) return null;
 
@@ -116,7 +103,7 @@ function matchAt(parts: string[], start: number, index: NarratorIndex): Match | 
         pi += 1;
         continue;
       }
-      const norm = normalizeArabic(part);
+      const norm = normalizeName(part);
       if (norm === toks[ti]) {
         lastWordIndex = pi;
         pi += 1;
@@ -178,7 +165,7 @@ export function mergeNarrators(
   canonical: NarratorRecord[],
 ): NarratorRecord[] {
   const byKey = new Map<string, NarratorRecord>();
-  for (const r of canonical) byKey.set(normalizeArabic(r.full_name), r);
-  for (const r of rijal) byKey.set(normalizeArabic(r.full_name), r);
+  for (const r of canonical) byKey.set(normalizeName(r.full_name), r);
+  for (const r of rijal) byKey.set(normalizeName(r.full_name), r);
   return [...byKey.values()];
 }

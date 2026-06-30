@@ -7,6 +7,7 @@ export type IconName =
   | 'graph'
   | 'daily'
   | 'search'
+  | 'book-search'
   | 'sun'
   | 'moon'
   | 'chevron-left'
@@ -39,6 +40,8 @@ export type IconName =
   | 'chevrons-left'
   | 'chevrons-right'
   | 'arrow-left'
+  | 'arrow-back'
+  | 'arrow-forward'
   | 'network'
   | 'share'
   | 'copy'
@@ -69,6 +72,8 @@ export const ICON_PATHS: Record<IconName, string> = {
     'M6 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM6 17a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 6.5l8 0M7.5 12.5l9 4M8 13l8-6',
   daily: 'M12 7v5l3 2M12 3a9 9 0 109 9 9 9 0 00-9-9z',
   search: 'M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.3-4.3',
+  'book-search':
+    'M6 3h9a1 1 0 011 1v15a2 2 0 01-2 2H7a2 2 0 01-2-2V4a1 1 0 011-1zM11 13.5a3 3 0 100-6 3 3 0 000 6zM13.2 12.7l2 2',
   sun: 'M12 17a5 5 0 100-10 5 5 0 000 10zM12 1v3M12 20v3M4.2 4.2l2 2M17.8 17.8l2 2M1 12h3M20 12h3M4.2 19.8l2-2M17.8 6.2l2-2',
   moon: 'M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z',
   'chevron-left': 'M15 18l-6-6 6-6',
@@ -102,7 +107,9 @@ export const ICON_PATHS: Record<IconName, string> = {
   plus: 'M12 5v14M5 12h14',
   'chevrons-left': 'M11 17l-5-5 5-5M18 17l-5-5 5-5',
   'chevrons-right': 'M13 17l5-5-5-5M6 17l5-5-5-5',
-  'arrow-left': 'M19 12H5M11 18l-6-6 6-6',
+  'arrow-left': 'M21 12H5M12 5l-7 7 7 7',
+  'arrow-back': 'M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11',
+  'arrow-forward': 'M15 14l5-5-5-5M20 9H9.5A5.5 5.5 0 0 0 4 14.5 5.5 5.5 0 0 0 9.5 20H13',
   network:
     'M6 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM6 17a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 6.5l8 0M7.5 12.5l9 4M8 13l8-6',
   share: 'M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v13',
@@ -130,3 +137,6 @@ export const ICON_PATHS: Record<IconName, string> = {
   highlighter: 'M9 11l-4 4v3h3l4-4M9 11l5-5 4 4-5 5M9 11l4 4',
   note: 'M14 3v4a1 1 0 001 1h4M5 3h9l5 5v11a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zM8 13h6M8 17h4',
 };
+
+// The full icon set as an array (derived from the path map, so it never drifts).
+export const ICON_NAMES = Object.keys(ICON_PATHS) as IconName[];

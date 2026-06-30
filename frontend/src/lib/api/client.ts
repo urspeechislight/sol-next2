@@ -1,23 +1,27 @@
-// client.ts:the only data path. Real sol-next endpoints, fail loud, no fallback.
-// Stage-2 reconciliation: import depth corrected (../constants, ../types:this
-// file lives in lib/api/); API now comes from routes.ts (CENTRAL-006 split); and
-// the paginated getters annotate params as `number` so the `as const` PAGE
-// defaults don't narrow them to literal types (breaks the collect() signature).
+// client.ts:the only data path to the :8001 backend (proxied via vite /api).
+// Every call is a GET; failures throw ApiError (fail loud, no silent fallback)
+// so callers render an explicit error state. CENTRAL-007 confines fetch here.
 import { PAGE } from '../constants';
+import { canonicalToRecord, mergeNarrators, rijalToRecord } from '../narrators';
 import { API } from '../routes';
 import type {
-  BookData,
-  BookGenre,
+  Ayah,
+  Book,
+  BookPage,
+  BookSearchMatch,
   CanonicalEntry,
-  HistoryEntry,
+  CorpusMatch,
+  Daily,
+  Domain,
   NarratorRecord,
-  Paginated,
-  ReaderPage,
+  Page,
   RijalEntry,
+  SearchFacets,
+  Toc,
+  Work,
 } from '../types';
-import { canonicalToRecord, mergeNarrators, rijalToRecord } from '../narrators';
 
-export class ApiError extends Error {
+class ApiError extends Error {
   status: number;
   url: string;
   constructor(status: number, url: string) {
@@ -28,6 +32,8 @@ export class ApiError extends Error {
   }
 }
 
+type QueryValue = string | number | boolean;
+
 async function get<T>(path: string): Promise<T> {
   const url = `${API.BASE}${path}`;
   const res = await fetch(url);
@@ -35,66 +41,216 @@ async function get<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-function paged(path: string, page: number, perPage: number): string {
-  return `${path}?page=${page}&per_page=${perPage}`;
+/** Build a query string, dropping empty strings and false flags. */
+function query(params: Record<string, QueryValue>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === '' || value === false) continue;
+    search.set(key, String(value));
+  }
+  const qs = search.toString();
+  return qs ? `?${qs}` : '';
 }
 
-export function getRijal(
-  page: number = PAGE.defaultPage,
-  perPage: number = PAGE.defaultPerPage,
-): Promise<Paginated<RijalEntry>> {
-  return get<Paginated<RijalEntry>>(paged(API.RIJAL, page, perPage));
+// ---- catalog + taxonomy ----
+
+export function getDomains(): Promise<Domain[]> {
+  return get<Domain[]>(API.DOMAINS);
 }
 
-export function getCanonical(
-  page: number = PAGE.defaultPage,
-  perPage: number = PAGE.defaultPerPage,
-): Promise<Paginated<CanonicalEntry>> {
-  return get<Paginated<CanonicalEntry>>(paged(API.CANONICAL, page, perPage));
+export function getBook(urn: string): Promise<Book> {
+  return get<Book>(`${API.BOOKS}/${encodeURIComponent(urn)}`);
 }
 
-export function getHistory(
-  page: number = PAGE.defaultPage,
-  perPage: number = PAGE.defaultPerPage,
-): Promise<Paginated<HistoryEntry>> {
-  return get<Paginated<HistoryEntry>>(paged(API.HISTORY, page, perPage));
+export interface WorkListParams {
+  category?: string;
+  domain?: string;
+  tradition?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
 }
 
-export function getCatalog(): Promise<BookGenre[]> {
-  return get<BookGenre[]>(API.BOOKS);
+/** Volume-folded works for the Library: one entry per work, scoped by
+    category, domain, and/or tradition. */
+export function getWorks(params: WorkListParams = {}): Promise<Page<Work>> {
+  const qs = query({
+    category: params.category ?? '',
+    domain: params.domain ?? '',
+    tradition: params.tradition ?? '',
+    q: params.q ?? '',
+    limit: params.limit ?? PAGE.defaultLimit,
+    offset: params.offset ?? 0,
+  });
+  return get<Page<Work>>(`${API.WORKS}${qs}`);
 }
 
-export function getBook(slug: string): Promise<BookData> {
-  return get<BookData>(`${API.DATA}/${encodeURIComponent(slug)}`);
+// ---- reader ----
+
+export function getToc(urn: string): Promise<Toc> {
+  return get<Toc>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.TOC}`);
 }
 
-export function getPage(slug: string, pageNumber: number): Promise<ReaderPage> {
-  return get<ReaderPage>(`${API.BOOKS}/${encodeURIComponent(slug)}${API.PAGE}/${pageNumber}`);
+export function getPage(urn: string, pageNumber: number): Promise<BookPage> {
+  return get<BookPage>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.PAGES}/${pageNumber}`);
+}
+
+export function searchBook(
+  urn: string,
+  q: string,
+  limit?: number,
+  offset?: number,
+): Promise<Page<BookSearchMatch>> {
+  const qs = query({ q, limit: limit ?? PAGE.defaultLimit, offset: offset ?? 0 });
+  return get<Page<BookSearchMatch>>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.SEARCH}${qs}`);
+}
+
+// ---- search (one query, many scopes: content / title / author / book / narrator) ----
+
+export const SEARCH_SCOPES = ['content', 'title', 'author', 'book', 'narrator', 'quran'] as const;
+export type SearchScope = (typeof SEARCH_SCOPES)[number];
+export type SearchMode = 'exact' | 'broad';
+
+export interface CorpusSearchParams {
+  mode?: SearchMode;
+  category?: string;
+  book?: string;
+  volume?: number;
+  limit?: number;
+  offset?: number;
+}
+
+export function searchCorpus(
+  q: string,
+  params: CorpusSearchParams = {},
+): Promise<Page<CorpusMatch>> {
+  const qs = query({
+    q,
+    mode: params.mode ?? 'exact',
+    category: params.category ?? '',
+    book: params.book ?? '',
+    volume: params.volume ?? 0,
+    limit: params.limit ?? PAGE.defaultLimit,
+    offset: params.offset ?? 0,
+  });
+  return get<Page<CorpusMatch>>(`${API.SEARCH}${qs}`);
+}
+
+export function searchFacets(
+  q: string,
+  mode: SearchMode = 'exact',
+  category = '',
+  book = '',
+): Promise<SearchFacets> {
+  const qs = query({ q, mode, category, book });
+  return get<SearchFacets>(`${API.SEARCH}${API.FACETS}${qs}`);
+}
+
+export interface BookSearchParams {
+  field?: 'title' | 'author' | 'any';
+  limit?: number;
+  offset?: number;
+}
+
+export function searchBooks(q: string, params: BookSearchParams = {}): Promise<Page<Book>> {
+  const qs = query({
+    q,
+    field: params.field ?? 'any',
+    limit: params.limit ?? PAGE.defaultLimit,
+    offset: params.offset ?? 0,
+  });
+  return get<Page<Book>>(`${API.SEARCH}${API.BOOKS}${qs}`);
+}
+
+// ---- quran ----
+
+/** Resolve a surah:ayah reference to its verse text (pointed + bare forms). */
+export function getVerse(surah: number, ayah: number): Promise<Ayah> {
+  return get<Ayah>(`${API.QURAN}/${surah}/${ayah}`);
+}
+
+/** Find Qurʾān verses whose text contains an Arabic term or phrase. */
+export function searchQuran(
+  q: string,
+  params: { limit?: number; offset?: number } = {},
+): Promise<Page<Ayah>> {
+  const qs = query({ q, limit: params.limit ?? PAGE.defaultLimit, offset: params.offset ?? 0 });
+  return get<Page<Ayah>>(`${API.QURAN}${API.SEARCH}${qs}`);
+}
+
+// ---- daily ----
+
+export function getDaily(): Promise<Daily> {
+  return get<Daily>(API.DAILY);
+}
+
+// ---- narrator registries ----
+
+export interface RijalParams {
+  q?: string;
+  tradition?: string;
+  category?: string;
+  has_teachers?: boolean;
+  has_reliability?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export function getRijal(params: RijalParams = {}): Promise<Page<RijalEntry>> {
+  const qs = query({
+    q: params.q ?? '',
+    tradition: params.tradition ?? '',
+    category: params.category ?? '',
+    has_teachers: params.has_teachers ?? false,
+    has_reliability: params.has_reliability ?? false,
+    limit: params.limit ?? PAGE.defaultLimit,
+    offset: params.offset ?? 0,
+  });
+  return get<Page<RijalEntry>>(`${API.RIJAL}${qs}`);
+}
+
+export interface CanonicalParams {
+  q?: string;
+  merged_only?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export function getCanonical(params: CanonicalParams = {}): Promise<Page<CanonicalEntry>> {
+  const qs = query({
+    q: params.q ?? '',
+    merged_only: params.merged_only ?? false,
+    limit: params.limit ?? PAGE.defaultLimit,
+    offset: params.offset ?? 0,
+  });
+  return get<Page<CanonicalEntry>>(`${API.CANONICAL}${qs}`);
 }
 
 async function collect<T>(
-  fetcher: (page: number, perPage: number) => Promise<Paginated<T>>,
-  maxPages: number,
+  fetcher: (limit: number, offset: number) => Promise<Page<T>>,
+  pages: number,
   perPage: number,
 ): Promise<T[]> {
   const out: T[] = [];
-  let page = 1;
-  let totalPages = 1;
-  do {
-    const res = await fetcher(page, perPage);
-    totalPages = res.total_pages;
-    out.push(...res.entries);
-    page += 1;
-  } while (page <= totalPages && page <= maxPages);
+  let offset = 0;
+  for (let i = 0; i < pages; i += 1) {
+    const res = await fetcher(perPage, offset);
+    out.push(...res.items);
+    offset += perPage;
+    if (offset >= res.total) break;
+  }
   return out;
 }
 
 /** Build the narrator index for in-reader tarjama: rijal (with reliability) +
     canonical, merged by name. Paged + capped to stay light. */
-export async function getNarratorIndex(maxPages = 6, perPage = 100): Promise<NarratorRecord[]> {
+export async function getNarratorIndex(
+  pages: number = PAGE.indexPages,
+  perPage: number = PAGE.indexPerPage,
+): Promise<NarratorRecord[]> {
   const [rijal, canonical] = await Promise.all([
-    collect<RijalEntry>(getRijal, maxPages, perPage),
-    collect<CanonicalEntry>(getCanonical, maxPages, perPage),
+    collect<RijalEntry>((limit, offset) => getRijal({ limit, offset }), pages, perPage),
+    collect<CanonicalEntry>((limit, offset) => getCanonical({ limit, offset }), pages, perPage),
   ]);
   return mergeNarrators(rijal.map(rijalToRecord), canonical.map(canonicalToRecord));
 }

@@ -1,5 +1,22 @@
 // variants.ts:status-map SSOT. Routes import these; never inline status maps.
 import type { BadgeVariant } from './design-system';
+import type { HadithGrade } from './types';
+
+/** Map a hadith authenticity grade to a Badge variant. The one grade→tone path:
+    ṣaḥīḥ is sound, ḥasan is fair, ḍaʿīf and mawḍūʿ are weak/fabricated. */
+export function hadithBadge(grade: HadithGrade | null | undefined): BadgeVariant {
+  switch (grade) {
+    case 'sahih':
+      return 'success';
+    case 'hasan':
+      return 'warning';
+    case 'daif':
+    case 'mawdu':
+      return 'danger';
+    default:
+      return 'default';
+  }
+}
 
 /** Map a narrator reliability grade to a Badge variant. */
 export function reliabilityBadge(grade: string | null | undefined): BadgeVariant {

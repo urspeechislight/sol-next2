@@ -21,9 +21,24 @@ export interface CardProps {
   children: ReactNode;
 }
 
-export function Card({ variant = "flat", pad = "md", interactive = false, as: Tag = "div", className, children }: CardProps) {
+export function Card({
+  variant = "flat",
+  pad = "md",
+  interactive = false,
+  as: Tag = "div",
+  className,
+  children,
+}: CardProps) {
   return (
-    <Tag className={cx("ds-card", VARIANT_CLASS[variant], PAD_CLASS[pad], interactive && "ds-card--interactive", className)}>
+    <Tag
+      className={cx(
+        "ds-card",
+        VARIANT_CLASS[variant],
+        PAD_CLASS[pad],
+        interactive && "ds-card--interactive",
+        className,
+      )}
+    >
       {children}
     </Tag>
   );

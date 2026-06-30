@@ -1,0 +1,10 @@
+/* Highlight.css — the search-match mark. Color comes only from the design
+   token --color-mark-bg (tokens.css); this file never hardcodes a color. */
+.ds-mark {
+  background: var(--color-mark-bg);
+  color: inherit;
+  border-radius: var(--radius-sm);
+  padding: 0 0.12em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}

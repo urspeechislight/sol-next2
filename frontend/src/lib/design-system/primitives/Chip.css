@@ -1,0 +1,49 @@
+.ds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-2xs) var(--space-2xs) var(--space-sm);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+.ds-chip__icon {
+  color: var(--color-text-muted);
+}
+.ds-chip__label {
+  white-space: nowrap;
+}
+.ds-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+.ds-chip__remove:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+/* Reader surface. */
+.ds-chip--reader {
+  background: var(--color-reader-pill-bg);
+  border-color: var(--color-reader-rule);
+  color: var(--color-reader-fg);
+}
+.ds-chip--reader .ds-chip__remove:hover {
+  background: var(--color-reader-rule);
+  color: var(--color-reader-fg);
+}

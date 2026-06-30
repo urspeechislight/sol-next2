@@ -1,0 +1,53 @@
+.ds-navarrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  height: var(--control-height-sm);
+  padding: 0 var(--space-sm);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+.ds-navarrow--md {
+  height: var(--control-height-md);
+}
+/* Icon-only → a square control matching its own height. */
+.ds-navarrow--icon {
+  width: var(--control-height-sm);
+  padding: 0;
+}
+.ds-navarrow--icon.ds-navarrow--md {
+  width: var(--control-height-md);
+}
+.ds-navarrow__label {
+  display: inline-block;
+}
+
+/* App surface: a standing, raised control matching the secondary-button chrome. */
+.ds-navarrow--app {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border-strong);
+}
+.ds-navarrow--app:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-deep);
+}
+
+/* Reader surface: matches the reader pill / segmented chrome. */
+.ds-navarrow--reader {
+  background: var(--color-reader-pill-bg);
+  border-color: var(--color-reader-rule);
+}
+.ds-navarrow--reader:hover {
+  border-color: var(--color-reader-progress);
+}

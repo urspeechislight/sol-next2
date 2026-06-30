@@ -36,30 +36,9 @@
   margin: var(--space-xs) 0 var(--space-gutter);
 }
 
-.narrator-grade {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border-radius: var(--radius-pill);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
+/* Appearance is the GradeBadge component; the panel owns only where it sits. */
+.narrator__grade {
   margin-bottom: var(--space-md);
-}
-.narrator-grade--default {
-  background: var(--color-reader-pill-bg);
-  color: var(--color-reader-muted);
-}
-.narrator-grade--success {
-  background: color-mix(in srgb, var(--color-success) 20%, var(--color-reader-bg));
-  color: var(--color-success);
-}
-.narrator-grade--warning {
-  background: color-mix(in srgb, var(--color-warning) 22%, var(--color-reader-bg));
-  color: var(--color-warning);
-}
-.narrator-grade--danger {
-  background: color-mix(in srgb, var(--color-danger) 20%, var(--color-reader-bg));
-  color: var(--color-danger);
 }
 
 .narrator__facts {

@@ -3,6 +3,7 @@
 export { Icon } from "./primitives/Icon";
 export type { IconProps, IconSize } from "./primitives/Icon";
 export type { IconName } from "./internal/icons";
+export { ICON_NAMES } from "./internal/icons";
 
 export { Text } from "./primitives/Text";
 export type { TextProps, TextSize, TextTone, TextWeight, TextFont } from "./primitives/Text";
@@ -19,11 +20,23 @@ export type { InlineProps } from "./primitives/Inline";
 export { Button } from "./primitives/Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./primitives/Button";
 
+export { IconButton } from "./primitives/IconButton";
+export type { IconButtonProps, IconButtonSize, Surface } from "./primitives/IconButton";
+
+export { Pill } from "./primitives/Pill";
+export type { PillProps } from "./primitives/Pill";
+
+export { NavArrow } from "./primitives/NavArrow";
+export type { NavArrowProps, NavArrowDirection, NavArrowSize } from "./primitives/NavArrow";
+
 export { Card } from "./primitives/Card";
 export type { CardProps, CardVariant, CardPad } from "./primitives/Card";
 
 export { Badge } from "./primitives/Badge";
 export type { BadgeProps, BadgeVariant } from "./primitives/Badge";
+
+export { Chip } from "./primitives/Chip";
+export type { ChipProps } from "./primitives/Chip";
 
 export { Link } from "./primitives/Link";
 export type { LinkProps, LinkVariant } from "./primitives/Link";
@@ -43,23 +56,36 @@ export type { SegmentedProps, SegmentedOption } from "./primitives/Segmented";
 export { Input } from "./primitives/Input";
 export type { InputProps } from "./primitives/Input";
 
-export { Select } from "./primitives/Select";
-export type { SelectProps, SelectOption } from "./primitives/Select";
-
-export { Textarea } from "./primitives/Textarea";
-export type { TextareaProps } from "./primitives/Textarea";
+export { Menu } from "./primitives/Menu";
+export type { MenuProps, MenuOption, MenuVariant } from "./primitives/Menu";
 
 export { Logo } from "./primitives/Logo";
 export type { LogoProps, LogoSize } from "./primitives/Logo";
 
-export { QRCode } from "./primitives/QRCode";
-export type { QRCodeProps } from "./primitives/QRCode";
-
-export { ShareCard } from "./primitives/ShareCard";
-export type { ShareCardProps } from "./primitives/ShareCard";
-
-export { ShareSheet } from "./primitives/ShareSheet";
-export type { ShareSheetProps } from "./primitives/ShareSheet";
-
 export { ShareButton } from "./primitives/ShareButton";
 export type { ShareButtonProps } from "./primitives/ShareButton";
+
+export { Highlight } from "./primitives/Highlight";
+export type { HighlightProps } from "./primitives/Highlight";
+
+// Reader-domain components — composed from primitives + reader-surface tokens.
+export { TocItem } from "./components/TocItem";
+export type { TocItemProps } from "./components/TocItem";
+
+export { MatchRow } from "./components/MatchRow";
+export type { MatchRowProps } from "./components/MatchRow";
+
+export { NarratorLink } from "./components/NarratorLink";
+export type { NarratorLinkProps } from "./components/NarratorLink";
+
+export { IsnadNode } from "./components/IsnadNode";
+export type { IsnadNodeProps } from "./components/IsnadNode";
+
+export { TitleLockup } from "./components/TitleLockup";
+export type { TitleLockupProps, LockupMode } from "./components/TitleLockup";
+
+export { SourceRecord } from "./components/SourceRecord";
+export type { SourceRecordProps } from "./components/SourceRecord";
+
+export { MetaBadges } from "./components/MetaBadges";
+export type { MetaBadgesProps } from "./components/MetaBadges";

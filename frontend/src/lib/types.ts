@@ -1,23 +1,24 @@
-// types.ts:real sol-next API contract (Part F). Fixed interface; copied verbatim.
-// All list endpoints return Paginated<T> with ?page=&per_page=.
+// types.ts:the real sol-next2 :8001 API contract (SSOT). List endpoints return
+// Page<T> {items,total,limit,offset}. Both this app and the design components
+// bind to these shapes — change them here only when the backend changes.
 
-export interface Paginated<T> {
+export interface Page<T> {
+  items: T[];
   total: number;
-  page: number;
-  per_page: number;
-  total_pages: number;
-  entries: T[];
+  limit: number;
+  offset: number;
 }
 
-// GET /api/rijal
+// ---- narrator registry (GET /api/rijal, /api/canonical) ----
+
 export interface RijalEntry {
-  id: string;
+  id: number;
   full_name: string;
   kunya: string;
   nisba: string;
   tradition: string;
-  death_year: string; // STRING
-  birth_year: string; // STRING
+  death_year: string; // recorded as free-form text (Hijri)
+  birth_year: string;
   category: string;
   teacher_count: number;
   student_count: number;
@@ -28,15 +29,14 @@ export interface RijalEntry {
   book_path: string;
 }
 
-// GET /api/canonical
 export interface CanonicalEntry {
-  canonical_id: string;
+  canonical_id: number;
   full_name: string;
   kunya: string;
   nisba: string;
   tradition: string;
-  death_year: number; // NUMBER
-  birth_year: number; // NUMBER
+  death_year: number | null;
+  birth_year: number | null;
   entry_count: number;
   source_count: number;
   teacher_count: number;
@@ -44,96 +44,187 @@ export interface CanonicalEntry {
   merge_confidence: number | null;
 }
 
-// GET /api/history
-export interface HistoryEntry {
-  id: string;
-  full_name: string;
-  kunya: string;
-  nisba: string;
-  title: string;
-  death_year: number;
-  birth_year: number;
-  event_count: number;
-  event_types: string[];
+// ---- catalog + taxonomy (GET /api/books, /api/domains) ----
+
+export type CanonicalRank = 'primary' | 'primary_reference' | 'secondary' | 'tertiary';
+
+export interface Book {
+  urn: string;
+  title_ar: string;
+  title_en: string | null;
+  author: string | null;
+  author_ar: string;
+  death_year_ah: number | null;
+  death_year_ce: number | null;
+  page_count: number | null;
+  volume: number | null;
+  category: string;
+  sect: string | null;
+  madhab: string | null;
+  canonical: CanonicalRank | null;
+  language: string;
+  blurb: string | null;
 }
 
-export interface BehaviorSummary {
-  behavior: string;
-  count: number;
-}
+export type Tradition = 'sunni' | 'shia' | 'shared';
 
-// GET /api/data
-export interface BookData {
-  work_id: string;
-  manifestation_id: string;
-  title: string;
-  author: string;
-  book_path: string;
-  book_slug: string;
-  total_pages: number;
-  content_pages: number;
-  skipped_pages: number;
-  total_spans: number;
-  behavior_count: number;
-  behavior_summary: BehaviorSummary[];
-}
-
-export interface BookCatalogEntry {
-  path: string;
-  filename: string;
-  display: string;
+export interface Category {
   slug: string;
+  label: string;
+  label_ar: string;
+  count: number;
+  volume_count: number;
+  tradition: Tradition;
 }
 
-// GET /api/books -> BookGenre[]
-export interface BookGenre {
-  genre: string;
-  genre_id: string;
-  books: BookCatalogEntry[];
+export interface Domain {
+  id: string;
+  label: string;
+  label_ar: string;
+  blurb: string;
+  categories: Category[];
 }
 
-// PROVISIONAL reading shape:bind the reader to THIS, nothing richer.
-export interface ReaderPage {
-  book_slug: string;
+// ---- works (GET /api/works): the volume-folded Library listing ----
+export interface Work {
+  stem: string;
+  title_ar: string;
+  title_en: string | null;
+  author: string | null;
+  author_ar: string;
+  death_year_ah: number | null;
+  death_year_ce: number | null;
+  page_count: number | null;
+  volume_count: number;
+  category: string;
+  sect: string | null;
+  canonical: CanonicalRank | null;
+  volumes: string[];
+  first_urn: string;
+}
+
+// ---- reader (GET /api/books/{urn}/toc, /pages/{n}) ----
+
+export type HadithGrade = 'sahih' | 'hasan' | 'daif' | 'mawdu';
+
+export interface TocEntry {
+  page: number;
+  title: string;
+  title_en: string | null;
+  active: boolean;
+}
+
+export interface Toc {
+  book_urn: string;
+  entries: TocEntry[];
+}
+
+export interface Narrator {
+  name: string;
+  name_ar: string;
+  role: string;
+  grade: string;
+  d: number | null;
+}
+
+export interface CrossRef {
+  book: string;
+  book_ar: string;
+  chapter: string;
+  page: number | null;
+}
+
+export interface Hadith {
+  n: number;
+  isnad_ar: string;
+  matn_ar: string;
+  matn_en: string | null;
+  narrators: Narrator[];
+  grade: HadithGrade | null;
+  cross_refs: CrossRef[];
+}
+
+export interface BookPage {
   page_number: number;
   total_pages: number;
-  heading?: string | null;
-  units: ReaderUnit[];
+  chapter_title: string;
+  chapter_title_en: string | null;
+  section_title: string;
+  section_title_en: string | null;
+  hadiths: Hadith[];
 }
 
-export interface ReaderUnit {
-  id: string;
-  text_ar: string;
-  text_en?: string | null;
-  kind?: string | null; // free string; NOT a hadith taxonomy
+// ---- daily editorial (GET /api/daily) ----
+
+export interface DailyDate {
+  hijri: string;
+  hijri_short: string;
+  gregorian: string;
 }
 
-// Share is PROVISIONAL:keep the Share UI; ShareContent stays generic.
-// Stage-2 reconciliation: ShareFormat was referenced by ShareCard/ShareSheet but
-// missing from the source; restored here as the three card aspect-ratios.
-export type ShareFormat = 'link' | 'square' | 'story';
-
-export interface ShareContent {
-  kicker: string;
-  arabic: string;
-  latin: string;
-  source: string;
-  url: string;
+export interface Tafsir {
+  book: string;
+  book_ar: string;
+  author: string;
+  urn: string;
+  excerpt_en: string;
+  excerpt_ar: string;
 }
 
-export interface ShareResponse {
-  short_url: string;
-  caption: string;
-  qr: boolean[][];
-  image_url?: string | null;
+export interface Verse {
+  surah: string;
+  surah_ar: string;
+  surah_n: number;
+  ayah_n: number;
+  ayah_ar: string;
+  ayah_en: string;
+  tafsirs: Tafsir[];
 }
 
-// ---- Narrator tarjama (DERIVED view-type) ----
+export interface HadithSource {
+  book: string;
+  book_ar: string;
+  n: string;
+  urn: string | null;
+  sect: string;
+}
+
+export interface DailyHadith {
+  matn_ar: string;
+  matn_en: string;
+  isnad_ar: string;
+  source: HadithSource;
+  parallels: HadithSource[];
+  grade: HadithGrade;
+  grade_label: string;
+  note: string;
+}
+
+export interface OpenTo {
+  page: number;
+  chapter_en: string;
+}
+
+export interface DailyBookPick {
+  urn: string;
+  rationale: string;
+  open_to: OpenTo;
+}
+
+export interface Daily {
+  date: DailyDate;
+  verse: Verse;
+  hadith: DailyHadith;
+  book: DailyBookPick;
+  rotation: string[];
+}
+
+// ---- narrator tarjama (DERIVED view-type) ----
 // Reading text carries no narrator IDs, so narrators are joined to the rijāl /
 // canonical registries BY NAME. NarratorRecord is the merged shape the reader
 // surfaces; it is composed client-side from RijalEntry + CanonicalEntry.
 export interface NarratorRecord {
-  id: string;
+  id: number;
   full_name: string;
   kunya: string;
   nisba: string;
@@ -148,4 +239,73 @@ export interface NarratorRecord {
   source_label?: string | null;
   merge_confidence?: number | null;
   origin: 'rijal' | 'canonical';
+}
+
+// ---- share (UI feature, generic; not backend-bound) ----
+// ShareFormat is derived from SHARE_FORMATS in constants.ts (the runtime options).
+
+export interface ShareContent {
+  kicker: string;
+  arabic: string;
+  latin: string;
+  source: string;
+  url: string;
+}
+
+export interface ShareResponse {
+  short_url: string;
+  caption: string;
+  qr: boolean[][];
+  image_url: string | null;
+}
+
+// GET /api/books/{urn}/search
+export interface BookSearchMatch {
+  page: number;
+  snippet: string;
+}
+
+// GET /api/search (cross-corpus full-text)
+export interface CorpusMatch {
+  urn: string;
+  title_ar: string;
+  title_en: string | null;
+  author: string | null;
+  category: string;
+  volume: number | null;
+  page: number;
+  snippet: string;
+}
+
+// GET /api/search/facets — drill-down: category -> book -> volume
+export interface CategoryFacet {
+  slug: string;
+  count: number;
+}
+
+export interface BookFacet {
+  title: string;
+  title_en: string | null;
+  count: number;
+}
+
+export interface VolumeFacet {
+  volume: number;
+  count: number;
+}
+
+export interface SearchFacets {
+  categories: CategoryFacet[];
+  books: BookFacet[];
+  volumes: VolumeFacet[];
+}
+
+// GET /api/quran/{surah}/{ayah} — one verse, pointed + bare forms
+export interface Ayah {
+  surah: number;
+  ayah: number;
+  verse_count: number;
+  text_ar: string;
+  text_plain: string;
+  text_en: string | null;
 }

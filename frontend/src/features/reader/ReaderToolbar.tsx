@@ -1,17 +1,174 @@
-import { Icon } from "../../lib/design-system";
-import type { IconName } from "../../lib/design-system";
+import { IconButton, Input, NavArrow, Pill, Segmented, TitleLockup } from '../../lib/design-system';
+import type { IconName } from '../../lib/design-system';
+import { READER } from '../../lib/constants';
+import { clamp } from '../../lib/utils';
 
-export type ReaderTheme = "bright" | "dark" | "classical";
-export type ReaderLang = "en" | "both" | "ar";
-export type LeftDrawer = "contents" | "search" | null;
-export type RightDrawer = "isnad" | "tarjama" | null;
+export type ReaderTheme = 'dark' | 'classical';
+export type ReaderLang = 'en' | 'both' | 'ar';
+export type LeftDrawer = 'contents' | null;
+export type RightDrawer = 'isnad' | 'tarjama' | null;
+
+const CHAPTER_STEP = 10;
 
 const THEMES: [ReaderTheme, string, IconName][] = [
-  ["bright", "Bright", "sun"], ["dark", "Dark", "moon"], ["classical", "Classical", "book"],
+  ['dark', 'Dark', 'moon'],
+  ['classical', 'Classical', 'book'],
 ];
-const LANGS: [ReaderLang, string][] = [["en", "EN"], ["both", "EN | AR"], ["ar", "AR"]];
+const LANGS: [ReaderLang, string][] = [
+  ['en', 'EN'],
+  ['both', 'EN | AR'],
+  ['ar', 'AR'],
+];
+
+function ContextRow({
+  titleAr,
+  titleEn,
+  author,
+  urn,
+  lang,
+  searchQuery,
+  onBack,
+  onSearchQuery,
+}: Pick<
+  ReaderToolbarProps,
+  'titleAr' | 'titleEn' | 'author' | 'urn' | 'lang' | 'searchQuery' | 'onBack' | 'onSearchQuery'
+>) {
+  return (
+    <div className="reader-toolbar__row">
+      <NavArrow direction="back" surface="reader" label="Back to catalog" onClick={onBack}>
+        Catalog
+      </NavArrow>
+      <span className="reader-vrule" />
+      <div className="reader-context">
+        <TitleLockup titleAr={titleAr} titleEn={titleEn} author={author} mode={lang} />
+      </div>
+      <Input
+        surface="reader"
+        className="reader-toolbar__search"
+        icon="book-search"
+        ariaLabel="Search in book"
+        value={searchQuery}
+        placeholder="ابحث في الكتاب…"
+        dir="rtl"
+        onInput={onSearchQuery}
+      />
+      <span className="reader-urn">⌗ {urn}</span>
+    </div>
+  );
+}
+
+function PagerRow({
+  page,
+  totalPages,
+  onPage,
+}: Pick<ReaderToolbarProps, 'page' | 'totalPages' | 'onPage'>) {
+  const toPage = (n: number) => onPage(clamp(n, 1, totalPages));
+  return (
+    <div className="reader-toolbar__row reader-toolbar__row--pager">
+      <IconButton
+        surface="reader"
+        label="Back ten pages"
+        onClick={() => toPage(page - CHAPTER_STEP)}
+      >
+        «
+      </IconButton>
+      <IconButton
+        surface="reader"
+        label="Previous page"
+        icon="chevron-left"
+        onClick={() => toPage(page - 1)}
+      />
+      <Pill surface="reader" active display className="reader-pagejump">
+        <span>{page.toLocaleString()}</span>
+        <span className="reader-pagejump__sep">/</span>
+        <span className="reader-pagejump__total">{totalPages.toLocaleString()}</span>
+      </Pill>
+      <IconButton
+        surface="reader"
+        label="Next page"
+        icon="chevron-right"
+        onClick={() => toPage(page + 1)}
+      />
+      <IconButton
+        surface="reader"
+        label="Forward ten pages"
+        onClick={() => toPage(page + CHAPTER_STEP)}
+      >
+        »
+      </IconButton>
+    </div>
+  );
+}
+
+function ThemeGroup(p: ReaderToolbarProps) {
+  return (
+    <div className="reader-toolbar__group">
+      <Segmented
+        surface="reader"
+        label="Reader theme"
+        value={p.readerTheme}
+        options={THEMES.map(([value, label, icon]) => ({ value, label, icon }))}
+        onChange={(v) => p.onTheme(v as ReaderTheme)}
+      />
+      <div className="reader-stepper">
+        <IconButton
+          surface="reader"
+          size="sm"
+          label="Smaller"
+          onClick={() => p.onSize(p.size - READER.SIZE_STEP)}
+        >
+          −
+        </IconButton>
+        <span>{p.size}px</span>
+        <IconButton
+          surface="reader"
+          size="sm"
+          label="Larger"
+          onClick={() => p.onSize(p.size + READER.SIZE_STEP)}
+        >
+          +
+        </IconButton>
+      </div>
+    </div>
+  );
+}
+
+function DrawerGroup(p: ReaderToolbarProps) {
+  const toggleContents = () => p.onLeft(p.leftDrawer === 'contents' ? null : 'contents');
+  return (
+    <div className="reader-toolbar__group">
+      <Segmented
+        surface="reader"
+        label="Language"
+        value={p.lang}
+        options={LANGS.map(([value, label]) => ({ value, label }))}
+        onChange={(v) => p.onLang(v as ReaderLang)}
+      />
+      <Pill
+        surface="reader"
+        active={p.leftDrawer === 'contents'}
+        icon="menu"
+        onClick={toggleContents}
+      >
+        Contents
+      </Pill>
+      <Pill
+        surface="reader"
+        active={p.rightDrawer === 'isnad'}
+        icon="network"
+        onClick={() => p.onRight(p.rightDrawer === 'isnad' ? null : 'isnad')}
+      >
+        Isnād
+      </Pill>
+    </div>
+  );
+}
 
 export interface ReaderToolbarProps {
+  titleAr: string;
+  titleEn?: string | null;
+  author?: string | null;
+  urn: string;
   page: number;
   totalPages: number;
   readerTheme: ReaderTheme;
@@ -19,6 +176,7 @@ export interface ReaderToolbarProps {
   size: number;
   leftDrawer: LeftDrawer;
   rightDrawer: RightDrawer;
+  searchQuery: string;
   onBack: () => void;
   onPage: (p: number) => void;
   onTheme: (t: ReaderTheme) => void;
@@ -26,57 +184,26 @@ export interface ReaderToolbarProps {
   onSize: (s: number) => void;
   onLeft: (d: LeftDrawer) => void;
   onRight: (d: RightDrawer) => void;
+  onSearchQuery: (q: string) => void;
 }
 
 export function ReaderToolbar(p: ReaderToolbarProps) {
-  const pill = (on: boolean) => `reader-pill${on ? " reader-pill--on" : ""}`;
   return (
     <header className="reader-toolbar">
-      <div className="reader-toolbar__row">
-        <button className="reader-pill" type="button" onClick={p.onBack}><Icon name="arrow-left" size="sm" /> Catalog</button>
-        <span className="reader-vrule" />
-        <div className="reader-context">
-          <span className="reader-title-ar" dir="rtl">وسائل الشيعة</span>
-          <span className="reader-context__en">· Wasāʾil al-Shīʿa · al-Ḥurr al-ʿĀmilī</span>
-        </div>
-        <span className="reader-urn">urn:WasShia</span>
-      </div>
-      <div className="reader-toolbar__row reader-toolbar__row--pager">
-        <button className="reader-iconbtn" aria-label="Previous chapter" onClick={() => p.onPage(Math.max(1, p.page - 10))}>«</button>
-        <button className="reader-iconbtn" aria-label="Previous page" onClick={() => p.onPage(Math.max(1, p.page - 1))}><Icon name="chevron-left" size="sm" /></button>
-        <span className="reader-pill reader-pill--on reader-pagejump">
-          <span>{p.page.toLocaleString()}</span>
-          <span className="reader-pagejump__sep">/</span>
-          <span className="reader-pagejump__total">{p.totalPages.toLocaleString()}</span>
-        </span>
-        <button className="reader-iconbtn" aria-label="Next page" onClick={() => p.onPage(Math.min(p.totalPages, p.page + 1))}><Icon name="chevron-right" size="sm" /></button>
-        <button className="reader-iconbtn" aria-label="Next chapter" onClick={() => p.onPage(Math.min(p.totalPages, p.page + 10))}>»</button>
-      </div>
+      <ContextRow
+        titleAr={p.titleAr}
+        titleEn={p.titleEn}
+        author={p.author}
+        urn={p.urn}
+        lang={p.lang}
+        searchQuery={p.searchQuery}
+        onBack={p.onBack}
+        onSearchQuery={p.onSearchQuery}
+      />
+      <PagerRow page={p.page} totalPages={p.totalPages} onPage={p.onPage} />
       <div className="reader-toolbar__row reader-toolbar__row--settings">
-        <div className="reader-toolbar__group">
-          <div className="reader-seg" role="radiogroup" aria-label="Reader theme">
-            {THEMES.map(([v, label, icon]) => (
-              <button key={v} className="reader-seg__btn" aria-pressed={p.readerTheme === v} onClick={() => p.onTheme(v)}>
-                <Icon name={icon} size="sm" />{label}
-              </button>
-            ))}
-          </div>
-          <div className="reader-stepper">
-            <button className="reader-iconbtn reader-iconbtn--sm" aria-label="Smaller" onClick={() => p.onSize(p.size - 1)}>−</button>
-            <span>{p.size}px</span>
-            <button className="reader-iconbtn reader-iconbtn--sm" aria-label="Larger" onClick={() => p.onSize(p.size + 1)}>+</button>
-          </div>
-        </div>
-        <div className="reader-toolbar__group">
-          <div className="reader-seg" role="radiogroup" aria-label="Language">
-            {LANGS.map(([v, label]) => (
-              <button key={v} className="reader-seg__btn" aria-pressed={p.lang === v} onClick={() => p.onLang(v)}>{label}</button>
-            ))}
-          </div>
-          <button className={pill(p.leftDrawer === "contents")} onClick={() => p.onLeft(p.leftDrawer === "contents" ? null : "contents")}><Icon name="menu" size="sm" /> Contents</button>
-          <button className={pill(p.leftDrawer === "search")} onClick={() => p.onLeft(p.leftDrawer === "search" ? null : "search")}><Icon name="search" size="sm" /> Search</button>
-          <button className={pill(p.rightDrawer === "isnad")} onClick={() => p.onRight(p.rightDrawer === "isnad" ? null : "isnad")}><Icon name="network" size="sm" /> Isnād</button>
-        </div>
+        <ThemeGroup {...p} />
+        <DrawerGroup {...p} />
       </div>
     </header>
   );

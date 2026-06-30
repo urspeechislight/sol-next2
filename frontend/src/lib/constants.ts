@@ -2,36 +2,31 @@
 // Path / URL constants (API, ROUTES, ASSETS) live in routes.ts (CENTRAL-006).
 
 export const PAGE = {
-  defaultPage: 1,
-  defaultPerPage: 24,
+  defaultLimit: 24,
+  // Book / narrator scopes facet (category filter) over the returned rows on the
+  // client, so they fetch a deeper page than the default to keep that facet and
+  // its counts complete for realistic result sets.
+  facetLimit: 200,
+  graphPerPage: 40,
+  indexPages: 6,
+  indexPerPage: 100,
 } as const;
 
-// the three graph registries:drives nav + screen config
+// Sentinel the upstream catalog uses for an unknown author death year; the
+// library treats it as "no year" rather than printing it.
+export const BOOK = { UNKNOWN_DEATH_YEAR: 99999 } as const;
+
+// the narrator registries that the graph browses
 export const REGISTRY = {
   RIJAL: 'rijal',
   CANONICAL: 'canonical',
-  HISTORY: 'history',
 } as const;
-
-export type RegistryKey = (typeof REGISTRY)[keyof typeof REGISTRY];
-
-export const BREAKPOINTS = { SM: 640, MD: 880, LG: 1080, XL: 1320 } as const;
-
-// Motion durations in ms for JS-driven timing. MUST mirror tokens.css
-// --dur-raw-fast/base/slow (the motion SSOT); keep the two in lockstep.
-export const DURATION_MS = { FAST: 120, BASE: 200, SLOW: 340 } as const;
 
 export const THEME = {
   ATTR: 'data-theme',
   LIGHT: 'light',
   DARK: 'dark',
   STORAGE_KEY: 'sol-theme',
-} as const;
-
-export const DENSITY = {
-  ATTR: 'data-density',
-  COMFORTABLE: 'comfortable',
-  COMPACT: 'compact',
 } as const;
 
 // reader surface controls. SIZE_DEFAULT mirrors tokens.css --reader-size (19px);
@@ -45,27 +40,15 @@ export const READER = {
   SIZE_DEFAULT: 19,
 } as const;
 
-export const READER_THEMES = [
-  { value: 'bright', label: 'Bright' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'classical', label: 'Classical' },
-] as const;
-
-// reader shows AR / EN / both:English-primary ordering
-export const LANG_MODES = [
-  { value: 'en', label: 'EN' },
-  { value: 'both', label: 'EN | AR' },
-  { value: 'ar', label: 'AR' },
-] as const;
-
-// Share card formats + platform targets (consumed by ShareSheet). Stage-2
-// reconstruction: these were referenced by ShareSheet but absent from source;
-// rebuilt from the ShareFormat union + the platform icons + openIntent() logic.
+// Share card formats + platform targets (consumed by ShareSheet).
 export const SHARE_FORMATS = [
   { value: 'square', label: 'Square' },
   { value: 'story', label: 'Story' },
   { value: 'link', label: 'Link' },
 ] as const;
+// Derived from the const above (not hand-listed), so the type can never drift
+// from the runtime options, mirroring how SearchScope derives from SEARCH_SCOPES.
+export type ShareFormat = (typeof SHARE_FORMATS)[number]['value'];
 
 export const SHARE_PLATFORMS = [
   { id: 'x', label: 'X', icon: 'x' },

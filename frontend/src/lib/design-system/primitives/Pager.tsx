@@ -2,6 +2,9 @@ import { cx, pageWindow } from '../../utils';
 import { Button } from './Button';
 import './Pager.css';
 
+// Max number-buttons shown around the current page.
+const PAGE_WINDOW = 5;
+
 export interface PagerProps {
   page: number;
   totalPages: number;
@@ -11,7 +14,7 @@ export interface PagerProps {
 
 export function Pager({ page, totalPages, onPage, className }: PagerProps) {
   if (totalPages <= 1) return null;
-  const window = pageWindow(page, totalPages, 5);
+  const window = pageWindow(page, totalPages, PAGE_WINDOW);
   return (
     <nav className={cx('ds-pager', className)} aria-label="Pagination">
       <Button

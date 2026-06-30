@@ -1,35 +1,67 @@
-import { Badge, Button, Card, Heading, Icon, Inline, Text } from "../../lib/design-system";
-import type { BadgeVariant, IconName } from "../../lib/design-system";
-import { ASSETS } from "../../lib/routes";
+import { Badge, Button, Heading, Highlight, Inline, Text } from "../../lib/design-system";
+import type { IconName } from "../../lib/design-system";
 import type { NavView } from "../../app/shell/nav";
+import { hadithBadge } from "../../lib/variants";
 import "./HomeScreen.css";
 
-type Status = "live" | "preview" | "soon";
-
-interface Surface {
+// A live surface: shown as a prominent column with an action. The three things
+// the workbench actually does today — everything else is demoted to the roadmap.
+interface LiveSurface {
   icon: IconName;
   arabic: string;
   english: string;
   desc: string;
-  status: Status;
-  target: NavView | "reader" | null;
+  go: string;
+  target: NavView | "reader";
 }
 
-const STATUS_BADGE: Record<Status, [BadgeVariant, string]> = {
-  live: ["success", "Live"],
-  preview: ["warning", "Preview"],
-  soon: ["default", "Soon"],
-};
+interface ComingSurface {
+  arabic: string;
+  english: string;
+  preview?: boolean;
+}
 
-const SURFACES: Surface[] = [
-  { icon: "reader", arabic: "القراءة", english: "Reader", desc: "Bilingual manuscript reading: isnād, matn and footnotes across three reader themes.", status: "live", target: "reader" },
-  { icon: "library", arabic: "المكتبة", english: "Library", desc: "Browse the collection by domain: the Six Books, the Four Books, the schools of law.", status: "live", target: "library" },
-  { icon: "daily", arabic: "اليوم", english: "Daily", desc: "A verse, a hadith and a chapter to continue, with parallels and tafsīr.", status: "live", target: "daily" },
-  { icon: "graph", arabic: "الإسناد", english: "Transmission graph", desc: "Trace a narrator through teachers, students and the works that cite them.", status: "preview", target: "graph" },
-  { icon: "node", arabic: "الرجال", english: "Rijāl", desc: "Narrator biographies: teachers, students and reliability gradings across traditions.", status: "soon", target: null },
-  { icon: "layers", arabic: "التوحيد", english: "Canonical", desc: "Deduplicated narrator profiles with merge confidence across editions.", status: "soon", target: null },
-  { icon: "calendar", arabic: "التاريخ", english: "History", desc: "Persons and dated events anchored to the Hijrī calendar.", status: "soon", target: null },
-  { icon: "grid", arabic: "الاستخراج", english: "Pipeline", desc: "Span-by-span provenance: patterns, behaviour routing, entities and units.", status: "soon", target: null },
+const LIVE: LiveSurface[] = [
+  {
+    icon: "reader",
+    arabic: "القراءة",
+    english: "Reader",
+    desc: "Bilingual manuscript reading: isnād, matn and footnotes across three reader themes.",
+    go: "Open the reader",
+    target: "reader",
+  },
+  {
+    icon: "library",
+    arabic: "المكتبة",
+    english: "Library",
+    desc: "Browse the collection by domain: the Six Books, the Four Books, the schools of law.",
+    go: "Browse",
+    target: "library",
+  },
+  {
+    icon: "daily",
+    arabic: "اليوم",
+    english: "Daily",
+    desc: "A verse, a hadith and a chapter to continue — with parallels and tafsīr.",
+    go: "Today's reading",
+    target: "daily",
+  },
+];
+
+const COMING: ComingSurface[] = [
+  { arabic: "الإسناد", english: "Transmission graph", preview: true },
+  { arabic: "الرجال", english: "Rijāl" },
+  { arabic: "التوحيد", english: "Canonical" },
+  { arabic: "التاريخ", english: "History" },
+  { arabic: "الاستخراج", english: "Pipeline" },
+];
+
+const TAGS = ["Arabic-first", "Bilingual", "Isnād-linked"];
+
+const REFS = [
+  { ar: "صحيح مسلم", pg: "§1907" },
+  { ar: "سنن النسائي", pg: "§75" },
+  { ar: "مسند أحمد", pg: "§169" },
 ];
 
 export interface HomeScreenProps {
@@ -37,56 +69,130 @@ export interface HomeScreenProps {
   onOpenReader: () => void;
 }
 
-function SurfaceCard({ s, onNav, onOpenReader }: { s: Surface; onNav: (v: NavView) => void; onOpenReader: () => void }) {
-  const [tone, label] = STATUS_BADGE[s.status];
-  const active = s.status !== "soon";
-  const open = () => {
-    if (s.target === "reader") onOpenReader();
-    else if (s.target) onNav(s.target);
-  };
-  return (
-    <Card variant="flat" pad="md" interactive={active} className="surface-card">
-      <div className="surface-card__top">
-        <span className="surface-card__icon"><Icon name={s.icon} size="lg" /></span>
-        <Badge variant={tone}>{label}</Badge>
-      </div>
-      <Heading level={3} font="arabic" dir="rtl">{s.arabic}</Heading>
-      <Text as="p" size="md" weight="semibold">{s.english}</Text>
-      <Text as="p" size="sm" tone="muted" className="surface-card__desc">{s.desc}</Text>
-      {active ? <Button variant="ghost" size="sm" iconAfter="arrow-right" onClick={open}>Open</Button> : null}
-    </Card>
-  );
+function openTarget(
+  target: LiveSurface["target"],
+  onNav: (view: NavView) => void,
+  onOpenReader: () => void,
+) {
+  if (target === "reader") onOpenReader();
+  else onNav(target);
 }
 
 export function HomeScreen({ onNav, onOpenReader }: HomeScreenProps) {
   return (
-    <>
-      <section className="home__hero">
-        <span className="home__mark"><img src={ASSETS.LOGO_MARK} alt="SOL" /></span>
-        <Text size="xs" tone="accent" weight="semibold" className="home__eyebrow">SOL · a workbench for the classical tradition</Text>
-        <Heading level={1} className="home__title">Read the sources, trace the chains.</Heading>
-        <Text as="p" size="md" tone="muted" className="home__lede">
-          Digitized Arabic manuscripts: hadith, fiqh, tafsīr and history, read Arabic-first with English alongside, every isnād one tap from its transmission graph.
-        </Text>
-        <Inline gap="sm" justify="center">
-          <Button variant="gold" iconBefore="reader" onClick={onOpenReader}>Start reading</Button>
-          <Button variant="secondary" iconBefore="daily" onClick={() => onNav("daily")}>Today’s reading</Button>
-        </Inline>
+    <div className="home">
+      <section className="home-hero">
+        <div className="home-hero__copy">
+          <Text size="xs" tone="accent" weight="semibold" className="home-eyebrow">
+            SOL · a workbench for the classical tradition
+          </Text>
+          <Heading level={1} className="home-hero__title">
+            Read the sources.
+            <br />
+            <em>Trace the chains.</em>
+          </Heading>
+          <Text as="p" size="md" tone="muted" className="home-hero__lede">
+            Digitized Arabic manuscripts — hadith, fiqh, tafsīr and history — read Arabic-first with
+            English alongside, every isnād one tap from its transmission graph.
+          </Text>
+          <Inline gap="lg" align="center" className="home-hero__cta">
+            <Button variant="gold" iconBefore="reader" onClick={onOpenReader}>
+              Start reading
+            </Button>
+            <Button variant="ghost" iconAfter="arrow-right" onClick={() => onNav("library")}>
+              Browse the library
+            </Button>
+          </Inline>
+          <ul className="home-tags" aria-label="At a glance">
+            {TAGS.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div
+          className="home-artifact"
+          data-reader-theme="classical"
+          aria-label="Example reading: the opening hadith of Ṣaḥīḥ al-Bukhārī"
+        >
+          <div className="home-artifact__top">
+            <span className="home-artifact__id">
+              <span className="home-artifact__num">١</span>
+              Ṣaḥīḥ al-Bukhārī · Kitāb al-Īmān
+            </span>
+            <Badge surface="reader" variant={hadithBadge('sahih')} dot>
+              ṣaḥīḥ
+            </Badge>
+          </div>
+          <Text as="p" font="arabic" dir="rtl" className="home-artifact__isnad">
+            حَدَّثَنَا عَبْدُ اللَّهِ بْنُ مَسْلَمَةَ الْقَعْنَبِيُّ، عَنْ مَالِكٍ
+          </Text>
+          <Text as="p" font="arabic" dir="rtl" className="home-artifact__matn">
+            <Highlight
+              text="إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى"
+              query="النيات"
+            />
+          </Text>
+          <Text as="p" className="home-artifact__en">
+            “Actions are but by intentions, and each person shall have only what they intended.”
+          </Text>
+          <div className="home-artifact__refs">
+            <span className="home-artifact__refs-label">Also cited</span>
+            {REFS.map((r) => (
+              <span key={r.pg} className="home-artifact__ref">
+                <span className="home-artifact__ref-ar">{r.ar}</span>
+                <span className="home-artifact__ref-pg">{r.pg}</span>
+              </span>
+            ))}
+          </div>
+        </div>
       </section>
 
-      <Card variant="raised" pad="lg" className="home-continue">
-        <div>
-          <Text size="xs" tone="accent" weight="semibold" className="home-continue__eyebrow">Continue reading</Text>
-          <Heading level={3} font="arabic" dir="rtl" className="home-continue__title">المغني · باب الوضوء</Heading>
-          <Text as="p" size="sm" tone="muted">Ibn Qudāma al-Maqdisī · page 4 of 312</Text>
+      <section className="home-surfaces">
+        <Text size="xs" tone="faint" weight="semibold" className="home-surfaces__label">
+          The workbench — three ways in
+        </Text>
+        <div className="home-surfaces__row">
+          {LIVE.map((s) => (
+            <article key={s.english} className="home-surf">
+              <Text font="arabic" dir="rtl" className="home-surf__ar">
+                {s.arabic}
+              </Text>
+              <Heading level={3} className="home-surf__en">
+                {s.english}
+              </Heading>
+              <Text as="p" size="sm" tone="muted" className="home-surf__desc">
+                {s.desc}
+              </Text>
+              <Button
+                variant="link"
+                iconAfter="arrow-right"
+                onClick={() => openTarget(s.target, onNav, onOpenReader)}
+              >
+                {s.go}
+              </Button>
+            </article>
+          ))}
         </div>
-        <Button variant="secondary" iconBefore="reader" onClick={onOpenReader}>Resume</Button>
-      </Card>
 
-      <Text size="xs" tone="faint" weight="semibold" className="home__section">The workbench</Text>
-      <div className="home__grid">
-        {SURFACES.map((s) => <SurfaceCard key={s.english} s={s} onNav={onNav} onOpenReader={onOpenReader} />)}
-      </div>
-    </>
+        <div className="home-roadmap">
+          <span className="home-roadmap__label">In progress</span>
+          <ul className="home-roadmap__items">
+            {COMING.map((c) => (
+              <li
+                key={c.english}
+                className={c.preview ? "home-roadmap__item home-roadmap__item--preview" : "home-roadmap__item"}
+              >
+                <span className="home-roadmap__ar" dir="rtl">
+                  {c.arabic}
+                </span>
+                <span className="home-roadmap__en">{c.english}</span>
+                {c.preview ? <span className="home-roadmap__tag">Preview</span> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    </div>
   );
 }

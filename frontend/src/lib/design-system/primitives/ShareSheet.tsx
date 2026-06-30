@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { ShareContent, ShareFormat, ShareResponse } from '../../types';
-import { SHARE_FORMATS, SHARE_PLATFORMS } from '../../constants';
+import type { ShareContent, ShareResponse } from '../../types';
+import { SHARE_FORMATS, SHARE_PLATFORMS, type ShareFormat } from '../../constants';
 import type { IconName } from '../internal/icons';
 import { Button } from './Button';
 import { Segmented } from './Segmented';
@@ -18,12 +18,13 @@ export interface ShareSheetProps {
     Presentational: the feature supplies content plus the resolved share response. */
 export function ShareSheet({ content, response, onClose }: ShareSheetProps) {
   const [format, setFormat] = useState<ShareFormat>('square');
-  const [showQr, setShowQr] = useState(true);
+  const [showQr, setShowQr] = useState(response.qr.length > 0);
   const [copied, setCopied] = useState(false);
 
   const link = `https://${response.short_url}`;
-  const copy = () => {
-    navigator.clipboard?.writeText(link);
+  const copy = async () => {
+    if (!navigator.clipboard) return;
+    await navigator.clipboard.writeText(link);
     setCopied(true);
   };
   const openIntent = (id: string) => {
@@ -94,26 +95,30 @@ export function ShareSheet({ content, response, onClose }: ShareSheetProps) {
           >
             {copied ? 'Copied' : response.short_url}
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            iconBefore="download"
-            onClick={() => openIntent('download')}
-          >
-            Image
-          </Button>
-          <Button
-            variant={showQr ? 'secondary' : 'ghost'}
-            size="sm"
-            iconBefore="qr"
-            ariaPressed={showQr}
-            onClick={() => setShowQr((v) => !v)}
-          >
-            QR
-          </Button>
+          {response.image_url ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              iconBefore="download"
+              onClick={() => openIntent('download')}
+            >
+              Image
+            </Button>
+          ) : null}
+          {response.qr.length > 0 ? (
+            <Button
+              variant={showQr ? 'secondary' : 'ghost'}
+              size="sm"
+              iconBefore="qr"
+              ariaPressed={showQr}
+              onClick={() => setShowQr((v) => !v)}
+            >
+              QR
+            </Button>
+          ) : null}
         </div>
         <p className="ds-sheet__note">
-          Instagram and TikTok have no web-post API. "Image" downloads the card to post in-app.
+          Copy the link or share to X / Facebook. Instagram and TikTok have no web-post API.
         </p>
       </div>
     </div>

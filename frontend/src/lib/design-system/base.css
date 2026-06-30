@@ -76,3 +76,15 @@ a {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Focus policy (single gate): the global :focus-visible rule above gives
+   generic elements (buttons, links, etc.) an outline ring. Design-system form
+   fields instead show focus via their own accent border — the Input container
+   (:focus-within), Select, and Textarea — so they opt out of the generic
+   outline here. This keeps exactly one focus indicator per control; without it
+   a field renders the rounded border AND the outline stacked on top. */
+.ds-input__field:focus-visible,
+.ds-select:focus-visible,
+.ds-textarea:focus-visible {
+  outline: none;
+}

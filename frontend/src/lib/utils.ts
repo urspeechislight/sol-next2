@@ -1,50 +1,37 @@
 // utils.ts:pure helpers only. No DOM, no side effects.
-// Stage-1 reconciliation: dropped the orphaned `gradeTone` helper and its
-// `GRADE_TONE` import:that symbol no longer exists in constants.ts, and the
-// canonical grade->variant mapping is `reliabilityBadge` in variants.ts (SSOT).
+
+import { BOOK } from './constants';
 
 /** Join class names, dropping falsy values. */
 export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ');
 }
 
-/** True when the string contains Arabic-script characters. */
-export function isRTL(text: string | null | undefined): boolean {
-  if (!text) return false;
-  return /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/.test(text);
+/** Join non-empty parts with the " · " separator used across name/meta lines. */
+export function joinDots(...parts: Array<string | number | null | undefined | false>): string {
+  return parts.filter(Boolean).join(' · ');
 }
 
-/** dir attribute value for a piece of text. */
-export function dirOf(text: string | null | undefined): 'rtl' | 'ltr' {
-  return isRTL(text) ? 'rtl' : 'ltr';
-}
-
-/** Format a death year as "ت {ah}هـ / {ce}م", omitting missing parts. */
+/** Format a death year as "ت {ah}هـ · {ce}م", omitting missing parts. */
 export function formatDeath(ah?: number | null, ce?: number | null): string {
-  const parts: string[] = [];
-  if (ah != null) parts.push(`ت ${ah}هـ`);
-  if (ce != null) parts.push(`${ce}م`);
-  return parts.join(' · ');
+  return joinDots(ah != null ? `ت ${ah}هـ` : null, ce != null ? `${ce}م` : null);
 }
 
-/** First grapheme of the first one or two words:for an avatar mark. */
-export function initials(nameAr: string | null | undefined): string {
-  if (!nameAr) return '؟';
-  const words = nameAr.replace(/[«»ـ]/g, '').split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '؟';
-  if (words.length === 1) return words[0].slice(0, 2);
-  return words[0].charAt(0) + words[1].charAt(0);
-}
-
-/** Extract the short id segment from a book urn (last colon-segment). */
-export function urnId(urn: string): string {
-  const seg = urn.split(':');
-  return seg[seg.length - 1] || urn;
+/** English death-year label for a meta badge, e.g. "d. 326 AH"; empty when the
+    year is missing or is the unknown-year sentinel. */
+export function deathLabel(ah?: number | null): string {
+  if (ah == null || ah === BOOK.UNKNOWN_DEATH_YEAR) return '';
+  return `d. ${ah} AH`;
 }
 
 /** Clamp a number into [min, max]. */
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+/** Number of pages for ``total`` items at ``perPage`` each (at least 1). */
+export function pageCount(total: number, perPage: number): number {
+  return Math.max(1, Math.ceil(total / perPage));
 }
 
 /** Inclusive 1-based page window for pagination, capped at `size` entries. */
