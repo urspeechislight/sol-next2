@@ -62,7 +62,7 @@ target-version = "py312"
 # force-exclude so ruff honours the exclude even when a tool such as lefthook
 # passes staged .claude files explicitly, keeps the project's lint off code it
 # does not own. Real project code (src, tests, scripts) stays fully linted.
-extend-exclude = [".venv", "build", "dist", "node_modules", ".svelte-kit", ".claude"]
+extend-exclude = [".venv", "build", "dist", "node_modules", ".claude"]
 force-exclude = true
 
 [tool.ruff.lint]
@@ -114,7 +114,7 @@ skip-magic-trailing-comma = false
 
 [tool.pyright]
 include = ["src", "tests", ".claude/lib", ".claude/hooks", ".claude/tests"]
-exclude = ["**/__pycache__", "**/.venv", "**/node_modules", "**/.svelte-kit"]
+exclude = ["**/__pycache__", "**/.venv", "**/node_modules"]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false

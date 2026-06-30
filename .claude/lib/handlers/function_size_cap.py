@@ -130,7 +130,7 @@ def check(ctx: HookContext) -> Decision:
         return Decision.allow(HANDLER)
     if ctx.suffix == "py":
         offenders = _scan_python(ctx.new_content)
-    elif ctx.suffix in {"ts", "tsx", "js", "jsx", "svelte"}:
+    elif ctx.suffix in {"ts", "tsx", "js", "jsx"}:
         offenders = _scan_ts(ctx.new_content)
     else:
         return Decision.allow(HANDLER)

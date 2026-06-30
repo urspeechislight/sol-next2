@@ -11,7 +11,7 @@ from lib.handlers import no_arbitrary_values
 def _ctx(content: str) -> HookContext:
     return HookContext(
         tool_name="Write",
-        file_path=Path("/tmp/x.svelte").resolve(),
+        file_path=Path("/tmp/x.tsx").resolve(),
         command=None,
         new_content=content,
         old_content=None,

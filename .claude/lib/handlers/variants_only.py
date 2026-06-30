@@ -85,7 +85,7 @@ def check(ctx: HookContext) -> Decision:
     """Return a deny if an object outside the design system uses ≥3 status keys."""
     if not ctx.is_write or ctx.new_content is None:
         return Decision.allow(HANDLER)
-    if ctx.suffix not in {"svelte", "ts", "tsx", "js", "jsx"}:
+    if ctx.suffix not in {"ts", "tsx", "js", "jsx"}:
         return Decision.allow(HANDLER)
     if is_design_system_file(ctx.file_path):
         return Decision.allow(HANDLER)

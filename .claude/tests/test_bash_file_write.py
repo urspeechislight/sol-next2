@@ -17,8 +17,8 @@ def _ctx(command: str) -> HookContext:
 
 
 def test_should_block_when_echo_redirect_to_project() -> None:
-    """`echo > foo.svelte` writes a project file via Bash."""
-    assert bash_file_write.check(_ctx('echo "x" > frontend/src/x.svelte')).severity == "block"
+    """`echo > foo.tsx` writes a project file via Bash."""
+    assert bash_file_write.check(_ctx('echo "x" > frontend/src/x.tsx')).severity == "block"
 
 
 def test_should_block_when_heredoc_to_project() -> None:

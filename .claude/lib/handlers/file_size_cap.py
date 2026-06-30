@@ -32,7 +32,7 @@ def check(ctx: HookContext) -> Decision:
     """Warn / block based on file LOC."""
     if not ctx.is_write or ctx.new_content is None:
         return Decision.allow(HANDLER)
-    if ctx.suffix not in {"py", "ts", "tsx", "js", "jsx", "svelte"}:
+    if ctx.suffix not in {"py", "ts", "tsx", "js", "jsx"}:
         return Decision.allow(HANDLER)
 
     loc = _line_count(ctx.new_content)

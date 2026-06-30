@@ -32,7 +32,7 @@ def test_should_block_when_inline_status_map_in_route(
 ) -> None:
     """A status-keyed object literal in a route is denied."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "frontend/src/routes/page.svelte"
+    target = repo / "frontend/src/app/App.tsx"
     target.parent.mkdir(parents=True)
     code = (
         "const palette = {\n"
@@ -70,7 +70,7 @@ def test_should_allow_when_unrelated_object(
 ) -> None:
     """An object missing the status keys passes."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "frontend/src/routes/page.svelte"
+    target = repo / "frontend/src/app/App.tsx"
     target.parent.mkdir(parents=True)
     code = "const config = { host: 'x', port: 8000 };\n"
     decision = variants_only.check(_ctx(target, code))

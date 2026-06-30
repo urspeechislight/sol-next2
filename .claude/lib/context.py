@@ -5,7 +5,7 @@ Claude Code dispatches hooks with a JSON payload like::
     {
       "session_id": "...",
       "tool_name": "Edit",
-      "tool_input": {"file_path": "/a/b/foo.svelte", "old_string": "...", "new_string": "..."},
+      "tool_input": {"file_path": "/a/b/foo.tsx", "old_string": "...", "new_string": "..."},
       "tool_response": null
     }
 

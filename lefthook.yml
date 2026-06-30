@@ -21,7 +21,7 @@ pre-commit:
       glob: '.claude/**/*.py'
       run: uv run pytest .claude/tests -q
     harness-rules:
-      glob: '*.{py,ts,tsx,js,jsx,svelte,css,md,html}'
+      glob: '*.{py,ts,tsx,js,jsx,css,md,html}'
       # The harness's own code (.claude) is validated by harness-self-test, not by
       # the app-code rules it enforces on project source (src/, frontend/). Its handlers
       # legitimately fail open (except returning None) and its test fixtures carry

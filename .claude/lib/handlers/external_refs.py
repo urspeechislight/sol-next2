@@ -77,7 +77,7 @@ def check(ctx: HookContext) -> Decision:  # noqa: PLR0911  -- one return per den
         return Decision.allow(HANDLER)
     # Markdown deliberately excluded: docs/ explains the standalone contract
     # by *naming* the projects we keep separate. Code is what matters.
-    if ctx.suffix not in {"py", "ts", "tsx", "js", "jsx", "svelte", "json", "yaml", "yml"}:
+    if ctx.suffix not in {"py", "ts", "tsx", "js", "jsx", "json", "yaml", "yml"}:
         return Decision.allow(HANDLER)
     # The harness's own tests AND the handler source contain forbidden-name
     # tokens by design (the deny-list itself, docstrings).
@@ -115,7 +115,7 @@ def check(ctx: HookContext) -> Decision:  # noqa: PLR0911  -- one return per den
                         doc=DOC,
                     )
 
-    if ctx.suffix in {"ts", "tsx", "js", "jsx", "svelte"}:
+    if ctx.suffix in {"ts", "tsx", "js", "jsx"}:
         for match in _JS_IMPORT.finditer(content):
             if _js_path_is_external(match.group(1)):
                 return Decision.deny(

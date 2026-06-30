@@ -2,8 +2,8 @@
 """PostToolUse hook for Write|Edit|MultiEdit.
 
 Runs after the file is on disk. Currently invokes ``ruff check`` against
-the written Python file (advisory). Extend with prettier / svelte-check /
-eslint wrappers as you wire them.
+the written Python file (advisory). Extend with prettier / eslint
+wrappers as you wire them.
 """
 
 from __future__ import annotations

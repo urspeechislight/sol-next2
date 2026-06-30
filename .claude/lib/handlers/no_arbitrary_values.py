@@ -47,7 +47,7 @@ def check(ctx: HookContext) -> Decision:
     """Return a deny if a Tailwind arbitrary value uses a raw size literal."""
     if not ctx.is_write or ctx.new_content is None:
         return Decision.allow(HANDLER)
-    if ctx.suffix not in {"svelte", "ts", "tsx", "js", "jsx", "css"}:
+    if ctx.suffix not in {"ts", "tsx", "js", "jsx", "css"}:
         return Decision.allow(HANDLER)
     if is_design_token_file(ctx.file_path):
         return Decision.allow(HANDLER)

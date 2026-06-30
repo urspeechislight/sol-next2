@@ -24,7 +24,7 @@ RULE_ID = "DOC-001"
 DOC = "docs/repo-layout.md#documentation"
 
 _ALLOWED_TOP_LEVEL = {"README.md", "CLAUDE.md"}
-_ALLOWED_PREFIXES = ("docs/", ".github/", "node_modules/", ".venv/", "build/", ".svelte-kit/")
+_ALLOWED_PREFIXES = ("docs/", ".github/", "node_modules/", ".venv/", "build/")
 # Claude Code discovers subagent and skill definitions only at these paths;
 # they are capability config (markdown by design), not documentation.
 _ALLOWED_CLAUDE_DEFS = (".claude/agents/", ".claude/skills/")
