@@ -75,6 +75,10 @@ Thumbs.db
 .claude/audit/*
 !.claude/audit/.gitkeep
 
+# Internal/employer project names for external_refs (ISO-001). Local-only so
+# the names are enforced on this machine but never reach the committed history.
+.claude/external_refs.private
+
 # Logs
 *.log
 logs/

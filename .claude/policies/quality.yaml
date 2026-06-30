@@ -212,7 +212,7 @@ rules:
   - id: ISO-001
     handler: external_refs
     severity: block
-    summary: No references to sibling projects (sol-next, REDACTED, REDACTED...).
+    summary: No references to sibling or internal projects (the sol-* family plus a gitignored local deny-list).
     doc: docs/foundation.md#standalone-contract
 
   # ---- Documentation discipline ---------------------------------------------

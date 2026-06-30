@@ -336,7 +336,7 @@ rules:
     description: Secret-store path references must come from the settings module.
     kind: regex
     # Match scheme-style paths used by REDACTED / Vault / AWS SM ARNs.
-    pattern: '["\x27](REDACTED://|vault://|arn:aws:secretsmanager:|gcp-secrets://|secret/)\S'
+    pattern: '["\x27](vault://|arn:aws:secretsmanager:|gcp-secrets://|secret/)\S'
     suffixes: [py, ts, tsx, js, jsx, yaml, yml]
     allowed_in:
       - 'src/backend/core/settings.py'

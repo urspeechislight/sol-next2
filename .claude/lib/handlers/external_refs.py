@@ -2,18 +2,21 @@
 
 Why: this repo is a re-implementation of an existing project. If the agent
 ever writes a path or import that points at a sibling project under
-``~/code/`` (REDACTED, REDACTED, sol-next, etc.), the standalone contract is
-broken. We catch this at write time across:
+``~/code/`` (sol-next, sol-app, ...), the standalone contract is broken. The
+committed deny-list covers the public sol-* family; any other internal names
+load from a gitignored ``external_refs.private`` so they are enforced on this
+machine without ever being committed. We catch references at write time:
 
-  • Absolute / tilde paths: ``/home/.../code/sol-next/...`` or ``~/code/REDACTED/...``
-  • JS/TS imports: ``from 'REDACTED/x'``
-  • Python imports: ``from REDACTED import x`` / ``import sol_next``
-  • Path traversal: ``../sol-next/...`` (relative)
+  - Absolute / tilde paths: ``/home/.../code/sol-next/...`` or ``~/code/sol-app/...``
+  - JS/TS imports: ``from 'sol-next/x'``
+  - Python imports: ``from sol_next import x`` / ``import sol_app``
+  - Path traversal: ``../sol-next/...`` (relative)
 """
 
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from ..context import HookContext
 from ..decision import Decision
@@ -22,17 +25,30 @@ HANDLER = "external_refs"
 RULE_ID = "ISO-001"
 DOC = "docs/foundation.md#standalone-contract"
 
-# Forbidden project names. Both kebab-case (filesystem) and snake_case
-# (Python module) forms are checked.
+
+def load_private_refs(path: Path | None = None) -> tuple[str, ...]:
+    """Extra banned project names from a gitignored local file, one per line
+    (``#`` comments and blank lines ignored). Keeps internal names out of the
+    committed history while still enforcing them on this machine."""
+    target = path or (Path(__file__).resolve().parent.parent.parent / "external_refs.private")
+    if not target.exists():
+        return ()
+    return tuple(
+        stripped
+        for line in target.read_text(encoding="utf-8").splitlines()
+        if (stripped := line.strip()) and not stripped.startswith("#")
+    )
+
+
+# Forbidden project names, kebab-case (filesystem) and snake_case (Python
+# module) forms both checked. The committed list is the public sol-* family;
+# load_private_refs adds any internal names from the gitignored
+# external_refs.private so they are enforced locally but never committed.
 _FORBIDDEN_KEBAB = (
     "sol-next",
     "sol-app",
     "sol-codex",
-    "REDACTED",
-    "REDACTED",
-    "REDACTED",
-    "REDACTED",
-)
+) + load_private_refs()
 
 
 def _kebab_to_snake(name: str) -> str:
