@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cx } from "../../utils";
 import { GAP_CLASS, ALIGN_CLASS, JUSTIFY_CLASS, type Gap, type Align, type Justify } from "./Stack";
 import "./Stack.css";
-import "./Cluster.css";
+import "./Inline.css";
 
 export interface InlineProps {
   gap?: Gap;
@@ -19,11 +19,11 @@ export function Inline({ gap = "sm", align = "center", justify = "start", wrap =
   return (
     <Tag
       className={cx(
-        "ds-cluster",
+        "ds-inline",
         GAP_CLASS[gap],
         ALIGN_CLASS[align],
         JUSTIFY_CLASS[justify],
-        wrap ? "ds-cluster--wrap" : "ds-cluster--nowrap",
+        wrap ? "ds-inline--wrap" : "ds-inline--nowrap",
         className,
       )}
     >

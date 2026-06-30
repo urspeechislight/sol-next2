@@ -1,12 +1,12 @@
-.ds-cluster {
+.ds-inline {
   display: flex;
   flex-direction: row;
   align-items: center;
   min-width: 0;
 }
-.ds-cluster--wrap {
+.ds-inline--wrap {
   flex-wrap: wrap;
 }
-.ds-cluster--nowrap {
+.ds-inline--nowrap {
   flex-wrap: nowrap;
 }
