@@ -17,7 +17,7 @@ rules:
   - id: DS-002
     handler: no_inline_styles
     severity: block
-    summary: No inline `style="..."` in .svelte files.
+    summary: No inline style props in React .tsx and .jsx files.
     rationale: Inline styles bypass the design system and twMerge.
     doc: docs/design-system.md#hard-rules
 

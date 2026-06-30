@@ -27,14 +27,14 @@ def _make_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return repo
 
 
-def test_should_block_when_route_imports_internal(
+def test_should_block_when_feature_imports_internal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A route reaching into design-system/internal is denied."""
+    """A feature reaching into design-system/internal is denied."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "frontend/src/routes/+page.svelte"
+    target = repo / "frontend/src/app/App.tsx"
     target.parent.mkdir(parents=True)
-    code = "import { thing } from '$lib/design-system/internal';\n"
+    code = "import { thing } from '../../lib/design-system/internal';\n"
     decision = import_boundaries.check(_ctx(target, code))
     assert decision.severity == "block"
 
@@ -44,9 +44,9 @@ def test_should_allow_when_design_system_imports_internal(
 ) -> None:
     """The design system itself may use internal/."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "frontend/src/lib/design-system/primitives/X.svelte"
+    target = repo / "frontend/src/lib/design-system/primitives/X.tsx"
     target.parent.mkdir(parents=True)
-    code = "import { thing } from '$lib/design-system/internal';\n"
+    code = "import { thing } from '../../lib/design-system/internal';\n"
     decision = import_boundaries.check(_ctx(target, code))
     assert decision.severity == "allow"
 
@@ -56,7 +56,7 @@ def test_should_block_when_frontend_imports_backend(
 ) -> None:
     """Frontend importing the Python backend package is denied."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "frontend/src/routes/+page.ts"
+    target = repo / "frontend/src/lib/data.ts"
     target.parent.mkdir(parents=True)
     code = "import { x } from 'backend/something';\n"
     decision = import_boundaries.check(_ctx(target, code))

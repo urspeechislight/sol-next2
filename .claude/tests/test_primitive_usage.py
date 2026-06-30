@@ -27,12 +27,12 @@ def _make_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return repo
 
 
-def test_should_block_when_raw_button_in_route(
+def test_should_block_when_raw_button_in_feature(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Raw <button> in a route is denied."""
+    """Raw <button> in a feature component is denied."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "frontend/src/routes/+page.svelte"
+    target = repo / "frontend/src/app/App.tsx"
     target.parent.mkdir(parents=True)
     decision = primitive_usage.check(_ctx(target, "<button>Click</button>"))
     assert decision.severity == "block"
@@ -44,7 +44,7 @@ def test_should_allow_when_raw_button_in_design_system(
 ) -> None:
     """The design system itself uses raw <button>."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "frontend/src/lib/design-system/primitives/Button.svelte"
+    target = repo / "frontend/src/lib/design-system/primitives/Button.tsx"
     target.parent.mkdir(parents=True)
     decision = primitive_usage.check(_ctx(target, "<button>Click</button>"))
     assert decision.severity == "allow"
@@ -55,7 +55,7 @@ def test_should_allow_when_input_outside_frontend(
 ) -> None:
     """Other places (docs, scripts) aren't enforced."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "scripts/util.svelte"
+    target = repo / "scripts/util.tsx"
     target.parent.mkdir(parents=True)
     decision = primitive_usage.check(_ctx(target, "<input />"))
     assert decision.severity == "allow"
