@@ -35,6 +35,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from backend.core.constants import BOOK__DEATH_YEAR_AH_MAX
 from backend.core.logging import configure_logging, get_logger
 from backend.core.paths import data_path
 from backend.core.settings import get_settings
@@ -142,6 +143,20 @@ def _normalize_volume(raw: Any) -> int | None:
     return v
 
 
+def _normalize_death_year(raw: Any) -> int | None:
+    """A death year, or None when absent / unrecognised / the upstream sentinel.
+
+    The corpus marks a missing death year with 99999 — a value no classical author
+    reaches — so it is the "unknown" sentinel, not a date. Coerce it (and any
+    implausible value) to None rather than pass a fabricated far-future year
+    through to the catalogue. The matching model bound (``BOOK__DEATH_YEAR_AH_MAX``)
+    is the defence-in-depth backstop."""
+    year = _opt_int(raw)
+    if year is None or year < 1 or year > BOOK__DEATH_YEAR_AH_MAX:
+        return None
+    return year
+
+
 def _book_from_frontmatter(fm: dict[str, Any], category: str, urn: str) -> Book | None:
     """Build a ``Book`` from a frontmatter dict. Returns None if unusable."""
     title_ar = _opt_str(fm.get("title")) or _opt_str(fm.get("short_title"))
@@ -154,7 +169,7 @@ def _book_from_frontmatter(fm: dict[str, Any], category: str, urn: str) -> Book 
         title_en=_opt_str(fm.get("title_en")) or _opt_str(fm.get("short_title")),
         author=_opt_str(fm.get("author_en")),
         author_ar=author_ar,
-        death_year_ah=_opt_int(fm.get("death_year") or fm.get("death_date")),
+        death_year_ah=_normalize_death_year(fm.get("death_year") or fm.get("death_date")),
         death_year_ce=None,
         page_count=_opt_int(fm.get("page_count")),
         volume=_normalize_volume(fm.get("volume")),

@@ -21,6 +21,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.core.constants import BOOK__DEATH_YEAR_AH_MAX
+
 Canonical = Literal["primary", "primary_reference", "secondary", "tertiary"]
 
 
@@ -33,7 +35,12 @@ class BibRecord(BaseModel):
     title_en: str | None = Field(default=None, description="English title, if available.")
     author: str | None = Field(default=None, description="Author in romanized form.")
     author_ar: str = Field(description="Author in Arabic.")
-    death_year_ah: int | None = Field(default=None, description="Author's death year, Hijri.")
+    death_year_ah: int | None = Field(
+        default=None,
+        ge=1,
+        le=BOOK__DEATH_YEAR_AH_MAX,
+        description="Author's death year, Hijri (unknown is None, never a sentinel).",
+    )
     death_year_ce: int | None = Field(default=None, description="Author's death year, CE.")
     page_count: int | None = Field(default=None, ge=0, description="Page count, if known.")
     category: str = Field(description="Category slug (matches Domain.categories[].slug).")

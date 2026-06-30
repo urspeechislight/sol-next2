@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
-from backend.core.constants import HTTP__DEFAULT_PAGE_SIZE
+from backend.core.constants import BOOK__DEATH_YEAR_AH_MAX, HTTP__DEFAULT_PAGE_SIZE
 from backend.models.book import Book
 from backend.repositories import books as books_repo
 from backend.repositories._data_loader import DataLoadError
@@ -105,3 +106,16 @@ def test_should_allow_unranked_canonical_to_be_null() -> None:
     """An unranked book is None, not a fabricated 'primary' (top rank)."""
     book = Book(urn="x", title_ar="ت", author_ar="م", category="c", canonical=None)
     assert book.canonical is None
+
+
+def test_should_reject_death_year_above_bound() -> None:
+    """A death year at/above the bound — where the upstream 99999 'unknown'
+    sentinel sits — is rejected rather than served as a real far-future date."""
+    with pytest.raises(ValidationError):
+        Book(
+            urn="x",
+            title_ar="ت",
+            author_ar="م",
+            category="c",
+            death_year_ah=BOOK__DEATH_YEAR_AH_MAX + 1,
+        )

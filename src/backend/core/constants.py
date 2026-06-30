@@ -32,6 +32,8 @@ READER__SOURCE_CACHE_MAX: Final[int] = 128
 
 READER__SEARCH_DEFAULT_LIMIT: Final[int] = 30
 
+BOOK__DEATH_YEAR_AH_MAX: Final[int] = 1500
+
 # ---------- Corpus full-text search --------------------------------------------
 
 # Excerpt geometry for the fold-aware snippet built in repositories/corpus.py:
