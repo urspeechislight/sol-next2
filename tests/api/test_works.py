@@ -22,7 +22,19 @@ def test_should_return_the_paginated_envelope_when_listing_works(client: TestCli
 def test_should_reject_an_unknown_domain_with_422(client: TestClient) -> None:
     """An unknown ?domain= is a client error, never a silent empty list."""
     response = client.get("/api/works", params={"domain": "definitely-not-a-domain"})
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+def test_should_reject_an_unknown_category_with_422(client: TestClient) -> None:
+    """An unknown ?category= is a client error, exactly like an unknown domain."""
+    response = client.get("/api/works", params={"category": "definitely-not-a-category"})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+def test_should_reject_an_unknown_tradition_with_422(client: TestClient) -> None:
+    """An unknown ?tradition= is a client error, exactly like an unknown domain."""
+    response = client.get("/api/works", params={"tradition": "definitely-not-a-tradition"})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_should_accept_a_known_domain_when_filtering(client: TestClient) -> None:

@@ -26,7 +26,7 @@ def _reject_unknown(param: str, value: str | None, predicate: Callable[[str], bo
     it silently filter to an empty list. No-op when the value is absent (None)."""
     if value is not None and not predicate(value):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Unknown {param}: {value!r}.",
         )
 
