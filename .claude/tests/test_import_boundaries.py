@@ -32,7 +32,7 @@ def test_should_block_when_route_imports_internal(
 ) -> None:
     """A route reaching into design-system/internal is denied."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "src/frontend/routes/+page.svelte"
+    target = repo / "frontend/src/routes/+page.svelte"
     target.parent.mkdir(parents=True)
     code = "import { thing } from '$lib/design-system/internal';\n"
     decision = import_boundaries.check(_ctx(target, code))
@@ -44,7 +44,7 @@ def test_should_allow_when_design_system_imports_internal(
 ) -> None:
     """The design system itself may use internal/."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "src/frontend/lib/design-system/primitives/X.svelte"
+    target = repo / "frontend/src/lib/design-system/primitives/X.svelte"
     target.parent.mkdir(parents=True)
     code = "import { thing } from '$lib/design-system/internal';\n"
     decision = import_boundaries.check(_ctx(target, code))
@@ -56,7 +56,7 @@ def test_should_block_when_frontend_imports_backend(
 ) -> None:
     """Frontend importing the Python backend package is denied."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "src/frontend/routes/+page.ts"
+    target = repo / "frontend/src/routes/+page.ts"
     target.parent.mkdir(parents=True)
     code = "import { x } from 'backend/something';\n"
     decision = import_boundaries.check(_ctx(target, code))

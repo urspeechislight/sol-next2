@@ -60,7 +60,7 @@ def check(ctx: HookContext) -> Decision:
         rule_id=RULE_ID,
         why=(
             f"Raw color literal(s) found: {sample}. Colors are SSOT and may only "
-            "be defined in src/frontend/lib/design-system/tokens.css."
+            "be defined in frontend/src/lib/design-system/tokens.css."
         ),
         fix=(
             "Replace with a token: a Tailwind utility (e.g. bg-accent, text-fg-2) "

@@ -5,7 +5,7 @@ unstructured, has no level, no context, no log-shipping. Production code
 must log via ``structlog`` so observability tooling sees consistent records.
 
 Allowed: scripts/, tests/, .claude/, anything imported as `__main__`. Block
-inside src/backend/, src/pipeline/, src/frontend/ Python files (rare).
+inside src/backend/, src/pipeline/ Python files (rare).
 """
 
 from __future__ import annotations

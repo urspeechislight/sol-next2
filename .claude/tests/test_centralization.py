@@ -202,10 +202,10 @@ def test_should_skip_when_pattern_is_in_js_line_comment(repo: Path) -> None:
         "    kind: regex\n"
         '    pattern: \'\\bfetch\\s*\\(\'\n'
         "    suffixes: [tsx]\n"
-        "    allowed_in: ['src/frontend/lib/api/**/*']\n"
+        "    allowed_in: ['frontend/src/lib/api/**/*']\n"
         "    fix: Use api client.\n",
     )
-    target = repo / "src/frontend/components/Foo.tsx"
+    target = repo / "frontend/src/components/Foo.tsx"
     target.parent.mkdir(parents=True)
     decision = centralization.check(
         _ctx(target, "// TODO: replace fetch( call with api client\nconst x = 1;\n")
@@ -223,10 +223,10 @@ def test_should_skip_when_pattern_is_in_js_block_comment(repo: Path) -> None:
         "    kind: regex\n"
         '    pattern: \'\\bfetch\\s*\\(\'\n'
         "    suffixes: [tsx]\n"
-        "    allowed_in: ['src/frontend/lib/api/**/*']\n"
+        "    allowed_in: ['frontend/src/lib/api/**/*']\n"
         "    fix: Use api client.\n",
     )
-    target = repo / "src/frontend/components/Foo.tsx"
+    target = repo / "frontend/src/components/Foo.tsx"
     target.parent.mkdir(parents=True)
     body = "/* The old version called fetch( directly — replaced with api. */\nconst x = 1;\n"
     decision = centralization.check(_ctx(target, body))
@@ -243,10 +243,10 @@ def test_should_block_raw_fetch_in_tsx(repo: Path) -> None:
         "    kind: regex\n"
         '    pattern: \'\\bfetch\\s*\\(\'\n'
         "    suffixes: [tsx]\n"
-        "    allowed_in: ['src/frontend/lib/api/**/*']\n"
+        "    allowed_in: ['frontend/src/lib/api/**/*']\n"
         "    fix: Use api client.\n",
     )
-    target = repo / "src/frontend/components/Foo.tsx"
+    target = repo / "frontend/src/components/Foo.tsx"
     target.parent.mkdir(parents=True)
     decision = centralization.check(
         _ctx(target, "export function Foo() {\n  return fetch('/api/x').then(r => r.json());\n}\n")

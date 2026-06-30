@@ -47,7 +47,7 @@ def test_should_allow_when_writing_to_tokens_css(
 ) -> None:
     """The token SSOT file IS allowed to contain raw colors."""
     repo = tmp_path / "repo"
-    target = repo / "src/frontend/lib/design-system/tokens.css"
+    target = repo / "frontend/src/lib/design-system/tokens.css"
     target.parent.mkdir(parents=True)
     target.write_text("")
     monkeypatch.setattr(paths, "REPO_ROOT", repo)

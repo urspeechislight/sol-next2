@@ -18,7 +18,7 @@ def _ctx(command: str) -> HookContext:
 
 def test_should_block_when_echo_redirect_to_project() -> None:
     """`echo > foo.svelte` writes a project file via Bash."""
-    assert bash_file_write.check(_ctx('echo "x" > src/frontend/x.svelte')).severity == "block"
+    assert bash_file_write.check(_ctx('echo "x" > frontend/src/x.svelte')).severity == "block"
 
 
 def test_should_block_when_heredoc_to_project() -> None:
@@ -39,7 +39,7 @@ def test_should_block_when_python_open_writes_project_file() -> None:
 
 def test_should_block_when_sed_inplace_on_project_file() -> None:
     """`sed -i` on a project file is denied."""
-    assert bash_file_write.check(_ctx("sed -i 's/a/b/' src/frontend/x.ts")).severity == "block"
+    assert bash_file_write.check(_ctx("sed -i 's/a/b/' frontend/src/x.ts")).severity == "block"
 
 
 def test_should_block_when_dd_of_to_project() -> None:
@@ -50,7 +50,7 @@ def test_should_block_when_dd_of_to_project() -> None:
 def test_should_block_when_curl_writes_to_project() -> None:
     """`curl ... -o src/...` denied."""
     assert (
-        bash_file_write.check(_ctx("curl https://x.test -o src/frontend/x.ts")).severity == "block"
+        bash_file_write.check(_ctx("curl https://x.test -o frontend/src/x.ts")).severity == "block"
     )
 
 

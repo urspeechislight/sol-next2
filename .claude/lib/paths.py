@@ -23,7 +23,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 # laptop-equivalent path) cannot read it. ``STUB_WORKSPACE_GLOBS`` mirrors the
 # declared package list so both sides agree; ``tests/test_workspace_globs.py``
 # pins it equal to the real manifest on buildhost, so the two cannot drift.
-STUB_WORKSPACE_GLOBS: tuple[str, ...] = ("src/frontend", "frontend")
+STUB_WORKSPACE_GLOBS: tuple[str, ...] = ("frontend",)
 
 _WORKSPACE_MANIFEST = "pnpm-workspace.yaml"
 
@@ -60,7 +60,7 @@ def is_in(path: Path | None, *segments: str) -> bool:
 
     Examples::
 
-        is_in(p, "src/frontend/lib")           # one segment
+        is_in(p, "frontend/src/lib")           # one segment
         is_in(p, "src/backend", "src/pipeline") # any of several
     """
     if path is None:
@@ -83,30 +83,23 @@ def relpath(path: Path | None) -> str:
         return str(path)
 
 
-# Frontend source roots. Both are live during the design-system migration: the
-# legacy Babel-in-browser prototype under ``src/frontend/`` and the new Vite + TS
-# package under ``frontend/src/``. Drop the legacy entry at cutover (Stage 4).
-_FRONTEND_ROOTS: tuple[str, ...] = ("src/frontend", "frontend/src")
+# Frontend source root: the Vite + TS package under ``frontend/src/``. The legacy
+# Babel-in-browser prototype under ``src/frontend/`` was deleted at cutover (M1).
+_FRONTEND_ROOTS: tuple[str, ...] = ("frontend/src",)
 
-# The design-system package within each frontend (the primitives layer, where
+# The design-system package within the frontend (the primitives layer, where
 # raw HTML tags and design-vocabulary maps are allowed because it IS the system).
-_DESIGN_SYSTEM_ROOTS: tuple[str, ...] = (
-    "src/frontend/lib/design-system",
-    "frontend/src/lib/design-system",
-)
+_DESIGN_SYSTEM_ROOTS: tuple[str, ...] = ("frontend/src/lib/design-system",)
 
 # The token SSOT files, the one place raw color/value literals are defined.
 _DESIGN_TOKEN_FILES: tuple[str, ...] = (
-    "src/frontend/tokens.css",
-    "src/frontend/lib/design-system/tokens.css",
-    "src/frontend/lib/design-system/internal",
     "frontend/src/lib/design-system/tokens.css",
     "frontend/src/lib/design-system/internal",
 )
 
 
 def is_in_frontend(path: Path | None) -> bool:
-    """True if ``path`` is inside any frontend source root (legacy or new)."""
+    """True if ``path`` is inside the frontend source root."""
     return is_in(path, *_FRONTEND_ROOTS)
 
 

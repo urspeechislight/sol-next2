@@ -32,7 +32,7 @@ def test_should_block_when_inline_status_map_in_route(
 ) -> None:
     """A status-keyed object literal in a route is denied."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "src/frontend/routes/page.svelte"
+    target = repo / "frontend/src/routes/page.svelte"
     target.parent.mkdir(parents=True)
     code = (
         "const palette = {\n"
@@ -51,7 +51,7 @@ def test_should_allow_when_in_design_system(
 ) -> None:
     """The variants.ts file is the SSOT — it's allowed to declare these."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "src/frontend/lib/design-system/variants.ts"
+    target = repo / "frontend/src/lib/design-system/variants.ts"
     target.parent.mkdir(parents=True)
     code = (
         "const palette = {\n"
@@ -70,7 +70,7 @@ def test_should_allow_when_unrelated_object(
 ) -> None:
     """An object missing the status keys passes."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "src/frontend/routes/page.svelte"
+    target = repo / "frontend/src/routes/page.svelte"
     target.parent.mkdir(parents=True)
     code = "const config = { host: 'x', port: 8000 };\n"
     decision = variants_only.check(_ctx(target, code))

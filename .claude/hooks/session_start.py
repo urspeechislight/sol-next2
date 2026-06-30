@@ -20,7 +20,7 @@ from lib.inventory import build_symbol_inventory
 
 BANNER = """
 ╭─ sol-next2 harness active ──────────────────────────────────────────────╮
-│  · Design tokens are SSOT (src/frontend/lib/design-system/tokens.css)   │
+│  · Design tokens are SSOT (frontend/src/lib/design-system/tokens.css)   │
 │  · No raw colors / inline styles / ad-hoc variant maps                  │
 │  · Reuse existing symbols — duplicates blocked (DRY-001/002/003)        │
 │  · All docs go in docs/                                                 │

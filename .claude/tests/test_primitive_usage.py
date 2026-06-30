@@ -32,7 +32,7 @@ def test_should_block_when_raw_button_in_route(
 ) -> None:
     """Raw <button> in a route is denied."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "src/frontend/routes/+page.svelte"
+    target = repo / "frontend/src/routes/+page.svelte"
     target.parent.mkdir(parents=True)
     decision = primitive_usage.check(_ctx(target, "<button>Click</button>"))
     assert decision.severity == "block"
@@ -44,7 +44,7 @@ def test_should_allow_when_raw_button_in_design_system(
 ) -> None:
     """The design system itself uses raw <button>."""
     repo = _make_repo(tmp_path, monkeypatch)
-    target = repo / "src/frontend/lib/design-system/primitives/Button.svelte"
+    target = repo / "frontend/src/lib/design-system/primitives/Button.svelte"
     target.parent.mkdir(parents=True)
     decision = primitive_usage.check(_ctx(target, "<button>Click</button>"))
     assert decision.severity == "allow"

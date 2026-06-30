@@ -23,7 +23,7 @@ pre-commit:
     harness-rules:
       glob: '*.{py,ts,tsx,js,jsx,svelte,css,md,html}'
       # The harness's own code (.claude) is validated by harness-self-test, not by
-      # the app-code rules it enforces on src/frontend/scripts. Its handlers
+      # the app-code rules it enforces on project source (src/, frontend/). Its handlers
       # legitimately fail open (except returning None) and its test fixtures carry
       # bare status codes, so running those rules against the harness is a category
       # error. Exclude it, the same boundary py:check (src tests) and ruff already use.

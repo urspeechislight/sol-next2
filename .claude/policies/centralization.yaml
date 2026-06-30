@@ -130,13 +130,11 @@ rules:
     pattern: '["\x27]/(?!assets/|static/|images/|fonts/)([a-z][a-z0-9_-]*|:[a-z])'
     suffixes: [jsx, tsx, ts, js]
     allowed_in:
-      - 'src/frontend/lib/routes.ts'
-      - 'src/frontend/lib/routes.js'
-      - 'src/frontend/lib/api/**/*'
       - 'frontend/src/lib/routes.ts'
+      - 'frontend/src/lib/routes.js'
       - 'frontend/src/lib/api/**/*'
     fix: |
-      Define routes in `src/frontend/lib/routes.{ts,js}` as a typed map
+      Define routes in `frontend/src/lib/routes.{ts,js}` as a typed map
       (`{ users: '/users/:id' }`) and import the constant or a helper
       (`routes.users(id)`). Hardcoding `/users/${id}` in components means
       the URL shape is duplicated across the app and impossible to refactor.
@@ -150,7 +148,6 @@ rules:
     pattern: '\b(fetch\s*\(|axios\.(get|post|put|patch|delete|request)\s*\()'
     suffixes: [jsx, tsx, ts, js]
     allowed_in:
-      - 'src/frontend/lib/api/**/*'
       - 'frontend/src/lib/api/**/*'
     fix: |
       Use the shared API client (`import { api } from '@/lib/api'`) instead

@@ -42,7 +42,7 @@ def test_should_allow_root_readme(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 def test_should_block_when_md_in_lib(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A README inside lib/ is rejected — must move to docs/."""
     repo = tmp_path / "repo"
-    target = repo / "src/frontend/lib/design-system/README.md"
+    target = repo / "frontend/src/lib/design-system/README.md"
     target.parent.mkdir(parents=True)
     monkeypatch.setattr(paths, "REPO_ROOT", repo)
     assert docs_location.check(_ctx(target)).severity == "block"
