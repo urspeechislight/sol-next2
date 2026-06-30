@@ -1,0 +1,18 @@
+{
+  "_comment": "Cross-stack golden table for the Arabic folds. The backend (patterns.fold_search / normalize_arabic) and the frontend (arabic.foldSearch / normalizeName) both assert against this exact table, so the two stacks fold identically by construction. See tests/test_fold_golden.py and frontend/src/lib/arabic.golden.test.ts.",
+  "fold_search": [
+    { "in": "أحمد", "out": "احمد" },
+    { "in": "إسماعيل", "out": "اسماعيل" },
+    { "in": "آدم", "out": "ادم" },
+    { "in": "موسى", "out": "موسي" },
+    { "in": "مكتبة", "out": "مكتبه" },
+    { "in": "عَلِيّ", "out": "علي" },
+    { "in": "123abc", "out": "123abc" }
+  ],
+  "normalize_name": [
+    { "in": "عَلِيّ   بنُ  أبي", "out": "علي بن ابي" },
+    { "in": "أحمد بن حنبل", "out": "احمد بن حنبل" },
+    { "in": "  فاطمة  ", "out": "فاطمه" },
+    { "in": "Ali بن", "out": "Ali بن" }
+  ]
+}
