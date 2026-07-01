@@ -10,25 +10,29 @@ strategy. A HADITH_TRANSMISSION span also gets its isnad_end computed here so th
 sanad/matn split and narrator extraction cap at the matn boundary. A content span
 that produces zero units is a bug and raises ExtractError.
 
-Ported from sol-next's src/phases/extract.py, decomposed across _extract_atomicize
-(atomicizer strategies) and _extract_backrefs (isnad back-references) to stay
-under the file and function caps.
+Ported from sol-next's src/phases/extract.py; the atomicizer strategies and the
+isnad back-reference handling were once shards under the old file-size cap and
+now live here with the orchestrator. Back-references ("وبهذا الاسناد") copy the
+source span's ISNAD unit and narrator entities onto the referencing span,
+annotated with provenance metadata for later graph linking.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from backend.core.constants import (
     HADITH__ENTITY_ID_FORMAT,
     HADITH__PATTERN_ATTRIBUTION,
     HADITH__STRATEGY_SANAD_MATN,
+    HADITH__STRATEGY_WHOLE_SPAN,
+    HADITH__UNIT_FOOTNOTE,
     HADITH__UNIT_ID_FORMAT,
+    HADITH__UNIT_ISNAD,
 )
 from backend.core.errors import ExtractError
 from backend.core.logging import get_logger
-from backend.pipeline._extract_atomicize import AtomizeArgs, atomicize_span, make_footnote_unit
-from backend.pipeline._extract_backrefs import handle_isnad_back_references
 from backend.pipeline.config import Config
 from backend.pipeline.contracts import PHASE_CONTRACTS, validate_manuscript_for_phase
 from backend.pipeline.extractors import EXTRACTOR_REGISTRY, VALID_ENTITY_TYPES, ExtractorFn
@@ -37,9 +41,23 @@ from backend.pipeline.extractors._hadith_isnad import (
     build_attribution_cues,
     find_isnad_end,
 )
-from backend.pipeline.models import DegradedMode, Entity, Manuscript, Span, ValidationIssue
+from backend.pipeline.models import (
+    DegradedMode,
+    Entity,
+    HierarchyPath,
+    Manuscript,
+    Span,
+    Unit,
+    ValidationIssue,
+)
 from backend.pipeline.ner import is_circuit_open
-from backend.pipeline.text import split_footnote_entries
+from backend.pipeline.persons import (
+    NARRATOR__ROLE_NARRATOR,
+    NARRATOR__SOURCE_ISNAD_BACK_REFERENCE,
+    PersonSpec,
+    emit_person_entity,
+)
+from backend.pipeline.text import split_footnote_entries, strip_footnote_markers
 
 _logger = get_logger("shia-library.pipeline.extract")
 _DEGRADED_SEVERITY_WARNING = "warning"
@@ -78,7 +96,7 @@ def extract(manuscript: Manuscript, config: Config) -> Manuscript:
     unit_counter = 0
     for span in manuscript.spans:
         unit_counter = _extract_span(span, run, unit_counter)
-    unit_counter = handle_isnad_back_references(manuscript, unit_counter, config)
+    unit_counter = _handle_isnad_back_references(manuscript, unit_counter, config)
     _record_ner_state(run)
     _logger.info(
         "extract_done",
@@ -111,11 +129,14 @@ def _extract_span(span: Span, run: _ExtractRun, unit_counter: int) -> int:
     for idx, entity in enumerate(entities):
         _validate_entity_type(entity)
         _assign_entity_id(entity, span.span_id, idx)
-    units = atomicize_span(
+    units = _atomicize_span(
         span,
         unit_counter,
-        AtomizeArgs(config_rule, run.manuscript.manifestation_id, behavior, hierarchy),
         strategy,
+        config_rule,
+        run.manuscript.manifestation_id,
+        behavior,
+        hierarchy,
     )
     if strategy == HADITH__STRATEGY_SANAD_MATN and len(units) == 1:
         run.manuscript.degraded_modes.add(DegradedMode.ISNAD_SPLIT_FALLBACK)
@@ -136,7 +157,7 @@ def _extract_span(span: Span, run: _ExtractRun, unit_counter: int) -> int:
                 manifestation_id=run.manuscript.manifestation_id, index=unit_counter
             )
             units.append(
-                make_footnote_unit(
+                _make_footnote_unit(
                     fn_unit_id, f"({fn_number}) {fn_text}", behavior, hierarchy, span
                 )
             )
@@ -228,3 +249,259 @@ def _degraded_issue(
         message=message,
         severity=severity,
     )
+
+
+def _atomicize_span(
+    span: Span,
+    start_index: int,
+    strategy: str,
+    config_rule: dict[str, Any],
+    manifestation_id: str,
+    behavior: str,
+    hierarchy: HierarchyPath,
+) -> list[Unit]:
+    """Dispatch the configured atomicizer strategy, raising on an unknown one.
+
+    whole_span emits one unit covering the span; sanad_matn_split emits an
+    ISNAD unit + a MATN unit at the precomputed isnad_end, with a whole-span
+    reserve unit when the split yields an empty side.
+    """
+    if strategy == HADITH__STRATEGY_WHOLE_SPAN:
+        return _atomicize_whole_span(
+            span, start_index, config_rule, manifestation_id, behavior, hierarchy
+        )
+    if strategy == HADITH__STRATEGY_SANAD_MATN:
+        return _atomicize_sanad_matn(
+            span, start_index, config_rule, manifestation_id, behavior, hierarchy
+        )
+    raise ExtractError(f"Unknown atomicizer strategy: {strategy}")
+
+
+def _text_from_pattern(span: Span, pattern_id: str) -> str:
+    """Return the first match of pattern_id, else the full span text.
+
+    When a structural span's content IS the pattern match (e.g. BASMALA), the unit
+    text is the matched text rather than the full span, which may carry inter-
+    boundary noise.
+    """
+    for pattern in span.patterns:
+        if pattern.pattern_id == pattern_id:
+            return pattern.matched_text.strip()
+    return span.text.strip()
+
+
+def _atomicize_whole_span(
+    span: Span,
+    start_index: int,
+    config_rule: dict[str, Any],
+    manifestation_id: str,
+    behavior: str,
+    hierarchy: HierarchyPath,
+) -> list[Unit]:
+    """One unit covering the whole span; optionally retext from a pattern match."""
+    unit_type: str = config_rule["unit_type"]
+    unit_id = HADITH__UNIT_ID_FORMAT.format(manifestation_id=manifestation_id, index=start_index)
+    unit_metadata: dict[str, Any] = {}
+    refers_to = span.metadata.get("refers_to_span_id")
+    if refers_to is not None:
+        unit_metadata["refers_to_span_id"] = refers_to
+    pattern_id = config_rule.get("use_pattern_text")
+    if pattern_id is not None:
+        text_ar = _text_from_pattern(span, pattern_id)
+        span.text = text_ar
+    else:
+        text_ar = strip_footnote_markers(span.text)
+    return [
+        Unit(
+            unit_id=unit_id,
+            text_ar=text_ar,
+            unit_type=unit_type,
+            behavior=behavior,
+            span_id=span.span_id,
+            page_start=span.page_start,
+            page_end=span.page_end,
+            hierarchy=hierarchy,
+            metadata=unit_metadata,
+        )
+    ]
+
+
+def _atomicize_sanad_matn(
+    span: Span,
+    start_index: int,
+    config_rule: dict[str, Any],
+    manifestation_id: str,
+    behavior: str,
+    hierarchy: HierarchyPath,
+) -> list[Unit]:
+    """Split the span into ISNAD + MATN units at isnad_end, else one reserve unit.
+
+    When the split produces an empty isnad or matn side, the configured reserve
+    unit type covers the whole span so the span never ends up unit-less.
+    """
+    isnad_end = span.metadata["isnad_end"]
+    if isnad_end < len(span.text):
+        isnad_text = strip_footnote_markers(span.text[:isnad_end])
+        matn_text = strip_footnote_markers(span.text[isnad_end:])
+        if isnad_text and matn_text:
+            unit_types: dict[str, Any] = config_rule["unit_types"]
+            return [
+                _unit(
+                    span,
+                    HADITH__UNIT_ID_FORMAT.format(
+                        manifestation_id=manifestation_id, index=start_index
+                    ),
+                    isnad_text,
+                    unit_types["isnad"],
+                    behavior,
+                    hierarchy,
+                ),
+                _unit(
+                    span,
+                    HADITH__UNIT_ID_FORMAT.format(
+                        manifestation_id=manifestation_id, index=start_index + 1
+                    ),
+                    matn_text,
+                    unit_types["matn"],
+                    behavior,
+                    hierarchy,
+                ),
+            ]
+        _logger.warning("sanad_matn_empty_split", span_id=span.span_id, isnad_end=isnad_end)
+
+    reserve_type: str = config_rule["fallback_unit_type"]
+    reserve_id = HADITH__UNIT_ID_FORMAT.format(manifestation_id=manifestation_id, index=start_index)
+    return [
+        _unit(
+            span, reserve_id, strip_footnote_markers(span.text), reserve_type, behavior, hierarchy
+        )
+    ]
+
+
+def _unit(
+    span: Span,
+    unit_id: str,
+    text_ar: str,
+    unit_type: str,
+    behavior: str,
+    hierarchy: HierarchyPath,
+) -> Unit:
+    """Build one Unit anchored on the span."""
+    return Unit(
+        unit_id=unit_id,
+        text_ar=text_ar,
+        unit_type=unit_type,
+        behavior=behavior,
+        span_id=span.span_id,
+        page_start=span.page_start,
+        page_end=span.page_end,
+        hierarchy=hierarchy,
+    )
+
+
+def _make_footnote_unit(
+    unit_id: str, footnote_text: str, behavior: str, hierarchy: HierarchyPath, span: Span
+) -> Unit:
+    """Build one FOOTNOTE_UNIT from a footnote entry."""
+    return Unit(
+        unit_id=unit_id,
+        text_ar=footnote_text,
+        unit_type=HADITH__UNIT_FOOTNOTE,
+        behavior=behavior,
+        span_id=span.span_id,
+        page_start=span.page_start,
+        page_end=span.page_end,
+        hierarchy=hierarchy,
+    )
+
+
+def _handle_isnad_back_references(manuscript: Manuscript, unit_counter: int, config: Config) -> int:
+    """Copy source ISNAD units + narrator entities onto back-reference spans.
+
+    Returns the unit counter advanced past every back-reference unit created.
+    """
+    span_map = {span.span_id: span for span in manuscript.spans}
+    manifestation_id = manuscript.manifestation_id
+    for span in manuscript.spans:
+        if not span.metadata.get("isnad_back_ref"):
+            continue
+        source_span_id = span.metadata.get("refers_to_span_id")
+        if source_span_id is None:
+            _logger.warning("isnad_back_ref_missing_source", span_id=span.span_id)
+            continue
+        source_span = span_map.get(source_span_id)
+        if source_span is None or source_span.units is None:
+            _logger.warning(
+                "isnad_back_ref_source_unitless",
+                span_id=span.span_id,
+                source_span_id=source_span_id,
+            )
+            continue
+        source_isnad = next(
+            (unit for unit in source_span.units if unit.unit_type == HADITH__UNIT_ISNAD),
+            None,
+        )
+        if source_isnad is None:
+            continue
+        behavior = span.behavior
+        hierarchy = span.hierarchy
+        if behavior is None or hierarchy is None:
+            continue
+        back_ref_unit = Unit(
+            unit_id=HADITH__UNIT_ID_FORMAT.format(
+                manifestation_id=manifestation_id, index=unit_counter
+            ),
+            text_ar=source_isnad.text_ar,
+            unit_type=HADITH__UNIT_ISNAD,
+            behavior=behavior,
+            span_id=span.span_id,
+            page_start=span.page_start,
+            page_end=span.page_end,
+            hierarchy=hierarchy,
+            metadata={
+                "isnad_source": "back_reference",
+                "source_span_id": source_span_id,
+                "source_unit_id": source_isnad.unit_id,
+            },
+        )
+        unit_counter += 1
+        if span.units is not None:
+            span.units.insert(0, back_ref_unit)
+        else:
+            span.units = [back_ref_unit]
+        _attach_back_ref_entities(span, source_span, config)
+    return unit_counter
+
+
+def _attach_back_ref_entities(span: Span, source_span: Span, config: Config) -> None:
+    """Copy the source's narrator entities onto the back-reference span."""
+    narrator_entities = source_span.persons_by_role(NARRATOR__ROLE_NARRATOR)
+    existing_count = len(span.entities) if span.entities else 0
+    copied: list[Entity] = []
+    for idx, src_entity in enumerate(narrator_entities):
+        new_entity = emit_person_entity(
+            span=source_span,
+            text=src_entity.text,
+            char_start=src_entity.char_start,
+            char_end=src_entity.char_end,
+            spec=PersonSpec(
+                role_in_context=NARRATOR__ROLE_NARRATOR,
+                source=NARRATOR__SOURCE_ISNAD_BACK_REFERENCE,
+                config=config,
+                extractor_id="isnad_back_reference",
+                chain_position=src_entity.metadata.get("chain_position", idx),
+                extra_metadata={
+                    "isnad_source": "back_reference",
+                    "source_span_id": source_span.span_id,
+                    "source_entity_id": src_entity.entity_id,
+                },
+            ),
+        )
+        new_entity.entity_id = HADITH__ENTITY_ID_FORMAT.format(
+            span_id=span.span_id, index=existing_count + idx
+        )
+        copied.append(new_entity)
+    if span.entities is None:
+        span.entities = copied
+    else:
+        span.entities.extend(copied)

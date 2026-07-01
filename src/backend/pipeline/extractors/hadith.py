@@ -58,11 +58,6 @@ class NarratorSliceContext:
     narrator_name_max_chars: int
 
 
-def get_narrator_entities(span: Span) -> list[Entity]:
-    """Return PERSON entities with role_in_context narrator from a span."""
-    return span.persons_by_role(NARRATOR__ROLE_NARRATOR)
-
-
 def narrator_extractor(span: Span, config: Config) -> list[Entity]:
     """Extract narrator-name entities from a hadith transmission span.
 
