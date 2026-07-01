@@ -42,11 +42,7 @@ from backend.pipeline._segment_routing import (
     route_behavior,
     validate_required_behaviors,
 )
-from backend.pipeline.boundaries import (
-    MergeCues,
-    build_merge_params_from_config,
-    merge_isnad_continuations,
-)
+from backend.pipeline.boundaries import build_merge_cues, merge_isnad_continuations
 from backend.pipeline.boundaries_headings import (
     HeadingCues,
     build_inline_heading_re,
@@ -228,27 +224,14 @@ def _merge_isnad_splits(
     paragraphs: list[tuple[str, int, int]], ctx: _SegmentContext
 ) -> list[tuple[str, int, int]]:
     """Rejoin paragraphs where an attribution verb continues an isnad chain."""
-    (
-        chain_regex,
-        narrative_regex,
-        transmission_regex,
-        isnad_continuation_regex,
-        speech_verb_tail_regex,
-    ) = build_merge_params_from_config(ctx.config.raw, ctx.config.patterns)
-    return merge_isnad_continuations(
-        paragraphs,
-        MergeCues(
-            ctx.attribution_regex,
-            ctx.config.thresholds.isnad_tail_max_chars,
-            chain_regex,
-            narrative_regex,
-            ctx.attribution_strong_regex,
-            ctx.config.thresholds.isnad_merge_name_max_chars,
-            transmission_regex,
-            isnad_continuation_regex,
-            speech_verb_tail_regex,
-        ),
+    cues = build_merge_cues(
+        ctx.config.raw,
+        ctx.config.patterns,
+        ctx.attribution_regex,
+        ctx.attribution_strong_regex,
+        ctx.config.thresholds,
     )
+    return merge_isnad_continuations(paragraphs, cues)
 
 
 def _split_headings(
