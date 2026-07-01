@@ -121,6 +121,7 @@ def _validate_required_thresholds(thresholds: dict[str, Any]) -> None:
         "ruvector_timeout_seconds",
         "evidence_context_chars",
         "max_degraded_modes",
+        "narrator_disqualifier_lookahead_chars",
     }
     missing = required_thresholds - set(thresholds.keys())
     if missing:
