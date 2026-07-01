@@ -1,10 +1,10 @@
 """Tests for the manuscript span artifact writer.
 
 Segment a small manuscript, then assert (a) the row projection JSON-encodes each
-span's structured fields correctly and (b) create_span_store + insert_spans
-persist exactly one row per span. Persistence is checked via the connection's
-total_changes counter rather than a SELECT, since raw SQL is not permitted in
-tests (CENTRAL-005).
+span's structured fields correctly and (b) runner.create_artifact + the span
+INSERT persist exactly one row per span. Persistence is checked via the
+connection's total_changes counter rather than a SELECT, since raw SQL is not
+permitted in tests (CENTRAL-005).
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 
 from backend.build import manuscript as manuscript_build
+from backend.build import runner
 from backend.pipeline.config import load_config
 from backend.pipeline.models import Manuscript, ManuscriptPage
 from backend.pipeline.segment import segment
@@ -59,7 +60,7 @@ def test_should_project_and_persist_every_span(tmp_path: Path) -> None:
         assert pattern_ids == [p.pattern_id for p in span.patterns]
 
     out = tmp_path / "manuscript.db"
-    connection = manuscript_build.create_span_store(out)
-    manuscript_build.insert_spans(connection, rows)
+    connection = runner.create_artifact(out, manuscript_build.MANUSCRIPT_SCHEMA)
+    connection.executemany(manuscript_build.TABLES["span"], rows)
     assert connection.total_changes == len(manuscript.spans)
     connection.close()

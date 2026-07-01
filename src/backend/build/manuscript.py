@@ -4,7 +4,8 @@ DDL + INSERT helpers that build ``data/manuscript.db`` from a segmented-then-
 extracted Manuscript: the ``span`` table (one row per segment-phase span), the
 ``entity`` table (one row per extracted Entity), and the ``unit`` table (one row
 per atomic Unit). This is the WRITE side; the served queries live in
-``backend.repositories.manuscript``. CENTRAL-005 permits the DDL/INSERT SQL here.
+``backend.repositories.manuscript``; the connection lifecycle and build loop
+live in ``backend.build.runner``. CENTRAL-005 permits the DDL/INSERT SQL here.
 Structured fields (hierarchy, patterns, metadata, provenance, evidence) are
 JSON-encoded.
 """
@@ -12,8 +13,6 @@ JSON-encoded.
 from __future__ import annotations
 
 import json
-import sqlite3
-from pathlib import Path
 from typing import Any
 
 from backend.core.errors import ExtractError, SegmentError
@@ -28,7 +27,6 @@ from backend.pipeline.models import (
 )
 
 MANUSCRIPT_SCHEMA: str = """
-DROP TABLE IF EXISTS span;
 CREATE TABLE span (
   span_id            TEXT PRIMARY KEY,
   manifestation_id   TEXT NOT NULL,
@@ -48,7 +46,6 @@ CREATE TABLE span (
 CREATE INDEX idx_span_manifestation ON span (manifestation_id);
 CREATE INDEX idx_span_page ON span (manifestation_id, page_start);
 
-DROP TABLE IF EXISTS entity;
 CREATE TABLE entity (
   entity_id          TEXT PRIMARY KEY,
   span_id            TEXT NOT NULL,
@@ -67,7 +64,6 @@ CREATE TABLE entity (
 CREATE INDEX idx_entity_page ON entity (manifestation_id, page_start);
 CREATE INDEX idx_entity_span ON entity (span_id);
 
-DROP TABLE IF EXISTS unit;
 CREATE TABLE unit (
   unit_id            TEXT PRIMARY KEY,
   span_id            TEXT NOT NULL,
@@ -110,14 +106,7 @@ _UNIT_INSERT = (
     ":hierarchy_depth, :metadata)"
 )
 
-
-def create_span_store(out: Path) -> sqlite3.Connection:
-    """Create a fresh manuscript span store at ``out`` and apply the schema."""
-    if out.exists():
-        out.unlink()
-    con = sqlite3.connect(out)
-    con.executescript(MANUSCRIPT_SCHEMA)
-    return con
+TABLES: dict[str, str] = {"span": _SPAN_INSERT, "entity": _ENTITY_INSERT, "unit": _UNIT_INSERT}
 
 
 def span_rows(manuscript: Manuscript) -> list[dict[str, Any]]:
@@ -126,11 +115,6 @@ def span_rows(manuscript: Manuscript) -> list[dict[str, Any]]:
         _span_row(manuscript.work_id, manuscript.manifestation_id, span)
         for span in manuscript.spans
     ]
-
-
-def insert_spans(con: sqlite3.Connection, rows: list[dict[str, Any]]) -> None:
-    """Insert projected span rows into the span table."""
-    con.executemany(_SPAN_INSERT, rows)
 
 
 def entity_rows(manuscript: Manuscript) -> list[dict[str, Any]]:
@@ -150,16 +134,6 @@ def entity_rows(manuscript: Manuscript) -> list[dict[str, Any]]:
 def unit_rows(manuscript: Manuscript) -> list[dict[str, Any]]:
     """Project an extracted Manuscript's atomic units into unit-table rows."""
     return [_unit_row(manuscript.manifestation_id, unit) for unit in manuscript.units]
-
-
-def insert_entities(con: sqlite3.Connection, rows: list[dict[str, Any]]) -> None:
-    """Insert projected entity rows into the entity table."""
-    con.executemany(_ENTITY_INSERT, rows)
-
-
-def insert_units(con: sqlite3.Connection, rows: list[dict[str, Any]]) -> None:
-    """Insert projected unit rows into the unit table."""
-    con.executemany(_UNIT_INSERT, rows)
 
 
 def _span_row(work_id: str, manifestation_id: str, span: Span) -> dict[str, Any]:

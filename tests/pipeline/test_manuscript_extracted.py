@@ -1,9 +1,10 @@
 """Round-trip tests for the entity + unit writers (build/manuscript.py).
 
 Segment + extract a small hadith manuscript, then assert the entity/unit row
-projectors produce the right shapes and that create_span_store + insert_* persist
-exactly (spans + entities + units) rows — verified via the connection's
-total_changes counter, since raw SQL is not permitted in tests (CENTRAL-005).
+projectors produce the right shapes and that runner.create_artifact + the
+TABLES insert statements persist exactly (spans + entities + units) rows —
+verified via the connection's total_changes counter, since raw SQL is not
+permitted in tests (CENTRAL-005).
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from backend.build import manuscript as manuscript_build
+from backend.build import runner
 from backend.pipeline.config import load_config
 from backend.pipeline.extract import extract
 from backend.pipeline.models import Manuscript, ManuscriptPage
@@ -56,10 +58,10 @@ def test_should_project_nonempty_entity_and_unit_rows() -> None:
 
 def test_should_persist_spans_entities_and_units(tmp_path: Path) -> None:
     manuscript = _extracted_manuscript()
-    con = manuscript_build.create_span_store(tmp_path / "manuscript.db")
-    manuscript_build.insert_spans(con, manuscript_build.span_rows(manuscript))
-    manuscript_build.insert_entities(con, manuscript_build.entity_rows(manuscript))
-    manuscript_build.insert_units(con, manuscript_build.unit_rows(manuscript))
+    con = runner.create_artifact(tmp_path / "manuscript.db", manuscript_build.MANUSCRIPT_SCHEMA)
+    con.executemany(manuscript_build.TABLES["span"], manuscript_build.span_rows(manuscript))
+    con.executemany(manuscript_build.TABLES["entity"], manuscript_build.entity_rows(manuscript))
+    con.executemany(manuscript_build.TABLES["unit"], manuscript_build.unit_rows(manuscript))
 
     expected = len(manuscript.spans) + len(manuscript.entities) + len(manuscript.units)
     assert con.total_changes == expected
