@@ -59,3 +59,18 @@ def attach_footnote_text(span_text: str, footnote_entries: dict[str, str]) -> st
             matched.append(f"({marker}) {footnote_entries[marker]}")
             seen.add(marker)
     return "\n".join(matched) if matched else None
+
+
+_FOOTNOTE_MARKER_STRIP_REGEX: CompiledPattern = cached_compile(r"\s*\(\d+\)\s*")
+_REPEATED_SPACES_REGEX: CompiledPattern = cached_compile(r" {2,}")
+
+
+def strip_footnote_markers(text: str) -> str:
+    """Remove inline (N) footnote markers and collapse the gaps they leave.
+
+    The markers are references that point at footnote entries; they belong in the
+    footnote units, not in the body text of an isnad/matn/other content unit.
+    """
+    cleaned = _FOOTNOTE_MARKER_STRIP_REGEX.sub("", text)
+    cleaned = _REPEATED_SPACES_REGEX.sub(" ", cleaned)
+    return cleaned.strip()

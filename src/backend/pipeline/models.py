@@ -234,3 +234,65 @@ class Manuscript:
     def entities(self) -> list[Entity]:
         """Every entity across all spans, in span then entity order."""
         return [e for s in self.spans if s.entities for e in s.entities]
+
+
+@dataclass(frozen=True, slots=True)
+class EntityInputs:
+    """Inputs to create_entity, regrouped to stay under the function param-count cap.
+
+    Carries the entity's type/text/offsets, the anchoring span, the producing
+    extractor id, the pipeline config (for the evidence-context threshold), the
+    phase number (from PHASE_CONTRACTS), and the optional metadata/confidence/
+    text_source fields.
+    """
+
+    entity_type: str
+    text: str
+    char_start: int
+    char_end: int
+    span: Span
+    extractor_id: str
+    config: Any
+    phase: int
+    metadata: dict[str, Any] | None = None
+    confidence: float | None = None
+    text_source: str | None = None
+
+
+def create_entity(inputs: EntityInputs) -> Entity:
+    """Factory: an Entity with automatic provenance and evidence anchoring.
+
+    Builds the EvidenceAnchor from the span's location (context window sized by
+    config.thresholds["evidence_context_chars"]) and the ExtractionProvenance
+    from the span's detected patterns. The entity_id is left empty; the calling
+    phase assigns ids scoped to the producing span.
+    """
+    span = inputs.span
+    context_chars = inputs.config.threshold_int("evidence_context_chars")
+    source_text = inputs.text_source if inputs.text_source is not None else span.text
+    context_before = source_text[max(0, inputs.char_start - context_chars) : inputs.char_start]
+    context_after = source_text[inputs.char_end : inputs.char_end + context_chars]
+    evidence = EvidenceAnchor(
+        span_id=span.span_id,
+        page_start=span.page_start,
+        page_end=span.page_end,
+        hierarchy=span.hierarchy or HierarchyPath(path=[], path_ids=[], depth=0),
+        context_before=context_before,
+        context_after=context_after,
+    )
+    provenance = ExtractionProvenance(
+        extractor_id=inputs.extractor_id,
+        phase=inputs.phase,
+        pattern_ids=[pattern.pattern_id for pattern in span.patterns],
+    )
+    return Entity(
+        entity_id="",
+        entity_type=inputs.entity_type,
+        text=inputs.text,
+        char_start=inputs.char_start,
+        char_end=inputs.char_end,
+        metadata=inputs.metadata or {},
+        provenance=provenance,
+        evidence=evidence,
+        confidence=inputs.confidence,
+    )

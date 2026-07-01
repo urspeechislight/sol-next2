@@ -39,3 +39,12 @@ class ContractError(PipelineError):
     A manuscript missing the prerequisites a phase requires, or a phase run out
     of order. The pipeline fails loud rather than producing output on bad input.
     """
+
+
+class ExtractError(PipelineError):
+    """Raised when the extract phase hits an unrecoverable structural error.
+
+    Covers a behavior with no atomicizer rule, an unknown atomicizer strategy or
+    extractor name, an invalid entity type, and a content span that produces zero
+    units. Each is a bug the pipeline surfaces rather than papering over.
+    """

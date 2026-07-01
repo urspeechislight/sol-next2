@@ -48,6 +48,9 @@ HADITH__UNIT_TYPES_WITH_TEXT: Final[frozenset[str]] = frozenset(
         HADITH__UNIT_BASMALA,
     }
 )
+HADITH__UNIT_HADITH: Final[str] = "HADITH_UNIT"
+HADITH__UNIT_ID_FORMAT: Final[str] = "{manifestation_id}_u{index:04d}"
+HADITH__ENTITY_ID_FORMAT: Final[str] = "{span_id}_e{index:02d}"
 HADITH__BEHAVIOR_TRANSMISSION: Final[str] = "HADITH_TRANSMISSION"
 HADITH__BEHAVIOR_GENERAL_PROSE: Final[str] = "GENERAL_PROSE"
 HADITH__BEHAVIOR_SECTION_HEADING: Final[str] = "SECTION_HEADING"
