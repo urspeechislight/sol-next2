@@ -43,10 +43,7 @@ async def _list_works(
     _reject_unknown("category", category, _taxonomy.is_known_category)
     _reject_unknown("tradition", tradition, _taxonomy.is_known_tradition)
     items, total = books_repo.list_works(
-        category=category,
-        domain=domain,
-        tradition=tradition,
-        q=q,
+        books_repo.WorksQuery(category=category, domain=domain, tradition=tradition, q=q),
         limit=page.limit,
         offset=page.offset,
     )

@@ -181,21 +181,23 @@ def _toc_entries_from_rows(book_urn: str, rows: list[Any]) -> list[TocEntry]:
 
 
 def get_page(book_urn: str, page_number: int) -> BookPage:
-    """Return the requested page or raise ResourceNotFoundError."""
+    """Return the requested page or raise ``ResourceNotFoundError``.
+
+    The pipeline has not yet parsed pages into structured hadiths (isnad + matn
+    + narrators + grade), so ``text_ar`` carries the raw page text honestly and
+    ``hadiths`` stays empty rather than wrapping the page in a single fabricated
+    Hadith whose isnad is empty and whose matn is really the whole unsegmented
+    page. Phase 3-5 will populate ``hadiths``. ``text_en`` is the single wiring
+    point for an English rendering of the page: the corpus has no English column
+    yet, so it stays ``None`` and the reader shows a labelled preview; set it
+    here from the source the moment translations land.
+    """
     rows = page_rows(book_urn)
     if not rows:
         raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
     match = next((r for r in rows if r.page == page_number), None)
     if match is None:
         raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
-    # The pipeline has not yet parsed pages into structured hadiths (isnad +
-    # matn + narrators + grade). Serve the raw page text honestly rather than
-    # wrapping it in a single fabricated Hadith whose isnad is empty and whose
-    # "matn" is really the whole unsegmented page. Phase 3-5 will populate
-    # hadiths; until then text_ar carries the content and hadiths stays empty.
-    # text_en is the single wiring point for an English rendering of the page:
-    # the corpus has no English column yet, so it stays None and the reader shows
-    # a labelled preview; set it here from the source the moment translations land.
     return BookPage(
         page_number=page_number,
         total_pages=len(rows),

@@ -158,9 +158,6 @@ def split_with_page_tracking(
     in each chunk carries the corresponding TocAnchor; later paragraphs carry
     None.
     """
-    page_starts = layout.page_starts
-    pages_list = layout.pages_list
-    min_span_chars = layout.min_span_chars
     anchors = list(layout.toc_anchors or [])
     chunk_bounds: list[tuple[int, int, TocAnchor | None]] = []
     prev = 0
@@ -177,24 +174,19 @@ def split_with_page_tracking(
     result: list[tuple[str, int, int, TocAnchor | None]] = []
     for lo, hi, anchor in chunk_bounds:
         chunk = combined_text[lo:hi]
-        _emit_chunk_paragraphs(
-            chunk, lo, page_starts, pages_list, min_span_chars, anchor, layout.boundary_re, result
-        )
+        _emit_chunk_paragraphs(chunk, lo, layout, anchor, result)
     return result
 
 
 def _emit_chunk_paragraphs(
     chunk: str,
     lo: int,
-    page_starts: list[int],
-    pages_list: list[ManuscriptPage],
-    min_span_chars: int,
+    layout: SplitLayout,
     anchor: TocAnchor | None,
-    boundary_re: CompiledPattern,
     result: list[tuple[str, int, int, TocAnchor | None]],
 ) -> None:
-    """Split one Layer-A chunk at boundary_re and append its paragraphs to result."""
-    parts = boundary_re.split(chunk)
+    """Split one Layer-A chunk at the boundary regex and append its paragraphs to result."""
+    parts = layout.boundary_re.split(chunk)
     search_from = 0
     first_paragraph_in_chunk = True
     for part in parts:
@@ -204,12 +196,12 @@ def _emit_chunk_paragraphs(
         if idx == -1:
             idx = search_from
         stripped = part.strip()
-        if stripped and len(stripped) >= min_span_chars:
+        if stripped and len(stripped) >= layout.min_span_chars:
             strip_offset = part.index(stripped[0]) if stripped else 0
             text_start = lo + idx + strip_offset
             text_end = text_start + len(stripped) - 1
-            pg_start = page_number_at_offset(text_start, page_starts, pages_list)
-            pg_end = page_number_at_offset(text_end, page_starts, pages_list)
+            pg_start = page_number_at_offset(text_start, layout.page_starts, layout.pages_list)
+            pg_end = page_number_at_offset(text_end, layout.page_starts, layout.pages_list)
             attached = anchor if first_paragraph_in_chunk else None
             result.append((stripped, pg_start, pg_end, attached))
             first_paragraph_in_chunk = False

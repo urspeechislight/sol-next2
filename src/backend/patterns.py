@@ -13,6 +13,15 @@ Two distinct fold capabilities live here, each with one definition:
 
 Both share ``_fold_letters`` so the letter-folding rule exists once.
 ``strip_diacritics`` is display-only (verse bare form); it folds nothing.
+
+The two mark classes the folds strip are defined once here. ``ARABIC_MARKS``
+covers the name-fold marks: the harakat (fathatan through sukun), the
+superscript alef, and tatweel. ``SEARCH_MARKS`` is the wider display-only set
+stripped before search: the Arabic signs (U+0610..U+061A), the harakat
+(U+064B..U+0652), the superscript alef (U+0670), the Quranic sajdah/waqf/
+small-high annotation signs (U+06D6..U+06ED), and tatweel (U+0640). It is a
+superset of ``ARABIC_MARKS`` so a pasted verse's waqf signs stay out of both
+the index and the query, and it is codepoint-built so the class is unambiguous.
 """
 
 from __future__ import annotations
@@ -25,13 +34,7 @@ from backend.core.constants import SEARCH__PATTERN_CACHE_MAX
 
 type CompiledPattern = re.Pattern[str]
 
-# Harakat (fathatan..sukun), superscript alef, and tatweel — the name-fold marks.
 ARABIC_MARKS: Final[re.Pattern[str]] = re.compile("[ً-ْٰـ]")
-# Every display-only mark stripped before SEARCH: arabic signs (0610-061A),
-# harakat (064B-0652), superscript alef (0670), Quranic annotation signs —
-# sajdah/waqf/small-high marks (06D6-06ED), and tatweel (0640). Superset of
-# ARABIC_MARKS; the wider set keeps a pasted verse's waqf signs out of the index
-# and query. Codepoint-built so the class is unambiguous.
 _SEARCH_MARK_CPS: Final[tuple[int, ...]] = (
     *range(0x0610, 0x061B),
     *range(0x064B, 0x0653),

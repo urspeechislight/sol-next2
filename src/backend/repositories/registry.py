@@ -12,6 +12,7 @@ The DDL + INSERT helpers that materialize this artifact live in
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import dataclass
 from typing import Any
 
 from backend.core.constants import HTTP__DEFAULT_PAGE_SIZE
@@ -52,24 +53,31 @@ def _connect() -> sqlite3.Connection:
     )
 
 
+@dataclass(frozen=True, slots=True)
+class RijalFilter:
+    """Closed-set filters for a rijal listing query."""
+
+    q: str = ""
+    tradition: str = ""
+    category: str = ""
+    has_teachers: bool = False
+    has_reliability: bool = False
+
+
 def list_rijal(
-    q: str = "",
-    tradition: str = "",
-    category: str = "",
-    has_teachers: bool = False,
-    has_reliability: bool = False,
+    filters: RijalFilter,
     limit: int = HTTP__DEFAULT_PAGE_SIZE,
     offset: int = 0,
 ) -> tuple[list[RijalEntry], int]:
     """Return ``(slice, total)`` of rijal entries matching the filters."""
     con = _connect()
     params: dict[str, Any] = {
-        "q": q,
-        "qlike": f"%{q}%",
-        "tradition": tradition,
-        "category": category,
-        "has_teachers": int(has_teachers),
-        "has_reliability": int(has_reliability),
+        "q": filters.q,
+        "qlike": f"%{filters.q}%",
+        "tradition": filters.tradition,
+        "category": filters.category,
+        "has_teachers": int(filters.has_teachers),
+        "has_reliability": int(filters.has_reliability),
     }
     total = int(con.execute(_RIJAL_COUNT, params).fetchone()[0])
     rows = con.execute(_RIJAL_PAGE, {**params, "limit": limit, "offset": offset}).fetchall()

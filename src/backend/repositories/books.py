@@ -13,6 +13,7 @@ stem into works so the Library lists works, not duplicated volumes.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
@@ -136,20 +137,27 @@ def _scope_slugs(
     return slugs
 
 
+@dataclass(frozen=True, slots=True)
+class WorksQuery:
+    """Scope + text filters for a volume-folded works listing."""
+
+    category: str | None = None
+    domain: str | None = None
+    tradition: str | None = None
+    q: str = ""
+
+
 def list_works(
-    category: str | None = None,
-    domain: str | None = None,
-    tradition: str | None = None,
-    q: str = "",
+    query: WorksQuery,
     limit: int | None = None,
     offset: int = 0,
 ) -> tuple[list[Work], int]:
     """Return ``(slice, total)`` of volume-folded works, scoped by category,
     domain, and/or tradition, and optionally text-matched on ``q`` (title or
     author, diacritic-insensitive for Arabic and lower-cased for Latin)."""
-    scope = _scope_slugs(category, domain, tradition)
+    scope = _scope_slugs(query.category, query.domain, query.tradition)
     works = list(_works()) if scope is None else [w for w in _works() if w.category in scope]
-    needle = q.strip()
+    needle = query.q.strip()
     if needle:
         fold = normalize_arabic(needle)
         low = needle.lower()

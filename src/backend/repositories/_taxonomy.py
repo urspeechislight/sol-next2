@@ -4,6 +4,11 @@ The structure (slugs, labels) is authored in ``data/taxonomy.json``; per-categor
 work/volume counts are overlaid from the live catalogue by the domains repo. The
 Sunni / Shia / shared TRADITION of a category is derived here, once, from its
 slug, so client and server never diverge on the sectarian axis.
+
+Fiqh madhabs whose slug carries no ``sunni-`` / ``shia-`` prefix are mapped to
+a fixed tradition explicitly in ``_SUNNI_MADHABS`` / ``_SHIA_MADHABS``.
+``DOMAIN_OF`` maps each category slug to its domain id and ``_CATEGORIES_IN``
+maps each domain id to its category slugs, both derived once from ``DOMAINS``.
 """
 
 from __future__ import annotations
@@ -13,7 +18,6 @@ from typing import get_args
 from backend.models.domain import Domain, Tradition
 from backend.repositories._data_loader import load_json
 
-# Madhabs whose slug carries no sunni-/shia- prefix but whose tradition is fixed.
 _SUNNI_MADHABS: frozenset[str] = frozenset(
     {"hanafi-fiqh", "maliki-fiqh", "shafii-fiqh", "hanbali-fiqh", "zahiri-fiqh"}
 )
@@ -40,7 +44,6 @@ def _load() -> tuple[Domain, ...]:
 
 DOMAINS: tuple[Domain, ...] = _load()
 
-# slug -> domain id, and domain id -> its category slugs, derived once from DOMAINS.
 DOMAIN_OF: dict[str, str] = {c.slug: d.id for d in DOMAINS for c in d.categories}
 _CATEGORIES_IN: dict[str, tuple[str, ...]] = {
     d.id: tuple(c.slug for c in d.categories) for d in DOMAINS
