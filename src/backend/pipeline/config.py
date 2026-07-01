@@ -48,10 +48,6 @@ class Config:
         """Return ``thresholds[name]`` as int; KeyError if absent (config is SSOT)."""
         return int(self.thresholds[name])
 
-    def threshold_float(self, name: str) -> float:
-        """Return ``thresholds[name]`` as float, for genuinely fractional thresholds."""
-        return float(self.thresholds[name])
-
 
 def load_config(path: Path | None = None) -> Config:
     """Load and validate config/sol.yaml, or raise ConfigError.
