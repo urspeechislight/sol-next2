@@ -97,7 +97,7 @@ def _build_slice_context(span: Span, config: Config) -> NarratorSliceContext:
         name_content_boundary_regex=build_name_content_boundary_regex(boundary_parts),
         relative_references=list(narrator_cfg["relative_references"]),
         stopwords=frozenset(narrator_cfg.get("narrator_stopwords", [])),
-        narrator_name_max_chars=config.threshold_int("narrator_name_max_chars"),
+        narrator_name_max_chars=config.thresholds.narrator_name_max_chars,
     )
 
 

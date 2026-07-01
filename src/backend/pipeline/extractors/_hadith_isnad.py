@@ -62,13 +62,13 @@ def build_attribution_cues(config: Config) -> AttributionCues:
     narrator_cfg = config.raw["narrator_extraction"]
     ana_exclusions = narrator_cfg.get("pronoun_ana_exclusions")
     return AttributionCues(
-        question_verb_lookback=config.threshold_int("question_verb_lookback_chars"),
+        question_verb_lookback=config.thresholds.question_verb_lookback_chars,
         prepositional_regex=_build_exclusion_regex(
             tuple(narrator_cfg["prepositional_an_exclusions"])
         ),
         narrative_regex=_build_exclusion_regex(tuple(narrator_cfg["narrative_context_words"])),
-        disqualifier_lookahead=config.threshold_int("narrator_disqualifier_lookahead_chars"),
-        narrative_lookahead=config.threshold_int("narrator_narrative_lookahead_chars"),
+        disqualifier_lookahead=config.thresholds.narrator_disqualifier_lookahead_chars,
+        narrative_lookahead=config.thresholds.narrator_narrative_lookahead_chars,
         ana_pronoun_regex=_build_exclusion_regex(tuple(ana_exclusions)) if ana_exclusions else None,
     )
 

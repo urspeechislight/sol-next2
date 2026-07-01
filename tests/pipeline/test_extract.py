@@ -12,7 +12,6 @@ from backend.core.constants import HADITH__BEHAVIOR_GENERAL_PROSE, HADITH__BEHAV
 from backend.pipeline.config import load_config
 from backend.pipeline.extract import extract
 from backend.pipeline.models import (
-    DegradedMode,
     HierarchyPath,
     Manuscript,
     ManuscriptPage,
@@ -90,27 +89,6 @@ def test_should_atomicize_whole_span_into_single_unit() -> None:
     assert len(units) == 1
     assert units[0].unit_type == "PROSE_UNIT"
     assert result.spans[0].entities == []
-
-
-def test_should_record_gazetteer_unavailable_when_gazetteer_empty() -> None:
-    span = Span(
-        span_id="s3",
-        text="نص عام",
-        page_start=1,
-        page_end=1,
-        span_type="paragraph",
-        behavior=HADITH__BEHAVIOR_GENERAL_PROSE,
-        hierarchy=HierarchyPath(path=[], path_ids=[], depth=0),
-        patterns=[],
-    )
-    manuscript = Manuscript(work_id="w1", manifestation_id="m1", spans=[span])
-
-    result = extract(manuscript, _CFG)
-
-    assert DegradedMode.GAZETTEER_UNAVAILABLE in result.degraded_modes
-    assert any(
-        issue.issue_type is DegradedMode.GAZETTEER_UNAVAILABLE for issue in result.validation_issues
-    )
 
 
 def test_should_extract_narrators_from_segmented_hadith_chain() -> None:

@@ -209,7 +209,7 @@ def _build_paragraphs(
             ctx.boundary_regex,
             page_starts,
             pages_list,
-            ctx.config.threshold_int("min_span_chars"),
+            ctx.config.thresholds.min_span_chars,
             toc_anchors,
         ),
     )
@@ -239,11 +239,11 @@ def _merge_isnad_splits(
         paragraphs,
         MergeCues(
             ctx.attribution_regex,
-            ctx.config.threshold_int("isnad_tail_max_chars"),
+            ctx.config.thresholds.isnad_tail_max_chars,
             chain_regex,
             narrative_regex,
             ctx.attribution_strong_regex,
-            ctx.config.threshold_int("isnad_merge_name_max_chars"),
+            ctx.config.thresholds.isnad_merge_name_max_chars,
             transmission_regex,
             isnad_continuation_regex,
             speech_verb_tail_regex,
@@ -255,9 +255,9 @@ def _split_headings(
     paragraphs: list[tuple[str, int, int]], ctx: _SegmentContext
 ) -> list[tuple[str, int, int]]:
     """Split heading markers and inline headings from their following content."""
-    min_heading_chars = ctx.config.threshold_int("heading_split_min_heading_chars")
+    min_heading_chars = ctx.config.thresholds.heading_split_min_heading_chars
     if ctx.inline_heading_regex is not None and ctx.attribution_strong_regex is not None:
-        max_heading_chars = int(ctx.config.thresholds.get("heading_split_max_heading_chars", 0))
+        max_heading_chars = ctx.config.thresholds.heading_split_max_heading_chars
         paragraphs = split_at_inline_headings(
             paragraphs,
             HeadingCues(
@@ -297,7 +297,7 @@ def _emit_spans(
         detected = drop_heading_for_narrative(
             paragraph_text,
             detected,
-            ctx.config.threshold_int("narrative_heading_max_chars"),
+            ctx.config.thresholds.narrative_heading_max_chars,
             ctx.narrative_genres,
             book_type,
         )

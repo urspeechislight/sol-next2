@@ -20,10 +20,10 @@ from backend.pipeline.extractors.hadith import narrator_extractor
 from backend.pipeline.models import Pattern, Span
 
 _CFG = load_config()
-_PROXIMITY = _CFG.threshold_int("isnad_chain_proximity_max")
-_GAP = _CFG.threshold_int("isnad_chain_gap_max")
-_LOOKBACK = _CFG.threshold_int("question_verb_lookback_chars")
-_LOOKAHEAD = _CFG.threshold_int("narrator_disqualifier_lookahead_chars")
+_PROXIMITY = _CFG.thresholds.isnad_chain_proximity_max
+_GAP = _CFG.thresholds.isnad_chain_gap_max
+_LOOKBACK = _CFG.thresholds.question_verb_lookback_chars
+_LOOKAHEAD = _CFG.thresholds.narrator_disqualifier_lookahead_chars
 
 
 def _pattern(pattern_id: str, text: str, pos: int) -> Pattern:

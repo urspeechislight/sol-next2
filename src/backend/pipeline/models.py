@@ -189,7 +189,6 @@ class DegradedMode(Enum):
     """Quality compromises the pipeline tracks explicitly rather than silently."""
 
     NER_UNAVAILABLE = auto()
-    GAZETTEER_UNAVAILABLE = auto()
     RIJAL_UNAVAILABLE = auto()
     TRANSLATION_FAILED = auto()
     EMBEDDING_PARTIAL = auto()
@@ -263,12 +262,12 @@ def create_entity(inputs: EntityInputs) -> Entity:
     """Factory: an Entity with automatic provenance and evidence anchoring.
 
     Builds the EvidenceAnchor from the span's location (context window sized by
-    config.thresholds["evidence_context_chars"]) and the ExtractionProvenance
+    config.thresholds.evidence_context_chars) and the ExtractionProvenance
     from the span's detected patterns. The entity_id is left empty; the calling
     phase assigns ids scoped to the producing span.
     """
     span = inputs.span
-    context_chars = inputs.config.threshold_int("evidence_context_chars")
+    context_chars = inputs.config.thresholds.evidence_context_chars
     source_text = inputs.text_source if inputs.text_source is not None else span.text
     context_before = source_text[max(0, inputs.char_start - context_chars) : inputs.char_start]
     context_after = source_text[inputs.char_end : inputs.char_end + context_chars]

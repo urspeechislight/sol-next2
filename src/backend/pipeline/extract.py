@@ -75,7 +75,6 @@ def extract(manuscript: Manuscript, config: Config) -> Manuscript:
         registry=_build_extractor_registry(config.extractors),
         cues=build_attribution_cues(config),
     )
-    _record_gazetteer_unavailable(run)
     unit_counter = 0
     for span in manuscript.spans:
         unit_counter = _extract_span(span, run, unit_counter)
@@ -104,8 +103,8 @@ def _extract_span(span: Span, run: _ExtractRun, unit_counter: int) -> int:
     if _needs_isnad_end(strategy, span):
         span.metadata["isnad_end"] = find_isnad_end(
             span,
-            run.config.threshold_int("isnad_chain_proximity_max"),
-            run.config.threshold_int("isnad_chain_gap_max"),
+            run.config.thresholds.isnad_chain_proximity_max,
+            run.config.thresholds.isnad_chain_gap_max,
             run.cues,
         )
     entities = _extract_entities(span, run.registry, behavior, run.config)
@@ -199,21 +198,6 @@ def _extract_entities(
     for extractor_fn in registry.get(behavior, []):
         entities.extend(extractor_fn(span, config))
     return entities
-
-
-def _record_gazetteer_unavailable(run: _ExtractRun) -> None:
-    """Flag the empty-gazetteer degraded mode when the narrator gazetteer is empty."""
-    if run.config.narrator_gazetteer:
-        return
-    run.manuscript.degraded_modes.add(DegradedMode.GAZETTEER_UNAVAILABLE)
-    run.manuscript.validation_issues.append(
-        _degraded_issue(
-            DegradedMode.GAZETTEER_UNAVAILABLE,
-            None,
-            "Narrator gazetteer is empty",
-            _DEGRADED_SEVERITY_WARNING,
-        )
-    )
 
 
 def _record_ner_state(run: _ExtractRun) -> None:

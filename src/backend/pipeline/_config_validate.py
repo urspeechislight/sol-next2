@@ -1,11 +1,13 @@
 """Structural config validation and the validate_config orchestrator.
 
-Ported from sol-next's src/utils/config.py _validate tree. Checks the shape
-every phase depends on (required sections, pattern/behavior cross-references,
-atomicizer rules, required thresholds, service keys, toc_sections) then
-dispatches to the extractor- and methodology-specific validators in
-_config_validate_extractors. Raises ValueError naming the broken reference on
-any failure; the config loader converts that to ConfigError.
+Ported from sol-next's src/utils/config.py _validate tree, then cut down to
+the sections the ported phases actually read: required sections,
+pattern/behavior cross-references, atomicizer rules, service keys,
+toc_sections, and narrator_extraction. Threshold presence is enforced by the
+typed ``Thresholds`` dataclass in ``config.py`` (one home, no drift), so no
+separate required-thresholds list exists here. Raises ValueError naming the
+broken reference on any failure; the config loader converts that to
+ConfigError.
 """
 
 from __future__ import annotations
@@ -13,20 +15,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, cast
 
-from backend.pipeline._config_validate_extractors import (
-    validate_biography_extraction,
-    validate_hadith_methodology_section,
-    validate_jarh_tadil_grades,
-    validate_name_decomposition,
-    validate_narrator_extraction,
-    validate_rijal_extraction,
-    validate_theme_taxonomy,
-)
-
 
 def validate_config(raw: dict[str, Any], path: Path) -> None:
     """Validate the whole config structure, raising ValueError on the first failure."""
-    for key in ("patterns", "behaviors", "atomicizers", "extractors", "graph", "thresholds"):
+    for key in ("patterns", "behaviors", "atomicizers", "extractors", "thresholds"):
         if key not in raw:
             raise ValueError(f"config/{path.name} missing required section: '{key}'")
 
@@ -41,9 +33,6 @@ def validate_config(raw: dict[str, Any], path: Path) -> None:
 
     extractor_lists = list(raw["extractors"].values())
     has_narrator = any("narrator_extractor" in el for el in extractor_lists)
-    has_person = any("person_extractor" in el for el in extractor_lists)
-    has_rijal = any("rijal_entry_extractor" in el for el in extractor_lists)
-    has_theme = any("theme_extractor" in el for el in extractor_lists)
 
     _validate_atomicizer_rules(raw["atomicizers"], behavior_ids)
     for behavior in raw["behaviors"]:
@@ -51,17 +40,9 @@ def validate_config(raw: dict[str, Any], path: Path) -> None:
         if gate is not None and not isinstance(gate, list):
             raise ValueError(f"Behavior '{behavior['id']}' genre_gate must be a list")
 
-    _validate_required_thresholds(raw["thresholds"])
     _validate_services(raw.get("services", {}))
-    validate_narrator_extraction(raw, has_narrator)
-    validate_biography_extraction(raw, has_person)
-    validate_rijal_extraction(raw, has_rijal)
-    validate_name_decomposition(raw, has_person or has_rijal)
-    validate_theme_taxonomy(raw, has_theme)
-    validate_jarh_tadil_grades(raw)
+    _validate_narrator_extraction(raw, has_narrator)
     _validate_toc_sections(raw)
-    if "hadith_methodology" in raw:
-        validate_hadith_methodology_section(raw)
 
 
 def _validate_behavior_pattern_refs(behavior: dict[str, Any], pattern_ids: set[Any]) -> None:
@@ -99,36 +80,6 @@ def _validate_atomicizer_rules(atomicizers: dict[str, Any], behavior_ids: set[An
                     )
 
 
-def _validate_required_thresholds(thresholds: dict[str, Any]) -> None:
-    """Validate that every threshold key the codebase reads exists in config."""
-    required_thresholds = {
-        "citation_confidence_min",
-        "alignment_confidence_min",
-        "isnad_chain_proximity_max",
-        "isnad_chain_gap_max",
-        "narrator_name_max_chars",
-        "question_verb_lookback_chars",
-        "rijal_name_similarity_min",
-        "rijal_search_k",
-        "biography_year_search_window",
-        "rijal_teacher_ref_window",
-        "chain_generation_overlap_max",
-        "isnad_tail_max_chars",
-        "tawatur_min_chains",
-        "istifadah_min_chains",
-        "aziz_min_chains",
-        "quran_verse_max_chars",
-        "ruvector_timeout_seconds",
-        "evidence_context_chars",
-        "max_degraded_modes",
-        "narrator_disqualifier_lookahead_chars",
-        "narrator_narrative_lookahead_chars",
-    }
-    missing = required_thresholds - set(thresholds.keys())
-    if missing:
-        raise ValueError(f"Missing required thresholds: {sorted(missing)}")
-
-
 def _validate_services(services: dict[str, Any]) -> None:
     """Validate each enabled service block carries its required keys."""
     ruvector_cfg = services.get("ruvector", {})
@@ -152,6 +103,42 @@ def _validate_services(services: dict[str, Any]) -> None:
     quran_cfg = services.get("quran", {})
     if quran_cfg.get("enabled") and "index_path" not in quran_cfg:
         raise ValueError("services.quran.enabled is true but 'index_path' is missing")
+
+
+def _validate_narrator_extraction(raw: dict[str, Any], has_narrator_extractor: bool) -> None:
+    """Validate the narrator_extraction section.
+
+    Required in full when narrator_extractor is in an extractor list; the
+    three core keys are still required when the section is present otherwise.
+    """
+    narrator_cfg = raw.get("narrator_extraction")
+    if has_narrator_extractor:
+        if narrator_cfg is None:
+            raise ValueError(
+                "narrator_extraction section is required because narrator_extractor "
+                "is in an extractor list"
+            )
+        for required_key in (
+            "relative_references",
+            "prepositional_an_exclusions",
+            "narrative_context_words",
+            "name_content_boundaries",
+            "sentence_start_disqualifiers",
+        ):
+            if required_key not in narrator_cfg:
+                raise ValueError(
+                    f"narrator_extraction section is missing required key '{required_key}'"
+                )
+    elif narrator_cfg is not None:
+        for required_key in (
+            "relative_references",
+            "prepositional_an_exclusions",
+            "narrative_context_words",
+        ):
+            if required_key not in narrator_cfg:
+                raise ValueError(
+                    f"narrator_extraction section is present but '{required_key}' is missing"
+                )
 
 
 def _validate_toc_sections(raw: dict[str, Any]) -> None:
