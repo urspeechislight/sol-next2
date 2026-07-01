@@ -7,7 +7,7 @@ mid-word snap, are all covered.
 
 from __future__ import annotations
 
-from backend.pipeline.hadith_names import (
+from backend.pipeline.extractors.hadith import (
     snap_name_end_to_word_boundary,
     split_co_narrators,
 )

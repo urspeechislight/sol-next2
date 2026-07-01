@@ -10,13 +10,13 @@ from __future__ import annotations
 from typing import Any
 
 from backend.pipeline.config import load_config
-from backend.pipeline.extractors._hadith_isnad import (
+from backend.pipeline.extractors.hadith import (
     AttributionCues,
     build_attribution_cues,
     filter_false_attributions,
     find_isnad_end,
+    narrator_extractor,
 )
-from backend.pipeline.extractors.hadith import narrator_extractor
 from backend.pipeline.models import Pattern, Span
 
 _CFG = load_config()

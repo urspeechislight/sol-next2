@@ -36,7 +36,7 @@ from backend.core.logging import get_logger
 from backend.pipeline.config import Config
 from backend.pipeline.contracts import PHASE_CONTRACTS, validate_manuscript_for_phase
 from backend.pipeline.extractors import EXTRACTOR_REGISTRY, VALID_ENTITY_TYPES, ExtractorFn
-from backend.pipeline.extractors._hadith_isnad import (
+from backend.pipeline.extractors.hadith import (
     AttributionCues,
     build_attribution_cues,
     find_isnad_end,
