@@ -111,3 +111,6 @@ src/frontend/src/
 src/frontend/scraps/
 src/frontend/screenshots/
 src/frontend/uploads/
+
+# Vendored design skills: local tooling, not part of the reader
+.agents/
