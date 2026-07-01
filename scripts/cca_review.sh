@@ -36,8 +36,22 @@ else
   diff="$(git diff --staged)"
 fi
 
-if [[ -z "${diff//[$' \t\r\n']/}" ]]; then
+# The emptiness check must never be a bash pattern substitution over the
+# whole diff: ${diff//...} rewrites the string in-process and goes
+# quadratic on multi-megabyte deltas (a 69-commit push pinned bash at 100%
+# CPU for 19+ minutes, upstream of the claude timeout guard). grep does the
+# same check in C time.
+if ! grep -q '[^[:space:]]' <<<"$diff"; then
   echo "cca_review: empty diff — nothing to review."
+  exit 0
+fi
+
+# A delta beyond what a reviewer can usefully read gets skipped loudly, the
+# same step-aside stance as an unreachable reviewer. This also bounds every
+# later bash operation on the string.
+max_diff_bytes=500000
+if (( ${#diff} > max_diff_bytes )); then
+  echo "cca_review: delta is ${#diff} bytes (cap ${max_diff_bytes}) — too large for a useful headless review, not blocking." >&2
   exit 0
 fi
 
