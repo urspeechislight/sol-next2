@@ -15,9 +15,11 @@ from backend.pipeline.models import (
     DegradedMode,
     HierarchyPath,
     Manuscript,
+    ManuscriptPage,
     Pattern,
     Span,
 )
+from backend.pipeline.segment import segment
 
 _CFG = load_config()
 
@@ -109,3 +111,42 @@ def test_should_record_gazetteer_unavailable_when_gazetteer_empty() -> None:
     assert any(
         issue.issue_type is DegradedMode.GAZETTEER_UNAVAILABLE for issue in result.validation_issues
     )
+
+
+def test_should_extract_narrators_from_segmented_hadith_chain() -> None:
+    """Full segment then extract on a realistic isnad chain.
+
+    segment detects the attribution verbs and routes the chain span to
+    HADITH_TRANSMISSION; extract then pulls narrator entities from those patterns
+    and splits the sanad from the matn.
+    """
+    pages = [
+        ManuscriptPage(
+            page_number=1,
+            page_name="1",
+            text="كتاب الإيمان\nحدثنا محمد بن إسماعيل عن مالك بن أنس قال: إنما الأعمال بالنيات",
+            is_content=True,
+        )
+    ]
+    manuscript = Manuscript(
+        work_id="w1",
+        manifestation_id="m1",
+        pages=pages,
+        metadata={"book_type": "hadith", "toc": []},
+    )
+
+    result = extract(segment(manuscript, _CFG), _CFG)
+
+    hadith_spans = [span for span in result.spans if span.behavior == HADITH__BEHAVIOR_TRANSMISSION]
+    assert hadith_spans, "segment did not route the chain span to HADITH_TRANSMISSION"
+    narrator_names = {entity.text for span in hadith_spans for entity in (span.entities or [])}
+    assert narrator_names, "no narrator entities extracted from the isnad chain"
+    assert any("محمد" in name for name in narrator_names)
+    assert any("مالك" in name for name in narrator_names)
+    isnad_units = [
+        unit
+        for span in hadith_spans
+        for unit in (span.units or [])
+        if unit.unit_type == "ISNAD_UNIT"
+    ]
+    assert isnad_units, "no ISNAD_UNIT produced from the chain"
