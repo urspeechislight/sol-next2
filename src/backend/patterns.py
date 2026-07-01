@@ -116,3 +116,12 @@ def compile_pattern_table(
         except re.error as exc:
             raise ValueError(f"Pattern {pattern_id!r} has invalid regex: {exc}") from exc
     return tuple(compiled)
+
+
+def escape_pattern(text: str) -> str:
+    """Escape ``text`` for literal use in a regex (re.escape).
+
+    The CENTRAL-002 home for re.escape so callers (e.g. the TOC title-to-regex
+    builder) need not import re themselves.
+    """
+    return re.escape(text)
