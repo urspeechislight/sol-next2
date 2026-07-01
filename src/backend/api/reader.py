@@ -32,10 +32,10 @@ async def _search_book(
     ),
     offset: int = Query(default=0, ge=0, description="Matches to skip."),
 ) -> Page[BookSearchMatch]:
-    """Run the corpus engine scoped to ``book_urn`` and project page + snippet."""
-    items, total = corpus_repo.search(q=q, urn=book_urn, limit=limit, offset=offset)
-    matches = [BookSearchMatch(page=m.page, snippet=m.snippet) for m in items]
-    return Page[BookSearchMatch](items=matches, total=total, limit=limit, offset=offset)
+    """Scan ``book_urn``'s own pages for ``q`` (the in-memory path; see
+    ``repositories.corpus.search_in_book``) and wrap the matches in a page."""
+    items, total = corpus_repo.search_in_book(book_urn, q=q, limit=limit, offset=offset)
+    return Page[BookSearchMatch](items=items, total=total, limit=limit, offset=offset)
 
 
 router.add_api_route(

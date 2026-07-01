@@ -154,6 +154,9 @@ export interface BookPage {
   hadiths: Hadith[];
   /** Raw page text, set when the page has no parsed hadiths yet. */
   text_ar: string | null;
+  /** English translation of the raw page text, paired with text_ar. Null until
+      the pipeline emits one; the reader shows a labelled preview in that case. */
+  text_en: string | null;
 }
 
 // ---- daily editorial (GET /api/daily) ----

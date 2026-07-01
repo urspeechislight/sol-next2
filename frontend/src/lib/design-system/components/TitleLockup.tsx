@@ -2,12 +2,17 @@ import { cx } from '../../utils';
 import './TitleLockup.css';
 
 export type LockupMode = 'en' | 'both' | 'ar';
+export type LockupVariant = 'centered' | 'editorial';
 
 export interface TitleLockupProps {
   titleAr: string;
   titleEn?: string | null;
   author?: string | null;
   mode: LockupMode;
+  /** "centered" (default) is the stacked, centered treatment. "editorial"
+      left-justifies and renders the Arabic and English as equal-weight peer
+      titles at one size, with the author as a quiet byline — the reader masthead. */
+  variant?: LockupVariant;
   className?: string;
 }
 
@@ -15,7 +20,29 @@ export interface TitleLockupProps {
     answering the EN / EN|AR / AR language mode. The Arabic is the display face;
     the English drops to an italic subtitle and the author to an upright byline —
     never strung onto one baseline with bullets (Issue 01, Direction A+C). */
-export function TitleLockup({ titleAr, titleEn, author, mode, className }: TitleLockupProps) {
+export function TitleLockup({
+  titleAr,
+  titleEn,
+  author,
+  mode,
+  variant = 'centered',
+  className,
+}: TitleLockupProps) {
+  if (variant === 'editorial') {
+    const enTitle = mode !== 'ar' ? titleEn : null;
+    const arTitle = mode === 'en' && titleEn ? null : titleAr;
+    return (
+      <div className={cx('ds-lockup', 'ds-lockup--editorial', className)}>
+        {arTitle ? (
+          <div className="ds-lockup__ar" dir="rtl">
+            {arTitle}
+          </div>
+        ) : null}
+        {enTitle ? <div className="ds-lockup__en-title">{enTitle}</div> : null}
+        {author ? <div className="ds-lockup__byline">{author}</div> : null}
+      </div>
+    );
+  }
   if (mode === 'en') {
     return (
       <div className={cx('ds-lockup', className)}>

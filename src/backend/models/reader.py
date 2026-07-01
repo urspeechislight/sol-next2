@@ -92,6 +92,14 @@ class BookPage(BaseModel):
             "hadiths list; never both."
         ),
     )
+    text_en: str | None = Field(
+        default=None,
+        description=(
+            "English translation of the raw page text, paired with text_ar. None "
+            "until the pipeline emits a translation for the page; the reader shows a "
+            "labelled preview in that case and this real text the moment it arrives."
+        ),
+    )
 
 
 class BookSearchMatch(BaseModel):

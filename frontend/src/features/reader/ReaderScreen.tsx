@@ -10,7 +10,14 @@ import {
   Spinner,
   Text,
 } from '../../lib/design-system';
-import { getBook, getNarratorIndex, getPage, getToc, searchBook } from '../../lib/api/client';
+import {
+  getBook,
+  getDomains,
+  getNarratorIndex,
+  getPage,
+  getToc,
+  searchBook,
+} from '../../lib/api/client';
 import { READER } from '../../lib/constants';
 import { hadithBadge, reliabilityBadge } from '../../lib/variants';
 import { normalizeName } from '../../lib/arabic';
@@ -27,6 +34,7 @@ import type {
 import { useAsync } from '../../lib/useAsync';
 import { clamp, cx, toArabicDigits } from '../../lib/utils';
 import { MatchList, TocDrawer } from './ReaderDrawers';
+import { RawPageText } from './RawPageText';
 import { ReaderToolbar } from './ReaderToolbar';
 import type { LeftDrawer, ReaderLang, ReaderTheme, RightDrawer } from './ReaderToolbar';
 import './reader.css';
@@ -276,6 +284,7 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
   const bookRes = useAsync(() => getBook(urn), [urn]);
   const tocRes = useAsync(() => getToc(urn), [urn]);
   const indexRes = useAsync(() => getNarratorIndex(), []);
+  const domainsRes = useAsync(() => getDomains(), []);
   const pageRes = useAsync<BookPage>(() => getPage(urn, page), [urn, page]);
   const searchRes = useAsync<Page<BookSearchMatch>>(
     () =>
@@ -291,6 +300,15 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
     () => new Map(records.map((r) => [normalizeName(r.full_name), r])),
     [records],
   );
+  // Category slugs -> human labels, from the taxonomy; the masthead badge shows
+  // the label ("Arabic Language Sciences"), never the raw slug.
+  const categoryLabels = useMemo(() => {
+    const labels = new Map<string, string>();
+    for (const domain of domainsRes.data ?? []) {
+      for (const category of domain.categories) labels.set(category.slug, category.label);
+    }
+    return labels;
+  }, [domainsRes.data]);
 
   const openRecord = (record: NarratorRecord) => {
     setNarrator(record);
@@ -301,6 +319,9 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
   const rootStyle = { '--reader-size': `${size}px` } as CSSProperties;
 
   const book = bookRes.data;
+  const categoryLabel = book ? categoryLabels.get(book.category) : undefined;
+  const volume = book?.volume ?? null;
+  const death = book?.death_year_ah ? `d. ${book.death_year_ah} AH` : null;
   const toc = tocRes.data;
   const pageData = pageRes.data;
   const hadiths = pageData?.hadiths ?? [];
@@ -318,7 +339,9 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
         titleAr={book?.title_ar ?? '…'}
         titleEn={book?.title_en}
         author={book?.author ?? book?.author_ar}
-        urn={urn}
+        categoryLabel={categoryLabel}
+        volume={volume}
+        death={death}
         page={page}
         totalPages={totalPages}
         readerTheme={readerTheme}
@@ -328,6 +351,7 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
         rightDrawer={right}
         searchQuery={searchQ}
         onSearchQuery={setSearchQ}
+        onClearSearch={() => setSearchQ('')}
         onBack={onBack}
         onPage={onPage}
         onTheme={setReaderTheme}
@@ -378,9 +402,12 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
                     />
                   ))
                 ) : pageData.text_ar ? (
-                  <p className="reader-rawtext" dir="rtl">
-                    <Highlight text={pageData.text_ar} query={highlight} />
-                  </p>
+                  <RawPageText
+                    textAr={pageData.text_ar}
+                    textEn={pageData.text_en}
+                    lang={lang}
+                    highlight={highlight}
+                  />
                 ) : null}
               </div>
             </article>

@@ -64,6 +64,30 @@
   color: var(--color-text-ghost);
 }
 
+/* Trailing clear (X), rendered by the primitive only once the field has text. */
+.ds-input__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.ds-input__clear:hover {
+  color: var(--color-text);
+}
+.ds-input__clear .ds-icon {
+  width: 12px;
+  height: 12px;
+}
+
 /* The design supplies its own search icon, so suppress the browser native
    search clear/decoration controls (the redundant circle that appears on
    type="search" once text is entered). */
@@ -91,4 +115,11 @@
   font-family: var(--font-ar);
   font-size: var(--text-base);
   color: inherit;
+}
+.ds-input--reader .ds-input__clear {
+  background: var(--color-reader-pill-bg);
+  color: var(--color-reader-muted);
+}
+.ds-input--reader .ds-input__clear:hover {
+  color: var(--color-reader-fg);
 }

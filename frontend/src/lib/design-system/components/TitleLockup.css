@@ -32,3 +32,21 @@
   font-size: var(--text-sm);
   color: var(--color-reader-muted);
 }
+
+/* Editorial masthead: left-justified, Arabic and English as equal-weight peer
+   titles at one size (the reader toolbar). */
+.ds-lockup--editorial {
+  align-items: flex-start;
+  text-align: start;
+}
+.ds-lockup--editorial .ds-lockup__ar {
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+}
+.ds-lockup__en-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--color-reader-fg);
+}

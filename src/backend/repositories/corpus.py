@@ -27,9 +27,11 @@ from backend.core.constants import (
 )
 from backend.core.logging import get_logger
 from backend.models.book import Book
+from backend.models.reader import BookSearchMatch
 from backend.models.search import BookFacet, CategoryFacet, CorpusMatch, SearchFacets, VolumeFacet
 from backend.patterns import fold_search
 from backend.repositories import books as books_repo
+from backend.repositories import reader as reader_repo
 from backend.repositories._data_loader import open_ro_db
 
 _logger = get_logger("shia-library.corpus")
@@ -44,7 +46,6 @@ _BROAD_WINDOW: Final[int] = 4
 _FILTER = (
     "FROM pages JOIN book ON book.urn = pages.urn "
     "WHERE pages MATCH :q "
-    "  AND (:urn = '' OR pages.urn = :urn) "
     "  AND (:category = '' OR book.category = :category) "
     "  AND (:book = '' OR book.title = :book) "
     "  AND (:volume = 0 OR book.volume = :volume)"
@@ -57,12 +58,12 @@ _SCAN_CAP: Final[int] = 50_000
 # S608 is a false positive on the two bounded queries below: each is built from
 # the constant _FILTER and run with bound parameters (:q, :cap, :limit), never
 # from interpolated input — the same construction the unbounded originals used.
-_COUNT = "SELECT count(*) FROM (SELECT 1 " + _FILTER + " LIMIT :cap)"  # noqa: S608
+_COUNT_UNFILTERED = "SELECT count(*) FROM (SELECT 1 FROM pages WHERE pages MATCH :q LIMIT :cap)"
+_COUNT_FILTERED = "SELECT count(*) FROM (SELECT 1 " + _FILTER + " LIMIT :cap)"  # noqa: S608
 _SEARCH = (
-    "SELECT urn, page, content FROM ("  # noqa: S608
-    "SELECT pages.urn AS urn, pages.page AS page, pages.content AS content, rank AS r "
+    "SELECT pages.urn AS urn, pages.page AS page, pages.content AS content "
     + _FILTER
-    + " LIMIT :cap) ORDER BY r LIMIT :limit OFFSET :offset"
+    + " ORDER BY pages.rowid LIMIT :limit OFFSET :offset"
 )
 _FACET_CATEGORIES = (
     "SELECT book.category AS category, count(*) AS n FROM ("
@@ -106,11 +107,12 @@ def _title_en_by_ar() -> dict[str, str | None]:
     return {b.title_ar: b.title_en for b in _meta().values()}
 
 
-def _fold_windows(q: str, mode: str) -> list[str]:
+def search_windows(q: str, mode: str) -> list[str]:
     """Fold the query and return the phrase windows to match + locate. ``exact``
     -> one window (the whole phrase). ``broad`` -> overlapping ``_BROAD_WINDOW``
     word windows when the query is longer than one window, else the whole
-    phrase. Empty query -> ``[]``."""
+    phrase. Empty query -> ``[]``. Shared by the corpus-wide FTS search and the
+    in-book page scan — the one place a query becomes match windows."""
     words = [w for w in fold_search(q).replace('"', " ").split() if w]
     if not words:
         return []
@@ -141,10 +143,11 @@ def _fold_with_map(text: str) -> tuple[str, list[int]]:
     return "".join(folded), origin
 
 
-def _snippet(content: str, windows: list[str]) -> str:
-    """Excerpt the original ``content`` around the first folded ``windows`` hit,
-    keeping original orthography. Falls to the head only if no window is located
-    (the row matched, so a window is normally present)."""
+def locate_snippet(content: str, windows: list[str]) -> tuple[bool, str]:
+    """Locate the first folded ``windows`` hit in ``content`` and return
+    ``(found, snippet)`` — a fold-aware excerpt keeping original orthography, or
+    ``(False, head)`` when no window is present. The one place the fold-aware
+    snippet is built; shared by the corpus-wide FTS path and the in-book scan."""
     folded, origin = _fold_with_map(content)
     for needle in windows:
         hit = folded.find(needle)
@@ -156,15 +159,16 @@ def _snippet(content: str, windows: list[str]) -> str:
         right = min(len(content), end + CORPUS__SNIPPET_WINDOW_CHARS)
         prefix = "…" if left > 0 else ""
         suffix = "…" if right < len(content) else ""
-        return f"{prefix}{content[left:right]}{suffix}"
+        return True, f"{prefix}{content[left:right]}{suffix}"
     head = content[:CORPUS__SNIPPET_HEAD_CHARS]
-    return f"{head}…" if len(content) > CORPUS__SNIPPET_HEAD_CHARS else head
+    if len(content) > CORPUS__SNIPPET_HEAD_CHARS:
+        return False, f"{head}…"
+    return False, head
 
 
 def search(
     q: str = "",
     mode: str = "exact",
-    urn: str = "",
     category: str = "",
     book: str = "",
     volume: int = 0,
@@ -173,15 +177,21 @@ def search(
 ) -> tuple[list[CorpusMatch], int]:
     """Return ``(slice, total)`` of corpus pages matching ``q`` (mode) + filters.
 
-    ``urn`` restricts the search to a single book; it is the one engine that
-    backs both the cross-corpus search and the reader's in-book search."""
-    windows = _fold_windows(q, mode)
+    Cross-corpus FTS5 search. Results come back in index (rowid) order, paginated
+    directly by the FTS engine — not bm25-ranked, because ranking scores the
+    whole match set and is pathologically slow for common terms. Counts are
+    bounded by ``_SCAN_CAP`` (exact below it, a floor at/above it); the count
+    joins ``book`` only when a category/book/volume filter is set, so an
+    unfiltered count stays cheap for common terms. In-book search is a separate
+    path (``search_in_book``): a single book is scanned in memory, since FTS
+    scoped by urn walks the whole posting list for late books.
+    """
+    windows = search_windows(q, mode)
     if not windows:
         return [], 0
     con = _connect()
     params: dict[str, Any] = {
         "q": _match_expr(windows),
-        "urn": urn,
         "category": category,
         "book": book,
         "volume": volume,
@@ -189,8 +199,11 @@ def search(
         "offset": offset,
         "cap": _SCAN_CAP,
     }
-    # Bounded count: exact below the cap, reported as the cap (a floor) above it.
-    total = int(con.execute(_COUNT, params).fetchone()[0])
+    if category or book or volume:
+        total = int(con.execute(_COUNT_FILTERED, params).fetchone()[0])
+    else:
+        count_params: dict[str, Any] = {"q": params["q"], "cap": _SCAN_CAP}
+        total = int(con.execute(_COUNT_UNFILTERED, count_params).fetchone()[0])
     rows = con.execute(_SEARCH, params).fetchall()
     meta = _meta()
     matches: list[CorpusMatch] = []
@@ -200,6 +213,7 @@ def search(
         b = meta.get(urn)
         if b is None:
             uncatalogued.add(urn)
+        _, snippet = locate_snippet(row["content"], windows)
         matches.append(
             CorpusMatch(
                 urn=urn,
@@ -209,13 +223,10 @@ def search(
                 category=b.category if b else "",
                 volume=b.volume if b else None,
                 page=int(row["page"]),
-                snippet=_snippet(row["content"], windows),
+                snippet=snippet,
             )
         )
     if uncatalogued:
-        # The index holds pages whose URN is no longer in the catalog (e.g. a book
-        # removed after the index was built). Surface it loudly so the URN-as-title
-        # display can never quietly mask a stale index.
         _logger.warning(
             "corpus-match-uncatalogued",
             count=len(uncatalogued),
@@ -228,7 +239,7 @@ def facets(q: str = "", mode: str = "exact", category: str = "", book: str = "")
     """Drill-down facets for the active match mode: categories (over q), books
     (within category), volumes (within the chosen book). Each level is computed
     only when its parent filter is set, so the menus stay scoped and small."""
-    windows = _fold_windows(q, mode)
+    windows = search_windows(q, mode)
     if not windows:
         return SearchFacets(categories=[], books=[], volumes=[])
     expr = _match_expr(windows)
@@ -259,3 +270,30 @@ def facets(q: str = "", mode: str = "exact", category: str = "", book: str = "")
         ],
         volumes=[VolumeFacet(volume=int(r["volume"]), count=int(r["n"])) for r in vol_rows],
     )
+
+
+def search_in_book(
+    book_urn: str,
+    q: str,
+    limit: int = HTTP__DEFAULT_PAGE_SIZE,
+    offset: int = 0,
+) -> tuple[list[BookSearchMatch], int]:
+    """Return ``(slice, total)`` of pages in ``book_urn`` whose folded text
+    contains a folded query window, each with a fold-aware snippet.
+
+    Scans the book's own pages in memory (via ``reader.page_rows``, the page
+    SSOT) rather than the global FTS index: a single book is small enough to
+    scan, and FTS scoped by urn walks the whole posting list for common terms in
+    late-indexed books. Shares ``search_windows`` + ``locate_snippet`` with the
+    corpus-wide path — the fold + snippet logic lives once.
+    """
+    windows = search_windows(q, "exact")
+    if not windows:
+        return [], 0
+    matches: list[BookSearchMatch] = []
+    for row in reader_repo.page_rows(book_urn):
+        found, snippet = locate_snippet(row.content, windows)
+        if found:
+            matches.append(BookSearchMatch(page=row.page, snippet=snippet))
+    total = len(matches)
+    return matches[offset : offset + limit], total

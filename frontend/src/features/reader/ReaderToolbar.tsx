@@ -1,4 +1,12 @@
-import { IconButton, Input, NavArrow, Pill, Segmented, TitleLockup } from '../../lib/design-system';
+import {
+  Icon,
+  IconButton,
+  Input,
+  NavArrow,
+  Pill,
+  Segmented,
+  TitleLockup,
+} from '../../lib/design-system';
 import type { IconName } from '../../lib/design-system';
 import { READER } from '../../lib/constants';
 import { clamp } from '../../lib/utils';
@@ -20,27 +28,74 @@ const LANGS: [ReaderLang, string][] = [
   ['ar', 'AR'],
 ];
 
+function ReaderMeta({
+  categoryLabel,
+  volume,
+  death,
+}: Pick<ReaderToolbarProps, 'categoryLabel' | 'volume' | 'death'>) {
+  if (!categoryLabel && !volume && !death) return null;
+  return (
+    <div className="reader-meta">
+      {categoryLabel ? (
+        <span className="reader-badge reader-badge--cat">
+          <Icon name="layers" size="sm" />
+          {categoryLabel}
+        </span>
+      ) : null}
+      {death ? <span className="reader-badge">{death}</span> : null}
+      {volume ? (
+        <span className="reader-badge reader-badge--vol">
+          <Icon name="book" size="sm" />
+          Volume {volume}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function ContextRow({
   titleAr,
   titleEn,
   author,
-  urn,
   lang,
   searchQuery,
+  categoryLabel,
+  volume,
+  death,
   onBack,
   onSearchQuery,
+  onClearSearch,
 }: Pick<
   ReaderToolbarProps,
-  'titleAr' | 'titleEn' | 'author' | 'urn' | 'lang' | 'searchQuery' | 'onBack' | 'onSearchQuery'
+  | 'titleAr'
+  | 'titleEn'
+  | 'author'
+  | 'lang'
+  | 'searchQuery'
+  | 'categoryLabel'
+  | 'volume'
+  | 'death'
+  | 'onBack'
+  | 'onSearchQuery'
+  | 'onClearSearch'
 >) {
   return (
-    <div className="reader-toolbar__row">
+    <div className="reader-toolbar__row reader-toolbar__row--context">
       <NavArrow direction="back" surface="reader" label="Back to catalog" onClick={onBack}>
         Catalog
       </NavArrow>
       <span className="reader-vrule" />
       <div className="reader-context">
-        <TitleLockup titleAr={titleAr} titleEn={titleEn} author={author} mode={lang} />
+        <div className="reader-masthead">
+          <TitleLockup
+            variant="editorial"
+            titleAr={titleAr}
+            titleEn={titleEn}
+            author={author}
+            mode={lang}
+          />
+          <ReaderMeta categoryLabel={categoryLabel} volume={volume} death={death} />
+        </div>
       </div>
       <Input
         surface="reader"
@@ -51,8 +106,9 @@ function ContextRow({
         placeholder="ابحث في الكتاب…"
         dir="rtl"
         onInput={onSearchQuery}
+        onClear={onClearSearch}
+        clearLabel="Clear search"
       />
-      <span className="reader-urn">⌗ {urn}</span>
     </div>
   );
 }
@@ -168,7 +224,12 @@ export interface ReaderToolbarProps {
   titleAr: string;
   titleEn?: string | null;
   author?: string | null;
-  urn: string;
+  /** Human-readable category label (e.g. "Arabic Language Sciences"). */
+  categoryLabel?: string | null;
+  /** Volume number for a multi-volume work; omitted for single-volume books. */
+  volume?: number | null;
+  /** Pre-formatted death label, e.g. "d. 732 AH". */
+  death?: string | null;
   page: number;
   totalPages: number;
   readerTheme: ReaderTheme;
@@ -185,6 +246,7 @@ export interface ReaderToolbarProps {
   onLeft: (d: LeftDrawer) => void;
   onRight: (d: RightDrawer) => void;
   onSearchQuery: (q: string) => void;
+  onClearSearch: () => void;
 }
 
 export function ReaderToolbar(p: ReaderToolbarProps) {
@@ -194,11 +256,14 @@ export function ReaderToolbar(p: ReaderToolbarProps) {
         titleAr={p.titleAr}
         titleEn={p.titleEn}
         author={p.author}
-        urn={p.urn}
+        categoryLabel={p.categoryLabel}
+        volume={p.volume}
+        death={p.death}
         lang={p.lang}
         searchQuery={p.searchQuery}
         onBack={p.onBack}
         onSearchQuery={p.onSearchQuery}
+        onClearSearch={p.onClearSearch}
       />
       <PagerRow page={p.page} totalPages={p.totalPages} onPage={p.onPage} />
       <div className="reader-toolbar__row reader-toolbar__row--settings">

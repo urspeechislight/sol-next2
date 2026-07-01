@@ -23,6 +23,10 @@ export interface InputProps {
   /** Make the field a search form: Enter (or clicking the icon) fires this once,
       instead of any live/per-keystroke behavior the caller wires to onInput. */
   onSubmit?: () => void;
+  /** When set, a trailing clear button appears once the field has text and calls
+      this. Lets a live search reset itself without leaving the field. */
+  onClear?: () => void;
+  clearLabel?: string;
 }
 
 /** Composite field: ds-field > label + ds-input(container) > icon + leading + field.
@@ -46,6 +50,8 @@ export function Input({
   className,
   onInput,
   onSubmit,
+  onClear,
+  clearLabel = 'Clear',
 }: InputProps) {
   const glyph = icon ? <Icon name={icon} size="sm" className="ds-input__icon" /> : null;
   const body = (
@@ -78,6 +84,16 @@ export function Input({
           className="ds-input__field"
           onInput={(e) => onInput?.((e.target as HTMLInputElement).value)}
         />
+        {onClear && value ? (
+          <button
+            type="button"
+            className="ds-input__clear"
+            aria-label={clearLabel}
+            onClick={onClear}
+          >
+            <Icon name="close" size="sm" />
+          </button>
+        ) : null}
       </div>
     </>
   );

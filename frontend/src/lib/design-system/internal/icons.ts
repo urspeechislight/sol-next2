@@ -72,8 +72,11 @@ export const ICON_PATHS: Record<IconName, string> = {
     'M6 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM6 17a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 6.5l8 0M7.5 12.5l9 4M8 13l8-6',
   daily: 'M12 7v5l3 2M12 3a9 9 0 109 9 9 9 0 00-9-9z',
   search: 'M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.3-4.3',
+  // A scroll (rolled parchment, top-left curl + two text lines) under a
+  // magnifying glass: "search inside this book". Replaces the flat book+lens
+  // glyph that read as a phone.
   'book-search':
-    'M6 3h9a1 1 0 011 1v15a2 2 0 01-2 2H7a2 2 0 01-2-2V4a1 1 0 011-1zM11 13.5a3 3 0 100-6 3 3 0 000 6zM13.2 12.7l2 2',
+    'M16 3H8a2 2 0 00-2 2v1a2 2 0 01-2 2M6 5v13M16 3a2 2 0 012 2v4M9 8h5M9 11h3M15 13.5a3 3 0 100 6 3 3 0 100-6M19 18.5l2.4 2.4',
   sun: 'M12 17a5 5 0 100-10 5 5 0 000 10zM12 1v3M12 20v3M4.2 4.2l2 2M17.8 17.8l2 2M1 12h3M20 12h3M4.2 19.8l2-2M17.8 6.2l2-2',
   moon: 'M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z',
   'chevron-left': 'M15 18l-6-6 6-6',

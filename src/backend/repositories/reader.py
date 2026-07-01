@@ -168,6 +168,9 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
     # wrapping it in a single fabricated Hadith whose isnad is empty and whose
     # "matn" is really the whole unsegmented page. Phase 3-5 will populate
     # hadiths; until then text_ar carries the content and hadiths stays empty.
+    # text_en is the single wiring point for an English rendering of the page:
+    # the corpus has no English column yet, so it stays None and the reader shows
+    # a labelled preview; set it here from the source the moment translations land.
     return BookPage(
         page_number=page_number,
         total_pages=len(rows),
@@ -177,6 +180,7 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
         section_title_en=None,
         hadiths=[],
         text_ar=match.content,
+        text_en=None,
     )
 
 

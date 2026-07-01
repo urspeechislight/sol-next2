@@ -83,7 +83,7 @@ export { IsnadNode } from "./components/IsnadNode";
 export type { IsnadNodeProps } from "./components/IsnadNode";
 
 export { TitleLockup } from "./components/TitleLockup";
-export type { TitleLockupProps, LockupMode } from "./components/TitleLockup";
+export type { TitleLockupProps, LockupMode, LockupVariant } from "./components/TitleLockup";
 
 export { SourceRecord } from "./components/SourceRecord";
 export type { SourceRecordProps } from "./components/SourceRecord";
