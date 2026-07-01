@@ -53,14 +53,18 @@ rules:
   # ---- Code quality ----------------------------------------------------------
   - id: QUAL-010
     handler: file_size_cap
-    severity: warn-400/block-450
-    summary: File LOC caps. Soft 400, hard 450 — split before either is reached.
+    severity: advisory
+    summary: >
+      File LOC signal at 400, advisory only. A large file calls for extracting
+      a real concept, never a mechanical split into facade plus shards.
     doc: docs/quality-standards.md#size-caps
 
   - id: QUAL-011
     handler: function_size_cap
-    severity: block
-    summary: Function LOC cap (80).
+    severity: advisory
+    summary: >
+      Function LOC signal at 80, advisory only. A long function calls for a
+      named extraction, never carving at an arbitrary line.
     doc: docs/quality-standards.md#size-caps
 
   - id: QUAL-012

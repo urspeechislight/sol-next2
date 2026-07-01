@@ -36,15 +36,15 @@ def test_should_advise_when_file_above_warn_cap() -> None:
     assert decision.severity == "advisory"
 
 
-def test_should_block_when_file_at_hard_cap() -> None:
-    """A file at exactly 450 LOC is at the hard cap and is blocked."""
+def test_should_advise_when_file_at_former_hard_cap() -> None:
+    """A 450-LOC file advises; the cap is a signal, not a block."""
     decision = file_size_cap.check(_ctx("x = 1\n" * 450))
-    assert decision.severity == "block"
+    assert decision.severity == "advisory"
     assert decision.rule_id == "QUAL-010"
 
 
-def test_should_block_when_file_above_hard_cap() -> None:
-    """A 600-line file is well past the cap."""
+def test_should_advise_when_file_far_above_signal() -> None:
+    """A 600-line file still advises rather than blocks."""
     decision = file_size_cap.check(_ctx("x = 1\n" * 600))
-    assert decision.severity == "block"
+    assert decision.severity == "advisory"
     assert decision.rule_id == "QUAL-010"

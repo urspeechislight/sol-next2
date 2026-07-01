@@ -25,11 +25,12 @@ def test_should_allow_when_function_under_limit() -> None:
     assert decision.severity == "allow"
 
 
-def test_should_block_when_function_too_long() -> None:
-    """An 100-line function denies."""
+def test_should_advise_when_function_too_long() -> None:
+    """A 100-line function advises; the cap is a signal, not a block."""
     body = "\n".join(f"    x = {i}" for i in range(100))
     decision = function_size_cap.check(_ctx(f"def big():\n{body}\n"))
-    assert decision.severity == "block"
+    assert decision.severity == "advisory"
+    assert decision.rule_id == "QUAL-011"
     assert "big" in decision.why
 
 

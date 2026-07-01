@@ -42,12 +42,29 @@ def test_should_block_when_name_is_too_long(tmp_path: Path) -> None:
     assert helper_constraints.check(_ctx(target, code)).severity == "block"
 
 
-def test_should_block_when_too_many_params(tmp_path: Path) -> None:
-    """More than 5 parameters is denied."""
+def test_should_advise_when_too_many_params(tmp_path: Path) -> None:
+    """More than 5 parameters is an advisory (FUNC-002), not a block."""
     target = tmp_path / "src/utils/x.py"
     target.parent.mkdir(parents=True)
     code = "def f(a: int, b: int, c: int, d: int, e: int, g: int) -> int:\n    return 1\n"
-    assert helper_constraints.check(_ctx(target, code)).severity == "block"
+    decision = helper_constraints.check(_ctx(target, code))
+    assert decision.severity == "advisory"
+    assert decision.rule_id == "FUNC-002"
+
+
+def test_should_prefer_block_when_naming_and_params_both_fire(tmp_path: Path) -> None:
+    """A naming invariant outranks the parameter advisory in one file."""
+    target = tmp_path / "src/utils/x.py"
+    target.parent.mkdir(parents=True)
+    code = (
+        "def f(a: int, b: int, c: int, d: int, e: int, g: int) -> int:\n"
+        "    return 1\n"
+        "def process() -> int:\n"
+        "    return 1\n"
+    )
+    decision = helper_constraints.check(_ctx(target, code))
+    assert decision.severity == "block"
+    assert decision.rule_id == "FUNC-001"
 
 
 def test_should_allow_when_function_is_clean(tmp_path: Path) -> None:
