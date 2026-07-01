@@ -21,6 +21,8 @@ import re
 from functools import lru_cache
 from typing import Final
 
+from backend.core.constants import SEARCH__PATTERN_CACHE_MAX
+
 type CompiledPattern = re.Pattern[str]
 
 # Harakat (fathatan..sukun), superscript alef, and tatweel — the name-fold marks.
@@ -83,16 +85,16 @@ def strip_diacritics(text: str) -> str:
     return ARABIC_MARKS.sub("", text)
 
 
-@lru_cache(maxsize=100)
-def cached_compile(pattern: str) -> re.Pattern[str]:
-    """Compile ``pattern`` once as a multiline regex, cached per pattern string.
+@lru_cache(maxsize=SEARCH__PATTERN_CACHE_MAX)
+def cached_compile(pattern: str, flags: int = 0) -> CompiledPattern:
+    """Compile ``pattern`` once with ``flags``, cached per (pattern, flags).
 
-    The single compile path for the ported pipeline's config-driven regexes, so
-    every pattern is built identically and reused rather than recompiled per
-    span. All config/sol.yaml patterns are multiline; that flag lives here, not
-    at call sites (CENTRAL-002 keeps every ``re.compile`` in this module).
+    The single compile path for the ported pipeline's regexes. ``flags`` defaults
+    to 0 (no flags) so util-local patterns compile exactly as in sol-next; config
+    patterns are compiled with re.MULTILINE by compile_pattern_table. CENTRAL-002
+    keeps every ``re.compile`` in this module.
     """
-    return re.compile(pattern, re.MULTILINE)
+    return re.compile(pattern, flags)
 
 
 def compile_pattern_table(
@@ -110,7 +112,7 @@ def compile_pattern_table(
         pattern_id = entry["id"]
         regex = entry["regex"]
         try:
-            compiled.append((pattern_id, cached_compile(regex)))
+            compiled.append((pattern_id, cached_compile(regex, re.MULTILINE)))
         except re.error as exc:
             raise ValueError(f"Pattern {pattern_id!r} has invalid regex: {exc}") from exc
     return tuple(compiled)

@@ -52,6 +52,7 @@ HADITH__BEHAVIOR_TRANSMISSION: Final[str] = "HADITH_TRANSMISSION"
 HADITH__ENTITY_PERSON: Final[str] = "PERSON"
 HADITH__PATTERN_HEADING_MARKER: Final[str] = "HEADING_MARKER"
 HADITH__MAX_NARRATOR_RANK: Final[int] = 12
+SEARCH__PATTERN_CACHE_MAX: Final[int] = 512
 
 # ---------- Corpus full-text search --------------------------------------------
 
