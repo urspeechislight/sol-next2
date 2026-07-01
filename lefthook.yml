@@ -40,13 +40,14 @@ pre-push:
     full-ci:
       run: pnpm run ci
     cca-review:
-      # Headless second-opinion review of the branch vs origin/main. Runs only
-      # when the `claude` CLI is installed, so it skips cleanly on machines that
-      # lack it (e.g. buildhost) instead of blocking the push. Exits non-zero only on
-      # a genuine "fail" verdict from the review.
+      # Headless second-opinion review of exactly what this push adds (the
+      # commits on this branch that origin does not have yet). Runs only when the
+      # `claude` CLI is installed, so it skips cleanly on machines that lack it
+      # (e.g. buildhost) instead of blocking the push. Exits non-zero only on a
+      # genuine "fail" verdict from the review.
       run: |
         if command -v claude >/dev/null 2>&1; then
-          scripts/cca_review.sh main
+          scripts/cca_review.sh --push
         else
           echo "cca-review: skipped (claude CLI not installed)"
         fi
