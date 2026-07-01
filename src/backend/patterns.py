@@ -125,3 +125,20 @@ def escape_pattern(text: str) -> str:
     builder) need not import re themselves.
     """
     return re.escape(text)
+
+
+@lru_cache(maxsize=SEARCH__PATTERN_CACHE_MAX)
+def cached_compile_alternation(
+    parts: tuple[str, ...],
+    joiner: str = "|",
+    prefix: str = "",
+    suffix: str = "",
+    flags: int = 0,
+) -> CompiledPattern:
+    """Compile ``prefix + joiner.join(parts) + suffix`` once, cached per input.
+
+    The shared builder for config word-list regexes (chain-continuation exclusions,
+    transmission verbs, ...). Parts arrive pre-escaped; this joins and wraps them
+    and compiles through cached_compile so the result is reused.
+    """
+    return cached_compile(prefix + joiner.join(parts) + suffix, flags)
