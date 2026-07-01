@@ -1,0 +1,1960 @@
+# sol-next configuration
+# All registries and thresholds in one file.
+# Validation at startup catches every broken cross-reference.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PATTERNS
+# Surface-level text detectors. Phase 2 runs these against span text.
+# Each match becomes a Pattern object on the span.
+# ─────────────────────────────────────────────────────────────────────────────
+patterns:
+  - id: ATTRIBUTION
+    description: >
+      Hadith transmission verbs and markers (حدثنا, أخبرنا, عن, روى).
+      Includes common abbreviations: أنا (=أخبرنا), نا (=حدثنا).
+      These abbreviations are extremely common in classical hadith collections
+      (شرح السنة, المعجم الأوسط, etc.). False matches of أنا as pronoun "I"
+      are filtered by _filter_false_attributions() using pronoun_ana_exclusions.
+
+      start_threshold restricts ROUTING relevance to the first 120 chars of
+      a span — a hadith chain has the transmission verb near the entry start,
+      not buried hundreds of chars into narrative. Boundary detection
+      (is_boundary) is unaffected by start_threshold.
+    regex: "\\bو?(?:حدثنا|حدثني|ثنا|أنا|نا|أخبرنا|أخبرني|روى|روينا|أنبأنا|نبأنا|سمعت|سمعنا|بإسناده)\\b|وعن\\b|\\bعن\\b"
+    is_boundary: true
+    start_threshold: 120
+
+  - id: ATTRIBUTION_STRONG
+    description: >
+      Unambiguous hadith transmission verbs only. Unlike ATTRIBUTION, this
+      excludes the polysemous عن which can mean "about" in non-chain contexts.
+      Used for behavior routing; ATTRIBUTION (with عن) remains for boundaries.
+    regex: "\\bو?(?:حدثنا|حدثني|ثنا|أخبرنا|أخبرني|روى|روينا|أنبأنا|نبأنا|سمعت|سمعنا|بإسناده)\\b"
+
+  - id: ATTRIBUTION_STRONG_INITIAL
+    description: >
+      Strong-attribution verb at the START of a span — a real hadith chain
+      indicator, as opposed to a mid-text citation. A modern sīrah author
+      writing "...فقد روى ابن هشام عن..." mid-paragraph (citation of a
+      classical work) makes plain ATTRIBUTION_STRONG fire and triggers
+      HADITH_TRANSMISSION variant 1 (priority 80), which is the wrong
+      classification — the surrounding span is narrative, not a hadith.
+
+      This pattern fires only when the strong-attribution verb sits within
+      the first few chars of the span (after optional numbered/decorative
+      prefix). Hadith collection entries — ``1 - حدثنا أبو بكر...``,
+      ``حدثنا ابن إسحاق``, ``روى البخاري عن...`` — match. Narrative spans
+      with mid-text citations do not.
+    regex: "^[\\s(*0-9٠-٩\\-.\\)]*و?(?:حدثنا|حدثني|ثنا|أخبرنا|أخبرني|روى|روينا|أنبأنا|نبأنا|سمعت|سمعنا|بإسناده)\\b"
+    start_threshold: 20
+
+  - id: SPEECH_VERB_GENERIC
+    description: >
+      Generic speech verb (قال, يقول, قيل). Anchored with non-Arabic-letter
+      lookarounds — Python's \b is ASCII-aware and is a no-op inside Arabic
+      text, so unanchored stems would match as substrings of unrelated tokens
+      (e.g. قال inside مقالات). The optional [وفبلك]?(?:ال)? prefix permits common
+      Arabic clitics (conjunction و/ف, prepositions ب/ل/ك, definite article ال)
+      so وقال and فيقول still match.
+    regex: "(?<![؀-ۿ])[وفبلك]?(?:ال)?(?:قال|قالوا|قالت|يقول|قيل|ذكر|قلت)(?![؀-ۿ])"
+
+  - id: MATN_BOUNDARY_HINT
+    description: >
+      Prophet attribution phrases that mark matn start. Used by Phase 3 for
+      sanad/matn splitting, NOT for behavior routing. These phrases identify
+      where the matn begins within a hadith — they do not indicate that a
+      hadith chain exists.
+    regex: "(?:قال|عن|أن|كان|أمر|نهى|سئل|رأيت)\\s+(?:رسول الله|النبي)|مرفوعا|رفعه|يرفعه|يبلغ به"
+
+  - id: QURAN_REF
+    description: Quranic quotation markers
+    regex: "قال الله تعالى|قال تعالى|قوله تعالى|قوله عز وجل|﴿|\\bسورة"
+
+  - id: GENEALOGY_CHAIN
+    description: >
+      Genealogy/isnad chain marker (ابن, بن, بنت). start_threshold restricts
+      ROUTING relevance to the first 120 chars — a hadith chain's first
+      narrator name appears at the very start of the entry, while a cited
+      name buried in mid-narrative is incidental. Detection itself is
+      unaffected by start_threshold (only the routing rules see the limit).
+    regex: "\\bبن\\b|\\bابن\\b|\\bبنت\\b"
+    start_threshold: 120
+
+  - id: DEATH_MARKER
+    description: >
+      Death date marker (توفي, مات, وفاته). Anchored with non-Arabic-letter
+      lookarounds so مات doesn't match inside قامات/علامات/أمات, etc. Optional
+      [وفبلك]?(?:ال)? prefix permits Arabic clitics (e.g. وتوفي, فمات).
+    regex: "(?<![؀-ۿ])[وفبلك]?(?:ال)?(?:توفي|توفيت|مات|ماتت|وفاته|وفاتها|المتوفى|المتوفاة)(?![؀-ۿ])"
+
+  - id: BIRTH_MARKER
+    description: >
+      Birth date marker (ولد, مولده). Anchored so ولد doesn't match inside
+      الولدان/أولاد/مولود. Optional [وفبلك]?(?:ال)? prefix permits Arabic clitics.
+    regex: "(?<![؀-ۿ])[وفبلك]?(?:ال)?(?:ولد|ولدت|مولده|مولدها|نشأ)(?![؀-ۿ])"
+
+  - id: PERSON_REF
+    description: Person reference markers (الشيخ, الإمام, العالم)
+    regex: "(?:الشيخ|الإمام|العالم|الحافظ|المحدث|الفقيه|القاضي|الأمير|الحاكم)\\b"
+
+  - id: LAQAB_MARKER
+    description: >
+      Explicit laqab/epithet introduction (المعروف بـ, الملقب بـ).
+      Phase 2 detection, consumed by Phase 3 extractors. Not for behavior routing.
+    regex: "المعروف\\s+ب|يعرف\\s+ب|الملقب\\s+ب|المشهور\\s+ب"
+
+  - id: FIQH_RULING
+    description: >
+      Legal ruling markers (يجب, يحرم, يستحب). Anchored with non-Arabic-letter
+      lookarounds — without them يجب matches the prefix of يجبنوا ("they shrink
+      back", root ج-ب-ن), فرض matches فرضية, etc. Optional [وفبلك]?(?:ال)?
+      prefix permits Arabic clitics (الواجب, ويجب, فالواجب).
+
+      Bare adjective حرام is intentionally NOT in this alternation: in
+      sīrah/tarīkh genres it is a proper-noun attribute (البيت الحرام,
+      المسجد الحرام, الشهر الحرام), and disambiguating per-clitic with
+      Python's fixed-width lookbehinds is impractical. Real fiqh statements
+      ("هذا حرام") are typically corroborated by the verbal forms يحرم /
+      مكروه / يجب that remain in the alternation.
+    regex: "(?<![؀-ۿ])[وفبلك]?(?:ال)?(?:يجب|يحرم|يكره|يستحب|يباح|فرض|واجب|مكروه|مندوب|مباح)(?![؀-ۿ])"
+
+  - id: BASMALA
+    description: Basmala (بسم الله الرحمن الرحيم)
+    regex: "بسم\\s+الله\\s+الرحمن\\s+الرحيم"
+    is_boundary: true
+
+  - id: HEADING_MARKER
+    description: >
+      Structural heading keywords across genres, with optional ال prefix,
+      decorative wrappers, and continuation prefixes (تتمة, بقية) for
+      volumes that begin mid-chapter.
+    regex: "^[\\s(*0-9٠-٩]*(?:(?:تتمة|بقية)\\s+)?(?:ال)?(?:كتاب|باب|فصل|فصول|مسألة|مسائل|مسند|قسم|مقصد|مبحث|مطلب|حرف|سورة|قول في|كلام في)(?=[\\s*()\\n]|$)"
+    is_boundary: true
+    heading_stop_patterns: ["الآيات"]
+    heading_disqualifiers:
+      - "\\s+فف"
+      - "\\s+و[إأ]ن"
+      - "\\s+(?!ال)\\S{2,}(?:هم|هما|هن|ها)\\b"
+      - "\\s+(?:على|إلى|من|عن|مع|لدى|نحو)\\b"
+    hierarchy_levels:
+      kitab: ["كتاب", "مسند", "حرف", "سورة", "قسم"]
+      bab: ["باب", "مسألة", "مسائل", "القول في", "الكلام في", "قول في", "كلام في", "مقصد", "مبحث"]
+      fasl: ["فصل", "فصول", "مطلب"]
+
+  - id: AUTHOR_COMMENTARY
+    description: Author commentary markers (بيان, أقول)
+    regex: "\\bبيان\\s*:|\\bأقول\\b|\\bتفسير\\s*:"
+    is_boundary: true
+    start_threshold: 20
+
+  - id: HIJRI_YEAR
+    description: >
+      Hijri year mention in narrative. Common shapes:
+        سنة 200 هـ      ("year 200 AH")
+        في سنة 5 هـ    ("in year 5 AH")
+        عام 150        ("year 150")
+        (ت 150)        ("died 150" — short form)
+        (150 هـ)       ("(150 AH)")
+      Western digits and Arabic-Indic digits both supported.
+    regex: "(?:\\bسنة\\s+|\\bعام\\s+|\\bفي\\s+سنة\\s+|\\bعام\\s+|\\bت\\s+)[٠-٩0-9]{1,4}(?:\\s*ه[ـ]?\\b|\\s*هجر\\S{0,5}|\\b)"
+
+  - id: LUNAR_MONTH
+    description: >
+      Names of the twelve Islamic lunar months. Captured for narrative-date
+      anchoring (events placed in شهر رمضان من العام ..., ذي الحجة, etc.).
+      Phase 3 emits LUNAR_MONTH entities for each match.
+    regex: "\\b(?:محرم|صفر|ربيع\\s+الأول|ربيع\\s+الآخر|ربيع\\s+الثاني|جمادى\\s+الأولى|جمادى\\s+الآخرة|جمادى\\s+الثانية|رجب|شعبان|رمضان|شوال|ذو\\s+القعدة|ذي\\s+القعدة|ذو\\s+الحجة|ذي\\s+الحجة)\\b"
+
+  - id: CLASSICAL_SOURCE_ATTRIBUTION
+    description: >
+      Deterministic citation marker — an attribution verb (قال/يقول/ذكر/روى/أخرج)
+      followed by a recognised classical-source author or work. Captured as the
+      surface trigger; the citation_extractor turns it into a CITATION_REF entity
+      whose text is the cited source. This is the per-claim asserter signal the
+      council identified as the deterministic backbone of provenance — no LLM
+      required when the author writes "قال ابن هشام".
+    regex: "(?:قال|يقول|ذكر|روى|أخرج|نقل|أخبر|يحكي|يقص|يروي)\\s+(?:ابن\\s+هشام|ابن\\s+إسحاق|ابن\\s+سعد|ابن\\s+كثير|ابن\\s+حجر|ابن\\s+الأثير|ابن\\s+الجوزي|ابن\\s+قتيبة|ابن\\s+عبد\\s+ربه|الطبري|الواقدي|البيهقي|السيوطي|الذهبي|البخاري|مسلم|أبو\\s+داود|الترمذي|النسائي|ابن\\s+ماجه|أحمد|الزهري|الكليني|الصدوق|الطوسي|المفيد|المجلسي)"
+
+  - id: JARH_TADIL
+    description: Reliability assessment terminology (narrator grading terms)
+    regex: "\\b(?:ثقة|ثقات|صدوق|ضعيف|ضعفوه|متروك|كذاب|مجهول|لا بأس به|ليس بثقة|حسن الحديث|صالح|منكر|واه|حجة|ثبت|متقن|لين|صالح الحديث)\\b"
+
+  - id: ISNAD_BACK_REF
+    description: Isnad back-reference — author references previous hadith's chain
+    regex: "(?:و)?بهذا\\s+ال[اإ]سناد|بال[اإ]سناد\\s+(?:عنه|المتقدم|السابق)"
+    start_threshold: 30
+
+  - id: AN_CHAIN_INITIAL
+    description: >
+      Chain-initial عن — isnad begins with عن rather than an explicit
+      transmission verb. Requires span-start anchoring via start_threshold
+      to avoid matching the common prepositional عن ("about") mid-span.
+    regex: "^\\s*و?عن\\s+"
+    start_threshold: 5
+
+  - id: NUMBERED_ENTRY
+    description: >
+      Numbered list entries (1., 1 -, ١., (1), ١), etc.). Accepts both
+      suffix forms (``5.`` / ``5 -`` / ``5)``) and parenthesized form
+      (``(5)`` / ``(٦٨٩)``) — the latter is common in indexed rijal works
+      like al-Ajli's Maʿrifat al-Thiqāt where each narrator entry is
+      prefixed ``(N)``. Negative lookahead ``(?!\s*[0-9٠-٩])`` blocks
+      number-range shapes like ``23 - 26`` (Qurʾān verse-range refs:
+      ``الأعراف: 23-26``) from being treated as list-item starts.
+    regex: "^\\s*\\(?[١٢٣٤٥٦٧٨٩٠0-9]+(?:\\s*[.\\-]|\\))(?!\\s*[١٢٣٤٥٦٧٨٩٠0-9])"
+    is_boundary: true
+
+  - id: POETRY_BLOCK
+    description: >
+      Classical Arabic poetry — at least two consecutive lines, each composed
+      of two hemistichs separated by a star delimiter ` * `. Requiring two
+      lines avoids firing on a stray asterisk in prose. The deterministic
+      backbone for POETRY behavior (no LLM needed — the typographic shape
+      itself carries the signal in this corpus).
+    regex: "(?:[^*\\n]{10,}\\s\\*\\s[^*\\n]{10,}\\n){2,}"
+
+  - id: SUBSECTION_MARKER
+    description: >
+      Author-typeset subsection marker — a line that begins with ``* `` (an
+      asterisk followed by a space and content). In modern sīrah/tarīkh
+      works the author uses ``* X :`` lines to delimit subsections within
+      a chapter (e.g. ``* صدى الدعوة في يثرب :``, ``* تمهيد :``). 160 such
+      lines appear in the target sīrah book; this is the dominant
+      structural signal of the corpus and the boundary splitter must fire
+      on each one. The line-start anchor (with MULTILINE) keeps poetry
+      hemistich asterisks (mid-line ` * `) from matching.
+    regex: "^\\*\\s+\\S"
+    is_boundary: true
+
+  - id: LETTER_ENTRY
+    description: >
+      Arabic-letter list item (أ - X, ب - Y, ج - Z, ...). Authors use abjad
+      ordering for sub-lists nested inside numbered lists or as a parallel
+      structure (e.g. analytical points within a subsection). The first ten
+      abjad letters are: أ ب ج د ه و ز ح ط ي. Same boundary semantics as
+      NUMBERED_ENTRY — each item is its own paragraph-level unit.
+    regex: "^(?:أ|ب|ج|د|ه|و|ز|ح|ط|ي|ك)\\s*[\\-\\)]"
+    is_boundary: true
+
+  - id: ORDINAL_ENTRY
+    description: >
+      Arabic ordinal-word list marker (أولا, ثانيا, ثالثا, ...). Used in
+      modern Arabic prose to enumerate analytical points or steps. Each
+      ordinal at line-start with optional colon starts a new list item.
+      Same boundary semantics as NUMBERED_ENTRY. Forms covered: the
+      adverbial accusative (أولاً written as أولا after tashkeel strip).
+    regex: "^\\s*(?:أولا|ثانيا|ثالثا|رابعا|خامسا|سادسا|سابعا|ثامنا|تاسعا|عاشرا|حاديا|ثانيا\\s+عشر|ثالثا\\s+عشر)\\s*[:\\-]?"
+    is_boundary: true
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BEHAVIORS
+# Routing table: pattern combinations → behavior labels.
+# Phase 2 consults this after detecting patterns on a span.
+#
+# Rules:
+#   requires:     ALL listed patterns must be present
+#   any_of:       AT LEAST ONE listed pattern must be present
+#   none_of:      behavior does NOT fire if ANY of these patterns are present
+#   genre_gate:   behavior only activates for these book_type values
+#   priority:     higher number wins when multiple behaviors match (default: 0)
+# ─────────────────────────────────────────────────────────────────────────────
+behaviors:
+  - id: HADITH_TRANSMISSION
+    description: >
+      A complete hadith unit — contains both the isnad (narrator chain) and the
+      matn (prophetic text). Classification requires evidence of an actual chain
+      AT THE START of the span: either ATTRIBUTION_STRONG_INITIAL (strong verb
+      within the first ~20 chars) or ISNAD_BACK_REF (chain back-reference).
+
+      The "INITIAL" qualifier is the key — modern sīrah authors cite hadiths
+      mid-paragraph using ``روى ابن هشام`` / ``سمع البيهقي``, which makes plain
+      ATTRIBUTION_STRONG fire deep inside narrative spans. That match indicates
+      a *citation*, not the surrounding span being a hadith transmission. Only
+      a chain marker at the start of the span (or after a numbered prefix)
+      is a true hadith-chain indicator.
+
+      MATN_BOUNDARY_HINT (قال رسول الله) is a matn-start marker, not a chain
+      indicator — prose that mentions the Prophet fires it but has no chain.
+    any_of: [ATTRIBUTION_STRONG_INITIAL, ISNAD_BACK_REF]
+    priority: 80
+
+  - id: HADITH_TRANSMISSION
+    description: >
+      عن-chain hadith — isnad starts with عن rather than an explicit verb.
+      Common in hadith collections where the compiler omits their own chain
+      prefix. Requires a genealogy marker (بن/ابن) to distinguish from
+      prepositional عن ("about X"). Lower priority than the primary rule.
+    requires: [AN_CHAIN_INITIAL, GENEALOGY_CHAIN]
+    none_of: [HEADING_MARKER]
+    priority: 78
+
+  - id: HADITH_TRANSMISSION
+    description: >
+      Numbered hadith in compilatory collections (Bihar al-Anwar, al-Kafi,
+      Wasāʾil, Muṣannaf, etc.). Format: ``N - Narrator1 بن X عن Narrator2...``
+
+      Variant correctness relies on the ``start_threshold`` set on the
+      ATTRIBUTION and GENEALOGY_CHAIN patterns: both must have their
+      earliest match within the first ~100 chars of the span for the rule
+      to count them. That is the hadith-chain shape — a name with بن /
+      ابن and a transmission verb عن or حدثنا in the opening tokens.
+
+      Without those thresholds the rule fired too cheaply: a modern sīrah
+      content list like ``5 - أن الوفد الإسلامي...`` has prepositional عن
+      and a cited "X بن Y" name somewhere deep in the entry, which is NOT
+      a hadith chain. Thresholds restrict the routing-relevant matches to
+      the entry-start region.
+    requires: [NUMBERED_ENTRY, ATTRIBUTION, GENEALOGY_CHAIN]
+    none_of: [HEADING_MARKER]
+    priority: 72
+
+  - id: QURAN_VERSE
+    description: >
+      Standalone Quranic text or verse reference. Does not fire when ATTRIBUTION
+      is present — a span beginning with a hadith chain that cites a Quran verse
+      as dalil is a HADITH_TRANSMISSION, not a QURAN_VERSE. BASMALA guard
+      prevents the basmala (already handled by its own behavior) from triggering
+      QURAN_VERSE when corpus matching detects it. MATN_BOUNDARY_HINT guard
+      blocks long narrative prose that *cites* a verse from being classified
+      as a verse — the hint matches "قال رسول الله / النبي" which never
+      appears in pure Quranic text.
+    requires: [QURAN_REF]
+    none_of: [ATTRIBUTION_STRONG, AN_CHAIN_INITIAL, BASMALA, MATN_BOUNDARY_HINT]
+    priority: 90
+
+  - id: BIOGRAPHY
+    description: Biographical entry about a scholar or person
+    requires: [PERSON_REF]
+    any_of: [DEATH_MARKER, BIRTH_MARKER, GENEALOGY_CHAIN]
+    priority: 70
+
+  - id: BIOGRAPHY
+    description: >
+      Scholar / narrator biography in narrative-genre books (sīrah, tarīkh,
+      genealogy). A numbered entry that contains a hijri year AND at least
+      one birth or death marker is unambiguously a biographical entry —
+      even when ATTRIBUTION_STRONG also fires (because the bio describes
+      the scholar's own transmission activities: ``روى عن فلان``,
+      ``سمع من فلان``). Without this rule those spans falsely classify as
+      HADITH_TRANSMISSION variant 1 (priority 80) — the cheap-pattern
+      false positive the user flagged on ``1 - أبان بن عثمان :``.
+
+      Priority 81 sits ABOVE HADITH variant 1 (80) so the BIRTH+DEATH+
+      HIJRI_YEAR triplet outranks the strong-attribution heuristic. The
+      genre gate keeps fiqh and hadith books (where ``ت 200`` style
+      narrator-death inserts mid-chain are common in legitimate hadiths)
+      unaffected — only narrative genres get this override.
+    requires: [NUMBERED_ENTRY, HIJRI_YEAR]
+    any_of: [BIRTH_MARKER, DEATH_MARKER]
+    none_of: [HEADING_MARKER, BASMALA, POETRY_BLOCK]
+    genre_gate: [prophet-imams-biography, genealogy-biography, history-geography]
+    priority: 81
+
+  - id: AUTHOR_COMMENTARY
+    description: Author commentary or explanation (بيان, أقول)
+    requires: [AUTHOR_COMMENTARY]
+    priority: 85
+
+  - id: FIQH_RULING
+    description: Legal ruling or juristic opinion
+    requires: [FIQH_RULING]
+    priority: 75
+
+  - id: HISTORICAL_NARRATIVE
+    description: >
+      Modern authorial historical narrative — the dominant content type in
+      sīrah/tarīkh/biography books. Genre-gated AND requires positive cues
+      (classical-source attribution, hijri year, or lunar month). The
+      genre gate alone is not the guardrail — the positive-cue requirement
+      is what prevents this behavior from absorbing every paragraph in a
+      sīrah book that happens to fall through. Spans with NO positive cue
+      remain GENERAL_PROSE. Priority sits ABOVE HADITH_TRANSMISSION
+      variant 3 (72) so the cheap-pattern false positives we identified
+      in long modern narrative reclassify here rather than as hadith, but
+      BELOW variant 1 (80) and variant 2 (78) so real hadith chains in
+      sīrah books (when they exist) keep their HADITH label.
+    requires: []
+    any_of: [CLASSICAL_SOURCE_ATTRIBUTION, HIJRI_YEAR, LUNAR_MONTH]
+    none_of: [HEADING_MARKER, BASMALA, POETRY_BLOCK]
+    genre_gate: [prophet-imams-biography, genealogy-biography, history-geography]
+    priority: 73
+
+  - id: SECTION_HEADING
+    description: Structural heading (kitab, bab, fasl)
+    requires: [HEADING_MARKER]
+    priority: 95
+
+  - id: SECTION_HEADING
+    description: >
+      Author-typeset subsection (line starts with ``* X :``). Same behavior
+      label as the keyword-based heading rule above so downstream atomizers/
+      extractors don't need to distinguish — both feed into the
+      SECTION_HEADING bucket. Slightly lower priority so a span that has
+      BOTH a kitab/bab heading AND a subsection marker still routes via
+      the higher-level structural keyword.
+    requires: [SUBSECTION_MARKER]
+    priority: 92
+
+  - id: RIJAL_ENTRY
+    description: Rijal narrator biography entry in a narrator assessment book
+    requires: [NUMBERED_ENTRY]
+    any_of: [PERSON_REF, GENEALOGY_CHAIN, DEATH_MARKER]
+    genre_gate: [sunni-hadith-narrators, shia-hadith-narrators]
+    priority: 85
+
+  - id: POETRY
+    description: >
+      Span where classical Arabic poetry (at least two consecutive
+      star-delimited lines) is the strongest detected signal. Priority is
+      deliberately LOW (65) — below HADITH_TRANSMISSION/AUTHOR_COMMENTARY/
+      FIQH_RULING — because a hadith or fiqh discussion that quotes a couplet
+      is not "poetry"; only a span whose strongest signal is the poetic shape
+      gets the POETRY label. Pure-poetry spans (qasida quotations) fire here.
+    requires: [POETRY_BLOCK]
+    priority: 65
+
+  - id: BASMALA
+    description: Standalone basmala (بسم الله الرحمن الرحيم) — structural section opener
+    requires: [BASMALA]
+    priority: 50
+
+  - id: NUMBERED_ENTRY
+    description: Numbered list entry
+    requires: [NUMBERED_ENTRY]
+    priority: 60
+
+  - id: NUMBERED_ENTRY
+    description: >
+      Arabic-letter list entry (أ - X, ب - Y, ج - Z, ...). Routed to the
+      same NUMBERED_ENTRY behavior label so downstream atomizers and
+      extractors don't need to distinguish — both are list items emitting
+      ENTRY_UNIT. Lower priority than the digit-numbered variant.
+    requires: [LETTER_ENTRY]
+    priority: 58
+
+  - id: NUMBERED_ENTRY
+    description: >
+      Arabic ordinal-word list entry (أولا :, ثانيا :, ثالثا :, ...).
+      Routed to NUMBERED_ENTRY so downstream consumers don't fork.
+    requires: [ORDINAL_ENTRY]
+    priority: 57
+
+  - id: GENERAL_PROSE
+    description: Default behavior for content with no specific pattern match
+    requires: []
+    priority: 0
+
+  - id: EDITORIAL_FRONTMATTER
+    description: >
+      Pages before the main content starts, as determined by TOC analysis.
+      Assigned by content-boundary detection, not pattern routing.
+    requires: []
+    priority: -1
+
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ATOMICIZERS
+# How to split each behavior's spans into atomic units.
+# Phase 3 looks up the behavior here.
+# ─────────────────────────────────────────────────────────────────────────────
+atomicizers:
+  HADITH_TRANSMISSION:
+    strategy: sanad_matn_split
+    unit_types:
+      isnad: ISNAD_UNIT
+      matn: MATN_UNIT
+    fallback_unit_type: HADITH_UNIT
+
+  AUTHOR_COMMENTARY:
+    strategy: whole_span
+    unit_type: COMMENTARY_UNIT
+
+  QURAN_VERSE:
+    strategy: whole_span
+    unit_type: QURAN_UNIT
+
+  BIOGRAPHY:
+    strategy: whole_span
+    unit_type: BIOGRAPHY_UNIT
+
+  FIQH_RULING:
+    strategy: whole_span
+    unit_type: FIQH_UNIT
+
+  SECTION_HEADING:
+    strategy: whole_span
+    unit_type: HEADING_UNIT
+
+  RIJAL_ENTRY:
+    strategy: whole_span
+    unit_type: RIJAL_UNIT
+
+  NUMBERED_ENTRY:
+    strategy: whole_span
+    unit_type: ENTRY_UNIT
+
+  BASMALA:
+    strategy: whole_span
+    unit_type: BASMALA_UNIT
+    use_pattern_text: BASMALA
+
+  POETRY:
+    strategy: whole_span
+    unit_type: POETRY_UNIT
+
+  HISTORICAL_NARRATIVE:
+    strategy: whole_span
+    unit_type: HISTORICAL_NARRATIVE_UNIT
+
+  GENERAL_PROSE:
+    strategy: whole_span
+    unit_type: PROSE_UNIT
+
+  EDITORIAL_FRONTMATTER:
+    strategy: whole_span
+    unit_type: EDITORIAL_UNIT
+
+  _special_unit_types:
+    footnote: FOOTNOTE_UNIT
+
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXTRACTORS
+# Which extractors to run per behavior.
+# Phase 3 looks up behavior here to find which extractors to invoke.
+# (Extractor implementations live in src/extractors/ — not yet built)
+# ─────────────────────────────────────────────────────────────────────────────
+extractors:
+  HADITH_TRANSMISSION:
+    - narrator_extractor
+    - quran_verse_extractor
+    - citation_extractor
+    - date_expression_extractor
+    - gazetteer_person_extractor
+    - ner_person_extractor
+  AUTHOR_COMMENTARY:
+    - quran_verse_extractor
+    - citation_extractor
+    - date_expression_extractor
+    - gazetteer_person_extractor
+    - ner_person_extractor
+  QURAN_VERSE:
+    - quran_verse_extractor
+  BIOGRAPHY:
+    - person_extractor
+    - date_extractor
+    - quran_verse_extractor
+    - citation_extractor
+    - date_expression_extractor
+    - gazetteer_person_extractor
+    - ner_person_extractor
+  RIJAL_ENTRY:
+    - rijal_entry_extractor
+    - narrator_extractor
+    - date_extractor
+    - gazetteer_person_extractor
+    - ner_person_extractor
+  FIQH_RULING:
+    - quran_verse_extractor
+    - citation_extractor
+    - date_expression_extractor
+    - gazetteer_person_extractor
+    - ner_person_extractor
+  SECTION_HEADING:
+    - quran_verse_extractor
+    - theme_extractor
+  BASMALA: []
+  NUMBERED_ENTRY:
+    - gazetteer_person_extractor
+    - ner_person_extractor
+  POETRY: []
+  GENERAL_PROSE:
+    - quran_verse_extractor
+    - citation_extractor
+    - date_expression_extractor
+    - gazetteer_person_extractor
+    - ner_person_extractor
+  HISTORICAL_NARRATIVE:
+    - citation_extractor
+    - date_expression_extractor
+    - quran_verse_extractor
+    - gazetteer_person_extractor
+    - ner_person_extractor
+  EDITORIAL_FRONTMATTER: []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GRAPH
+# Edge types produced by Phase 5.
+# ─────────────────────────────────────────────────────────────────────────────
+graph:
+  structural:
+    - CONTAINS
+    - NEXT
+    - HAS_SECTION
+    - HAS_FOOTNOTE
+    - COMMENTS_ON
+    - HAS_THEME
+
+  reference:
+    - CITATION_MENTION
+    - CITES
+    - MENTIONS_PERSON
+
+  hadith:
+    - HAS_SANAD
+    - HAS_MATN
+    - NARRATES_FROM
+    - CORROBORATES
+    - HAS_CHAIN_GRADE
+    - HAS_HADITH_GRADE
+    - REUSES_ISNAD
+
+  alignment:
+    - ALIGNS_WITH
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THRESHOLDS
+# All numeric thresholds in one place.
+# Python code reads config.thresholds["key"] — never hard-codes numbers.
+# ─────────────────────────────────────────────────────────────────────────────
+thresholds:
+  citation_confidence_min: 0.85
+  alignment_confidence_min: 0.90
+  semantic_similarity_min: 0.75
+  dominance_gap_min: 0.15
+  frontmatter_page_max: 5
+  content_page_min_chars: 100
+  content_min_line_length: 55
+  min_span_chars: 20
+  narrative_heading_max_chars: 300
+  gold_set_precision_min: 0.85
+  heading_split_max_heading_chars: 150
+  isnad_chain_proximity_max: 40
+  isnad_chain_gap_max: 85
+  narrator_name_max_chars: 100
+  question_verb_lookback_chars: 60
+  rijal_name_similarity_min: 0.70
+  rijal_search_k: 10
+  rijal_entry_number_max: 99999
+  rijal_classify_isnad_min_chars: 60
+  rijal_classify_long_min_chars: 80
+  quran_verse_max_chars: 500
+  isnad_tail_max_chars: 120
+  isnad_merge_name_max_chars: 60
+  heading_split_min_heading_chars: 8
+  tawatur_min_chains: 10
+  istifadah_min_chains: 5
+  aziz_min_chains: 2
+  chain_generation_overlap_max: 50
+  corroboration_matn_similarity_min: 0.80
+  biography_year_search_window: 60
+  biography_name_min_chars: 3
+  biography_clitic_strip_min_word_chars: 5
+  ner_person_confidence: 0.7
+  rijal_teacher_ref_window: 80
+  ruvector_timeout_seconds: 30
+  evidence_context_chars: 50
+  narrator_disqualifier_lookahead_chars: 20
+  narrator_narrative_lookahead_chars: 15
+  max_degraded_modes: 3
+  quran_corpus_min_words: 4
+  quran_corpus_min_match_chars: 20
+  quran_corpus_high_coverage_min: 0.30
+  dedup_exact_merge_min: 0.60
+  dedup_fuzzy_merge_min: 0.75
+  dedup_tarajm_link_min: 0.70
+  dedup_death_year_tolerance: 5
+  dedup_death_year_close: 2
+  dedup_name_prefix_min_chars: 8
+  dedup_token_overlap_min: 2
+  dedup_max_block_size: 500
+  dedup_embedding_sim_min: 0.70
+  dedup_name_only_min_tokens: 3
+  dedup_max_cluster_size: 50
+  dedup_min_name_chars: 6
+  registry_name_score_min: 0.70
+  registry_score_gap_min: 0.15
+  age_at_event_min: 10
+  age_at_event_max: 130
+  rijal_quality_lifespan_min: 10
+  rijal_quality_lifespan_max: 130
+  rijal_quality_hijri_year_max: 1500
+  rijal_quality_age_year_tolerance: 15
+  rijal_century_inference_window: 20
+  rijal_century_inference_min_neighbors: 3
+  rijal_century_inference_max_spread: 100
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TOC SECTIONS
+# Content-boundary detection: which existing patterns identify the start of
+# main content in TOC entry titles. Phase 2 tests each TOC title against
+# these patterns (in order). The first match marks the content-start page.
+# All pages before that page get behavior EDITORIAL_FRONTMATTER.
+# ─────────────────────────────────────────────────────────────────────────────
+toc_sections:
+  # Patterns tested against TOC entry titles, in order. The first TOC entry
+  # whose cleaned title matches ANY pattern marks the page where main content
+  # begins; pages before that are EDITORIAL_FRONTMATTER. Lower-priority
+  # patterns help catch books whose first real chapter title doesn't contain
+  # a classical heading keyword — e.g. modern sīrah works that use ``* X :``
+  # subsection markers as the primary structural unit.
+  content_start_patterns: [HEADING_MARKER, SUBSECTION_MARKER]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FAILURE BUDGET
+# The operational form of CLAUDE.md's "fail loudly" — a hard halt threshold
+# for silent fallbacks. When the share of content spans that fall through to
+# GENERAL_PROSE WITHOUT matching any explicit routing rule exceeds this
+# percentage, Phase 2 raises SegmentError. This catches the failure mode the
+# council identified: a routing taxonomy that has silently stopped modelling
+# its corpus, producing structurally valid garbage. Tightening this number is
+# how we ratchet quality up; loosening it should require a written justification.
+# ─────────────────────────────────────────────────────────────────────────────
+failure_budget:
+  # Initial ceiling chosen just above the highest currently-observed drift
+  # post-TOC track (sira at ~16.6%). The number is a ratchet — every PR
+  # that adds a behavior rule for an observed pattern combo should lower
+  # this. Target milestones: 15% (post-routing-coverage pass), 10%
+  # (post-HISTORICAL_NARRATIVE expansion), 5% (production target). The
+  # intent is for this value to fall over time, not rise; raising it
+  # requires written justification in PR.
+  unclassified_routed_max_pct: 20.0
+  min_content_spans_for_enforcement: 20
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CROSS-PAGE REPAIR
+# Tokens that signal a compound Arabic name has been line-broken across pages.
+# When the previous page's last token matches one of these, Phase 2 joins the
+# pages with a space instead of a newline so the boundary splitter cannot
+# fire on the page seam — preventing names like عبد المطلب / أبو القاسم /
+# ابن الأثير from being torn apart and their tails mislabeled as headings.
+# ─────────────────────────────────────────────────────────────────────────────
+stance_extraction:
+  # The council's Phase C — STANCE edges (PERSON → PERSON/EVENT/GROUP with
+  # valence). LLM-only, semantic, not deterministic. Ship dark behind this
+  # flag until two promotion gates are met:
+  #   1. Gold-set inter-annotator agreement on stance assertions ≥ 0.70
+  #      across at least 200 hand-labeled spans (see data/gold_set/).
+  #   2. Every STANCE edge carries a complete asserter chain back to either
+  #      a deterministic CITATION_REF entity or to the manuscript author.
+  # Both gates are non-negotiable. STANCE edges produced without a complete
+  # asserter chain are blocked by Edge's __post_init__ in src/models/.
+  enabled: false
+  promotion_inter_annotator_agreement_min: 0.70
+  promotion_gold_set_min_spans: 200
+  edge_type: STANCE
+  allowed_valences: [hostile, friendly, neutral, allied, betrayed, pledged]
+
+
+narrative_genres:
+  # book_types where the modern-authorial-narrative routing applies. Used by
+  # Phase 2 to gate the HEADING_MARKER / FIQH_RULING drop for long spans
+  # carrying narrative evidence (classical-source attribution, hijri date,
+  # lunar month). Fiqh and hadith book_types are intentionally NOT here:
+  # a fiqh manual that mentions a date in a ruling should keep its FIQH
+  # label, not get reclassified as narrative.
+  book_types:
+    - prophet-imams-biography
+    - genealogy-biography
+    - history-geography
+
+
+cross_page_repair:
+  name_prefix_tokens:
+    - عبد
+    - أمة
+    - عبيد
+    - أبو
+    - أبي
+    - أم
+    - ابن
+    - بن
+    - بنت
+    - أهل
+    - بني
+    - آل
+    - ذو
+    - ذي
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NARRATOR EXTRACTION
+# Domain-specific settings for hadith narrator extraction in Phase 3.
+# ─────────────────────────────────────────────────────────────────────────────
+narrator_extraction:
+  relative_references:
+    - "أبيه"
+    - "أبوه"
+    - "أمه"
+    - "أمها"
+    - "جده"
+    - "جدته"
+    - "عمه"
+    - "عمته"
+    - "أخيه"
+    - "أخته"
+    - "خاله"
+    - "خالته"
+    - "ابنه"
+    - "ابنته"
+
+  prepositional_an_exclusions:
+    - "يمين"
+    - "شمال"
+    - "يسار"
+    - "رأس"
+    - "ظهر"
+    - "جنب"
+    - "وجه"
+    - "فرس"
+    - "سبيل"
+    - "طريق"
+    - "قلب"
+    - "ذلك"
+    - "هذا"
+    - "هؤلاء"
+    - "المدينة"
+    - "الدنيا"
+    - "الآخرة"
+    - "نفسه"
+    - "نفسها"
+    - "نفسي"
+
+  narrative_context_words:
+    - "في"
+    - "ذلك"
+    - "هذا"
+    - "شيئ"
+
+  # Words after أنا that indicate it is the pronoun "I" (أنا أسمع = I was
+  # listening), not the transmission abbreviation أنا = أخبرنا.
+  pronoun_ana_exclusions:
+    - "أسمع"
+    - "أعلم"
+    - "أعرف"
+    - "أكتب"
+    - "أقرأ"
+    - "أنظر"
+    - "أحفظ"
+    - "أحسب"
+    - "قائم"
+    - "حاضر"
+    - "معه"
+    - "معهم"
+    - "معها"
+    - "شاهد"
+
+  # Words that are never standalone narrator names (pronouns, common words)
+  narrator_stopwords:
+    - "هو"
+    - "هي"
+    - "هم"
+    - "هن"
+    - "هكذا"
+    - "غيرهم"
+    - "الحديث"
+    - "فتى"
+    - "يقول"
+
+  transmission_tail_verbs:
+    - "يحدث"
+    - "يروي"
+    - "يخبر"
+
+  name_content_boundaries:
+    # Patterns that mark where a narrator name ends and content begins
+    an_clause_not_transmission: "\\bأنه[ام]?\\s+(?!سمع|حدث|أخبر|روى|ثنا|نبأ)"
+    book_abbreviation_ref: "\\b(?:يب|كا|ئل|فقيه)\\s+\\d"
+    topical_fi: "\\bفي\\s+(?:حديث|كتاب|باب|قول|رواية|تفسير|سورة|يب|كا|ئل|مسجد|مكة|المدينة|نار|عصمت)"
+    nahw_formula: "\\bنحو\\s+ما\\b"
+    mithluhu: "\\bمثله\\b"
+    editorial_reference: "\\bوقد\\s+أوردنا"
+    question_mark: "[؟?]"
+    qala_colon: "\\bقال\\s*:\\s*\\S"
+    an_not_name: "\\b[اأإ]ن\\s+(?!يحيى|يزيد|يعقوب|يوسف|يونس)\\S+\\s"
+    fa_narrative_verbs: "\\bف(?:هل|لم|لما|إذا|قام|جاء|أخذ|دخل|خرج|قال|سأل)\\b"
+    thumma_inna: "\\bثم\\s+إن\\b"
+    vocative: "\\bيا\\s+"
+    colon_separator: "\\s+:\\s+"
+    saqita: "\\bساقطة\\b"
+    kanat_prophet: "\\bكانت?\\s+(?:رسول|النبي|تحت)"
+    # Transmission method phrases (صيغ الأداء) — follow the narrator name,
+    # never part of it.  E.g. "الصواف قراءة عليه وأنا أسمع قال"
+    transmission_method: "(?:قراءة|قرئ|عرض(?:ت|نا)?|سماعا?)\\s+(?:عليه|عليها|علينا|عليهم|من\\b)"
+    audition_witness: "وأنا أسمع"
+    # Honorific formulas that follow a person's name, never part of it.
+    honorific_salawat: "\\bصلى\\s+الله\\s+عليه"
+    honorific_praise: "\\bرضي\\s+الله\\s+عنه"
+    # Demonstrative + content noun: "هذا الحديث" (this hadith) is content, not a name.
+    demonstrative_content: "(?:هذا|هذه|بهذا|بهذه|لهذا|لهذه)\\s+(?:الحديث|الخبر|الأثر|القول|الرواية|الكتاب|الباب)"
+    honorific_mercy: "\\bرحم[ةه]\\s+الله\\b"
+    # Cross-reference verbs with pronoun suffixes — "رواه البيهقي" (he narrated it)
+    # is a reference to another scholar's collection, never a narrator name.
+    cross_reference_verb: "\\bو?(?:رواه[ا]?|أخرجه[ا]?|ذكره[ا]?|هكذا)\\b"
+    # Pronoun "he/she" at start of name_slice is always commentary, never a name.
+    pronoun_sentence_start: "^\\s*ه[وي]\\s"
+    # Present-tense transmission verbs after a narrator name end the name.
+    # Includes pronominal suffix forms (يحدثك, يحدثه, يرويه, etc.)
+    transmission_tail: "\\b(?:يحدث|يروي|يخبر|يذكر)(?:ه[امن]?|ك[مـ]?|نا|ون)?\\b"
+    # "كان من / كانت من" — biographical phrase ("was from the companions of..."),
+    # never part of a narrator name.
+    kana_min: "\\bكان[ت]?\\s+من\\b"
+    # Narrator grading vocabulary — "ثقة" (trustworthy), "ضعيف" (weak), etc.
+    # These follow a name as evaluation, never part of it.
+    grading_phrase: "\\b(?:ثقة|ضعيف|كذاب|قليل الحديث|كثير الحديث|مجهول)\\b"
+    # "وهو/وهي" + descriptive verb/adjective — circumstantial clause describing
+    # state, never part of a narrator name.
+    waw_huwa_descriptive: "\\bوه[وي]\\s+(?:يصلي|ينظر|جالس|قائم|واقف|متكئ|راكب|نائم|قاعد|مضطجع|من\\s+مشا[يئ]خ|مستقبل)"
+    # "الحديث" at the end of a name_slice (with optional ellipsis/dots) is a
+    # cross-reference, not part of the narrator name.
+    trailing_hadith: "\\.\\s*\\.?\\s*\\.?\\s*الحديث|\\bالحديث\\s*\\d|\\bالحديث\\s*$"
+    # "قد تقدم" (has preceded) — editorial cross-reference phrase.
+    qad_taqaddama: "\\bقد\\s+تقدم\\b"
+    # "إنه/إنها" (indeed he/she) — introduces content clause, not a name.
+    # Distinguished from أنه which has its own boundary with transmission lookahead.
+    innahu_content: "\\b[إا]نه[ام]?\\s+(?!سمع|حدث|أخبر|روى)"
+    # "لأنه/لأنها" (because he/she) — causal clause.
+    li_annahu: "\\bلأنه[ام]?\\s"
+    # "أنه سمع" mid-name merges two narrators — treat as boundary.
+    # Distinct from an_clause_not_transmission which has a lookahead that
+    # allows "أنه سمع" as transmission. When it appears inside a name_slice
+    # (between two attribution verbs), it signals a narrator boundary.
+    anahu_samiʿa: "\\bأنه[ام]?\\s+سمع"
+    # Reference numbers: ") . 6243" or similar — editorial apparatus.
+    reference_number: "[)\\]]\\s*\\.?\\s*[-–]|[)\\]]\\s*\\.?\\s*\\d{3,}"
+    # Poetry marker: * between hemistiches (with surrounding whitespace).
+    poetry_marker: "\\s\\*\\s"
+    # "كما" (as / just as) — introduces comparison or attestation clause.
+    kama_clause: "\\bكما\\s+(?:صرح|يظهر|ذكر|قال|روى|نقل|تقدم|في\\b)"
+    # "باسناده إلى" (with his chain to) — transmission phrase in commentary.
+    bi_isnadihi: "\\bباسناده[ام]?\\s+(?:إلى|الى|عن)\\b"
+    # "بقراءتي / بقراءته" (by my/his reading) — audition method phrase.
+    bi_qiraati: "\\bبقراءت[يه]\\b"
+    # "فكأن" (as if) — commentary/editorial phrase.
+    fa_kaanna: "\\bفكأن\\b"
+    # "صلوات الله عليه" — Shia honorific formula, not part of name.
+    honorific_salawat_shia: "\\bصلوات\\s+الله\\s+علي[هـ]"
+    # "قدس الله روحه" — honorific for deceased scholar.
+    honorific_quds: "\\bقدس\\s+(?:الله\\s+)?(?:روحه|سره)"
+    # "إذا / إذ" — temporal/conditional clause start.
+    idha_clause: "\\bإذ(?:ا)?\\s+(?:لا|لم|كان|جاء|دخل|قام)"
+    # Dictionary definition patterns — "إذا جمعه" etc.
+    dictionary_def: "\\bإذا\\s+(?:جمعه|فعله|قاله|ضربه)"
+    # Persian text detection — Persian function words and verb endings.
+    # Catches Persian content leaking into narrator names from bilingual books.
+    persian_content: "\\sرا\\s|\\s(?:است|بود|شد[ه]?|شود|كرد|گفت(?:ند)?|آمد|نيست|باشد|نمايد|داشت[ه]?)\\b|\\bمى\\S|\\bنمى\\S|\\b(?:كه|چون|چنانچه|اگر|ولى|زيرا|بلكه|براى|سپس)\\s|\\bسخن\\s"
+    # "لكن" (but/however) — introduces adversative clause, not a name.
+    lakin_clause: "\\bلكن\\s"
+    # "إنما" (only/indeed) — introduces emphatic clause.
+    innama_clause: "\\bإنما\\s"
+    # "انتهى" (end of quote) — editorial phrase marking end of citation.
+    intaha: "\\bانتهى\\b"
+    # "أن هذا / ان هذا" (that this) — content clause.
+    an_hadha: "\\b[اأإ]ن\\s+هذ[اه]\\b"
+    # "عليه السلام" honorific when followed by content clause.
+    # This catches "الصادق عليه السلام ان ..." where the post-honorific content leaks.
+    alayhis_salam_content: "\\bعليه[ام]?\\s+السلام\\s+(?:أن|ان|إن|انه|أنه)"
+    # «guillemets» — editorial quotation marks signal named-entity boundaries.
+    guillemet: "»"
+    # "الذي/التي" (who/which) — relative clause, not part of name.
+    relative_clause: "\\bالذي\\s|\\bالتي\\s"
+    # "من جهة" (from the side of) — biographical/genealogical phrase.
+    min_jiha: "\\bمن\\s+جهة\\b"
+    # Folio/page markers in editorial brackets: (/ أ [4 / أ])
+    folio_marker: "\\(/\\s*[أب]"
+    # Parenthetical reference codes: (ح 98), (خ 87), (ك 149), (ر 31)
+    paren_reference: "\\(\\s*[حخكر]\\s+\\d"
+    # "فإن" (for indeed) — introduces causal/explanatory clause.
+    fa_inna: "\\bفإن\\s"
+    # "فاذهب / فاطلب" — imperative after fa-, not a name.
+    fa_imperative: "\\bفا(?:ذهب|طلب|تق|سأل|نظر)\\b"
+    # "لئن" (if indeed) — conditional clause start (common in sermons/Quran).
+    la_in: "\\bلئن\\s"
+    # "نقله" (he transmitted it) — cross-reference verb with pronoun suffix.
+    naqalahu: "\\bنقله[ا]?\\b"
+    # "ما خلا" (except for) — exclusion clause.
+    ma_khala: "\\bما\\s+خلا\\b"
+    # "يناقض / يقوم / يلزم" — present-tense verbs as content boundary.
+    present_tense_content: "\\b(?:يناقض|يلزم|يقاس|يتوكأ)\\b"
+    # "وبناء على" (and based on) — editorial/analytical phrase.
+    bina_ala: "\\bوبناء\\s+على\\b"
+    # "العبارة" (the phrase) — editorial/commentary reference.
+    al_ibara: "\\bالعبارة\\b"
+    # "إلى أصنام / إلى + non-name noun" — directional content.
+    ila_content: "\\bإلى\\s+(?:أصنام|بيت|دار|أرض|مكان|بلاد|جبل)"
+    # "فذكره / فذكرها" — fa- + cross-reference verb.
+    fa_dhakara: "\\bف(?:ذكره[ا]?|رواه[ا]?|أخرجه[ا]?)\\b"
+    # "جميعا" (together) — adverb after a name list, not a name.
+    jamian: "\\bجميعا\\b"
+    # "ليس" (is not) — negation clause.
+    laysa: "\\bليس\\b"
+    # "وقد" (and indeed) — editorial/narrative clause starter.
+    wa_qad: "\\bوقد\\s"
+    # "صحبت / صحبنا" (I accompanied / we accompanied) — content verb.
+    sahibtu: "\\bصحب[تن]"
+    # "تكلموا / تكلمت" (they/she spoke) — content verb.
+    takallamu: "\\bتكلم[وت]"
+    # "فهذه / فهذا / فهؤلاء" — demonstrative with fa-.
+    fa_demonstrative: "\\bف(?:هذ[اهي]|هؤلاء)\\s"
+    # "[في" — editorial bracket with preposition.
+    bracket_content: "\\[في\\s"
+    # "انا ابن" (I am the son of) — pronoun I + genealogy.
+    ana_ibn: "\\b[اأ]نا\\s+(?:ابن|بنت)\\b"
+    # "فليقل / فليشهد" — jussive with fa-li-.
+    fa_li_jussive: "\\bفل(?:يقل|يشهد|يقم|ينظر|يأخذ|يصل)\\b"
+    # "فكفى" (for sufficient is) — emphatic clause.
+    fa_kafa: "\\bفكفى\\b"
+    # "واكظم / واقصر / واسكن / واحذر / واصفح" — imperative with waw.
+    wa_imperative: "\\bوا(?:كظم|قصر|سكن|حذر|صفح|كثر|ستصلح)\\b"
+    # "فمن" (so whoever) — conditional with fa-.
+    fa_man: "\\bفمن\\s"
+    # "عده الشيخ" (the sheikh counted him) — biographical evaluation.
+    addahu: "\\bعده\\s"
+    # "فيقضون / فيقولون" — present tense with fa-.
+    fa_present: "\\bفيقض|\\bفيقول|\\bفيأت"
+    # "القضية في" (the case/incident in) — narrative content.
+    al_qadiyya: "\\bالقضية\\s"
+    # "يرفعون / يسندون" (they raise/attribute) — group verb content.
+    group_verb: "\\b(?:يرفعون|يسندون|يحتجون|يستدلون)\\b"
+    # "أدام الله / أيد الله" — prayer formula after scholar name.
+    prayer_formula: "\\b(?:أدام|أيد|أعز|حفظ|نصر)\\s+الله\\b"
+    # "لم يثنوا / لم ينتضل" — negated past with لم.
+    lam_verb: "\\bلم\\s+ي"
+    # "قد اتخذوا" — perfect with قد + plural.
+    qad_verb: "\\bقد\\s+(?:اتخذ|استقر|علم|ثبت)"
+    # "قائم أصلي" — present tense prayer/action after state.
+    state_action: "\\bقائم[اة]?\\s+أصلي\\b"
+    # "ألا تسمعون" (do you not hear) — rhetorical question.
+    ala_tasmaun: "\\bألا\\s+[تي]"
+    # "فإنما / فإنها" — emphatic explanatory clause.
+    fa_innama: "\\bفإن(?:ما|ها|هم|ه)\\s"
+    # "ما أنكروا" (they did not deny) — negated past.
+    ma_past: "\\bما\\s+أنكر"
+    # "نستعين" (we seek help) — liturgical/prayer phrase.
+    nastaeen: "\\bنستعين\\b"
+    # "لا في" (not in) — negation + preposition content.
+    la_fi: "\\bلا\\s+في\\s"
+    # "(ع)" Shia honorific abbreviation followed by content.
+    honorific_ayn_content: "\\(ع[\\).\\s]\\s*(?:ي|ل|ف|و(?!عن\\b))"
+    # "معلوما أن" — known-that clause.
+    maʿluman: "\\bمعلوما?\\s+[اأإ]ن\\b"
+    # Names starting with ya that are NOT content boundaries
+    ya_names_not_boundary: ["يحيى", "يزيد", "يعقوب", "يوسف", "يونس"]
+
+  sentence_start_disqualifiers:
+    - "قد"
+    - "أما"
+    - "كما"
+    - "هناك"
+    - "من المعلوم"
+    - "سقطت"
+    - "أدخل"
+    - "فات"
+    - "وقد"
+    - "لأن"
+    - "قلت"
+    - "سمع"
+    - "هنا"
+    - "فإن"
+    - "كان"
+    - "هذا"
+    - "ذكر"
+    - "وهذ"
+    - "ولكن"
+    - "ونظرا"
+    - "ومنها"
+    - "وقال"
+    - "قال"
+    - "من"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BIOGRAPHY EXTRACTION
+# Domain-specific settings for biography person extraction in Phase 3.
+# ─────────────────────────────────────────────────────────────────────────────
+biography_extraction:
+  # Structural delimiters that end a person name in biography spans.
+  # Arabic comma, Latin comma, newline, or opening parenthesis.
+  name_boundaries: "[،,\\.:\\n;]|\\(|\\s-\\s|فقال|\\sقال\\b|\\sفي\\b|\\sعن\\b|\\sعلى\\b|\\sوهو\\b|\\sوهي\\b|بقوله|قوله|مرفوعا|\\sعليه|\\sرضي\\b|\\sرحمه\\b|\\sرحمها\\b|\\sرحمهما\\b|\\sرحمهم\\b|\\sصلى\\b|\\sحواري\\b|\\sفارسا?\\b|\\sالخليفة\\b|\\sبأنه\\b|\\sأن\\b|\\sقد\\b|\\sكان\\b|\\sإن\\b|\\sحيث\\b|\\sبأن\\b|\\sلم\\b|\\sلقد\\b|\\sبطل\\b|\\sالأمير\\b"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NAME DECOMPOSITION
+# Shared patterns for extracting kunya and laqab from person names.
+# Used by biography, rijal, and hadith extractors via src/utils/names.py.
+# ─────────────────────────────────────────────────────────────────────────────
+name_decomposition:
+  kunya_pattern: "(?:أبو|أبي|أبا|أمّ|أم)\\s+(?:عبد\\s+\\S+|\\S+)"
+  laqab_boundaries: "[،,\\n]|\\(|[٠-٩0-9]"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RIJAL EXTRACTION
+# Domain-specific settings for rijal entry extraction in Phase 3.
+# ─────────────────────────────────────────────────────────────────────────────
+rijal_extraction:
+  # Structural delimiters that split a raw name region into segments.
+  # Arabic comma, newline, or period+space. First segment = nasab chain.
+  name_delimiters: "[،\\n]|\\.\\s"
+
+  # Trailing date patterns stripped from name tails when no jarh/bracket
+  # terminates the region. Detects abbreviated death markers (ت NNN),
+  # date ranges (NNN-NNN ه), and lone year numbers.
+  death_date_trail: "\\s+(?:ت\\s*\\d|مات\\b|توفي|ولد\\b|\\d{2,4}\\s*[-–]\\s*\\d{2,4}\\s*(?:ه|$)|\\d{2,4}\\s*(?:ه[ـ‍]?|أو\\b|$))"
+
+  # Kunya prefix (أبو/أبي/أم) — validates names without genealogy markers.
+  kunya_start: "^أ[بم][وي]\\s+"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SERVICES
+# External service endpoints used by the pipeline.
+# All URLs and timeouts live here — never hard-coded in Python.
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  # sol-next2 port: the upstream services are disabled here. ruvector and ner
+  # are substituted (narrator linking goes through registry.db; NER is off for
+  # the v1 port). gazetteer and quran index loaders are wired in later
+  # milestones once their data is vendored. The domain sections above this
+  # block are ported verbatim from sol-next.
+  ruvector:
+    url: "http://127.0.0.1:6333"
+    collection: "narrators"
+    dimensions: 384
+    enabled: false
+
+  gazetteer:
+    narrator_path: "data/sanadset/narrator_gazetteer_final.txt"
+    sira_persons_path: "data/sira_persons/gazetteer.txt"
+    enabled: false
+
+  ner:
+    url: "https://camel.fkhome.local"
+    endpoint: "/farasa/ner"
+    timeout_seconds: 45
+    verify_ssl: false
+    enabled: false
+
+  quran:
+    index_path: "data/quran/quran_clearquran.json"
+    enabled: false
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JARH/TA'DIL GRADES
+# Tradition-aware narrator reliability scale.
+# Sunni: Ibn Hajar's 12-level scale (1 = Sahabah, 12 = declared liar).
+# Shia: Category-based scale (1 = emphatic thiqah, 7 = fabricator).
+# ─────────────────────────────────────────────────────────────────────────────
+jarh_tadil_grades:
+  sunni:
+    # Rank 1: Sahabah (handled by companion_exemption, not term-based)
+    # Rank 2: Emphatic praise
+    "ثقة ثبت": 2
+    "ثقة عين": 2
+    "ثقة عدل": 2
+    "ثقة متقن": 2
+    "ثقة ثبت حافظ": 2
+    "حجة": 2
+    "متقن": 2
+    "ثبت": 2
+    "أوثق الناس": 2
+    "ثقة حافظ": 2
+    # Rank 3: Single praise
+    "ثقة": 3
+    "ثقات": 3
+    "عدل": 3
+    # Rank 4: Slightly below
+    "صدوق": 4
+    "لا بأس به": 4
+    "حسن الحديث": 4
+    # Rank 5: Poor memory
+    "صدوق يهم": 5
+    "صدوق سيء الحفظ": 5
+    "صدوق له أوهام": 5
+    "صالح": 5
+    "صالح الحديث": 5
+    # Rank 6: Few narrations
+    "مقبول": 6
+    "لين الحديث": 6
+    "لين": 6
+    # Rank 7: Unknown state
+    "مستور": 7
+    "مجهول الحال": 7
+    # Rank 8: Explicit weakness
+    "ضعيف": 8
+    "ضعفوه": 8
+    "ليس بالقوي": 8
+    "ليس بثقة": 8
+    # Rank 9: True unknown
+    "مجهول": 9
+    # Rank 10: Abandoned
+    "متروك": 10
+    "واه": 10
+    "واهي الحديث": 10
+    # Rank 11: Accused liar
+    "متهم بالكذب": 11
+    "متهم": 11
+    "منكر": 11
+    "منكر الحديث": 11
+    # Rank 12: Declared liar/fabricator
+    "كذاب": 12
+    "وضاع": 12
+    "يضع الحديث": 12
+
+  shia:
+    # Authentication terms
+    "ثقة ثقة": 1
+    "ثقة ثبت": 1
+    "ثقة عين": 1
+    "ثقة عدل": 1
+    "ثقة": 2
+    "عدل": 2
+    "عين": 2
+    "وجه": 2
+    "جليل القدر": 2
+    "صدوق": 3
+    "صالح": 3
+    "خير": 3
+    "لا بأس به": 3
+    "فاضل": 3
+    "حسن": 3
+    # Criticism terms
+    "ضعيف": 4
+    "لين": 4
+    "ضعفوه": 4
+    "مجهول": 5
+    "مهمل": 5
+    "متروك": 5
+    "واه": 5
+    "منكر": 5
+    "غالي": 6
+    "غال": 6
+    "متهم": 6
+    "فاسق": 6
+    "كذاب": 7
+    "وضاع": 7
+    "فاسد المذهب": 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HADITH METHODOLOGY
+# Tradition-specific grading rules, chain defect types, and corroboration
+# logic. Python code reads these rules — never duplicates them.
+# ─────────────────────────────────────────────────────────────────────────────
+hadith_methodology:
+  default_tradition: sunni
+  default_methodology: standard
+
+  chain_defect_types:
+    - id: MURSAL
+      description: "Narrator attributes to source but omits intermediaries"
+      severity: "DA'IF"
+    - id: MUNQATI
+      description: "One narrator missing in the middle"
+      severity: "DA'IF"
+    - id: MUDAL
+      description: "Two or more consecutive narrators missing"
+      severity: "DA'IF"
+    - id: MUALLAQ
+      description: "Missing narrator(s) at compiler's end"
+      severity: "DA'IF"
+    - id: MUDALLAS
+      description: "Narrator conceals a gap using ambiguous language"
+      severity: "DA'IF"
+
+  transmission_type:
+    mutawatir_bypasses_grading: true
+
+  grade_hierarchy:
+    - MUTAWATIR
+    - SAHIH_LI_DHATIHI
+    - SAHIH_LI_GHAYRIHI
+    - HASAN_LI_DHATIHI
+    - HASAN_LI_GHAYRIHI
+    - MUWATHTHAQ
+    - QAWI
+    - "DA'IF"
+    - "DA'IF_JIDDAN"
+    - MAWDU
+
+  sunni:
+    narrator_rank_to_grade:
+      1: SAHIH_LI_DHATIHI
+      2: SAHIH_LI_DHATIHI
+      3: SAHIH_LI_DHATIHI
+      4: HASAN_LI_DHATIHI
+      5: HASAN_CONDITIONAL
+      6: HASAN_CONDITIONAL
+      7: "DA'IF"
+      8: "DA'IF"
+      9: "DA'IF"
+      10: "DA'IF_JIDDAN"
+      11: MAWDU
+      12: MAWDU
+
+    taqwiyah_eligible_ranks: [5, 6, 7, 8, 9]
+    taqwiyah_blocked_ranks: [10, 11, 12]
+
+    companion_exemption: true
+    mursal_handling: reject
+
+  shia:
+    methodology: usuli_strict
+
+    narrator_rank_to_grade:
+      1: SAHIH_LI_DHATIHI
+      2: SAHIH_LI_DHATIHI
+      3: HASAN_LI_DHATIHI
+      4: "DA'IF"
+      5: "DA'IF"
+      6: "DA'IF_JIDDAN"
+      7: MAWDU
+    thiqah_rank_max: 2
+
+    narrator_category_rules:
+      SAHIH_LEVEL:
+        requires:
+          imami: true
+          thiqah: true
+      HASAN_LEVEL:
+        requires:
+          imami: true
+          praised: true
+        excludes:
+          thiqah: true
+      MUWATHTHAQ_LEVEL:
+        requires:
+          thiqah: true
+        excludes:
+          imami: true
+      QAWI_LEVEL:
+        requires:
+          imami: true
+          no_evaluation: true
+      DAIF_LEVEL:
+        default: true
+
+    tawthiq_amm_accepted:
+      - kamil_al_ziyarat
+      - mashayikh_najashi
+
+    mursal_thiqah_override: true
+    trusted_mursal_senders:
+      - ibn_abi_umayr
+      - safwan_ibn_yahya
+      - al_bazanti
+
+    tarjih_criteria:
+      - narrator_quality
+      - shuhra
+      - muwafaqah_kitab
+      - mukhalafah_ammah
+      - ihtiyat
+
+    four_books_qati: false
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NARRATOR CORPUS
+# Vocabulary and patterns for building structured narrator biographies.
+# Organized to match the tarajm.com data model.
+# ─────────────────────────────────────────────────────────────────────────────
+narrator_corpus:
+
+  # ── Teacher/student extraction patterns ──
+  # Text signals that introduce a list of teacher or student names.
+  teacher_signals:
+    - "فكتب ب"
+    - "كتب عن "
+    - "روى عن "
+    - "حدث عن "
+    - "حدث عن :"
+    - "سمع "
+    - "سمع من "
+    - "سمع : "
+    - "سمع :"
+    - "عن : "
+    - "عن :"
+    - "أخذ عن "
+    - "تفقه على "
+    - "تفقه عند "
+    - "قرأ على "
+    - "درس على "
+    - "صحب "
+    - "يروي عن "
+    - "يروى عن "
+    - "يحدث عن "
+    - "حمل عن "
+    - "، عن "
+    - "لقي "
+    - "تلمذ على "
+    - "تلمذ ل"
+    - "أدرك "
+    - "روت عن "
+    - "سمعت من "
+
+  student_signals:
+    - "حدث عنه :"
+    - "حدث عنه "
+    - "روى عنه "
+    - "أخذ عنه "
+    - "سمع منه "
+    - "تفقه عليه "
+    - "قرأ عليه "
+    - "خرج له "
+    - "وعنه :"
+    - "وعنه "
+    - "يروي عنه "
+    - "منهم "
+    - "تخرج به "
+    - "تخرجوا به "
+    - "روت عنه "
+    - "سمعت منه "
+
+  # ── Name list delimiters ──
+  # Characters that separate names in teacher/student lists.
+  name_list_delimiters: "[،,]|\\sو(?!هب|ليد|ائل|كيع|اصل|رقاء|هيب|حشي|اقد|أخ|ابن)(?=\\S)"
+  name_list_terminators: "\\.|\\n|حدث عنه|روى عنه|يروي عنه|أخذ عنه|سمع منه|تفقه عل|قرأ عليه|خرج له|وروى عنه|وأخذ|وسمع|قال|توفي|توفى|مات|ولد|وهو|وكان|وله\\s|وصنف|ودرس|حديثه|ذكره|وعنه"
+
+  # ── Nisba → Place mapping ──
+  # Maps common geographic nisbas to structured place objects (name + country).
+  nisba_places:
+    الكوفي: {name: "الكوفة", country: "العراق"}
+    البصري: {name: "البصرة", country: "العراق"}
+    البغدادي: {name: "بغداد", country: "العراق"}
+    الواسطي: {name: "واسط", country: "العراق"}
+    الموصلي: {name: "الموصل", country: "العراق"}
+    المصري: {name: "مصر", country: "مصر"}
+    القاهري: {name: "القاهرة", country: "مصر"}
+    الإسكندري: {name: "الإسكندرية", country: "مصر"}
+    الدمشقي: {name: "دمشق", country: "سوريا"}
+    الحلبي: {name: "حلب", country: "سوريا"}
+    الحمصي: {name: "حمص", country: "سوريا"}
+    الشامي: {name: "بلاد الشام", country: "سوريا"}
+    المكي: {name: "مكة المكرمة", country: "الحجاز"}
+    المدني: {name: "المدينة المنورة", country: "الحجاز"}
+    الحجازي: {name: "الحجاز", country: "الحجاز"}
+    الخراساني: {name: "خراسان", country: "إيران"}
+    النيسابوري: {name: "نيسابور", country: "إيران"}
+    الرازي: {name: "الري", country: "إيران"}
+    الأصبهاني: {name: "أصبهان", country: "إيران"}
+    الهمذاني: {name: "همذان", country: "إيران"}
+    الطبري: {name: "طبرستان", country: "إيران"}
+    المروزي: {name: "مرو", country: "تركمانستان"}
+    البخاري: {name: "بخارى", country: "أوزبكستان"}
+    السمرقندي: {name: "سمرقند", country: "أوزبكستان"}
+    القرطبي: {name: "قرطبة", country: "الأندلس"}
+    الأندلسي: {name: "الأندلس", country: "الأندلس"}
+    الفاسي: {name: "فاس", country: "المغرب"}
+    المغربي: {name: "المغرب", country: "المغرب"}
+    القيرواني: {name: "القيروان", country: "تونس"}
+    التونسي: {name: "تونس", country: "تونس"}
+    اليمني: {name: "اليمن", country: "اليمن"}
+    الصنعاني: {name: "صنعاء", country: "اليمن"}
+    المقدسي: {name: "بيت المقدس", country: "فلسطين"}
+    العسقلاني: {name: "عسقلان", country: "فلسطين"}
+    الهندي: {name: "الهند", country: "الهند"}
+    الطرابلسي: {name: "طرابلس", country: "لبنان"}
+    البيروتي: {name: "بيروت", country: "لبنان"}
+
+  # ── Category vocabulary ──
+  # Arabic text patterns mapped to normalized category labels.
+  # Grouped by type; each term is searched in biography text.
+  categories:
+    scholarly_role:
+      - {term: "محدث", label: "محدث"}
+      - {term: "حافظ", label: "حافظ"}
+      - {term: "فقيه", label: "فقيه"}
+      - {term: "مقرئ", label: "مقرئ"}
+      - {term: "مفسر", label: "عالم بالتفسير"}
+      - {term: "أصولي", label: "أصولي"}
+      - {term: "نحوي", label: "نحوي"}
+      - {term: "لغوي", label: "لغوي"}
+      - {term: "أديب", label: "أديب"}
+      - {term: "شاعر", label: "شاعر"}
+      - {term: "مؤرخ", label: "مؤرخ"}
+      - {term: "مصنف", label: "مصنف"}
+      - {term: "مؤلف", label: "مؤلف"}
+      - {term: "عالم", label: "عالم"}
+      - {term: "إمام", label: "إمام"}
+      - {term: "مفتي", label: "مفتي"}
+      - {term: "خطيب", label: "خطيب"}
+      - {term: "واعظ", label: "واعظ"}
+      - {term: "مدرس", label: "مدرس"}
+      - {term: "معلم", label: "معلم"}
+      - {term: "قاض", label: "قاض"}
+      - {term: "شيخ الإسلام", label: "شيخ الإسلام"}
+      - {term: "شيخ القراء", label: "شيخ القراء"}
+
+    transmission:
+      - {term: "صحابي", label: "صحابي جليل"}
+      - {term: "تابعي", label: "تابعي"}
+      - {term: "راو", label: "راوي للحديث"}
+      - {term: "راوي", label: "راوي للحديث"}
+      - {term: "كثير الحديث", label: "كثير الحديث"}
+      - {term: "قليل الحديث", label: "قليل الحديث"}
+      - {term: "مسند", label: "مسند"}
+      - {term: "معمر", label: "معمر"}
+      - {term: "رحالة", label: "رحالة"}
+      - {term: "مولى", label: "مولى"}
+      - {term: "مولاهم", label: "مولى"}
+
+    grading:
+      - {term: "ثقة", label: "ثقة"}
+      - {term: "صدوق", label: "صدوق"}
+      - {term: "ضعيف", label: "ضعيف"}
+      - {term: "متروك", label: "متروك"}
+
+    character:
+      - {term: "زاهد", label: "زاهد"}
+      - {term: "الزهد", label: "زاهد"}
+      - {term: "عابد", label: "عابد"}
+      - {term: "ورع", label: "ورع"}
+      - {term: "صالح", label: "صالح"}
+      - {term: "متواضع", label: "متواضع"}
+      - {term: "كريم", label: "كريم"}
+      - {term: "شجاع", label: "شجاع"}
+      - {term: "قدوة", label: "قدوة"}
+      - {term: "فاضل", label: "فاضل"}
+      - {term: "تقي", label: "تقي"}
+      - {term: "صوفي", label: "صوفي"}
+
+    madhhab:
+      - {term: "شافعي", label: "شافعي"}
+      - {term: "مالكي", label: "مالكي"}
+      - {term: "حنفي", label: "حنفي"}
+      - {term: "حنبلي", label: "حنبلي"}
+      - {term: "ظاهري", label: "ظاهري"}
+
+    shia_scholarly:
+      - {term: "مرجع", label: "مرجع تقليد"}
+      - {term: "آية الله", label: "آية الله"}
+      - {term: "حجة الإسلام", label: "حجة الإسلام"}
+      - {term: "ثقة الإسلام", label: "ثقة الإسلام"}
+
+    reliability:
+      - {term: "ثقة", label: "ثقة"}
+      - {term: "ثبت", label: "ثبت"}
+      - {term: "متقن", label: "متقن"}
+      - {term: "حجة", label: "حجة"}
+      - {term: "صدوق", label: "صدوق"}
+      - {term: "مأمون", label: "(ثقة مأمون)"}
+      - {term: "ضعيف", label: "ضعيف"}
+      - {term: "متروك", label: "متروك الحديث"}
+
+  # ── Date extraction patterns ──
+  # Markers that precede year numbers in biographies.
+  death_year_patterns:
+    - "توف[يى]ت?\\s*(?:في\\s*)?(?:سنة\\s*)?"
+    - "مات[ت]?\\s*(?:في\\s*)?(?:سنة\\s*)?"
+    - "المتوف[يى]\\s*(?:سنة\\s*)?"
+    - "وفاته[اه]?\\s*(?:سنة\\s*)?"
+    - "هلك\\s*(?:سنة\\s*)?"
+    - "قتل[ت]?\\s*(?:سنة\\s*)?"
+    - "استشهد[ت]?\\s*(?:سنة\\s*)?"
+
+  birth_year_patterns:
+    - "ولد\\s*(?:في\\s*)?(?:سنة\\s*)?"
+    - "مولده\\s*(?:سنة\\s*)?"
+    - "ولادته\\s*(?:في\\s*)?(?:سنة\\s*)?"
+
+  # ── Place extraction from text signals ──
+  birth_place_signals:
+    - "مولده ب"
+    - "مولده :"
+    - "ولد ب"
+    - "ولد في"
+    - "نشأ ب"
+    - "من أهل"
+    - "أصله من"
+
+  death_place_signals:
+    - "توفي ب"
+    - "توفى ب"
+    - "مات ب"
+    - "ماتت ب"
+    - "توفي في "
+    - "توفى في "
+    - "مات في "
+    - "دفن ب"
+    - "قتل ب"
+
+  residence_signals:
+    - "سكن"
+    - "نزل"
+    - "أقام ب"
+    - "المجاور ب"
+    - "انتقل إلى"
+
+  stance_terms:
+    pro_ahlulbayt:
+      - "يتشيع"
+      - "تشيع"
+      - "شيعي"
+      - "رافضي"
+      - "رفض"
+      - "محبا لعلي"
+      - "يوالي عليا"
+      - "غالٍ في التشيع"
+      - "من شيعة علي"
+      - "علوي"
+      - "يفضّل عليا"
+      - "صحب عليا"
+      - "كان مع علي"
+    anti_ahlulbayt:
+      - "ناصبي"
+      - "ناصب"
+      - "نواصب"
+      - "نصب"
+      - "بغض علي"
+      - "بغض أهل البيت"
+      - "عداوة"
+      - "عثماني"
+      - "ينال من علي"
+      - "يسب عليا"
+      - "يبغض عليا"
+      - "ينتقص عليا"
+      - "أموي"
+      - "يميل إلى بني أمية"
+      - "عداوة لأهل البيت"
+    khariji:
+      - "خارجي"
+      - "خوارج"
+      - "إباضي"
+      - "حروري"
+      - "صفري"
+
+  age_at_death_signals:
+    - "وله"
+    - "عاش"
+    - "بلغ"
+    - "عمره"
+    - "جاوز"
+    - "تجاوز"
+    - "ناهز"
+    - "ابن"
+
+  scholarly_journey_signals:
+    - "رحل إلى"
+    - "قدم"
+    - "ورد"
+    - "خرج إلى"
+    - "هاجر إلى"
+    - "انتقل إلى"
+    - "سافر إلى"
+
+  appointment_signals:
+    - "ولي"
+    - "تولى"
+    - "قلد"
+    - "استعمله"
+
+  authorship_signals:
+    - "صنف"
+    - "ألف"
+    - "له كتاب"
+    - "من تصانيفه"
+
+  death_cause_signals:
+    - "قتل"
+    - "استشهد"
+    - "غرق"
+    - "طاعون"
+
+  reliability_evaluator_patterns:
+    - {pattern: "قال\\s+(\\S+(?:\\s+\\S+){0,3})\\s*:\\s*", type: "explicit_quote"}
+    - {pattern: "وثقه\\s+(\\S+(?:\\s+\\S+){0,3})", implicit_grade: "ثقة", type: "implicit_praise"}
+    - {pattern: "ضعفه\\s+(\\S+(?:\\s+\\S+){0,3})", implicit_grade: "ضعيف", type: "implicit_criticism"}
+
+  migration_signals:
+    - "انتقل إلى"
+    - "رحل إلى"
+    - "هاجر إلى"
+    - "خرج إلى"
+    - "قدم"
+    - "ورد"
+
+  # ── Hadith book code symbols ──
+  # Single-letter codes used in biographical works (e.g., Siyar) to indicate
+  # which hadith collections include the narrator. Found in headings like
+  # "(خ ، م ، د ، س ، ت)".
+  # ── Deduplication scoring weights ──
+  # Weights for cross-book narrator deduplication pair scoring.
+  # Must sum to 1.0. Used by scripts/rijal_matching.py.
+  dedup_weights:
+    name: 0.40
+    death_year: 0.20
+    kunya: 0.10
+    nisba: 0.10
+    teacher_overlap: 0.10
+    student_overlap: 0.05
+    category_overlap: 0.05
+
+  hadith_book_codes:
+    خ: "ممن روى له البخاري"
+    م: "ممن روى له مسلم"
+    د: "ممن روى له أبو داود"
+    ت: "ممن روى له الترمذي"
+    س: "ممن روى له النسائي"
+    ق: "ممن روى له ابن ماجه"
+    ع: "ممن روى له الستة"
+    ز: "ممن روى له البزار"
+    بخ: "ممن روى له البخاري في الأدب المفرد"
+    مق: "ممن روى له ابن ماجه في المقدمة"
+    خت: "ممن روى له البخاري تعليقا"
+    صد: "ممن روى له أبو داود في فضائل الأنصار"
+    عس: "ممن روى له النسائي في عمل اليوم والليلة"
+    سي: "ممن روى له النسائي في السنن الكبرى"
+    فق: "ممن روى له ابن ماجه في التفسير"
+    مد: "ممن روى له أبو داود في المراسيل"
+    "4": "ممن روى له أصحاب السنن الأربعة"
+    ص: "ممن روى له أصحاب السنن"
+    قد: "ممن روى له البخاري في القدر"
+    دس: "ممن روى له أبو داود والنسائي"
+    عخ: "ممن روى له البخاري في الأفعال"
+    تم: "ممن روى له الترمذي في الشمائل"
+    ل: "ممن روى له في الخصائص"
+    كن: "ممن روى له النسائي في الكنى"
+    خد: "ممن روى له البخاري في الأدب"
+    تق: "ممن روى له الترمذي في العلل"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THEME TAXONOMY
+# Usul al-Din / Furu al-Din framework for classifying section headings.
+# classification_order controls domain priority (Usul checked first).
+# ─────────────────────────────────────────────────────────────────────────────
+theme_taxonomy:
+  classification_order: [usul, furu, furu_fiqh]
+  heading_core_stop_words: "\\s+(?:وهو|وهي|وما|ومن|وفيه|وغير|وسائر|وأحكام|وبيان|في\\s|من\\s|علة\\s|علل\\s|بدء\\s|خمس\\s|\\d)"
+
+  domains:
+    usul:
+      label_ar: "أصول الدين"
+      categories:
+        - id: tawhid
+          label_ar: "التوحيد"
+          label_en: "Tawhid (Divine Oneness)"
+          keywords:
+            - "توحيد"
+            - "صفات الذات"
+            - "صفات الأفعال"
+            - "أسماء الله"
+            - "تنزيه"
+            - "تشبيه"
+            - "رؤية"
+            - "جسم"
+            - "صورة"
+            - "عرش"
+            - "كرسي"
+            - "نفي المكان"
+            - "سبحان"
+            - "الله أكبر"
+            - "الأول والآخر"
+            - "الصمد"
+            - "نور السماوات"
+            - "وجهه"
+            - "يداه"
+            - "القرآن ما هو"
+            - "الموحدين"
+            - "تفسير قل هو"
+            - "عظمة الله"
+            - "لطف الله"
+            - "معنى الواحد"
+            - "فطرة"
+        - id: adl
+          label_ar: "العدل"
+          label_en: "Adl (Divine Justice)"
+          keywords:
+            - "عدل"
+            - "جبر"
+            - "تفويض"
+            - "قضاء والقدر"
+            - "قضاء وقدر"
+            - "بداء"
+            - "مشيئة"
+            - "إرادة"
+            - "استطاعة"
+            - "سعادة"
+            - "شقاوة"
+            - "شقاء"
+            - "ابتلاء"
+            - "اختبار"
+            - "الأصلح"
+            - "الأطفال وعدل"
+            - "أمر بين الأمرين"
+            - "خير والشر"
+        - id: nubuwwa
+          label_ar: "النبوة"
+          label_en: "Nubuwwa (Prophethood)"
+          keywords:
+            - "نبوة"
+            - "أنبياء"
+            - "رسل"
+            - "بعثة"
+            - "نبي"
+            - "رسول"
+            - "معجز"
+            - "عصمة الأنبياء"
+            - "آدم"
+            - "نوح"
+            - "إبراهيم"
+            - "موسى"
+            - "عيسى"
+            - "محمد"
+        - id: imama
+          label_ar: "الإمامة"
+          label_en: "Imama (Imamate)"
+          keywords:
+            - "إمامة"
+            - "إمام"
+            - "أئمة"
+            - "حجة"
+            - "حجج"
+            - "ولاية"
+            - "وصي"
+            - "وصاية"
+            - "خلافة"
+            - "نص"
+            - "غدير"
+            - "أهل البيت"
+            - "عترة"
+            - "ثقلين"
+            - "علي بن أبي طالب"
+            - "أمير المؤمنين"
+            - "الحسن"
+            - "الحسين"
+            - "السجاد"
+            - "الباقر"
+            - "الصادق"
+            - "الكاظم"
+            - "الرضا"
+            - "الجواد"
+            - "الهادي"
+            - "العسكري"
+            - "المهدي"
+            - "القائم"
+            - "الحجة"
+            - "صاحب الزمان"
+        - id: maad
+          label_ar: "المعاد"
+          label_en: "Maad (Resurrection)"
+          keywords:
+            - "معاد"
+            - "قيامة"
+            - "بعث"
+            - "حشر"
+            - "نشر"
+            - "جنة"
+            - "نار"
+            - "آخرة"
+            - "برزخ"
+            - "صراط"
+            - "ميزان"
+            - "حساب"
+            - "عذاب"
+            - "ثواب"
+            - "موت"
+            - "قبر"
+            - "شفاعة"
+
+    furu:
+      label_ar: "فروع الدين"
+      categories:
+        - id: salat
+          label_ar: "الصلاة"
+          label_en: "Salat (Prayer)"
+          keywords: ["صلاة", "صلوات", "قنوت", "ركوع", "سجود", "تشهد", "أذان", "إقامة", "جماعة"]
+        - id: sawm
+          label_ar: "الصوم"
+          label_en: "Sawm (Fasting)"
+          keywords: ["صوم", "صيام", "إفطار", "رمضان", "اعتكاف"]
+        - id: hajj
+          label_ar: "الحج"
+          label_en: "Hajj (Pilgrimage)"
+          keywords: ["حج", "عمرة", "مناسك", "طواف", "كعبة", "مشاعر", "إحرام"]
+        - id: zakat
+          label_ar: "الزكاة"
+          label_en: "Zakat (Alms-tax)"
+          keywords: ["زكاة", "صدقة", "صدقات"]
+        - id: khums
+          label_ar: "الخمس"
+          label_en: "Khums (The Fifth)"
+          keywords: ["خمس"]
+        - id: jihad
+          label_ar: "الجهاد"
+          label_en: "Jihad (Struggle)"
+          keywords: ["جهاد", "مرابطة"]
+        - id: amr_nahi
+          label_ar: "الأمر بالمعروف والنهي عن المنكر"
+          label_en: "Amr/Nahi (Enjoining Good, Forbidding Evil)"
+          keywords: ["أمر بالمعروف", "نهي عن المنكر"]
+        - id: tawalli
+          label_ar: "التولي"
+          label_en: "Tawalli (Love of Ahl al-Bayt)"
+          keywords: ["تولي", "موالاة", "ولاء", "محبة أهل البيت"]
+        - id: tabarra
+          label_ar: "التبري"
+          label_en: "Tabarra (Dissociation)"
+          keywords: ["تبري", "براءة"]
+
+    furu_fiqh:
+      label_ar: "أحكام فقهية أخرى"
+      categories:
+        - id: tahara
+          label_ar: "الطهارة"
+          label_en: "Tahara (Purification)"
+          keywords: ["طهارة", "وضوء", "غسل", "أغسال", "تيمم", "نجاسات", "أسئار", "حيض", "استنجاء"]
+        - id: nikah
+          label_ar: "النكاح"
+          label_en: "Nikah (Marriage)"
+          keywords: ["نكاح", "زواج", "متعة", "مهر", "أولاد", "عقيقة"]
+        - id: talaq
+          label_ar: "الطلاق"
+          label_en: "Talaq (Divorce)"
+          keywords: ["طلاق", "إيلاء", "ظهار", "لعان", "خلع"]
+        - id: tijarah
+          label_ar: "المعاملات"
+          label_en: "Tijarah (Commerce)"
+          keywords: ["تجارة", "تجارات", "بيع", "بيوع", "مكاسب", "معيشة", "ربا", "إجارة"]
+        - id: hudud
+          label_ar: "الحدود"
+          label_en: "Hudud (Penal Law)"
+          keywords: ["حدود", "حد", "زنى", "سرقة", "قصاص", "تعزير"]
+        - id: diyat
+          label_ar: "الديات"
+          label_en: "Diyat (Blood Money)"
+          keywords: ["ديات", "دية", "جنايات"]
+        - id: qada
+          label_ar: "القضاء"
+          label_en: "Qada (Judiciary)"
+          keywords: ["قضايا", "قضاء", "أحكام", "شهادات", "شهادة"]
+        - id: wasaya
+          label_ar: "الوصايا والأوقاف"
+          label_en: "Wasaya (Bequests & Endowments)"
+          keywords: ["وصايا", "وصية", "وقف", "وقوف", "صدقات", "هبات"]
+        - id: mawarith
+          label_ar: "المواريث"
+          label_en: "Mawarith (Inheritance)"
+          keywords: ["مواريث", "فرائض", "إرث"]
+        - id: itq
+          label_ar: "العتق"
+          label_en: "Itq (Manumission)"
+          keywords: ["عتق", "تدبير", "مكاتبة"]
+        - id: ayman
+          label_ar: "الأيمان والنذور"
+          label_en: "Ayman (Oaths & Vows)"
+          keywords: ["أيمان", "نذور", "كفارات"]
+        - id: atima
+          label_ar: "الأطعمة والأشربة"
+          label_en: "Atima (Food & Drink)"
+          keywords: ["أطعمة", "أشربة", "ذبائح", "صيد", "بقول", "حبوب", "حلاوات", "أنبذة", "دواجن"]

@@ -44,11 +44,18 @@ class Settings(BaseSettings):
             "Required: set SOL_BOOKS_DIR in the environment or .env."
         ),
     )
+    pipeline_config: Path = Field(
+        default=REPO_ROOT / "config" / "sol.yaml",
+        description="Path to the ported sol-next pipeline config (config/sol.yaml).",
+    )
 
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    """Return the cached Settings singleton."""
-    # pydantic-settings populates required fields from env at runtime; pyright
-    # can't see that, so silence the strict-mode reportCallIssue here.
+    """Return the cached Settings singleton.
+
+    pydantic-settings populates the required fields from the environment at
+    runtime, which pyright's strict mode cannot see, so the ``reportCallIssue``
+    suppression on the constructor call is intentional.
+    """
     return Settings()  # pyright: ignore[reportCallIssue]

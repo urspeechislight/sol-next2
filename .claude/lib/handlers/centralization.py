@@ -125,14 +125,24 @@ def _load_rules() -> list[Rule]:
         kind: Kind = cast(Kind, kind_raw)
         pattern_str = r.get("pattern") if kind == "regex" else None
         pattern = re.compile(str(pattern_str)) if isinstance(pattern_str, str) else None
-        ast_match_list = r.get("ast_match") or []
-        ast_match = tuple(str(x) for x in ast_match_list) if isinstance(ast_match_list, list) else ()
-        suffixes_list = r.get("suffixes") or []
-        suffixes = (
-            frozenset(str(x) for x in suffixes_list) if isinstance(suffixes_list, list) else frozenset()
+        ast_match_list: Any = r.get("ast_match") or []
+        ast_match = (
+            tuple(str(x) for x in cast(list[Any], ast_match_list))
+            if isinstance(ast_match_list, list)
+            else ()
         )
-        allowed_list = r.get("allowed_in") or []
-        allowed_in = tuple(str(x) for x in allowed_list) if isinstance(allowed_list, list) else ()
+        suffixes_list: Any = r.get("suffixes") or []
+        suffixes = (
+            frozenset(str(x) for x in cast(list[Any], suffixes_list))
+            if isinstance(suffixes_list, list)
+            else frozenset[str]()
+        )
+        allowed_list: Any = r.get("allowed_in") or []
+        allowed_in = (
+            tuple(str(x) for x in cast(list[Any], allowed_list))
+            if isinstance(allowed_list, list)
+            else ()
+        )
         rules.append(
             Rule(
                 rule_id=str(r.get("id", "CENTRAL-???")),

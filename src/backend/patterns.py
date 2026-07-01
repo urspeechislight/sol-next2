@@ -13,20 +13,28 @@ Two distinct fold capabilities live here, each with one definition:
 
 Both share ``_fold_letters`` so the letter-folding rule exists once.
 ``strip_diacritics`` is display-only (verse bare form); it folds nothing.
+
+The two mark classes the folds strip are defined once here. ``ARABIC_MARKS``
+covers the name-fold marks: the harakat (fathatan through sukun), the
+superscript alef, and tatweel. ``SEARCH_MARKS`` is the wider display-only set
+stripped before search: the Arabic signs (U+0610..U+061A), the harakat
+(U+064B..U+0652), the superscript alef (U+0670), the Quranic sajdah/waqf/
+small-high annotation signs (U+06D6..U+06ED), and tatweel (U+0640). It is a
+superset of ``ARABIC_MARKS`` so a pasted verse's waqf signs stay out of both
+the index and the query, and it is codepoint-built so the class is unambiguous.
 """
 
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from typing import Final
 
-# Harakat (fathatan..sukun), superscript alef, and tatweel — the name-fold marks.
+from backend.core.constants import SEARCH__PATTERN_CACHE_MAX
+
+type CompiledPattern = re.Pattern[str]
+
 ARABIC_MARKS: Final[re.Pattern[str]] = re.compile("[ً-ْٰـ]")
-# Every display-only mark stripped before SEARCH: arabic signs (0610-061A),
-# harakat (064B-0652), superscript alef (0670), Quranic annotation signs —
-# sajdah/waqf/small-high marks (06D6-06ED), and tatweel (0640). Superset of
-# ARABIC_MARKS; the wider set keeps a pasted verse's waqf signs out of the index
-# and query. Codepoint-built so the class is unambiguous.
 _SEARCH_MARK_CPS: Final[tuple[int, ...]] = (
     *range(0x0610, 0x061B),
     *range(0x064B, 0x0653),
@@ -78,3 +86,62 @@ def strip_diacritics(text: str) -> str:
     verse in both its pointed and bare forms.
     """
     return ARABIC_MARKS.sub("", text)
+
+
+@lru_cache(maxsize=SEARCH__PATTERN_CACHE_MAX)
+def cached_compile(pattern: str, flags: int = 0) -> CompiledPattern:
+    """Compile ``pattern`` once with ``flags``, cached per (pattern, flags).
+
+    The single compile path for the ported pipeline's regexes. ``flags`` defaults
+    to 0 (no flags) so util-local patterns compile exactly as in sol-next; config
+    patterns are compiled with re.MULTILINE by compile_pattern_table. CENTRAL-002
+    keeps every ``re.compile`` in this module.
+    """
+    return re.compile(pattern, flags)
+
+
+def compile_pattern_table(
+    raw_patterns: list[dict[str, str]],
+) -> tuple[tuple[str, re.Pattern[str]], ...]:
+    """Compile every ``{"id", "regex"}`` entry into an immutable
+    ``(pattern_id, compiled)`` tuple, preserving config order.
+
+    Raises ``ValueError`` naming the offending pattern when its regex fails to
+    compile, so the pipeline config loader can surface it as a ConfigError at
+    startup rather than running on a half-compiled pattern set.
+    """
+    compiled: list[tuple[str, re.Pattern[str]]] = []
+    for entry in raw_patterns:
+        pattern_id = entry["id"]
+        regex = entry["regex"]
+        try:
+            compiled.append((pattern_id, cached_compile(regex, re.MULTILINE)))
+        except re.error as exc:
+            raise ValueError(f"Pattern {pattern_id!r} has invalid regex: {exc}") from exc
+    return tuple(compiled)
+
+
+def escape_pattern(text: str) -> str:
+    """Escape ``text`` for literal use in a regex (re.escape).
+
+    The CENTRAL-002 home for re.escape so callers (e.g. the TOC title-to-regex
+    builder) need not import re themselves.
+    """
+    return re.escape(text)
+
+
+@lru_cache(maxsize=SEARCH__PATTERN_CACHE_MAX)
+def cached_compile_alternation(
+    parts: tuple[str, ...],
+    joiner: str = "|",
+    prefix: str = "",
+    suffix: str = "",
+    flags: int = 0,
+) -> CompiledPattern:
+    """Compile ``prefix + joiner.join(parts) + suffix`` once, cached per input.
+
+    The shared builder for config word-list regexes (chain-continuation exclusions,
+    transmission verbs, ...). Parts arrive pre-escaped; this joins and wraps them
+    and compiles through cached_compile so the result is reused.
+    """
+    return cached_compile(prefix + joiner.join(parts) + suffix, flags)

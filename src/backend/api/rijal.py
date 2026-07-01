@@ -20,28 +20,38 @@ from backend.repositories import registry
 router = APIRouter(tags=["rijal"])
 
 
+class RijalFilterParams:
+    """Rijal listing filters as request query parameters."""
+
+    def __init__(
+        self,
+        q: str = Query(default="", description="Substring match on name / kunya / nisba."),
+        tradition: str = Query(
+            default="", description="Filter by tradition (sunni / shia / both)."
+        ),
+        category: str = Query(default="", description="Filter by data-quality category."),
+        has_teachers: bool = Query(
+            default=False, description="Only entries with at least one teacher."
+        ),
+        has_reliability: bool = Query(
+            default=False, description="Only entries carrying a reliability term."
+        ),
+    ) -> None:
+        self.filter = registry.RijalFilter(
+            q=q,
+            tradition=tradition,
+            category=category,
+            has_teachers=has_teachers,
+            has_reliability=has_reliability,
+        )
+
+
 async def _list_rijal(
     page: Annotated[PageParams, Depends()],
-    q: str = Query(default="", description="Substring match on name / kunya / nisba."),
-    tradition: str = Query(default="", description="Filter by tradition (sunni / shia / both)."),
-    category: str = Query(default="", description="Filter by data-quality category."),
-    has_teachers: bool = Query(
-        default=False, description="Only entries with at least one teacher."
-    ),
-    has_reliability: bool = Query(
-        default=False, description="Only entries carrying a reliability term."
-    ),
+    filters: Annotated[RijalFilterParams, Depends()],
 ) -> Page[RijalEntry]:
     """Wrap the repo's (slice, total) into a Page[RijalEntry] envelope."""
-    items, total = registry.list_rijal(
-        q=q,
-        tradition=tradition,
-        category=category,
-        has_teachers=has_teachers,
-        has_reliability=has_reliability,
-        limit=page.limit,
-        offset=page.offset,
-    )
+    items, total = registry.list_rijal(filters.filter, limit=page.limit, offset=page.offset)
     return Page[RijalEntry](items=items, total=total, limit=page.limit, offset=page.offset)
 
 

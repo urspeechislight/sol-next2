@@ -3,7 +3,9 @@
 
 Everything that needs an on-disk path under the repo derives it from here:
 the settings ``.env`` lookup, the static-data loader, and the build scripts.
-The root is computed once so it cannot drift between callers.
+The root is computed once so it cannot drift between callers. ``REPO_ROOT``
+walks four parents up from this file: ``core/paths.py`` to ``core`` to
+``backend`` to ``src`` to the repo root.
 """
 
 from __future__ import annotations
@@ -11,7 +13,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Final
 
-# core/paths.py -> core -> backend -> src -> repo root.
 REPO_ROOT: Final[Path] = Path(__file__).resolve().parent.parent.parent.parent
 DATA_DIR: Final[Path] = REPO_ROOT / "data"
 

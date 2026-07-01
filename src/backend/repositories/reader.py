@@ -16,13 +16,14 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 
 from backend.core.constants import READER__SOURCE_CACHE_MAX
 from backend.core.errors import ResourceNotFoundError
 from backend.core.logging import get_logger
 from backend.models.reader import BookPage, Toc, TocEntry
 from backend.repositories import books as books_repo
+from backend.repositories import manuscript as manuscript_repo
 
 _logger = get_logger("shia-library.reader")
 
@@ -43,7 +44,7 @@ def _load_source(path: Path) -> dict[str, Any]:
     if not isinstance(doc, dict):
         _logger.error("source-not-object", path=str(path))
         raise ReaderSourceError(f"Source at {path} is not a JSON object")
-    return doc
+    return cast(dict[str, Any], doc)
 
 
 def _first_book_key(d: dict[str, Any]) -> str | None:
@@ -70,13 +71,14 @@ def _content_rows(doc: dict[str, Any]) -> list[Any]:
         return []
     if not isinstance(content_raw, dict):
         raise ReaderSourceError("source 'content' is not an object")
-    book_key = _first_book_key(content_raw)
+    content_dict = cast(dict[str, Any], content_raw)
+    book_key = _first_book_key(content_dict)
     if book_key is None:
         return []
-    rows = content_raw.get(book_key)
+    rows = content_dict.get(book_key)
     if not isinstance(rows, list):
         raise ReaderSourceError("source 'content' rows are not a list")
-    return rows
+    return cast(list[Any], rows)
 
 
 class PageRow(NamedTuple):
@@ -107,8 +109,9 @@ def page_rows(book_urn: str) -> list[PageRow]:
         if not isinstance(row, dict):
             _logger.warning("page-row-skipped", urn=book_urn, reason="not-a-mapping")
             continue
-        page = row.get("page_number")
-        body = (row.get("content") or "").strip()
+        row_dict = cast(dict[str, Any], row)
+        page = row_dict.get("page_number")
+        body = (row_dict.get("content") or "").strip()
         if not body:
             continue
         if not isinstance(page, int) or page < 1:
@@ -120,26 +123,49 @@ def page_rows(book_urn: str) -> list[PageRow]:
     return rows
 
 
-def get_toc(book_urn: str) -> Toc:
-    """Return the TOC for ``book_urn`` or raise ResourceNotFoundError."""
-    src = _require_source(book_urn, "toc")
+def try_get_toc(book_urn: str) -> Toc | None:
+    """Return the TOC for ``book_urn``, or None when the book has no TOC section.
+
+    None is the explicit absent-TOC signal so call sites model absence without a
+    try/except. Present-but-corrupt TOC (rows not a list) still raises
+    ReaderSourceError — that is corruption, not absence.
+    """
+    src = books_repo.source_path(book_urn)
+    if src is None:
+        return None
     doc = _load_source(src)
     toc_raw = doc.get("toc")
     if not isinstance(toc_raw, dict):
-        raise ResourceNotFoundError(kind="toc", identifier=book_urn)
-    book_key = _first_book_key(toc_raw)
+        return None
+    toc_dict = cast(dict[str, Any], toc_raw)
+    book_key = _first_book_key(toc_dict)
     if book_key is None:
-        raise ResourceNotFoundError(kind="toc", identifier=book_urn)
-    rows = toc_raw.get(book_key)
+        return None
+    rows = toc_dict.get(book_key)
     if not isinstance(rows, list):
         raise ReaderSourceError("source 'toc' rows are not a list")
+    entries = _toc_entries_from_rows(book_urn, cast(list[Any], rows))
+    return Toc(book_urn=book_urn, entries=entries)
+
+
+def get_toc(book_urn: str) -> Toc:
+    """Return the TOC for ``book_urn`` or raise ResourceNotFoundError."""
+    toc = try_get_toc(book_urn)
+    if toc is None:
+        raise ResourceNotFoundError(kind="toc", identifier=book_urn)
+    return toc
+
+
+def _toc_entries_from_rows(book_urn: str, rows: list[Any]) -> list[TocEntry]:
+    """Shape validated toc rows into TocEntry objects, skipping malformed ones."""
     entries: list[TocEntry] = []
     for row in rows:
         if not isinstance(row, dict):
             _logger.warning("toc-row-skipped", urn=book_urn, reason="not-a-mapping")
             continue
-        page_num = row.get("page_number")
-        title = (row.get("title") or "").strip()
+        row_dict = cast(dict[str, Any], row)
+        page_num = row_dict.get("page_number")
+        title = (row_dict.get("title") or "").strip()
         if not title:
             continue
         if not isinstance(page_num, int) or page_num < 1:
@@ -152,25 +178,28 @@ def get_toc(book_urn: str) -> Toc:
             )
             continue
         entries.append(TocEntry(page=page_num, title=title))
-    return Toc(book_urn=book_urn, entries=entries)
+    return entries
 
 
 def get_page(book_urn: str, page_number: int) -> BookPage:
-    """Return the requested page or raise ResourceNotFoundError."""
+    """Return the requested page or raise ``ResourceNotFoundError``.
+
+    Structured ``hadiths`` (isnad + matn + narrators) come from the manuscript
+    index built by Phase 3 extract, via ``manuscript.hadiths_for_page``. When the
+    page has parsed hadiths they are served and ``text_ar`` is ``None`` (the two
+    are mutually exclusive per the ``BookPage`` contract); otherwise ``text_ar``
+    carries the raw page text honestly — for prose pages, or before the index is
+    built. ``text_en`` is the single wiring point for an English rendering: the
+    corpus has no English column yet, so it stays ``None`` and the reader shows a
+    labelled preview; set it here the moment translations land.
+    """
     rows = page_rows(book_urn)
     if not rows:
         raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
     match = next((r for r in rows if r.page == page_number), None)
     if match is None:
         raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
-    # The pipeline has not yet parsed pages into structured hadiths (isnad +
-    # matn + narrators + grade). Serve the raw page text honestly rather than
-    # wrapping it in a single fabricated Hadith whose isnad is empty and whose
-    # "matn" is really the whole unsegmented page. Phase 3-5 will populate
-    # hadiths; until then text_ar carries the content and hadiths stays empty.
-    # text_en is the single wiring point for an English rendering of the page:
-    # the corpus has no English column yet, so it stays None and the reader shows
-    # a labelled preview; set it here from the source the moment translations land.
+    hadiths = manuscript_repo.hadiths_for_page(book_urn, page_number)
     return BookPage(
         page_number=page_number,
         total_pages=len(rows),
@@ -178,8 +207,8 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
         chapter_title_en=None,
         section_title="",
         section_title_en=None,
-        hadiths=[],
-        text_ar=match.content,
+        hadiths=hadiths,
+        text_ar=None if hadiths else match.content,
         text_en=None,
     )
 
@@ -196,14 +225,16 @@ def _chapter_title_at(book_urn: str, page_number: int) -> str:
     toc_raw = _load_source(src).get("toc")
     if not isinstance(toc_raw, dict) or not toc_raw:
         return ""
-    rows = next(iter(toc_raw.values()))
+    toc_dict = cast(dict[str, Any], toc_raw)
+    rows = next(iter(toc_dict.values()))
     if not isinstance(rows, list):
         return ""
     current = ""
-    for row in rows:
+    for row in cast(list[Any], rows):
         if not isinstance(row, dict):
             continue
-        rp = row.get("page_number")
+        row_dict = cast(dict[str, Any], row)
+        rp = row_dict.get("page_number")
         if isinstance(rp, int) and rp <= page_number:
-            current = (row.get("title") or "").strip()
+            current = (row_dict.get("title") or "").strip()
     return current

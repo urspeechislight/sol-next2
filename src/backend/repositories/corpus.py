@@ -12,11 +12,17 @@ backs the category -> book -> volume filters. Two match modes: ``exact`` (the
 whole phrase) and ``broad`` (OR of the query's overlapping fixed-width word
 windows — finds sub-phrases). Opened read-only + immutable at serve; the DDL +
 INSERT helpers that build it live in ``backend.build.corpus``.
+
+The bounded count queries ``_COUNT_UNFILTERED`` / ``_COUNT_FILTERED`` are each
+built from the constant ``_FILTER`` and run with bound parameters (``:q``,
+``:cap``, ``:limit``), never from interpolated input, so Bandit's S608 warning
+on them is a false positive and is suppressed inline.
 """
 
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Final
 
@@ -38,9 +44,6 @@ _logger = get_logger("shia-library.corpus")
 
 _DB_FILE = "corpus.db"
 _BROAD = "broad"
-# Width of the overlapping word window OR-ed together in broad mode. Four
-# consecutive words stay distinctive enough that even a long, common-worded
-# verse matches only a few hundred pages (a 2-word window matched millions).
 _BROAD_WINDOW: Final[int] = 4
 
 _FILTER = (
@@ -50,14 +53,7 @@ _FILTER = (
     "  AND (:book = '' OR book.title = :book) "
     "  AND (:volume = 0 OR book.volume = :volume)"
 )
-# A common single word matches millions of pages, and counting / ranking /
-# faceting every one took 30-40s. Cap the FTS rows any one query examines:
-# below the cap the count is exact and the whole match-set is ranked; at it the
-# total is a floor and the (now partial, book-biased) facet split is dropped.
 _SCAN_CAP: Final[int] = 50_000
-# S608 is a false positive on the two bounded queries below: each is built from
-# the constant _FILTER and run with bound parameters (:q, :cap, :limit), never
-# from interpolated input — the same construction the unbounded originals used.
 _COUNT_UNFILTERED = "SELECT count(*) FROM (SELECT 1 FROM pages WHERE pages MATCH :q LIMIT :cap)"
 _COUNT_FILTERED = "SELECT count(*) FROM (SELECT 1 " + _FILTER + " LIMIT :cap)"  # noqa: S608
 _SEARCH = (
@@ -112,7 +108,12 @@ def search_windows(q: str, mode: str) -> list[str]:
     -> one window (the whole phrase). ``broad`` -> overlapping ``_BROAD_WINDOW``
     word windows when the query is longer than one window, else the whole
     phrase. Empty query -> ``[]``. Shared by the corpus-wide FTS search and the
-    in-book page scan — the one place a query becomes match windows."""
+    in-book page scan — the one place a query becomes match windows.
+
+    ``_BROAD_WINDOW`` is 4: four consecutive words stay distinctive enough that
+    even a long, common-worded verse matches only a few hundred pages, whereas a
+    two-word window matched millions.
+    """
     words = [w for w in fold_search(q).replace('"', " ").split() if w]
     if not words:
         return []
@@ -166,40 +167,48 @@ def locate_snippet(content: str, windows: list[str]) -> tuple[bool, str]:
     return False, head
 
 
+@dataclass(frozen=True, slots=True)
+class SearchQuery:
+    """The query text + scope filters for a cross-corpus content search."""
+
+    q: str = ""
+    mode: str = "exact"
+    category: str = ""
+    book: str = ""
+    volume: int = 0
+
+
 def search(
-    q: str = "",
-    mode: str = "exact",
-    category: str = "",
-    book: str = "",
-    volume: int = 0,
+    query: SearchQuery,
     limit: int = HTTP__DEFAULT_PAGE_SIZE,
     offset: int = 0,
 ) -> tuple[list[CorpusMatch], int]:
-    """Return ``(slice, total)`` of corpus pages matching ``q`` (mode) + filters.
+    """Return ``(slice, total)`` of corpus pages matching ``query`` + filters.
 
     Cross-corpus FTS5 search. Results come back in index (rowid) order, paginated
     directly by the FTS engine — not bm25-ranked, because ranking scores the
-    whole match set and is pathologically slow for common terms. Counts are
-    bounded by ``_SCAN_CAP`` (exact below it, a floor at/above it); the count
+    whole match set and is pathologically slow for common terms. A common single
+    word matches millions of pages and counting every one took 30-40s, so counts
+    are bounded by ``_SCAN_CAP`` (exact below it, a floor at/above it); the count
     joins ``book`` only when a category/book/volume filter is set, so an
     unfiltered count stays cheap for common terms. In-book search is a separate
     path (``search_in_book``): a single book is scanned in memory, since FTS
     scoped by urn walks the whole posting list for late books.
     """
-    windows = search_windows(q, mode)
+    windows = search_windows(query.q, query.mode)
     if not windows:
         return [], 0
     con = _connect()
     params: dict[str, Any] = {
         "q": _match_expr(windows),
-        "category": category,
-        "book": book,
-        "volume": volume,
+        "category": query.category,
+        "book": query.book,
+        "volume": query.volume,
         "limit": limit,
         "offset": offset,
         "cap": _SCAN_CAP,
     }
-    if category or book or volume:
+    if query.category or query.book or query.volume:
         total = int(con.execute(_COUNT_FILTERED, params).fetchone()[0])
     else:
         count_params: dict[str, Any] = {"q": params["q"], "cap": _SCAN_CAP}
@@ -238,16 +247,19 @@ def search(
 def facets(q: str = "", mode: str = "exact", category: str = "", book: str = "") -> SearchFacets:
     """Drill-down facets for the active match mode: categories (over q), books
     (within category), volumes (within the chosen book). Each level is computed
-    only when its parent filter is set, so the menus stay scoped and small."""
+    only when its parent filter is set, so the menus stay scoped and small.
+
+    When the category scan fills ``_SCAN_CAP`` the match-set exceeds the cap, so
+    the partial split is biased toward the first books scanned; the facets are
+    dropped rather than showing a wrong breakdown, since drill-down is moot at
+    that scale and the result count already reads as capped.
+    """
     windows = search_windows(q, mode)
     if not windows:
         return SearchFacets(categories=[], books=[], volumes=[])
     expr = _match_expr(windows)
     con = _connect()
     cat_rows = con.execute(_FACET_CATEGORIES, {"q": expr, "cap": _SCAN_CAP}).fetchall()
-    # A filled scan means the match-set exceeds the cap, so this partial split is
-    # biased toward the first books scanned — drop facets rather than show a wrong
-    # breakdown (drill-down is moot at that scale, and the result count says "cap").
     if sum(int(r["n"]) for r in cat_rows) >= _SCAN_CAP:
         return SearchFacets(categories=[], books=[], volumes=[])
     book_rows = (
