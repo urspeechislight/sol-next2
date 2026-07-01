@@ -43,17 +43,17 @@ _MIN_CHAIN_ATTRIBUTIONS: int = 2
 class AttributionCues:
     """Compiled patterns + thresholds for attribution false-positive filtering.
 
-    disqualifier_lookahead is the char window scanned after an attribution verb
-    for a prepositional / narrative / pronoun disqualifier; sol-next used 20/15/20
-    for the three checks — they are consolidated to one config threshold here, the
-    widest of the three, since the disqualifier words sit immediately after the
-    verb and the extra window only catches the same class of false positive.
+    disqualifier_lookahead is the post-verb char window for the prepositional عن and
+    pronoun أنا disqualifiers; narrative_lookahead is the tighter window for the
+    narrative سمعت check. sol-next uses 20 and 15 respectively, and both windows are
+    read from config so the per-check widths match sol-next exactly.
     """
 
     question_verb_lookback: int
     prepositional_regex: CompiledPattern
     narrative_regex: CompiledPattern
     disqualifier_lookahead: int
+    narrative_lookahead: int
     ana_pronoun_regex: CompiledPattern | None = None
 
 
@@ -68,6 +68,7 @@ def build_attribution_cues(config: Config) -> AttributionCues:
         ),
         narrative_regex=_build_exclusion_regex(tuple(narrator_cfg["narrative_context_words"])),
         disqualifier_lookahead=config.threshold_int("narrator_disqualifier_lookahead_chars"),
+        narrative_lookahead=config.threshold_int("narrator_narrative_lookahead_chars"),
         ana_pronoun_regex=_build_exclusion_regex(tuple(ana_exclusions)) if ana_exclusions else None,
     )
 
@@ -121,7 +122,7 @@ def _disqualifies_as_narrative(span: Span, attr: Pattern, cues: AttributionCues)
     """سمعت/سمعنا followed by a narrative-context word (في/ذلك/هذا/شيئ)."""
     if attr.matched_text.strip() not in ("سمعت", "سمعنا"):
         return False
-    after = span.text[attr.char_end : attr.char_end + cues.disqualifier_lookahead]
+    after = span.text[attr.char_end : attr.char_end + cues.narrative_lookahead]
     return bool(cues.narrative_regex.match(after))
 
 

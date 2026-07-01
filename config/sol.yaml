@@ -660,6 +660,7 @@ thresholds:
   ruvector_timeout_seconds: 30
   evidence_context_chars: 50
   narrator_disqualifier_lookahead_chars: 20
+  narrator_narrative_lookahead_chars: 15
   max_degraded_modes: 3
   quran_corpus_min_words: 4
   quran_corpus_min_match_chars: 20
