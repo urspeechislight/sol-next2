@@ -10,10 +10,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from backend.pipeline.models import HierarchyPath
+from backend.pipeline.trackers import TrackerProtocol
 
 
 @dataclass
-class SanadMatnTracker:
+class SanadMatnTracker(TrackerProtocol):
     """FSM tracker for hadith position numbering.
 
     Advances on spans whose behavior matches the configured hadith behavior id.
@@ -27,7 +28,7 @@ class SanadMatnTracker:
         """Return True when the behavior matches the hadith behavior id."""
         return bool(self._hadith_behavior_id) and behavior == self._hadith_behavior_id
 
-    def advance(self, _span_text: str, _span_id: str) -> None:
+    def advance(self, span_text: str, span_id: str) -> None:  # noqa: ARG002
         """Increment the hadith counter."""
         self._hadith_counter += 1
 

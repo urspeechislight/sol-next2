@@ -13,10 +13,11 @@ from typing import Any
 from backend.core.constants import HADITH__PATTERN_HEADING_MARKER
 from backend.patterns import CompiledPattern
 from backend.pipeline.models import HierarchyPath
+from backend.pipeline.trackers import TrackerProtocol
 
 
 @dataclass
-class KitabBabFaslTracker:
+class KitabBabFaslTracker(TrackerProtocol):
     """FSM tracker for hierarchical heading levels.
 
     Levels and their Arabic prefixes come from config's HEADING_MARKER
@@ -38,7 +39,7 @@ class KitabBabFaslTracker:
         """Return True when the behavior is a section heading."""
         return behavior == self._heading_behavior_id
 
-    def advance(self, span_text: str, _span_id: str) -> None:
+    def advance(self, span_text: str, span_id: str) -> None:  # noqa: ARG002
         """Update hierarchy state when a SECTION_HEADING span is encountered.
 
         Determines the heading level from the text prefix, stores the heading
