@@ -26,14 +26,14 @@ class KitabBabFaslTracker(TrackerProtocol):
     """
 
     _level_names: tuple[str, ...] = ()
-    _prefix_to_level: dict[str, str] = field(default_factory=dict)
+    _prefix_to_level: dict[str, str] = field(default_factory=dict[str, str])
     _all_prefixes: tuple[str, ...] = ()
-    _top_level_prefixes: frozenset[str] = field(default_factory=frozenset)
+    _top_level_prefixes: frozenset[str] = field(default_factory=frozenset[str])
     _heading_stop_patterns: tuple[str, ...] = ()
     _attribution_re: CompiledPattern | None = field(default=None, repr=False)
     _heading_behavior_id: str = "SECTION_HEADING"
     _heading_counter: int = field(default=0)
-    _state: dict[str, tuple[str, str]] = field(default_factory=dict)
+    _state: dict[str, tuple[str, str]] = field(default_factory=dict[str, tuple[str, str]])
 
     def should_advance(self, behavior: str) -> bool:
         """Return True when the behavior is a section heading."""

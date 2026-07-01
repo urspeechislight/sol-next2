@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 
 from backend.core.constants import READER__SOURCE_CACHE_MAX
 from backend.core.errors import ResourceNotFoundError
@@ -43,7 +43,7 @@ def _load_source(path: Path) -> dict[str, Any]:
     if not isinstance(doc, dict):
         _logger.error("source-not-object", path=str(path))
         raise ReaderSourceError(f"Source at {path} is not a JSON object")
-    return doc
+    return cast(dict[str, Any], doc)
 
 
 def _first_book_key(d: dict[str, Any]) -> str | None:
@@ -70,13 +70,14 @@ def _content_rows(doc: dict[str, Any]) -> list[Any]:
         return []
     if not isinstance(content_raw, dict):
         raise ReaderSourceError("source 'content' is not an object")
-    book_key = _first_book_key(content_raw)
+    content_dict = cast(dict[str, Any], content_raw)
+    book_key = _first_book_key(content_dict)
     if book_key is None:
         return []
-    rows = content_raw.get(book_key)
+    rows = content_dict.get(book_key)
     if not isinstance(rows, list):
         raise ReaderSourceError("source 'content' rows are not a list")
-    return rows
+    return cast(list[Any], rows)
 
 
 class PageRow(NamedTuple):
@@ -107,8 +108,9 @@ def page_rows(book_urn: str) -> list[PageRow]:
         if not isinstance(row, dict):
             _logger.warning("page-row-skipped", urn=book_urn, reason="not-a-mapping")
             continue
-        page = row.get("page_number")
-        body = (row.get("content") or "").strip()
+        row_dict = cast(dict[str, Any], row)
+        page = row_dict.get("page_number")
+        body = (row_dict.get("content") or "").strip()
         if not body:
             continue
         if not isinstance(page, int) or page < 1:
@@ -134,13 +136,15 @@ def try_get_toc(book_urn: str) -> Toc | None:
     toc_raw = doc.get("toc")
     if not isinstance(toc_raw, dict):
         return None
-    book_key = _first_book_key(toc_raw)
+    toc_dict = cast(dict[str, Any], toc_raw)
+    book_key = _first_book_key(toc_dict)
     if book_key is None:
         return None
-    rows = toc_raw.get(book_key)
+    rows = toc_dict.get(book_key)
     if not isinstance(rows, list):
         raise ReaderSourceError("source 'toc' rows are not a list")
-    return Toc(book_urn=book_urn, entries=_toc_entries_from_rows(book_urn, rows))
+    entries = _toc_entries_from_rows(book_urn, cast(list[Any], rows))
+    return Toc(book_urn=book_urn, entries=entries)
 
 
 def get_toc(book_urn: str) -> Toc:
@@ -158,8 +162,9 @@ def _toc_entries_from_rows(book_urn: str, rows: list[Any]) -> list[TocEntry]:
         if not isinstance(row, dict):
             _logger.warning("toc-row-skipped", urn=book_urn, reason="not-a-mapping")
             continue
-        page_num = row.get("page_number")
-        title = (row.get("title") or "").strip()
+        row_dict = cast(dict[str, Any], row)
+        page_num = row_dict.get("page_number")
+        title = (row_dict.get("title") or "").strip()
         if not title:
             continue
         if not isinstance(page_num, int) or page_num < 1:
@@ -216,14 +221,16 @@ def _chapter_title_at(book_urn: str, page_number: int) -> str:
     toc_raw = _load_source(src).get("toc")
     if not isinstance(toc_raw, dict) or not toc_raw:
         return ""
-    rows = next(iter(toc_raw.values()))
+    toc_dict = cast(dict[str, Any], toc_raw)
+    rows = next(iter(toc_dict.values()))
     if not isinstance(rows, list):
         return ""
     current = ""
-    for row in rows:
+    for row in cast(list[Any], rows):
         if not isinstance(row, dict):
             continue
-        rp = row.get("page_number")
+        row_dict = cast(dict[str, Any], row)
+        rp = row_dict.get("page_number")
         if isinstance(rp, int) and rp <= page_number:
-            current = (row.get("title") or "").strip()
+            current = (row_dict.get("title") or "").strip()
     return current

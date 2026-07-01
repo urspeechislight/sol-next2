@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -70,26 +70,27 @@ def load_config(path: Path | None = None) -> Config:
         raise ConfigError(f"Pipeline config is not valid YAML: {config_path}") from exc
     if not isinstance(raw, dict):
         raise ConfigError(f"Pipeline config root must be a mapping: {config_path}")
+    raw_dict = cast(dict[str, Any], raw)
 
     try:
-        validate_config(raw, config_path)
+        validate_config(raw_dict, config_path)
     except (ValueError, TypeError) as exc:
         raise ConfigError(str(exc)) from exc
 
     try:
-        compiled_patterns = compile_pattern_table(raw["patterns"])
+        compiled_patterns = compile_pattern_table(raw_dict["patterns"])
     except ValueError as exc:
         raise ConfigError(str(exc)) from exc
 
     return Config(
-        patterns=raw["patterns"],
-        behaviors=raw["behaviors"],
-        atomicizers=raw["atomicizers"],
-        extractors=raw["extractors"],
-        graph=raw["graph"],
-        thresholds=raw["thresholds"],
-        services=raw.get("services", {}),
+        patterns=raw_dict["patterns"],
+        behaviors=raw_dict["behaviors"],
+        atomicizers=raw_dict["atomicizers"],
+        extractors=raw_dict["extractors"],
+        graph=raw_dict["graph"],
+        thresholds=raw_dict["thresholds"],
+        services=raw_dict.get("services", {}),
         narrator_gazetteer=frozenset(),
-        raw=raw,
+        raw=raw_dict,
         compiled_patterns=compiled_patterns,
     )

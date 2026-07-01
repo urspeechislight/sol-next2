@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Any, cast
 
 from backend.core.constants import HTTP__DEFAULT_PAGE_SIZE
 from backend.core.errors import ResourceNotFoundError
@@ -37,14 +38,15 @@ def _index() -> tuple[tuple[Book, ...], dict[str, str]]:
     raw = load_json("books_index.json")
     if not isinstance(raw, dict):
         raise DataLoadError("books_index.json is not a JSON object")
-    books_raw = raw.get("books")
-    sources_raw = raw.get("sources")
+    raw_dict = cast(dict[str, Any], raw)
+    books_raw = raw_dict.get("books")
+    sources_raw = raw_dict.get("sources")
     if not isinstance(books_raw, list):
         raise DataLoadError("books_index.json is missing a 'books' list")
     if not isinstance(sources_raw, dict):
         raise DataLoadError("books_index.json is missing a 'sources' map")
-    books = tuple(Book.model_validate(entry) for entry in books_raw)
-    return books, dict(sources_raw)
+    books = tuple(Book.model_validate(entry) for entry in cast(list[Any], books_raw))
+    return books, dict(cast(dict[str, str], sources_raw))
 
 
 def list_books(

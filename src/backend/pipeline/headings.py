@@ -21,7 +21,7 @@ sol-next's src/utils/headings.py.
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, cast
 
 from backend.core.constants import HADITH__PATTERN_HEADING_MARKER as HEADING_MARKER_ID
 from backend.core.errors import SegmentError
@@ -82,7 +82,9 @@ def parse_heading_qualifiers(raw_patterns: list[dict[str, Any]]) -> list[Compile
         return []
     compiled: list[CompiledPattern] = []
     for q_entry in entry["heading_qualifiers"]:
-        regex = q_entry.get("after_match") if isinstance(q_entry, dict) else None
+        regex = (
+            cast(dict[str, Any], q_entry).get("after_match") if isinstance(q_entry, dict) else None
+        )
         if not regex:
             raise SegmentError(f"Qualifier missing after_match: {q_entry!r}") from None
         try:

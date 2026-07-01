@@ -14,7 +14,7 @@ text contains it, so a reader can find a word, not only a surah:ayah reference.
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
+from typing import Any, cast
 
 from backend.core.errors import ResourceNotFoundError
 from backend.models.quran import Ayah
@@ -33,13 +33,18 @@ def get_verse(surah: int, ayah: int) -> Ayah:
     chapter = _quran().get(str(surah))
     if not isinstance(chapter, dict):
         raise ResourceNotFoundError(kind="surah", identifier=str(surah))
-    verses = chapter.get("verses")
+    chapter_dict = cast(dict[str, Any], chapter)
+    verses = chapter_dict.get("verses")
     if not isinstance(verses, dict):
         raise ResourceNotFoundError(kind="surah", identifier=str(surah))
-    verse = verses.get(str(ayah))
+    verses_dict = cast(dict[str, Any], verses)
+    verse = verses_dict.get(str(ayah))
     if not isinstance(verse, dict):
         raise ResourceNotFoundError(kind="ayah", identifier=f"{surah}:{ayah}")
-    return _make_ayah(surah, ayah, chapter["verse_count"], verse["ar"], verse.get("en"))
+    verse_dict = cast(dict[str, Any], verse)
+    return _make_ayah(
+        surah, ayah, chapter_dict["verse_count"], verse_dict["ar"], verse_dict.get("en")
+    )
 
 
 def _make_ayah(surah: int, ayah: int, verse_count: int, text_ar: str, text_en: str | None) -> Ayah:

@@ -34,7 +34,7 @@ class Pattern:
     matched_text: str
     char_start: int
     char_end: int
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
 
 
 @dataclass
@@ -90,7 +90,7 @@ class Entity:
     text: str
     char_start: int
     char_end: int
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
     provenance: ExtractionProvenance | None = None
     evidence: EvidenceAnchor | None = None
     confidence: float | None = None
@@ -113,7 +113,7 @@ class Unit:
     page_start: int
     page_end: int
     hierarchy: HierarchyPath
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
 
 
 @dataclass
@@ -130,13 +130,13 @@ class Span:
     page_start: int
     page_end: int
     span_type: str
-    patterns: list[Pattern] = field(default_factory=list)
+    patterns: list[Pattern] = field(default_factory=list[Pattern])
     behavior: str | None = None
     hierarchy: HierarchyPath | None = None
     entities: list[Entity] | None = None
     units: list[Unit] | None = None
     footnote_text: str | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
 
     def patterns_by_id(self, *pattern_ids: str) -> list[Pattern]:
         """Return this span's patterns whose id is in ``pattern_ids``, sorted by offset.
@@ -219,11 +219,11 @@ class Manuscript:
 
     work_id: str
     manifestation_id: str
-    pages: list[ManuscriptPage] = field(default_factory=list)
-    spans: list[Span] = field(default_factory=list)
-    metadata: dict[str, Any] = field(default_factory=dict)
-    degraded_modes: set[DegradedMode] = field(default_factory=set)
-    validation_issues: list[ValidationIssue] = field(default_factory=list)
+    pages: list[ManuscriptPage] = field(default_factory=list[ManuscriptPage])
+    spans: list[Span] = field(default_factory=list[Span])
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
+    degraded_modes: set[DegradedMode] = field(default_factory=set[DegradedMode])
+    validation_issues: list[ValidationIssue] = field(default_factory=list[ValidationIssue])
 
     @property
     def units(self) -> list[Unit]:

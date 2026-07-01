@@ -69,7 +69,9 @@ class Hadith(BaseModel):
             "pipeline has not yet graded; the UI hides the grade pill in that case."
         ),
     )
-    cross_refs: list[CrossRef] = Field(default_factory=list, description="Parallel narrations.")
+    cross_refs: list[CrossRef] = Field(
+        default_factory=list[CrossRef], description="Parallel narrations."
+    )
 
 
 class BookPage(BaseModel):

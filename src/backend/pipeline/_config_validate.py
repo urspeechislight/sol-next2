@@ -11,7 +11,7 @@ any failure; the config loader converts that to ConfigError.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from backend.pipeline._config_validate_extractors import (
     validate_biography_extraction,
@@ -165,7 +165,7 @@ def _validate_toc_sections(raw: dict[str, Any]) -> None:
     if not isinstance(patterns, list) or not patterns:
         raise ValueError("toc_sections.content_start_patterns must be a non-empty list")
     pattern_ids = {p["id"] for p in raw["patterns"]}
-    for pat_id in patterns:
+    for pat_id in cast(list[Any], patterns):
         if pat_id not in pattern_ids:
             raise ValueError(
                 f"toc_sections.content_start_patterns references unknown pattern '{pat_id}'"
