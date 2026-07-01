@@ -44,6 +44,10 @@ class Settings(BaseSettings):
             "Required: set SOL_BOOKS_DIR in the environment or .env."
         ),
     )
+    pipeline_config: Path = Field(
+        default=REPO_ROOT / "config" / "sol.yaml",
+        description="Path to the ported sol-next pipeline config (config/sol.yaml).",
+    )
 
 
 @lru_cache(maxsize=1)

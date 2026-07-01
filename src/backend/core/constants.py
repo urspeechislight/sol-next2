@@ -34,6 +34,25 @@ READER__SEARCH_DEFAULT_LIMIT: Final[int] = 30
 
 BOOK__DEATH_YEAR_AH_MAX: Final[int] = 1500
 
+HADITH__UNIT_ISNAD: Final[str] = "ISNAD_UNIT"
+HADITH__UNIT_MATN: Final[str] = "MATN_UNIT"
+HADITH__UNIT_HEADING: Final[str] = "HEADING_UNIT"
+HADITH__UNIT_FOOTNOTE: Final[str] = "FOOTNOTE_UNIT"
+HADITH__UNIT_BASMALA: Final[str] = "BASMALA_UNIT"
+HADITH__UNIT_TYPES_WITH_TEXT: Final[frozenset[str]] = frozenset(
+    {
+        HADITH__UNIT_ISNAD,
+        HADITH__UNIT_MATN,
+        HADITH__UNIT_HEADING,
+        HADITH__UNIT_FOOTNOTE,
+        HADITH__UNIT_BASMALA,
+    }
+)
+HADITH__BEHAVIOR_TRANSMISSION: Final[str] = "HADITH_TRANSMISSION"
+HADITH__ENTITY_PERSON: Final[str] = "PERSON"
+HADITH__PATTERN_HEADING_MARKER: Final[str] = "HEADING_MARKER"
+HADITH__MAX_NARRATOR_RANK: Final[int] = 12
+
 # ---------- Corpus full-text search --------------------------------------------
 
 # Excerpt geometry for the fold-aware snippet built in repositories/corpus.py:

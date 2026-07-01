@@ -45,6 +45,11 @@ data/books_index.json
 # (data/quran/quran_clearquran.json). Not hand-edited; formatting is irrelevant.
 data/quran.json
 
+# Ported sol-next pipeline config — vendored verbatim from the sibling sol-next
+# project. Not hand-edited, so its formatting is irrelevant and prettier must
+# not rewrite it.
+config/sol.yaml
+
 # Vendored/shared agent skills, symlinked in from the global skills library.
 # They are not project-owned source; don't reformat them.
 .agents/skills/**

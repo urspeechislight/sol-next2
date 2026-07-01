@@ -18,7 +18,10 @@ Both share ``_fold_letters`` so the letter-folding rule exists once.
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from typing import Final
+
+type CompiledPattern = re.Pattern[str]
 
 # Harakat (fathatan..sukun), superscript alef, and tatweel — the name-fold marks.
 ARABIC_MARKS: Final[re.Pattern[str]] = re.compile("[ً-ْٰـ]")
@@ -78,3 +81,36 @@ def strip_diacritics(text: str) -> str:
     verse in both its pointed and bare forms.
     """
     return ARABIC_MARKS.sub("", text)
+
+
+@lru_cache(maxsize=100)
+def cached_compile(pattern: str) -> re.Pattern[str]:
+    """Compile ``pattern`` once as a multiline regex, cached per pattern string.
+
+    The single compile path for the ported pipeline's config-driven regexes, so
+    every pattern is built identically and reused rather than recompiled per
+    span. All config/sol.yaml patterns are multiline; that flag lives here, not
+    at call sites (CENTRAL-002 keeps every ``re.compile`` in this module).
+    """
+    return re.compile(pattern, re.MULTILINE)
+
+
+def compile_pattern_table(
+    raw_patterns: list[dict[str, str]],
+) -> tuple[tuple[str, re.Pattern[str]], ...]:
+    """Compile every ``{"id", "regex"}`` entry into an immutable
+    ``(pattern_id, compiled)`` tuple, preserving config order.
+
+    Raises ``ValueError`` naming the offending pattern when its regex fails to
+    compile, so the pipeline config loader can surface it as a ConfigError at
+    startup rather than running on a half-compiled pattern set.
+    """
+    compiled: list[tuple[str, re.Pattern[str]]] = []
+    for entry in raw_patterns:
+        pattern_id = entry["id"]
+        regex = entry["regex"]
+        try:
+            compiled.append((pattern_id, cached_compile(regex)))
+        except re.error as exc:
+            raise ValueError(f"Pattern {pattern_id!r} has invalid regex: {exc}") from exc
+    return tuple(compiled)
