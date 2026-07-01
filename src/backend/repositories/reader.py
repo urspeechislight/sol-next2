@@ -23,6 +23,7 @@ from backend.core.errors import ResourceNotFoundError
 from backend.core.logging import get_logger
 from backend.models.reader import BookPage, Toc, TocEntry
 from backend.repositories import books as books_repo
+from backend.repositories import manuscript as manuscript_repo
 
 _logger = get_logger("shia-library.reader")
 
@@ -183,14 +184,14 @@ def _toc_entries_from_rows(book_urn: str, rows: list[Any]) -> list[TocEntry]:
 def get_page(book_urn: str, page_number: int) -> BookPage:
     """Return the requested page or raise ``ResourceNotFoundError``.
 
-    The pipeline has not yet parsed pages into structured hadiths (isnad + matn
-    + narrators + grade), so ``text_ar`` carries the raw page text honestly and
-    ``hadiths`` stays empty rather than wrapping the page in a single fabricated
-    Hadith whose isnad is empty and whose matn is really the whole unsegmented
-    page. Phase 3-5 will populate ``hadiths``. ``text_en`` is the single wiring
-    point for an English rendering of the page: the corpus has no English column
-    yet, so it stays ``None`` and the reader shows a labelled preview; set it
-    here from the source the moment translations land.
+    Structured ``hadiths`` (isnad + matn + narrators) come from the manuscript
+    index built by Phase 3 extract, via ``manuscript.hadiths_for_page``. When the
+    page has parsed hadiths they are served and ``text_ar`` is ``None`` (the two
+    are mutually exclusive per the ``BookPage`` contract); otherwise ``text_ar``
+    carries the raw page text honestly — for prose pages, or before the index is
+    built. ``text_en`` is the single wiring point for an English rendering: the
+    corpus has no English column yet, so it stays ``None`` and the reader shows a
+    labelled preview; set it here the moment translations land.
     """
     rows = page_rows(book_urn)
     if not rows:
@@ -198,6 +199,7 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
     match = next((r for r in rows if r.page == page_number), None)
     if match is None:
         raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
+    hadiths = manuscript_repo.hadiths_for_page(book_urn, page_number)
     return BookPage(
         page_number=page_number,
         total_pages=len(rows),
@@ -205,8 +207,8 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
         chapter_title_en=None,
         section_title="",
         section_title_en=None,
-        hadiths=[],
-        text_ar=match.content,
+        hadiths=hadiths,
+        text_ar=None if hadiths else match.content,
         text_en=None,
     )
 
