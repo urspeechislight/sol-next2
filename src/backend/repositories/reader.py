@@ -120,19 +120,39 @@ def page_rows(book_urn: str) -> list[PageRow]:
     return rows
 
 
-def get_toc(book_urn: str) -> Toc:
-    """Return the TOC for ``book_urn`` or raise ResourceNotFoundError."""
-    src = _require_source(book_urn, "toc")
+def try_get_toc(book_urn: str) -> Toc | None:
+    """Return the TOC for ``book_urn``, or None when the book has no TOC section.
+
+    None is the explicit absent-TOC signal so call sites model absence without a
+    try/except. Present-but-corrupt TOC (rows not a list) still raises
+    ReaderSourceError — that is corruption, not absence.
+    """
+    src = books_repo.source_path(book_urn)
+    if src is None:
+        return None
     doc = _load_source(src)
     toc_raw = doc.get("toc")
     if not isinstance(toc_raw, dict):
-        raise ResourceNotFoundError(kind="toc", identifier=book_urn)
+        return None
     book_key = _first_book_key(toc_raw)
     if book_key is None:
-        raise ResourceNotFoundError(kind="toc", identifier=book_urn)
+        return None
     rows = toc_raw.get(book_key)
     if not isinstance(rows, list):
         raise ReaderSourceError("source 'toc' rows are not a list")
+    return Toc(book_urn=book_urn, entries=_toc_entries_from_rows(book_urn, rows))
+
+
+def get_toc(book_urn: str) -> Toc:
+    """Return the TOC for ``book_urn`` or raise ResourceNotFoundError."""
+    toc = try_get_toc(book_urn)
+    if toc is None:
+        raise ResourceNotFoundError(kind="toc", identifier=book_urn)
+    return toc
+
+
+def _toc_entries_from_rows(book_urn: str, rows: list[Any]) -> list[TocEntry]:
+    """Shape validated toc rows into TocEntry objects, skipping malformed ones."""
     entries: list[TocEntry] = []
     for row in rows:
         if not isinstance(row, dict):
@@ -152,7 +172,7 @@ def get_toc(book_urn: str) -> Toc:
             )
             continue
         entries.append(TocEntry(page=page_num, title=title))
-    return Toc(book_urn=book_urn, entries=entries)
+    return entries
 
 
 def get_page(book_urn: str, page_number: int) -> BookPage:
