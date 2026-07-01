@@ -10,16 +10,24 @@ export function TocDrawer({
   current: number;
   onJump: (page: number) => void;
 }) {
+  // The current section is the last entry that begins at or before the current
+  // page — the same rule the backend uses for the page's chapter title. Mark
+  // only that one row current; several sections can share a page number, and
+  // matching on page alone lit every one of them.
+  let currentIndex = -1;
+  toc.entries.forEach((t, i) => {
+    if (t.page <= current) currentIndex = i;
+  });
   return (
     <aside className="reader-toc" aria-label="Table of contents">
       <p className="reader-toc__label">Contents</p>
-      {toc.entries.map((t) => (
+      {toc.entries.map((t, i) => (
         <TocItem
-          key={`${t.page}-${t.title}`}
+          key={`${t.page}-${t.title}-${i}`}
           titleAr={t.title}
           titleEn={t.title_en}
           page={t.page}
-          current={t.page === current}
+          current={i === currentIndex}
           onClick={() => onJump(t.page)}
         />
       ))}
