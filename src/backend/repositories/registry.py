@@ -15,6 +15,8 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
+from pydantic import BaseModel
+
 from backend.core.constants import HTTP__DEFAULT_PAGE_SIZE
 from backend.core.errors import ResourceNotFoundError
 from backend.models.narrator import CanonicalEntry, RijalEntry
@@ -53,6 +55,29 @@ def _connect() -> sqlite3.Connection:
     )
 
 
+def _paged_query[M: BaseModel](
+    count_sql: str,
+    page_sql: str,
+    params: dict[str, Any],
+    model: type[M],
+    limit: int,
+    offset: int,
+) -> tuple[list[M], int]:
+    """Count + page + validate: the one (slice, total) shape over registry tables."""
+    con = _connect()
+    total = int(con.execute(count_sql, params).fetchone()[0])
+    rows = con.execute(page_sql, {**params, "limit": limit, "offset": offset}).fetchall()
+    return [model.model_validate(dict(r)) for r in rows], total
+
+
+def _get_one[M: BaseModel](sql: str, key: int, model: type[M], kind: str) -> M:
+    """Fetch one row by id and validate it, or raise ``ResourceNotFoundError``."""
+    row = _connect().execute(sql, {"id": key}).fetchone()
+    if row is None:
+        raise ResourceNotFoundError(kind=kind, identifier=str(key))
+    return model.model_validate(dict(row))
+
+
 @dataclass(frozen=True, slots=True)
 class RijalFilter:
     """Closed-set filters for a rijal listing query."""
@@ -70,7 +95,6 @@ def list_rijal(
     offset: int = 0,
 ) -> tuple[list[RijalEntry], int]:
     """Return ``(slice, total)`` of rijal entries matching the filters."""
-    con = _connect()
     params: dict[str, Any] = {
         "q": filters.q,
         "qlike": f"%{filters.q}%",
@@ -79,17 +103,12 @@ def list_rijal(
         "has_teachers": int(filters.has_teachers),
         "has_reliability": int(filters.has_reliability),
     }
-    total = int(con.execute(_RIJAL_COUNT, params).fetchone()[0])
-    rows = con.execute(_RIJAL_PAGE, {**params, "limit": limit, "offset": offset}).fetchall()
-    return [RijalEntry.model_validate(dict(r)) for r in rows], total
+    return _paged_query(_RIJAL_COUNT, _RIJAL_PAGE, params, RijalEntry, limit, offset)
 
 
 def get_rijal(entry_id: int) -> RijalEntry:
     """Return one rijal entry by id, or raise ``ResourceNotFoundError``."""
-    row = _connect().execute("SELECT * FROM rijal WHERE id = :id", {"id": entry_id}).fetchone()
-    if row is None:
-        raise ResourceNotFoundError(kind="rijal", identifier=str(entry_id))
-    return RijalEntry.model_validate(dict(row))
+    return _get_one("SELECT * FROM rijal WHERE id = :id", entry_id, RijalEntry, "rijal")
 
 
 def list_canonical(
@@ -99,20 +118,15 @@ def list_canonical(
     offset: int = 0,
 ) -> tuple[list[CanonicalEntry], int]:
     """Return ``(slice, total)`` of canonical profiles matching the filters."""
-    con = _connect()
     params: dict[str, Any] = {"q": q, "qlike": f"%{q}%", "merged_only": int(merged_only)}
-    total = int(con.execute(_CANONICAL_COUNT, params).fetchone()[0])
-    rows = con.execute(_CANONICAL_PAGE, {**params, "limit": limit, "offset": offset}).fetchall()
-    return [CanonicalEntry.model_validate(dict(r)) for r in rows], total
+    return _paged_query(_CANONICAL_COUNT, _CANONICAL_PAGE, params, CanonicalEntry, limit, offset)
 
 
 def get_canonical(canonical_id: int) -> CanonicalEntry:
     """Return one canonical profile by id, or raise ``ResourceNotFoundError``."""
-    row = (
-        _connect()
-        .execute("SELECT * FROM canonical WHERE canonical_id = :id", {"id": canonical_id})
-        .fetchone()
+    return _get_one(
+        "SELECT * FROM canonical WHERE canonical_id = :id",
+        canonical_id,
+        CanonicalEntry,
+        "canonical",
     )
-    if row is None:
-        raise ResourceNotFoundError(kind="canonical", identifier=str(canonical_id))
-    return CanonicalEntry.model_validate(dict(row))

@@ -19,7 +19,7 @@ from typing import Any, cast
 from backend.core.errors import ResourceNotFoundError
 from backend.models.quran import Ayah
 from backend.patterns import WHITESPACE, fold_search, strip_diacritics
-from backend.repositories._data_loader import load_json
+from backend.repositories._data_loader import load_json, slice_page
 
 _FILE = "quran.json"
 
@@ -92,4 +92,4 @@ def search_verses(q: str, limit: int, offset: int) -> tuple[list[Ayah], int]:
         for surah, ayah, verse_count, text_ar, folded, text_en in _folded_index()
         if needle in folded
     ]
-    return hits[offset : offset + limit], len(hits)
+    return slice_page(hits, limit, offset)

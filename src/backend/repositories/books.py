@@ -25,7 +25,7 @@ from backend.models.book import Book
 from backend.models.work import Work
 from backend.patterns import normalize_arabic
 from backend.repositories import _taxonomy
-from backend.repositories._data_loader import DataLoadError, load_json
+from backend.repositories._data_loader import DataLoadError, load_json, slice_page
 
 
 @lru_cache(maxsize=1)
@@ -58,10 +58,7 @@ def list_books(
     """Return ``(slice, total)`` of books, optionally filtered by category."""
     books, _ = _index()
     filtered = [b for b in books if b.category == category] if category is not None else list(books)
-    total = len(filtered)
-    if limit is None:
-        return filtered[offset:], total
-    return filtered[offset : offset + limit], total
+    return slice_page(filtered, limit, offset)
 
 
 def _stem(urn: str) -> str:
@@ -164,10 +161,7 @@ def list_works(
         works = [
             w for w in works if _hit((w.title_ar, w.title_en, w.author, w.author_ar), fold, low)
         ]
-    total = len(works)
-    if limit is None:
-        return works[offset:], total
-    return works[offset : offset + limit], total
+    return slice_page(works, limit, offset)
 
 
 @lru_cache(maxsize=1)
@@ -215,8 +209,7 @@ def search_books(
     low = needle.lower()
     books, _ = _index()
     matched = [b for b in books if _hit(_field_values(b, field), fold, low)]
-    total = len(matched)
-    return matched[offset : offset + limit], total
+    return slice_page(matched, limit, offset)
 
 
 def get_book(urn: str) -> Book:

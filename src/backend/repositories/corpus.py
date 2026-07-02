@@ -38,7 +38,7 @@ from backend.models.search import BookFacet, CategoryFacet, CorpusMatch, SearchF
 from backend.patterns import fold_search
 from backend.repositories import books as books_repo
 from backend.repositories import reader as reader_repo
-from backend.repositories._data_loader import open_ro_db
+from backend.repositories._data_loader import open_ro_db, slice_page
 
 _logger = get_logger("shia-library.corpus")
 
@@ -307,5 +307,4 @@ def search_in_book(
         found, snippet = locate_snippet(row.content, windows)
         if found:
             matches.append(BookSearchMatch(page=row.page, snippet=snippet))
-    total = len(matches)
-    return matches[offset : offset + limit], total
+    return slice_page(matches, limit, offset)

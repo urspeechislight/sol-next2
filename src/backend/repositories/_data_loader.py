@@ -13,19 +13,33 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Sequence
 from functools import cache
 from typing import Any
 
 from backend.core.logging import get_logger
 from backend.core.paths import data_path
 
-__all__ = ["DataLoadError", "data_path", "load_json", "open_ro_db"]
+__all__ = ["DataLoadError", "data_path", "load_json", "open_ro_db", "slice_page"]
 
 _logger = get_logger("shia-library.data-loader")
 
 
 class DataLoadError(RuntimeError):
     """Raised when a static data file is missing or malformed."""
+
+
+def slice_page[T](matched: Sequence[T], limit: int | None, offset: int) -> tuple[list[T], int]:
+    """Return the in-memory ``(slice, total)`` page over pre-filtered matches.
+
+    The one pagination shape shared by the JSON-backed repositories.
+    ``limit=None`` returns the full tail from ``offset`` (the internal
+    unbounded listing the works fold and the build scripts use).
+    """
+    total = len(matched)
+    if limit is None:
+        return list(matched[offset:]), total
+    return list(matched[offset : offset + limit]), total
 
 
 @cache
