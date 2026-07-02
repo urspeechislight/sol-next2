@@ -8,8 +8,6 @@ export const PAGE = {
   // its counts complete for realistic result sets.
   facetLimit: 200,
   graphPerPage: 40,
-  indexPages: 6,
-  indexPerPage: 100,
 } as const;
 
 // Sentinel the upstream catalog uses for an unknown author death year; the

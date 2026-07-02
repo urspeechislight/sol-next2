@@ -2,7 +2,6 @@
 // Every call is a GET; failures throw ApiError (fail loud, no silent fallback)
 // so callers render an explicit error state. CENTRAL-007 confines fetch here.
 import { PAGE } from '../constants';
-import { canonicalToRecord, mergeNarrators, rijalToRecord } from '../narrators';
 import { API } from '../routes';
 import type {
   Ayah,
@@ -13,7 +12,6 @@ import type {
   CorpusMatch,
   Daily,
   Domain,
-  NarratorRecord,
   Page,
   RijalEntry,
   SearchFacets,
@@ -226,31 +224,12 @@ export function getCanonical(params: CanonicalParams = {}): Promise<Page<Canonic
   return get<Page<CanonicalEntry>>(`${API.CANONICAL}${qs}`);
 }
 
-async function collect<T>(
-  fetcher: (limit: number, offset: number) => Promise<Page<T>>,
-  pages: number,
-  perPage: number,
-): Promise<T[]> {
-  const out: T[] = [];
-  let offset = 0;
-  for (let i = 0; i < pages; i += 1) {
-    const res = await fetcher(perPage, offset);
-    out.push(...res.items);
-    offset += perPage;
-    if (offset >= res.total) break;
-  }
-  return out;
+/** Fetch one rijal entry by id — the reader's tarjama detail for a linked narrator. */
+export function getRijalEntry(id: number): Promise<RijalEntry> {
+  return get<RijalEntry>(`${API.RIJAL}/${id}`);
 }
 
-/** Build the narrator index for in-reader tarjama: rijal (with reliability) +
-    canonical, merged by name. Paged + capped to stay light. */
-export async function getNarratorIndex(
-  pages: number = PAGE.indexPages,
-  perPage: number = PAGE.indexPerPage,
-): Promise<NarratorRecord[]> {
-  const [rijal, canonical] = await Promise.all([
-    collect<RijalEntry>((limit, offset) => getRijal({ limit, offset }), pages, perPage),
-    collect<CanonicalEntry>((limit, offset) => getCanonical({ limit, offset }), pages, perPage),
-  ]);
-  return mergeNarrators(rijal.map(rijalToRecord), canonical.map(canonicalToRecord));
+/** Fetch one canonical profile by id, for narrators linked to the canonical registry. */
+export function getCanonicalEntry(id: number): Promise<CanonicalEntry> {
+  return get<CanonicalEntry>(`${API.CANONICAL}/${id}`);
 }
