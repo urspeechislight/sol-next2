@@ -12,7 +12,6 @@ import {
 } from '../../lib/design-system';
 import {
   getBook,
-  getDomains,
   getNarratorIndex,
   getPage,
   getToc,
@@ -31,7 +30,8 @@ import type {
   NarratorRecord,
   Page,
 } from '../../lib/types';
-import { useAsync } from '../../lib/useAsync';
+import { useAsync, useCachedAsync } from '../../lib/useAsync';
+import { useDomains } from '../../lib/useDomains';
 import { clamp, cx, toArabicDigits } from '../../lib/utils';
 import { MatchList, TocDrawer } from './ReaderDrawers';
 import { RawPageText } from './RawPageText';
@@ -283,8 +283,8 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
 
   const bookRes = useAsync(() => getBook(urn), [urn]);
   const tocRes = useAsync(() => getToc(urn), [urn]);
-  const indexRes = useAsync(() => getNarratorIndex(), []);
-  const domainsRes = useAsync(() => getDomains(), []);
+  const indexRes = useCachedAsync('narrator-index', getNarratorIndex);
+  const domainsRes = useDomains();
   const pageRes = useAsync<BookPage>(() => getPage(urn, page), [urn, page]);
   const searchRes = useAsync<Page<BookSearchMatch>>(
     () =>

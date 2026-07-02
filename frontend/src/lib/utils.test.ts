@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { clamp, formatDeath, joinDots, pageCount, toArabicDigits } from './utils';
+import { clamp, joinDots, pageCount, toArabicDigits } from './utils';
 
 describe('joinDots', () => {
   test('should join non-empty parts with a dot separator', () => {
@@ -8,17 +8,6 @@ describe('joinDots', () => {
   });
   test('should return empty string when all parts are empty', () => {
     expect(joinDots(null, undefined, false)).toBe('');
-  });
-});
-
-describe('formatDeath', () => {
-  test('should format both hijri and gregorian years', () => {
-    expect(formatDeath(150, 767)).toBe('ت 150هـ · 767م');
-  });
-  test('should omit a missing part', () => {
-    expect(formatDeath(null, 767)).toBe('767م');
-    expect(formatDeath(150, null)).toBe('ت 150هـ');
-    expect(formatDeath(null, null)).toBe('');
   });
 });
 

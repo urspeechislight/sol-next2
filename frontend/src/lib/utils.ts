@@ -12,11 +12,6 @@ export function joinDots(...parts: Array<string | number | null | undefined | fa
   return parts.filter(Boolean).join(' · ');
 }
 
-/** Format a death year as "ت {ah}هـ · {ce}م", omitting missing parts. */
-export function formatDeath(ah?: number | null, ce?: number | null): string {
-  return joinDots(ah != null ? `ت ${ah}هـ` : null, ce != null ? `${ce}م` : null);
-}
-
 /** English death-year label for a meta badge, e.g. "d. 326 AH"; empty when the
     year is missing or is the unknown-year sentinel. */
 export function deathLabel(ah?: number | null): string {

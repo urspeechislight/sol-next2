@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { Spinner, Text } from '../../lib/design-system';
-import { getDomains, getWorks } from '../../lib/api/client';
+import { getWorks } from '../../lib/api/client';
 import { PAGE } from '../../lib/constants';
-import type { Domain, Page, Work } from '../../lib/types';
+import type { Page, Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
+import { useDomains } from '../../lib/useDomains';
 import { CorpusOverview } from './CorpusOverview';
 import { FihristRail } from './FihristRail';
 import { WorksPane } from './WorksPane';
@@ -118,7 +119,7 @@ export interface LibraryScreenProps {
     taxonomy, grouped, with a works search) and a results pane that swaps in place
     between the corpus overview and a volume-folded work list. */
 export function LibraryScreen({ onOpenReader }: LibraryScreenProps) {
-  const domains = useAsync<Domain[]>(() => getDomains(), []);
+  const domains = useDomains();
   const list = domains.data ?? [];
   const domainOfCat = useMemo(() => {
     const map = new Map<string, string>();
