@@ -2,14 +2,16 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { Spinner, Text } from '../../lib/design-system';
 import { getWorks } from '../../lib/api/client';
-import { PAGE } from '../../lib/constants';
+import { LIBRARY, PAGE } from '../../lib/constants';
 import type { Page, Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { useDomains } from '../../lib/useDomains';
+import { CategoryPane } from './CategoryPane';
 import { CorpusOverview } from './CorpusOverview';
+import { DomainPane } from './DomainPane';
 import { FihristRail } from './FihristRail';
 import { WorksPane } from './WorksPane';
-import { domainLabel, domainLabelAr, labelArOf, labelOf } from './lib';
+import { domainLabel, labelArOf, labelOf } from './lib';
 import type { TraditionLens } from './lib';
 import '../screens.css';
 import './LibraryScreen.css';
@@ -96,28 +98,50 @@ function useScope(domainOfCat: Map<string, string>) {
   };
 }
 
-function useWorks(cat: string, dom: string, lens: TraditionLens, page: number, filter: string) {
+function useSearchWorks(lens: TraditionLens, page: number, filter: string) {
   return useAsync<Page<Work> | null>(() => {
     const q = filter.trim();
-    if (!q && !cat && !dom) return Promise.resolve(null);
+    if (!q) return Promise.resolve(null);
     return getWorks({
       q,
-      category: q ? '' : cat,
-      domain: q ? '' : dom,
       tradition: lens === 'all' ? '' : lens,
       limit: PER_PAGE,
       offset: (page - 1) * PER_PAGE,
     });
-  }, [cat, dom, lens, page, filter]);
+  }, [lens, page, filter]);
+}
+
+/** Assemble a whole category (paged fetches of PAGE.facetLimit) so the pane can
+    shelve landmarks and group by era. Bounded by LIBRARY.categoryMax; the pane
+    says so when a scope is larger. */
+function useCategoryWorks(cat: string, lens: TraditionLens) {
+  return useAsync<{ items: Work[]; total: number } | null>(async () => {
+    if (!cat) return null;
+    const tradition = lens === 'all' ? '' : lens;
+    const first = await getWorks({ category: cat, tradition, limit: PAGE.facetLimit, offset: 0 });
+    const items = [...first.items];
+    while (items.length < first.total && items.length < LIBRARY.categoryMax) {
+      const next = await getWorks({
+        category: cat,
+        tradition,
+        limit: PAGE.facetLimit,
+        offset: items.length,
+      });
+      if (next.items.length === 0) break;
+      items.push(...next.items);
+    }
+    return { items, total: first.total };
+  }, [cat, lens]);
 }
 
 export interface LibraryScreenProps {
   onOpenReader: (urn: string) => void;
 }
 
-/** The Library as a two-column reading room: a sticky Fihrist rail (the whole
-    taxonomy, grouped, with a works search) and a results pane that swaps in place
-    between the corpus overview and a volume-folded work list. */
+/** The Library as a two-column reading room with progressive depth: the
+    corpus overview (domain cards), a domain as category tiles, a category as
+    a landmarks shelf over era-grouped works, and the rail search as a flat
+    paged result list. Each step narrows; nothing dumps the whole scope. */
 export function LibraryScreen({ onOpenReader }: LibraryScreenProps) {
   const domains = useDomains();
   const list = domains.data ?? [];
@@ -127,7 +151,8 @@ export function LibraryScreen({ onOpenReader }: LibraryScreenProps) {
     return map;
   }, [list]);
   const sc = useScope(domainOfCat);
-  const works = useWorks(sc.cat, sc.dom, sc.lens, sc.page, sc.filter);
+  const search = useSearchWorks(sc.lens, sc.page, sc.filter);
+  const category = useCategoryWorks(sc.cat, sc.lens);
 
   if (domains.loading) {
     return (
@@ -146,21 +171,7 @@ export function LibraryScreen({ onOpenReader }: LibraryScreenProps) {
 
   const searching = sc.filter.trim().length > 0;
   const parentDom = sc.cat ? (domainOfCat.get(sc.cat) ?? '') : sc.dom;
-  const scopeLabel = searching
-    ? `“${sc.filter.trim()}”`
-    : sc.cat
-      ? labelOf(list, sc.cat)
-      : domainLabel(list, sc.dom);
-  const scopeLabelAr = searching
-    ? 'بحث'
-    : sc.cat
-      ? labelArOf(list, sc.cat)
-      : domainLabelAr(list, sc.dom);
-  const breadcrumb = searching
-    ? 'Library / Search'
-    : sc.cat
-      ? `Library / ${domainLabel(list, parentDom)} / ${scopeLabel}`
-      : `Library / ${scopeLabel}`;
+  const activeDomain = sc.dom ? (list.find((d) => d.id === sc.dom) ?? null) : null;
 
   return (
     <section className="library">
@@ -180,20 +191,33 @@ export function LibraryScreen({ onOpenReader }: LibraryScreenProps) {
           onReset={sc.reset}
         />
         <div className="library__pane">
-          {sc.scoped ? (
+          {searching ? (
             <WorksPane
-              breadcrumb={breadcrumb}
-              scopeLabel={scopeLabel}
-              scopeLabelAr={scopeLabelAr}
-              works={works.data ?? null}
-              loading={works.loading}
-              error={works.error}
+              breadcrumb="Library / Search"
+              scopeLabel={`“${sc.filter.trim()}”`}
+              scopeLabelAr="بحث"
+              works={search.data ?? null}
+              loading={search.loading}
+              error={search.error}
               page={sc.page}
               perPage={PER_PAGE}
               labelFor={(slug) => labelOf(list, slug)}
               onPage={sc.setPage}
               onOpen={onOpenReader}
             />
+          ) : sc.cat ? (
+            <CategoryPane
+              breadcrumb={`Library / ${domainLabel(list, parentDom)} / ${labelOf(list, sc.cat)}`}
+              scopeLabel={labelOf(list, sc.cat)}
+              scopeLabelAr={labelArOf(list, sc.cat)}
+              works={category.data?.items ?? null}
+              total={category.data?.total ?? 0}
+              loading={category.loading}
+              error={category.error}
+              onOpen={onOpenReader}
+            />
+          ) : activeDomain ? (
+            <DomainPane domain={activeDomain} lens={sc.lens} onPickCategory={sc.pickCategory} />
           ) : (
             <CorpusOverview domains={list} onPickDomain={sc.pickDomain} />
           )}
