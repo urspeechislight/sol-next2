@@ -62,7 +62,11 @@
   gap: var(--space-xs);
   margin-top: var(--space-2xs);
 }
-.reader-badge {
+/* The volume switcher (.reader-badge-menu, a ds-menu) shares the badge rules
+   by selector so the menu trigger IS the volume badge: one definition, no
+   restated styles. The extra specificity also overrides Menu.css's trigger. */
+.reader-badge,
+.reader-badge-menu .ds-menu__trigger {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2xs);
@@ -76,7 +80,8 @@
   color: var(--color-reader-muted);
   background: var(--color-reader-card);
 }
-.reader-badge .ds-icon {
+.reader-badge .ds-icon,
+.reader-badge-menu .ds-menu__trigger .ds-icon {
   width: 12px;
   height: 12px;
 }
@@ -84,7 +89,8 @@
   color: var(--color-reader-honorific);
   border-color: color-mix(in oklch, var(--color-reader-honorific) 40%, var(--color-reader-rule));
 }
-.reader-badge--vol {
+.reader-badge--vol,
+.reader-badge-menu .ds-menu__trigger {
   color: var(--color-reader-fg);
   background: var(--color-reader-card-active);
   border-color: color-mix(in oklch, var(--color-reader-honorific) 32%, var(--color-reader-rule));

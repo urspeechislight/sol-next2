@@ -13,6 +13,7 @@ import {
 } from '../../lib/design-system';
 import {
   getBook,
+  getBookVolumes,
   getCanonicalEntry,
   getRijalEntry,
   getPage,
@@ -20,10 +21,17 @@ import {
   searchBook,
 } from '../../lib/api/client';
 import { READER } from '../../lib/constants';
+import { useTheme } from '../../lib/useTheme';
 import { hadithBadge, reliabilityBadge } from '../../lib/variants';
-import { annotateText, buildNarratorIndex, canonicalToRecord, rijalToRecord } from '../../lib/narrators';
+import {
+  annotateText,
+  buildNarratorIndex,
+  canonicalToRecord,
+  rijalToRecord,
+} from '../../lib/narrators';
 import type { NarratorIndex } from '../../lib/narrators';
 import type {
+  Book,
   BookPage,
   BookSearchMatch,
   Hadith,
@@ -320,11 +328,21 @@ export interface ReaderScreenProps {
   page: number;
   initialQuery?: string;
   onPage: (page: number) => void;
+  /** Open a sibling volume of the same work (from the masthead's volume menu). */
+  onVolume: (urn: string) => void;
   onBack: () => void;
 }
 
-export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: ReaderScreenProps) {
-  const [readerTheme, setReaderTheme] = useState<ReaderTheme>('classical');
+export function ReaderScreen({
+  urn,
+  page,
+  initialQuery = '',
+  onPage,
+  onVolume,
+  onBack,
+}: ReaderScreenProps) {
+  const { dark } = useTheme();
+  const [readerTheme, setReaderTheme] = useState<ReaderTheme>(dark ? 'dark' : 'classical');
   const [lang, setLang] = useState<ReaderLang>('both');
   const [size, setSize] = useState<number>(READER.SIZE_DEFAULT);
   const [left, setLeft] = useState<LeftDrawer>('contents');
@@ -341,6 +359,7 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
   }, [page]);
 
   const bookRes = useAsync(() => getBook(urn), [urn]);
+  const volumesRes = useAsync<Book[]>(() => getBookVolumes(urn), [urn]);
   const tocRes = useAsync(() => getToc(urn), [urn]);
   const domainsRes = useDomains();
   const pageRes = useAsync<BookPage>(() => getPage(urn, page), [urn, page]);
@@ -424,6 +443,9 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
         categoryLabel={categoryLabel}
         volume={volume}
         death={death}
+        urn={urn}
+        volumes={volumesRes.data}
+        onVolume={onVolume}
         page={page}
         totalPages={totalPages}
         readerTheme={readerTheme}
