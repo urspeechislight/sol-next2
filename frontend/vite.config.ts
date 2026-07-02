@@ -8,6 +8,10 @@ import { API } from './src/lib/routes';
 // linkage. The typed client in src/lib/api fetches relative API paths
 // (mirroring sol-next's vite proxy), so no CORS rules or hardcoded host
 // leak into the app. The prefix itself comes from routes.ts (CENTRAL-006).
+// allowedHosts: Vite 6 rejects non-IP Host headers it does not know
+// (DNS-rebinding protection), which 403'd http://titan:8765 from the laptop.
+// 'titan' is the one documented hostname entry point; IP hosts
+// (10.0.12.10, 127.0.0.1) pass the check by default, so they are not listed.
 const API_TARGET = 'http://localhost:8001';
 
 export default defineConfig({
@@ -15,6 +19,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 8765,
+    allowedHosts: ['titan'],
     proxy: {
       [API.BASE]: { target: API_TARGET, changeOrigin: true },
     },
