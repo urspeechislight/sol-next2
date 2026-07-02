@@ -4,24 +4,12 @@
 
 .rotor {
   position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  background: linear-gradient(170deg, var(--color-surface) 0%, var(--color-surface-sunken) 100%);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-accent-strong) 45%, transparent);
   border-radius: var(--radius-lg);
   padding: var(--space-md) var(--space-lg) var(--space-sm);
   box-shadow: var(--shadow-md);
   margin-bottom: var(--space-lg);
-}
-.rotor__halo {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: radial-gradient(
-    ellipse 70% 90% at 78% 30%,
-    color-mix(in srgb, var(--color-accent-strong) 25%, transparent),
-    transparent 70%
-  );
 }
 
 .rotor__head {

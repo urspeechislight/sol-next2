@@ -2,14 +2,8 @@
    and an event from the chronicles. Today is marked typographically (accent
    numeral + tag), never with a highlight bubble. Tokens only. */
 
-.almanac {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-}
-
 .almanac__card {
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);

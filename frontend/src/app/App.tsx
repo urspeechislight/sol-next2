@@ -40,8 +40,6 @@ interface AppContentProps {
   lib: LibScope;
   runSearch: (next: string, nextScope: SearchScope) => void;
   openReader: (urn: string, page?: number, q?: string) => void;
-  openCategory: (slug: string) => void;
-  openDomain: (id: string) => void;
 }
 
 /** The shell's child: the search overlay when a query is submitted, otherwise the
@@ -54,8 +52,6 @@ function AppContent({
   lib,
   runSearch,
   openReader,
-  openCategory,
-  openDomain,
 }: AppContentProps) {
   if (searching) {
     return (
@@ -64,13 +60,7 @@ function AppContent({
   }
   return (
     <>
-      {view === 'home' ? (
-        <HomeScreen
-          onOpenReader={openReader}
-          onOpenCategory={openCategory}
-          onOpenDomain={openDomain}
-        />
-      ) : null}
+      {view === 'home' ? <HomeScreen onOpenReader={openReader} /> : null}
       {view === 'library' ? (
         <LibraryScreen
           key={`${lib.cat}|${lib.dom}`}
@@ -135,19 +125,6 @@ export function App() {
     setSubmitted('');
     setLib({ cat: '', dom: '' });
   };
-  // The home hero's astrolabe and drawers open the Library pre-scoped.
-  const openCategory = (slug: string) => {
-    setView('library');
-    setQuery('');
-    setSubmitted('');
-    setLib({ cat: slug, dom: '' });
-  };
-  const openDomain = (id: string) => {
-    setView('library');
-    setQuery('');
-    setSubmitted('');
-    setLib({ cat: '', dom: id });
-  };
   // Typing only updates the field; clearing it closes the results. Enter commits.
   const onQuery = (next: string) => {
     setQuery(next);
@@ -181,8 +158,6 @@ export function App() {
         lib={lib}
         runSearch={runSearch}
         openReader={openReader}
-        openCategory={openCategory}
-        openDomain={openDomain}
       />
     </AppShell>
   );

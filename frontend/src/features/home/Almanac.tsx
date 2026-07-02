@@ -7,14 +7,15 @@ export interface AlmanacProps {
   today: HijriToday;
 }
 
-/** The landing page's right rail: today's Hijri date with the month's
-    observances, and an event from the chronicles keyed to the same day. */
+/** The almanac pair for the daily band: the chronicles event keyed to today,
+    then the Hijri calendar with the month's observances. Rendered as a
+    fragment so the band's grid places the two cards as its own cells. */
 export function Almanac({ today }: AlmanacProps) {
   return (
-    <div className="almanac">
-      <HijriCard today={today} />
+    <>
       <HistoryCard today={today} />
-    </div>
+      <HijriCard today={today} />
+    </>
   );
 }
 

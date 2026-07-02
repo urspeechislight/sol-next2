@@ -1,39 +1,16 @@
-/* HomeScreen — two registers: the illuminated frontispiece (glow canvas, hero,
-   astrolabe, drawers) breaking out to the full viewport width, and the day's
-   reading below it as one compact three-panel band. Tokens only. */
+/* HomeScreen — the day's reading over one page-wide glow: a 2x2 band of
+   translucent cards (verse | hadith, then history | calendar). This file owns
+   placement; surfaces and decor come from the design system. */
 
 .home2 {
-  display: flex;
-  flex-direction: column;
-}
-
-/* ---- the illuminated plate: full-bleed breakout from the app container ---- */
-.home2__plate {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
-  margin-inline: calc(50% - 50vw);
-  border-bottom: 1px solid var(--color-accent-tint);
-}
-.home2__domains-error {
-  position: relative;
-  z-index: 1;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 var(--space-2xl) var(--space-xl);
 }
 
-/* The rule between plate sections is the design system's ornament; this
-   wrapper only lifts it above the glow layer. */
-.home2__rule {
-  position: relative;
-  z-index: 1;
-}
-
-/* ---- the day's reading band ---- */
 .home2__daily {
+  position: relative;
+  z-index: 1;
   padding: var(--space-xl) 0 var(--space-3xl);
-  scroll-margin-top: var(--space-lg);
 }
 .home2__daily-head {
   display: flex;
@@ -79,18 +56,14 @@
   color: var(--color-accent);
 }
 
+/* 2x2: verse | hadith on the first row, history | calendar beneath them.
+   Rows stretch, so the pairs stay the same size. */
 .home2__band {
   display: grid;
-  grid-template-columns: 1.1fr 1fr 0.9fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-lg);
-  align-items: start;
 }
 
-@media (max-width: 1080px) {
-  .home2__band {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 @media (max-width: 760px) {
   .home2__band {
     grid-template-columns: 1fr;

@@ -5,9 +5,7 @@
 .vday {
   position: relative;
   padding: var(--space-md) var(--space-lg);
-  background:
-    radial-gradient(ellipse at 50% 0%, var(--color-accent-wash), transparent 70%),
-    var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm), var(--shadow-md);
@@ -71,8 +69,6 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--color-surface);
-  padding: 0 var(--space-xs);
   color: var(--color-accent);
   font-size: var(--text-xs);
   line-height: 1;

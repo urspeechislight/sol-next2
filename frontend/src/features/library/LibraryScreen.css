@@ -1,8 +1,15 @@
-/* The Library: Fihrist catalogue rail. Two columns on warm paper: a sticky
-   domain->category rail and an in-place results pane, split by one hairline.
-   All colour / type / spacing comes from tokens.css. */
+/* The Library: Fihrist catalogue rail. Two columns on warm paper over the
+   page-wide glow: a sticky domain->category rail and an in-place results
+   pane, split by one hairline. All colour / type / spacing comes from
+   tokens.css. */
 
+.library {
+  position: relative;
+  isolation: isolate;
+}
 .library__grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(252px, 312px) minmax(0, 1fr);
   gap: var(--space-xl);
@@ -294,9 +301,7 @@
 .cpane__shelf {
   margin-bottom: var(--space-lg);
   padding: var(--space-md);
-  background:
-    radial-gradient(ellipse at 50% 0%, var(--color-accent-wash), transparent 70%),
-    var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);

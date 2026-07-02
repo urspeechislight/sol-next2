@@ -53,7 +53,6 @@ export function RotationHero({ domain, category, onOpen }: RotationHeroProps) {
 
   return (
     <section className="rotor" aria-label="Primary sources on rotation">
-      <div className="rotor__halo" aria-hidden="true" />
       <header className="rotor__head">
         <Eyebrow>Primary sources · أمهات الكتب</Eyebrow>
         <span className="rotor__index">

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Spinner, Text } from '../../lib/design-system';
+import { PageGlow, Spinner, Text } from '../../lib/design-system';
 import { getWorks } from '../../lib/api/client';
 import { LIBRARY, PAGE } from '../../lib/constants';
 import type { Page, Work } from '../../lib/types';
@@ -192,6 +192,7 @@ export function LibraryScreen({
 
   return (
     <section className="library">
+      <PageGlow />
       <div className="library__grid">
         <FihristRail
           domains={list}
