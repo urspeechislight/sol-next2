@@ -68,8 +68,9 @@ export type BookFacet = Full<S['BookFacet']>;
 export type VolumeFacet = Full<S['VolumeFacet']>;
 export type SearchFacets = Full<S['SearchFacets']>;
 
-// ---- quran (GET /api/quran/{surah}/{ayah}, /quran/search) ----
+// ---- quran (GET /api/quran/{surah}, /quran/{surah}/{ayah}, /quran/search) ----
 export type Ayah = Full<S['Ayah']>;
+export type Surah = Full<S['Surah']>;
 
 // ---- narrator tarjama (DERIVED view-type) ----
 // Reading text carries no narrator IDs, so narrators are joined to the rijāl /

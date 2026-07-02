@@ -15,6 +15,7 @@ import type {
   Page,
   RijalEntry,
   SearchFacets,
+  Surah,
   Toc,
   Work,
 } from '../types';
@@ -165,6 +166,11 @@ export function searchBooks(q: string, params: BookSearchParams = {}): Promise<P
 /** Resolve a surah:ayah reference to its verse text (pointed + bare forms). */
 export function getVerse(surah: number, ayah: number): Promise<Ayah> {
   return get<Ayah>(`${API.QURAN}/${surah}/${ayah}`);
+}
+
+/** Fetch a full surah: every numbered ayah in recitation order. */
+export function getSurah(surah: number): Promise<Surah> {
+  return get<Surah>(`${API.QURAN}/${surah}`);
 }
 
 /** Find Qurʾān verses whose text contains an Arabic term or phrase. */

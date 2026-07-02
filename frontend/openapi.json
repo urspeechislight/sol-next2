@@ -1356,6 +1356,34 @@
         "title": "SearchFacets",
         "type": "object"
       },
+      "Surah": {
+        "description": "One full surah: its numbered ayat in recitation order.\n\nThe dedicated Qur\u02be\u0101n reader consumes whole surahs; the longest (al-Baqara,\n286 ayat) is small enough that the full run ships in one response rather\nthan a paged envelope.",
+        "properties": {
+          "surah": {
+            "description": "Surah number.",
+            "minimum": 1.0,
+            "title": "Surah",
+            "type": "integer"
+          },
+          "verse_count": {
+            "description": "Total ayat in the surah.",
+            "minimum": 1.0,
+            "title": "Verse Count",
+            "type": "integer"
+          },
+          "verses": {
+            "description": "The surah's numbered ayat, in order.",
+            "items": {
+              "$ref": "#/components/schemas/Ayah"
+            },
+            "title": "Verses",
+            "type": "array"
+          }
+        },
+        "required": ["surah", "verse_count", "verses"],
+        "title": "Surah",
+        "type": "object"
+      },
       "Tafsir": {
         "description": "One tafsir excerpt attached to the verse of the day.",
         "properties": {
@@ -2221,6 +2249,47 @@
           }
         },
         "summary": "Find Qur\u02be\u0101n verses containing an Arabic term or phrase.",
+        "tags": ["quran"]
+      }
+    },
+    "/api/quran/{surah}": {
+      "get": {
+        "description": "Resolve a surah number to its full run of numbered ayat, in order.\n\nThe prefatory basmala (key ``0``) is skipped, matching the search index:\nit is not a numbered ayah.",
+        "operationId": "get_surah_api_quran__surah__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "surah",
+            "required": true,
+            "schema": {
+              "title": "Surah",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Surah"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve a full surah to its numbered ayat, in order.",
         "tags": ["quran"]
       }
     },

@@ -215,6 +215,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/quran/{surah}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve a full surah to its numbered ayat, in order.
+         * @description Resolve a surah number to its full run of numbered ayat, in order.
+         *
+         *     The prefatory basmala (key ``0``) is skipped, matching the search index:
+         *     it is not a numbered ayah.
+         */
+        get: operations["get_surah_api_quran__surah__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/quran/{surah}/{ayah}": {
         parameters: {
             query?: never;
@@ -1309,6 +1332,31 @@ export interface components {
             volumes: components["schemas"]["VolumeFacet"][];
         };
         /**
+         * Surah
+         * @description One full surah: its numbered ayat in recitation order.
+         *
+         *     The dedicated Qurʾān reader consumes whole surahs; the longest (al-Baqara,
+         *     286 ayat) is small enough that the full run ships in one response rather
+         *     than a paged envelope.
+         */
+        Surah: {
+            /**
+             * Surah
+             * @description Surah number.
+             */
+            surah: number;
+            /**
+             * Verse Count
+             * @description Total ayat in the surah.
+             */
+            verse_count: number;
+            /**
+             * Verses
+             * @description The surah's numbered ayat, in order.
+             */
+            verses: components["schemas"]["Ayah"][];
+        };
+        /**
          * Tafsir
          * @description One tafsir excerpt attached to the verse of the day.
          */
@@ -1804,6 +1852,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_Ayah_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_surah_api_quran__surah__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                surah: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Surah"];
                 };
             };
             /** @description Validation Error */

@@ -15,7 +15,7 @@ from fastapi import APIRouter, Query
 from backend.api._pagination import PageDep
 from backend.api._routes import as_page, get_route
 from backend.models.pagination import Page
-from backend.models.quran import Ayah
+from backend.models.quran import Ayah, Surah
 from backend.repositories import quran as quran_repo
 
 router = APIRouter(tags=["quran"])
@@ -37,6 +37,14 @@ get_route(
     _search_verses,
     response_model=Page[Ayah],
     summary="Find Qurʾān verses containing an Arabic term or phrase.",
+)
+
+get_route(
+    router,
+    "/quran/{surah}",
+    quran_repo.get_surah,
+    response_model=Surah,
+    summary="Resolve a full surah to its numbered ayat, in order.",
 )
 
 get_route(

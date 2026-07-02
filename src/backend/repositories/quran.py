@@ -17,7 +17,7 @@ from functools import lru_cache
 from typing import Any, cast
 
 from backend.core.errors import ResourceNotFoundError
-from backend.models.quran import Ayah
+from backend.models.quran import Ayah, Surah
 from backend.patterns import WHITESPACE, fold_search, strip_diacritics
 from backend.repositories._data_loader import load_json, slice_page
 
@@ -45,6 +45,26 @@ def get_verse(surah: int, ayah: int) -> Ayah:
     return _make_ayah(
         surah, ayah, chapter_dict["verse_count"], verse_dict["ar"], verse_dict.get("en")
     )
+
+
+def get_surah(surah: int) -> Surah:
+    """Resolve a surah number to its full run of numbered ayat, in order.
+
+    The prefatory basmala (key ``0``) is skipped, matching the search index:
+    it is not a numbered ayah.
+    """
+    chapter = _quran().get(str(surah))
+    if not isinstance(chapter, dict):
+        raise ResourceNotFoundError(kind="surah", identifier=str(surah))
+    chapter_dict = cast(dict[str, Any], chapter)
+    verses = cast(dict[str, Any], chapter_dict["verses"])
+    verse_count = cast(int, chapter_dict["verse_count"])
+    ayat = [
+        _make_ayah(surah, n, verse_count, verses[str(n)]["ar"], verses[str(n)].get("en"))
+        for n in sorted(int(a) for a in verses)
+        if n != 0
+    ]
+    return Surah(surah=surah, verse_count=verse_count, verses=ayat)
 
 
 def _make_ayah(surah: int, ayah: int, verse_count: int, text_ar: str, text_en: str | None) -> Ayah:

@@ -29,7 +29,7 @@ export const ASSETS = {
 // and the parse/serialize pair. Nothing else reads or formats the hash.
 // 'design' is the living styleguide: a valid route (#/design) but intentionally
 // not in the nav bar (NAV in app/shell/nav.ts is the visible subset).
-const NAV_VIEWS = ['home', 'library', 'graph', 'design'] as const;
+const NAV_VIEWS = ['home', 'library', 'quran', 'graph', 'design'] as const;
 export type NavView = (typeof NAV_VIEWS)[number];
 
 const DEFAULT_VIEW: NavView = 'home';

@@ -8,6 +8,7 @@ import { useHashRoute } from '../lib/useHashRoute';
 import { GraphScreen } from '../features/graph/GraphScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { LibraryScreen } from '../features/library/LibraryScreen';
+import { QuranScreen } from '../features/quran/QuranScreen';
 import { ReaderScreen } from '../features/reader/ReaderScreen';
 import { SearchResults } from '../features/search/SearchResults';
 import { DesignSystemScreen } from '../features/design/DesignSystemScreen';
@@ -53,6 +54,7 @@ function AppContent({
     <>
       {view === 'home' ? <HomeScreen onOpenReader={openReader} /> : null}
       {view === 'library' ? <LibraryScreen onOpenReader={(urn) => openReader(urn)} /> : null}
+      {view === 'quran' ? <QuranScreen /> : null}
       {view === 'graph' ? <GraphScreen /> : null}
       {view === 'design' ? <DesignSystemScreen /> : null}
     </>

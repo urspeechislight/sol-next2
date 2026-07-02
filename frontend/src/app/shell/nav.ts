@@ -12,5 +12,6 @@ export interface NavItem {
 export const NAV: NavItem[] = [
   { view: 'home', label: 'Today', icon: 'daily' },
   { view: 'library', label: 'Browse', icon: 'library' },
+  { view: 'quran', label: 'Qurʾān', icon: 'book' },
   { view: 'graph', label: 'Graph', icon: 'graph' },
 ];

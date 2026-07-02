@@ -23,3 +23,16 @@ class Ayah(FrozenModel):
     text_ar: str = Field(description="Verse text with diacritics.")
     text_plain: str = Field(description="Verse text with diacritics stripped.")
     text_en: str | None = Field(default=None, description="English rendering, if available.")
+
+
+class Surah(FrozenModel):
+    """One full surah: its numbered ayat in recitation order.
+
+    The dedicated Qurʾān reader consumes whole surahs; the longest (al-Baqara,
+    286 ayat) is small enough that the full run ships in one response rather
+    than a paged envelope.
+    """
+
+    surah: int = Field(ge=1, description="Surah number.")
+    verse_count: int = Field(ge=1, description="Total ayat in the surah.")
+    verses: list[Ayah] = Field(description="The surah's numbered ayat, in order.")
