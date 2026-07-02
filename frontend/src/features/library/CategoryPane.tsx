@@ -11,6 +11,7 @@ import {
 import type { Work } from '../../lib/types';
 import { deathLabel } from '../../lib/utils';
 import { groupByEra, landmarks } from './lib';
+import { ScopeHead } from './ScopeHead';
 
 export interface CategoryPaneProps {
   breadcrumb: string;
@@ -59,17 +60,11 @@ export function CategoryPane({
 
   return (
     <section className="works cpane">
-      <header className="works__head">
-        <Text size="xs" tone="faint" font="mono" className="works__crumb">
-          {breadcrumb}
-        </Text>
-        <Heading level={2} font="arabic" dir="rtl">
-          {scopeLabelAr}
-        </Heading>
-        <Text as="p" size="sm" tone="muted">
-          {scopeLabel} · {total.toLocaleString()} works
-        </Text>
-      </header>
+      <ScopeHead
+        breadcrumb={breadcrumb}
+        labelAr={scopeLabelAr}
+        line={`${scopeLabel} · ${total.toLocaleString()} works`}
+      />
 
       {shelf.length > 0 ? (
         <div className="cpane__shelf" aria-label="Landmark works">

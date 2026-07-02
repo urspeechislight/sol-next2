@@ -1,7 +1,8 @@
-import { Heading, MetaBadges, Pager, SourceRecord, Spinner, Text } from '../../lib/design-system';
+import { MetaBadges, Pager, SourceRecord, Spinner, Text } from '../../lib/design-system';
 import type { Page, Work } from '../../lib/types';
 import { DataView } from '../../lib/DataView';
 import { deathLabel, pageCount } from '../../lib/utils';
+import { ScopeHead } from './ScopeHead';
 
 interface WorkRecordProps {
   work: Work;
@@ -65,17 +66,11 @@ export function WorksPane({
   const total = works?.total ?? 0;
   return (
     <section className="works">
-      <header className="works__head">
-        <Text size="xs" tone="faint" font="mono" className="works__crumb">
-          {breadcrumb}
-        </Text>
-        <Heading level={2} font="arabic" dir="rtl">
-          {scopeLabelAr}
-        </Heading>
-        <Text as="p" size="sm" tone="muted">
-          {scopeLabel} · {total.toLocaleString()} works
-        </Text>
-      </header>
+      <ScopeHead
+        breadcrumb={breadcrumb}
+        labelAr={scopeLabelAr}
+        line={`${scopeLabel} · ${total.toLocaleString()} works`}
+      />
       <DataView
         result={{ data: works, error, loading }}
         errorText="Could not load works"

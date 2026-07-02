@@ -157,9 +157,6 @@ export function domainLabel(domains: Domain[], id: string): string {
   return domains.find((d) => d.id === id)?.label ?? id;
 }
 
-export function domainLabelAr(domains: Domain[], id: string): string {
-  return domains.find((d) => d.id === id)?.label_ar ?? id;
-}
 
 /** Corpus totals for the rail masthead. */
 export function corpusTotals(domains: Domain[]): {
