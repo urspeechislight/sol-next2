@@ -13,7 +13,7 @@ function DomainCard({ domain, onPick }: DomainCardProps) {
   return (
     <Link
       href={viewHref('library')}
-      className="dom-card"
+      className="ds-card ds-card--p-md ds-card--interactive dom-card"
       ariaLabel={`Browse ${domain.label}, ${count.toLocaleString()} works`}
       onActivate={() => onPick(domain.id)}
     >
