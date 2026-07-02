@@ -1,6 +1,24 @@
-// types.ts:the real sol-next2 :8001 API contract (SSOT). List endpoints return
-// Page<T> {items,total,limit,offset}. Both this app and the design components
-// bind to these shapes — change them here only when the backend changes.
+// types.ts:the sol-next2 :8001 API contract, generated — not hand-mirrored.
+// The wire shapes come from src/lib/api/schema.d.ts, which openapi-typescript
+// generates from frontend/openapi.json (itself exported from the backend by
+// scripts/export_openapi.py). Regenerate both with `pnpm types:gen`; ci fails
+// if they drift from the backend.
+//
+// Full<> restores field presence: pydantic marks defaulted fields as
+// non-required in OpenAPI, but FastAPI responses always serialize every
+// field, so the truthful contract is "always present, possibly null".
+// Page<T> stays hand-written because the schema can only express the
+// monomorphized Page_Book_/Page_Ayah_/... forms of the one generic envelope.
+
+import type { components } from './api/schema';
+
+type S = components['schemas'];
+
+type Full<T> = T extends (infer U)[]
+  ? Full<U>[]
+  : T extends object
+    ? { [K in keyof T]-?: Full<T[K]> }
+    : T;
 
 export interface Page<T> {
   items: T[];
@@ -10,219 +28,48 @@ export interface Page<T> {
 }
 
 // ---- narrator registry (GET /api/rijal, /api/canonical) ----
-
-export interface RijalEntry {
-  id: number;
-  full_name: string;
-  kunya: string;
-  nisba: string;
-  tradition: string;
-  death_year: string; // recorded as free-form text (Hijri)
-  birth_year: string;
-  category: string;
-  teacher_count: number;
-  student_count: number;
-  reliability_term: string;
-  reliability_grade: string;
-  evaluator: string;
-  source_label: string;
-  book_path: string;
-}
-
-export interface CanonicalEntry {
-  canonical_id: number;
-  full_name: string;
-  kunya: string;
-  nisba: string;
-  tradition: string;
-  death_year: number | null;
-  birth_year: number | null;
-  entry_count: number;
-  source_count: number;
-  teacher_count: number;
-  student_count: number;
-  merge_confidence: number | null;
-}
+export type RijalEntry = Full<S['RijalEntry']>;
+export type CanonicalEntry = Full<S['CanonicalEntry']>;
 
 // ---- catalog + taxonomy (GET /api/books, /api/domains) ----
-
-export type CanonicalRank = 'primary' | 'primary_reference' | 'secondary' | 'tertiary';
-
-export interface Book {
-  urn: string;
-  title_ar: string;
-  title_en: string | null;
-  author: string | null;
-  author_ar: string;
-  death_year_ah: number | null;
-  death_year_ce: number | null;
-  page_count: number | null;
-  volume: number | null;
-  category: string;
-  sect: string | null;
-  madhab: string | null;
-  canonical: CanonicalRank | null;
-  language: string;
-  blurb: string | null;
-}
-
-export type Tradition = 'sunni' | 'shia' | 'shared';
-
-export interface Category {
-  slug: string;
-  label: string;
-  label_ar: string;
-  count: number;
-  volume_count: number;
-  tradition: Tradition;
-}
-
-export interface Domain {
-  id: string;
-  label: string;
-  label_ar: string;
-  blurb: string;
-  categories: Category[];
-}
+export type Book = Full<S['Book']>;
+export type Category = Full<S['Category']>;
+export type Domain = Full<S['Domain']>;
+export type CanonicalRank = NonNullable<Book['canonical']>;
+export type Tradition = Category['tradition'];
 
 // ---- works (GET /api/works): the volume-folded Library listing ----
-export interface Work {
-  stem: string;
-  title_ar: string;
-  title_en: string | null;
-  author: string | null;
-  author_ar: string;
-  death_year_ah: number | null;
-  death_year_ce: number | null;
-  page_count: number | null;
-  volume_count: number;
-  category: string;
-  sect: string | null;
-  canonical: CanonicalRank | null;
-  volumes: string[];
-  first_urn: string;
-}
+export type Work = Full<S['Work']>;
 
 // ---- reader (GET /api/books/{urn}/toc, /pages/{n}) ----
-
-export type HadithGrade = 'sahih' | 'hasan' | 'daif' | 'mawdu';
-
-export interface TocEntry {
-  page: number;
-  title: string;
-  title_en: string | null;
-  active: boolean;
-}
-
-export interface Toc {
-  book_urn: string;
-  entries: TocEntry[];
-}
-
-export interface Narrator {
-  name: string;
-  name_ar: string;
-  role: string;
-  grade: string;
-  d: number | null;
-}
-
-export interface CrossRef {
-  book: string;
-  book_ar: string;
-  chapter: string;
-  page: number | null;
-}
-
-export interface Hadith {
-  n: number;
-  isnad_ar: string;
-  matn_ar: string;
-  matn_en: string | null;
-  narrators: Narrator[];
-  grade: HadithGrade | null;
-  cross_refs: CrossRef[];
-}
-
-export interface BookPage {
-  page_number: number;
-  total_pages: number;
-  chapter_title: string;
-  chapter_title_en: string | null;
-  section_title: string;
-  section_title_en: string | null;
-  hadiths: Hadith[];
-  /** Raw page text, set when the page has no parsed hadiths yet. */
-  text_ar: string | null;
-  /** English translation of the raw page text, paired with text_ar. Null until
-      the pipeline emits one; the reader shows a labelled preview in that case. */
-  text_en: string | null;
-}
+export type TocEntry = Full<S['TocEntry']>;
+export type Toc = Full<S['Toc']>;
+export type Narrator = Full<S['Narrator']>;
+export type CrossRef = Full<S['CrossRef']>;
+export type Hadith = Full<S['Hadith']>;
+export type BookPage = Full<S['BookPage']>;
+export type HadithGrade = NonNullable<Hadith['grade']>;
 
 // ---- daily editorial (GET /api/daily) ----
+export type DailyDate = Full<S['DailyDate']>;
+export type Tafsir = Full<S['Tafsir']>;
+export type Verse = Full<S['Verse']>;
+export type HadithSource = Full<S['HadithSource']>;
+export type DailyHadith = Full<S['DailyHadith']>;
+export type OpenTo = Full<S['OpenTo']>;
+export type DailyBookPick = Full<S['DailyBookPick']>;
+export type Daily = Full<S['Daily']>;
 
-export interface DailyDate {
-  hijri: string;
-  hijri_short: string;
-  gregorian: string;
-}
+// ---- search (GET /api/search, /search/facets, /books/{urn}/search) ----
+export type BookSearchMatch = Full<S['BookSearchMatch']>;
+export type CorpusMatch = Full<S['CorpusMatch']>;
+export type CategoryFacet = Full<S['CategoryFacet']>;
+export type BookFacet = Full<S['BookFacet']>;
+export type VolumeFacet = Full<S['VolumeFacet']>;
+export type SearchFacets = Full<S['SearchFacets']>;
 
-export interface Tafsir {
-  book: string;
-  book_ar: string;
-  author: string;
-  urn: string;
-  excerpt_en: string;
-  excerpt_ar: string;
-}
-
-export interface Verse {
-  surah: string;
-  surah_ar: string;
-  surah_n: number;
-  ayah_n: number;
-  ayah_ar: string;
-  ayah_en: string;
-  tafsirs: Tafsir[];
-}
-
-export interface HadithSource {
-  book: string;
-  book_ar: string;
-  n: string;
-  urn: string | null;
-  sect: string;
-}
-
-export interface DailyHadith {
-  matn_ar: string;
-  matn_en: string;
-  isnad_ar: string;
-  source: HadithSource;
-  parallels: HadithSource[];
-  grade: HadithGrade;
-  grade_label: string;
-  note: string;
-}
-
-export interface OpenTo {
-  page: number;
-  chapter_en: string;
-}
-
-export interface DailyBookPick {
-  urn: string;
-  rationale: string;
-  open_to: OpenTo;
-}
-
-export interface Daily {
-  date: DailyDate;
-  verse: Verse;
-  hadith: DailyHadith;
-  book: DailyBookPick;
-  rotation: string[];
-}
+// ---- quran (GET /api/quran/{surah}/{ayah}, /quran/search) ----
+export type Ayah = Full<S['Ayah']>;
 
 // ---- narrator tarjama (DERIVED view-type) ----
 // Reading text carries no narrator IDs, so narrators are joined to the rijāl /
@@ -262,55 +109,4 @@ export interface ShareResponse {
   caption: string;
   qr: boolean[][];
   image_url: string | null;
-}
-
-// GET /api/books/{urn}/search
-export interface BookSearchMatch {
-  page: number;
-  snippet: string;
-}
-
-// GET /api/search (cross-corpus full-text)
-export interface CorpusMatch {
-  urn: string;
-  title_ar: string;
-  title_en: string | null;
-  author: string | null;
-  category: string;
-  volume: number | null;
-  page: number;
-  snippet: string;
-}
-
-// GET /api/search/facets — drill-down: category -> book -> volume
-export interface CategoryFacet {
-  slug: string;
-  count: number;
-}
-
-export interface BookFacet {
-  title: string;
-  title_en: string | null;
-  count: number;
-}
-
-export interface VolumeFacet {
-  volume: number;
-  count: number;
-}
-
-export interface SearchFacets {
-  categories: CategoryFacet[];
-  books: BookFacet[];
-  volumes: VolumeFacet[];
-}
-
-// GET /api/quran/{surah}/{ayah} — one verse, pointed + bare forms
-export interface Ayah {
-  surah: number;
-  ayah: number;
-  verse_count: number;
-  text_ar: string;
-  text_plain: string;
-  text_en: string | null;
 }

@@ -1,0 +1,2897 @@
+{
+  "components": {
+    "schemas": {
+      "Ayah": {
+        "description": "One Qur\u02be\u0101n verse, resolved from a surah:ayah reference.\n\n``text_ar`` carries the diacritized recitation text; ``text_plain`` is the\nsame verse with vowel marks stripped, so a reader sees both the pointed and\nthe bare forms that corpus quotations may use. The diacritic-insensitive\nmatching against book content is handled by the search FTS tokenizer, so\neither form locates the same passages.",
+        "properties": {
+          "ayah": {
+            "description": "Ayah number within the surah.",
+            "minimum": 1.0,
+            "title": "Ayah",
+            "type": "integer"
+          },
+          "surah": {
+            "description": "Surah number.",
+            "minimum": 1.0,
+            "title": "Surah",
+            "type": "integer"
+          },
+          "text_ar": {
+            "description": "Verse text with diacritics.",
+            "title": "Text Ar",
+            "type": "string"
+          },
+          "text_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "English rendering, if available.",
+            "title": "Text En"
+          },
+          "text_plain": {
+            "description": "Verse text with diacritics stripped.",
+            "title": "Text Plain",
+            "type": "string"
+          },
+          "verse_count": {
+            "description": "Total ayat in the surah.",
+            "minimum": 1.0,
+            "title": "Verse Count",
+            "type": "integer"
+          }
+        },
+        "required": ["surah", "ayah", "verse_count", "text_ar", "text_plain"],
+        "title": "Ayah",
+        "type": "object"
+      },
+      "Book": {
+        "description": "One book record (a single physical volume) exposed by the screens.",
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Author in romanized form.",
+            "title": "Author"
+          },
+          "author_ar": {
+            "description": "Author in Arabic.",
+            "title": "Author Ar",
+            "type": "string"
+          },
+          "blurb": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "One-sentence editorial summary, if any.",
+            "title": "Blurb"
+          },
+          "canonical": {
+            "anyOf": [
+              {
+                "enum": ["primary", "primary_reference", "secondary", "tertiary"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Editorial rank, or None.",
+            "title": "Canonical"
+          },
+          "category": {
+            "description": "Category slug (matches Domain.categories[].slug).",
+            "title": "Category",
+            "type": "string"
+          },
+          "death_year_ah": {
+            "anyOf": [
+              {
+                "maximum": 1500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Author's death year, Hijri (unknown is None, never a sentinel).",
+            "title": "Death Year Ah"
+          },
+          "death_year_ce": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Author's death year, CE.",
+            "title": "Death Year Ce"
+          },
+          "language": {
+            "default": "Arabic",
+            "description": "Primary language of the text.",
+            "title": "Language",
+            "type": "string"
+          },
+          "madhab": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Madhab when applicable.",
+            "title": "Madhab"
+          },
+          "page_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page count, if known.",
+            "title": "Page Count"
+          },
+          "sect": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sect tagging (Imami, Sunni, etc.).",
+            "title": "Sect"
+          },
+          "title_ar": {
+            "description": "Arabic title.",
+            "title": "Title Ar",
+            "type": "string"
+          },
+          "title_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "English title, if available.",
+            "title": "Title En"
+          },
+          "urn": {
+            "description": "Opaque URN identifying the book across screens.",
+            "title": "Urn",
+            "type": "string"
+          },
+          "volume": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Volume number, if multi-volume.",
+            "title": "Volume"
+          }
+        },
+        "required": ["title_ar", "author_ar", "category", "urn"],
+        "title": "Book",
+        "type": "object"
+      },
+      "BookFacet": {
+        "description": "How many matches a book (work, by title) holds, for the book filter.",
+        "properties": {
+          "count": {
+            "description": "Matching pages in this book across its volumes.",
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Arabic book title (groups a work's volumes); the filter key.",
+            "title": "Title",
+            "type": "string"
+          },
+          "title_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "English book title, for display.",
+            "title": "Title En"
+          }
+        },
+        "required": ["title", "count"],
+        "title": "BookFacet",
+        "type": "object"
+      },
+      "BookPage": {
+        "description": "One book page: parsed hadiths, or raw page text when none are parsed yet.",
+        "properties": {
+          "chapter_title": {
+            "title": "Chapter Title",
+            "type": "string"
+          },
+          "chapter_title_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter Title En"
+          },
+          "hadiths": {
+            "items": {
+              "$ref": "#/components/schemas/Hadith"
+            },
+            "title": "Hadiths",
+            "type": "array"
+          },
+          "page_number": {
+            "minimum": 1.0,
+            "title": "Page Number",
+            "type": "integer"
+          },
+          "section_title": {
+            "title": "Section Title",
+            "type": "string"
+          },
+          "section_title_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Title En"
+          },
+          "text_ar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Raw page text in Arabic, present when the pipeline has not parsed the page into structured hadiths. Mutually exclusive with a populated hadiths list; never both.",
+            "title": "Text Ar"
+          },
+          "text_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "English translation of the raw page text, paired with text_ar. None until the pipeline emits a translation for the page; the reader shows a labelled preview in that case and this real text the moment it arrives.",
+            "title": "Text En"
+          },
+          "total_pages": {
+            "minimum": 1.0,
+            "title": "Total Pages",
+            "type": "integer"
+          }
+        },
+        "required": ["page_number", "total_pages", "chapter_title", "section_title", "hadiths"],
+        "title": "BookPage",
+        "type": "object"
+      },
+      "BookSearchMatch": {
+        "description": "One in-book search hit: the page and a short Arabic excerpt.",
+        "properties": {
+          "page": {
+            "description": "Page the match occurs on.",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "snippet": {
+            "description": "Excerpt of the matching unit (Arabic).",
+            "title": "Snippet",
+            "type": "string"
+          }
+        },
+        "required": ["page", "snippet"],
+        "title": "BookSearchMatch",
+        "type": "object"
+      },
+      "CanonicalEntry": {
+        "description": "A canonicalized person, merging one identity across sources.",
+        "properties": {
+          "birth_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Birth year, Hijri, when known.",
+            "title": "Birth Year"
+          },
+          "canonical_id": {
+            "description": "Stable canonical identity id + detail-route key.",
+            "minimum": 0.0,
+            "title": "Canonical Id",
+            "type": "integer"
+          },
+          "death_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Death year, Hijri, when known.",
+            "title": "Death Year"
+          },
+          "entry_count": {
+            "description": "Raw corpus entries merged into this identity.",
+            "minimum": 0.0,
+            "title": "Entry Count",
+            "type": "integer"
+          },
+          "full_name": {
+            "description": "Full name in Arabic.",
+            "title": "Full Name",
+            "type": "string"
+          },
+          "kunya": {
+            "default": "",
+            "description": "Teknonym, if recorded.",
+            "title": "Kunya",
+            "type": "string"
+          },
+          "merge_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Merge confidence in 0..1, or null when unscored.",
+            "title": "Merge Confidence"
+          },
+          "nisba": {
+            "default": "",
+            "description": "Attributive name, if recorded.",
+            "title": "Nisba",
+            "type": "string"
+          },
+          "source_count": {
+            "description": "Distinct source works contributing entries.",
+            "minimum": 0.0,
+            "title": "Source Count",
+            "type": "integer"
+          },
+          "student_count": {
+            "description": "Union of recorded students across entries.",
+            "minimum": 0.0,
+            "title": "Student Count",
+            "type": "integer"
+          },
+          "teacher_count": {
+            "description": "Union of recorded teachers across entries.",
+            "minimum": 0.0,
+            "title": "Teacher Count",
+            "type": "integer"
+          },
+          "tradition": {
+            "default": "",
+            "description": "Sunni / shia / both, when classified.",
+            "title": "Tradition",
+            "type": "string"
+          }
+        },
+        "required": [
+          "canonical_id",
+          "full_name",
+          "entry_count",
+          "source_count",
+          "teacher_count",
+          "student_count"
+        ],
+        "title": "CanonicalEntry",
+        "type": "object"
+      },
+      "Category": {
+        "description": "One category leaf under a domain in the IA taxonomy.",
+        "properties": {
+          "count": {
+            "default": 0,
+            "description": "Folded works in this category.",
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "label": {
+            "description": "English label.",
+            "title": "Label",
+            "type": "string"
+          },
+          "label_ar": {
+            "description": "Arabic label.",
+            "title": "Label Ar",
+            "type": "string"
+          },
+          "slug": {
+            "description": "URL-safe identifier, e.g. 'shia-hadith-fiqh'.",
+            "title": "Slug",
+            "type": "string"
+          },
+          "tradition": {
+            "default": "shared",
+            "description": "Sunni, Shia, or shared/neutral.",
+            "enum": ["sunni", "shia", "shared"],
+            "title": "Tradition",
+            "type": "string"
+          },
+          "volume_count": {
+            "default": 0,
+            "description": "Physical volumes in this category.",
+            "minimum": 0.0,
+            "title": "Volume Count",
+            "type": "integer"
+          }
+        },
+        "required": ["slug", "label", "label_ar"],
+        "title": "Category",
+        "type": "object"
+      },
+      "CategoryFacet": {
+        "description": "How many matches a category holds, for the category filter.",
+        "properties": {
+          "count": {
+            "description": "Matching pages in this category.",
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "slug": {
+            "description": "Category slug (resolve label via the domain taxonomy).",
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": ["slug", "count"],
+        "title": "CategoryFacet",
+        "type": "object"
+      },
+      "CorpusMatch": {
+        "description": "One full-text hit: the book it occurs in, the page, and an excerpt.",
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Romanized author of the book, if known.",
+            "title": "Author"
+          },
+          "category": {
+            "default": "",
+            "description": "Category slug; resolve via domain taxonomy.",
+            "title": "Category",
+            "type": "string"
+          },
+          "page": {
+            "description": "Page the match occurs on.",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "snippet": {
+            "description": "Excerpt of the matching page, Arabic.",
+            "title": "Snippet",
+            "type": "string"
+          },
+          "title_ar": {
+            "description": "Arabic title of the book.",
+            "title": "Title Ar",
+            "type": "string"
+          },
+          "title_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "English title, if available.",
+            "title": "Title En"
+          },
+          "urn": {
+            "description": "URN of the matching book (opens in the reader).",
+            "title": "Urn",
+            "type": "string"
+          },
+          "volume": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Volume number, if known.",
+            "title": "Volume"
+          }
+        },
+        "required": ["urn", "title_ar", "page", "snippet"],
+        "title": "CorpusMatch",
+        "type": "object"
+      },
+      "CrossRef": {
+        "description": "Pointer to a parallel narration in another collection.",
+        "properties": {
+          "book": {
+            "description": "Source book (English transliteration).",
+            "title": "Book",
+            "type": "string"
+          },
+          "book_ar": {
+            "description": "Source book (Arabic).",
+            "title": "Book Ar",
+            "type": "string"
+          },
+          "chapter": {
+            "description": "Chapter or volume reference.",
+            "title": "Chapter",
+            "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page number in the source book.",
+            "title": "Page"
+          }
+        },
+        "required": ["book", "book_ar", "chapter"],
+        "title": "CrossRef",
+        "type": "object"
+      },
+      "Daily": {
+        "description": "Top-level Daily payload.",
+        "properties": {
+          "book": {
+            "$ref": "#/components/schemas/DailyBookPick"
+          },
+          "date": {
+            "$ref": "#/components/schemas/DailyDate"
+          },
+          "hadith": {
+            "$ref": "#/components/schemas/DailyHadith"
+          },
+          "rotation": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rotation",
+            "type": "array"
+          },
+          "verse": {
+            "$ref": "#/components/schemas/Verse"
+          }
+        },
+        "required": ["date", "verse", "hadith", "book", "rotation"],
+        "title": "Daily",
+        "type": "object"
+      },
+      "DailyBookPick": {
+        "description": "The 'book of the day' pick.",
+        "properties": {
+          "open_to": {
+            "$ref": "#/components/schemas/OpenTo"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "urn": {
+            "title": "Urn",
+            "type": "string"
+          }
+        },
+        "required": ["urn", "rationale", "open_to"],
+        "title": "DailyBookPick",
+        "type": "object"
+      },
+      "DailyDate": {
+        "description": "Date display values for the editorial header.",
+        "properties": {
+          "gregorian": {
+            "title": "Gregorian",
+            "type": "string"
+          },
+          "hijri": {
+            "title": "Hijri",
+            "type": "string"
+          },
+          "hijri_short": {
+            "title": "Hijri Short",
+            "type": "string"
+          }
+        },
+        "required": ["hijri", "hijri_short", "gregorian"],
+        "title": "DailyDate",
+        "type": "object"
+      },
+      "DailyHadith": {
+        "description": "Hadith of the day with source + parallels + grade.",
+        "properties": {
+          "grade": {
+            "enum": ["sahih", "hasan", "daif", "mawdu"],
+            "title": "Grade",
+            "type": "string"
+          },
+          "grade_label": {
+            "title": "Grade Label",
+            "type": "string"
+          },
+          "isnad_ar": {
+            "title": "Isnad Ar",
+            "type": "string"
+          },
+          "matn_ar": {
+            "title": "Matn Ar",
+            "type": "string"
+          },
+          "matn_en": {
+            "title": "Matn En",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "parallels": {
+            "items": {
+              "$ref": "#/components/schemas/HadithParallel"
+            },
+            "title": "Parallels",
+            "type": "array"
+          },
+          "source": {
+            "$ref": "#/components/schemas/HadithSource"
+          }
+        },
+        "required": [
+          "matn_ar",
+          "matn_en",
+          "isnad_ar",
+          "source",
+          "parallels",
+          "grade",
+          "grade_label",
+          "note"
+        ],
+        "title": "DailyHadith",
+        "type": "object"
+      },
+      "Domain": {
+        "description": "One top-level domain of knowledge (e.g. Hadith, Fiqh, Theology).",
+        "properties": {
+          "blurb": {
+            "description": "One-sentence editorial summary of the domain.",
+            "title": "Blurb",
+            "type": "string"
+          },
+          "categories": {
+            "description": "Categories grouped under this domain.",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "id": {
+            "description": "Domain id, e.g. 'hadith'.",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "description": "English label.",
+            "title": "Label",
+            "type": "string"
+          },
+          "label_ar": {
+            "description": "Arabic label.",
+            "title": "Label Ar",
+            "type": "string"
+          }
+        },
+        "required": ["id", "label", "label_ar", "blurb", "categories"],
+        "title": "Domain",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Hadith": {
+        "description": "One hadith record: isnad + matn + narrators + cross-references.",
+        "properties": {
+          "cross_refs": {
+            "description": "Parallel narrations.",
+            "items": {
+              "$ref": "#/components/schemas/CrossRef"
+            },
+            "title": "Cross Refs",
+            "type": "array"
+          },
+          "grade": {
+            "anyOf": [
+              {
+                "enum": ["sahih", "hasan", "daif", "mawdu"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Authenticity grade. None when the page is raw corpus text that the pipeline has not yet graded; the UI hides the grade pill in that case.",
+            "title": "Grade"
+          },
+          "isnad_ar": {
+            "description": "Chain of transmission in Arabic.",
+            "title": "Isnad Ar",
+            "type": "string"
+          },
+          "matn_ar": {
+            "description": "Body of the hadith in Arabic.",
+            "title": "Matn Ar",
+            "type": "string"
+          },
+          "matn_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "English translation of the matn.",
+            "title": "Matn En"
+          },
+          "n": {
+            "description": "Sequence number on the page.",
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "narrators": {
+            "description": "Narrators in the chain.",
+            "items": {
+              "$ref": "#/components/schemas/Narrator"
+            },
+            "title": "Narrators",
+            "type": "array"
+          }
+        },
+        "required": ["n", "isnad_ar", "matn_ar", "narrators"],
+        "title": "Hadith",
+        "type": "object"
+      },
+      "HadithParallel": {
+        "description": "A parallel narration in another collection.",
+        "properties": {
+          "book": {
+            "title": "Book",
+            "type": "string"
+          },
+          "book_ar": {
+            "title": "Book Ar",
+            "type": "string"
+          },
+          "n": {
+            "description": "Report number within the source (often non-integer like '1/34/h.1').",
+            "title": "N",
+            "type": "string"
+          },
+          "sect": {
+            "title": "Sect",
+            "type": "string"
+          },
+          "urn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urn"
+          }
+        },
+        "required": ["book", "book_ar", "n", "sect"],
+        "title": "HadithParallel",
+        "type": "object"
+      },
+      "HadithSource": {
+        "description": "The originating book of a hadith of the day.",
+        "properties": {
+          "book": {
+            "title": "Book",
+            "type": "string"
+          },
+          "book_ar": {
+            "title": "Book Ar",
+            "type": "string"
+          },
+          "n": {
+            "description": "Report number within the source (often non-integer like '1/34/h.1').",
+            "title": "N",
+            "type": "string"
+          },
+          "sect": {
+            "title": "Sect",
+            "type": "string"
+          },
+          "urn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urn"
+          }
+        },
+        "required": ["book", "book_ar", "n", "sect"],
+        "title": "HadithSource",
+        "type": "object"
+      },
+      "Narrator": {
+        "description": "One narrator in an isnad.",
+        "properties": {
+          "d": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Death year, Hijri.",
+            "title": "D"
+          },
+          "grade": {
+            "description": "Biographical evaluation (Trustworthy, Reliable, ...).",
+            "title": "Grade",
+            "type": "string"
+          },
+          "name": {
+            "description": "Name in romanized form.",
+            "title": "Name",
+            "type": "string"
+          },
+          "name_ar": {
+            "description": "Name in Arabic.",
+            "title": "Name Ar",
+            "type": "string"
+          },
+          "role": {
+            "description": "Role / position in the chain (companion, transmitter, ...).",
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": ["name", "name_ar", "role", "grade"],
+        "title": "Narrator",
+        "type": "object"
+      },
+      "OpenTo": {
+        "description": "Where to open the recommended book.",
+        "properties": {
+          "chapter_en": {
+            "title": "Chapter En",
+            "type": "string"
+          },
+          "page": {
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          }
+        },
+        "required": ["page", "chapter_en"],
+        "title": "OpenTo",
+        "type": "object"
+      },
+      "Page_Ayah_": {
+        "properties": {
+          "items": {
+            "description": "Records in this slice.",
+            "items": {
+              "$ref": "#/components/schemas/Ayah"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Slice size requested.",
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Number of records skipped before this slice.",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total records matching the query, across all pages.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "limit", "offset"],
+        "title": "Page[Ayah]",
+        "type": "object"
+      },
+      "Page_BookSearchMatch_": {
+        "properties": {
+          "items": {
+            "description": "Records in this slice.",
+            "items": {
+              "$ref": "#/components/schemas/BookSearchMatch"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Slice size requested.",
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Number of records skipped before this slice.",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total records matching the query, across all pages.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "limit", "offset"],
+        "title": "Page[BookSearchMatch]",
+        "type": "object"
+      },
+      "Page_Book_": {
+        "properties": {
+          "items": {
+            "description": "Records in this slice.",
+            "items": {
+              "$ref": "#/components/schemas/Book"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Slice size requested.",
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Number of records skipped before this slice.",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total records matching the query, across all pages.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "limit", "offset"],
+        "title": "Page[Book]",
+        "type": "object"
+      },
+      "Page_CanonicalEntry_": {
+        "properties": {
+          "items": {
+            "description": "Records in this slice.",
+            "items": {
+              "$ref": "#/components/schemas/CanonicalEntry"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Slice size requested.",
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Number of records skipped before this slice.",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total records matching the query, across all pages.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "limit", "offset"],
+        "title": "Page[CanonicalEntry]",
+        "type": "object"
+      },
+      "Page_CorpusMatch_": {
+        "properties": {
+          "items": {
+            "description": "Records in this slice.",
+            "items": {
+              "$ref": "#/components/schemas/CorpusMatch"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Slice size requested.",
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Number of records skipped before this slice.",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total records matching the query, across all pages.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "limit", "offset"],
+        "title": "Page[CorpusMatch]",
+        "type": "object"
+      },
+      "Page_RijalEntry_": {
+        "properties": {
+          "items": {
+            "description": "Records in this slice.",
+            "items": {
+              "$ref": "#/components/schemas/RijalEntry"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Slice size requested.",
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Number of records skipped before this slice.",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total records matching the query, across all pages.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "limit", "offset"],
+        "title": "Page[RijalEntry]",
+        "type": "object"
+      },
+      "Page_Work_": {
+        "properties": {
+          "items": {
+            "description": "Records in this slice.",
+            "items": {
+              "$ref": "#/components/schemas/Work"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Slice size requested.",
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Number of records skipped before this slice.",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total records matching the query, across all pages.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "limit", "offset"],
+        "title": "Page[Work]",
+        "type": "object"
+      },
+      "RijalEntry": {
+        "description": "One narrator in the rijal registry (reliability-graded).",
+        "properties": {
+          "birth_year": {
+            "default": "",
+            "description": "Birth year as recorded (Hijri, free-form).",
+            "title": "Birth Year",
+            "type": "string"
+          },
+          "book_path": {
+            "default": "",
+            "description": "Relative path of the source corpus file.",
+            "title": "Book Path",
+            "type": "string"
+          },
+          "category": {
+            "default": "clean",
+            "description": "Data-quality class (clean, editorial).",
+            "title": "Category",
+            "type": "string"
+          },
+          "death_year": {
+            "default": "",
+            "description": "Death year as recorded (Hijri, free-form).",
+            "title": "Death Year",
+            "type": "string"
+          },
+          "evaluator": {
+            "default": "",
+            "description": "Critic who issued the reliability term.",
+            "title": "Evaluator",
+            "type": "string"
+          },
+          "full_name": {
+            "description": "Full name in Arabic.",
+            "title": "Full Name",
+            "type": "string"
+          },
+          "id": {
+            "description": "Stable corpus index, also the detail-route key.",
+            "minimum": 0.0,
+            "title": "Id",
+            "type": "integer"
+          },
+          "kunya": {
+            "default": "",
+            "description": "Teknonym (Abu/Umm ...), if recorded.",
+            "title": "Kunya",
+            "type": "string"
+          },
+          "nisba": {
+            "default": "",
+            "description": "Attributive name (tribe/place), if recorded.",
+            "title": "Nisba",
+            "type": "string"
+          },
+          "reliability_grade": {
+            "default": "",
+            "description": "Numeric reliability grade, as text.",
+            "title": "Reliability Grade",
+            "type": "string"
+          },
+          "reliability_term": {
+            "default": "",
+            "description": "Primary reliability term (thiqa, ...).",
+            "title": "Reliability Term",
+            "type": "string"
+          },
+          "source_label": {
+            "default": "",
+            "description": "Human label of the source work + volume.",
+            "title": "Source Label",
+            "type": "string"
+          },
+          "student_count": {
+            "description": "Number of recorded students.",
+            "minimum": 0.0,
+            "title": "Student Count",
+            "type": "integer"
+          },
+          "teacher_count": {
+            "description": "Number of recorded teachers.",
+            "minimum": 0.0,
+            "title": "Teacher Count",
+            "type": "integer"
+          },
+          "tradition": {
+            "default": "",
+            "description": "Sunni / shia / both, when classified.",
+            "title": "Tradition",
+            "type": "string"
+          }
+        },
+        "required": ["id", "full_name", "teacher_count", "student_count"],
+        "title": "RijalEntry",
+        "type": "object"
+      },
+      "SearchFacets": {
+        "description": "Drill-down filters for the current query: categories, then books within\nthe chosen category, then volumes within the chosen book.",
+        "properties": {
+          "books": {
+            "description": "Books in the chosen category, by count desc.",
+            "items": {
+              "$ref": "#/components/schemas/BookFacet"
+            },
+            "title": "Books",
+            "type": "array"
+          },
+          "categories": {
+            "description": "Categories with matches, by count desc.",
+            "items": {
+              "$ref": "#/components/schemas/CategoryFacet"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "volumes": {
+            "description": "Volumes in the chosen book, ascending.",
+            "items": {
+              "$ref": "#/components/schemas/VolumeFacet"
+            },
+            "title": "Volumes",
+            "type": "array"
+          }
+        },
+        "required": ["categories", "books", "volumes"],
+        "title": "SearchFacets",
+        "type": "object"
+      },
+      "Tafsir": {
+        "description": "One tafsir excerpt attached to the verse of the day.",
+        "properties": {
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
+          "book": {
+            "title": "Book",
+            "type": "string"
+          },
+          "book_ar": {
+            "title": "Book Ar",
+            "type": "string"
+          },
+          "excerpt_ar": {
+            "title": "Excerpt Ar",
+            "type": "string"
+          },
+          "excerpt_en": {
+            "title": "Excerpt En",
+            "type": "string"
+          },
+          "urn": {
+            "title": "Urn",
+            "type": "string"
+          }
+        },
+        "required": ["book", "book_ar", "author", "urn", "excerpt_en", "excerpt_ar"],
+        "title": "Tafsir",
+        "type": "object"
+      },
+      "Toc": {
+        "description": "The full table of contents for one book.",
+        "properties": {
+          "book_urn": {
+            "description": "URN of the book this TOC belongs to.",
+            "title": "Book Urn",
+            "type": "string"
+          },
+          "entries": {
+            "description": "Ordered TOC rows.",
+            "items": {
+              "$ref": "#/components/schemas/TocEntry"
+            },
+            "title": "Entries",
+            "type": "array"
+          }
+        },
+        "required": ["book_urn", "entries"],
+        "title": "Toc",
+        "type": "object"
+      },
+      "TocEntry": {
+        "description": "One row in a book's table of contents.",
+        "properties": {
+          "active": {
+            "default": false,
+            "description": "Whether this is the section currently being read.",
+            "title": "Active",
+            "type": "boolean"
+          },
+          "page": {
+            "description": "Page number where this section begins.",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Arabic section title.",
+            "title": "Title",
+            "type": "string"
+          },
+          "title_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "English section title, if translated.",
+            "title": "Title En"
+          }
+        },
+        "required": ["page", "title"],
+        "title": "TocEntry",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "Verse": {
+        "description": "Verse of the day with one or more tafsir excerpts.",
+        "properties": {
+          "ayah_ar": {
+            "title": "Ayah Ar",
+            "type": "string"
+          },
+          "ayah_en": {
+            "title": "Ayah En",
+            "type": "string"
+          },
+          "ayah_n": {
+            "minimum": 1.0,
+            "title": "Ayah N",
+            "type": "integer"
+          },
+          "surah": {
+            "title": "Surah",
+            "type": "string"
+          },
+          "surah_ar": {
+            "title": "Surah Ar",
+            "type": "string"
+          },
+          "surah_n": {
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Surah N",
+            "type": "integer"
+          },
+          "tafsirs": {
+            "items": {
+              "$ref": "#/components/schemas/Tafsir"
+            },
+            "title": "Tafsirs",
+            "type": "array"
+          }
+        },
+        "required": ["surah", "surah_ar", "surah_n", "ayah_n", "ayah_ar", "ayah_en", "tafsirs"],
+        "title": "Verse",
+        "type": "object"
+      },
+      "VolumeFacet": {
+        "description": "How many matches a volume number holds, for the volume filter.",
+        "properties": {
+          "count": {
+            "description": "Matching pages in this volume.",
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "volume": {
+            "description": "Volume number present in the results.",
+            "minimum": 1.0,
+            "title": "Volume",
+            "type": "integer"
+          }
+        },
+        "required": ["volume", "count"],
+        "title": "VolumeFacet",
+        "type": "object"
+      },
+      "Work": {
+        "description": "One work, folded across the volumes that share its URN stem. ``page_count``\nis summed across the folded volumes.",
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Author in romanized form.",
+            "title": "Author"
+          },
+          "author_ar": {
+            "description": "Author in Arabic.",
+            "title": "Author Ar",
+            "type": "string"
+          },
+          "canonical": {
+            "anyOf": [
+              {
+                "enum": ["primary", "primary_reference", "secondary", "tertiary"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Editorial rank, or None.",
+            "title": "Canonical"
+          },
+          "category": {
+            "description": "Category slug (matches Domain.categories[].slug).",
+            "title": "Category",
+            "type": "string"
+          },
+          "death_year_ah": {
+            "anyOf": [
+              {
+                "maximum": 1500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Author's death year, Hijri (unknown is None, never a sentinel).",
+            "title": "Death Year Ah"
+          },
+          "death_year_ce": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Author's death year, CE.",
+            "title": "Death Year Ce"
+          },
+          "first_urn": {
+            "description": "URN of the first volume; opening the work opens this.",
+            "title": "First Urn",
+            "type": "string"
+          },
+          "page_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Page count, if known.",
+            "title": "Page Count"
+          },
+          "sect": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sect tagging (Imami, Sunni, etc.).",
+            "title": "Sect"
+          },
+          "stem": {
+            "description": "URN stem shared by the work's volumes; the work key.",
+            "title": "Stem",
+            "type": "string"
+          },
+          "title_ar": {
+            "description": "Arabic title.",
+            "title": "Title Ar",
+            "type": "string"
+          },
+          "title_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "English title, if available.",
+            "title": "Title En"
+          },
+          "volume_count": {
+            "description": "Number of volumes folded into this work.",
+            "minimum": 1.0,
+            "title": "Volume Count",
+            "type": "integer"
+          },
+          "volumes": {
+            "description": "Member volume URNs, ordered by volume number.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Volumes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title_ar",
+          "author_ar",
+          "category",
+          "stem",
+          "volume_count",
+          "volumes",
+          "first_urn"
+        ],
+        "title": "Work",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Knowledge-graph reader for classical Arabic manuscripts.",
+    "title": "Shia Online Library",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/books": {
+      "get": {
+        "description": "Wrap the repo's (slice, total) into a Page[Book] envelope.",
+        "operationId": "_list_books_api_books_get",
+        "parameters": [
+          {
+            "description": "Filter by category slug.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by category slug.",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "Records per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Records per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Records to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Records to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Book_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List books with pagination, optionally filtered by category slug.",
+        "tags": ["books"]
+      }
+    },
+    "/api/books/{book_urn}/pages/{page_number}": {
+      "get": {
+        "description": "Return the requested page or raise ``ResourceNotFoundError``.\n\nStructured ``hadiths`` (isnad + matn + narrators) come from the manuscript\nindex built by Phase 3 extract, via ``manuscript.hadiths_for_page``. When the\npage has parsed hadiths they are served and ``text_ar`` is ``None`` (the two\nare mutually exclusive per the ``BookPage`` contract); otherwise ``text_ar``\ncarries the raw page text honestly \u2014 for prose pages, or before the index is\nbuilt. ``text_en`` is the single wiring point for an English rendering: the\ncorpus has no English column yet, so it stays ``None`` and the reader shows a\nlabelled preview; set it here the moment translations land.",
+        "operationId": "get_page_api_books__book_urn__pages__page_number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_urn",
+            "required": true,
+            "schema": {
+              "title": "Book Urn",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_number",
+            "required": true,
+            "schema": {
+              "title": "Page Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get one page of book content.",
+        "tags": ["reader"]
+      }
+    },
+    "/api/books/{book_urn}/search": {
+      "get": {
+        "description": "Scan ``book_urn``'s own pages for ``q`` (the in-memory path; see\n``repositories.corpus.search_in_book``) and wrap the matches in a page.",
+        "operationId": "_search_book_api_books__book_urn__search_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_urn",
+            "required": true,
+            "schema": {
+              "title": "Book Urn",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Arabic query; folded before matching.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Arabic query; folded before matching.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Matches per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Matches per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Matches to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Matches to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_BookSearchMatch_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search within a book's text (diacritic- + letter-variant-insensitive).",
+        "tags": ["reader"]
+      }
+    },
+    "/api/books/{book_urn}/toc": {
+      "get": {
+        "description": "Return the TOC for ``book_urn`` or raise ResourceNotFoundError.",
+        "operationId": "get_toc_api_books__book_urn__toc_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_urn",
+            "required": true,
+            "schema": {
+              "title": "Book Urn",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Toc"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get the table of contents for a book.",
+        "tags": ["reader"]
+      }
+    },
+    "/api/books/{urn}": {
+      "get": {
+        "description": "Return the book with the given URN, or raise ResourceNotFoundError.",
+        "operationId": "get_book_api_books__urn__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "urn",
+            "required": true,
+            "schema": {
+              "title": "Urn",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Book"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get a single book by URN.",
+        "tags": ["books"]
+      }
+    },
+    "/api/canonical": {
+      "get": {
+        "description": "Wrap the repo's (slice, total) into a Page[CanonicalEntry] envelope.",
+        "operationId": "_list_canonical_api_canonical_get",
+        "parameters": [
+          {
+            "description": "Substring match on name / kunya / nisba.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Substring match on name / kunya / nisba.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only profiles merged from more than one raw entry.",
+            "in": "query",
+            "name": "merged_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Only profiles merged from more than one raw entry.",
+              "title": "Merged Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Records per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Records per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Records to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Records to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CanonicalEntry_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List canonical narrator profiles with pagination + filters.",
+        "tags": ["canonical"]
+      }
+    },
+    "/api/canonical/{canonical_id}": {
+      "get": {
+        "description": "Return one canonical profile by id, or raise ``ResourceNotFoundError``.",
+        "operationId": "get_canonical_api_canonical__canonical_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "canonical_id",
+            "required": true,
+            "schema": {
+              "title": "Canonical Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanonicalEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get a single canonical profile by id.",
+        "tags": ["canonical"]
+      }
+    },
+    "/api/daily": {
+      "get": {
+        "description": "Return today's curated Daily payload.",
+        "operationId": "get_today_api_daily_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Daily"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Today's verse, hadith, and book pick.",
+        "tags": ["daily"]
+      }
+    },
+    "/api/domains": {
+      "get": {
+        "description": "Return all domains with their categories, counts + tradition overlaid from\nthe live catalogue. Stable order.",
+        "operationId": "list_domains_api_domains_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Domain"
+                  },
+                  "title": "Response List Domains Api Domains Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List all knowledge domains and their categories.",
+        "tags": ["domains"]
+      }
+    },
+    "/api/quran/search": {
+      "get": {
+        "description": "Wrap the repo's ``(slice, total)`` of matching ayat into a Page[Ayah].",
+        "operationId": "_search_verses_api_quran_search_get",
+        "parameters": [
+          {
+            "description": "Arabic term or phrase to find in the Qur\u02be\u0101n.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Arabic term or phrase to find in the Qur\u02be\u0101n.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Records per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Records per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Records to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Records to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Ayah_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Find Qur\u02be\u0101n verses containing an Arabic term or phrase.",
+        "tags": ["quran"]
+      }
+    },
+    "/api/quran/{surah}/{ayah}": {
+      "get": {
+        "description": "Resolve a surah:ayah reference to its verse text (both pointed + bare).",
+        "operationId": "get_verse_api_quran__surah___ayah__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "surah",
+            "required": true,
+            "schema": {
+              "title": "Surah",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ayah",
+            "required": true,
+            "schema": {
+              "title": "Ayah",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ayah"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve a Qur\u02be\u0101n verse by surah:ayah reference.",
+        "tags": ["quran"]
+      }
+    },
+    "/api/rijal": {
+      "get": {
+        "description": "Wrap the repo's (slice, total) into a Page[RijalEntry] envelope.",
+        "operationId": "_list_rijal_api_rijal_get",
+        "parameters": [
+          {
+            "description": "Records per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Records per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Records to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Records to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Substring match on name / kunya / nisba.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Substring match on name / kunya / nisba.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by tradition (sunni / shia / both).",
+            "in": "query",
+            "name": "tradition",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Filter by tradition (sunni / shia / both).",
+              "title": "Tradition",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by data-quality category.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Filter by data-quality category.",
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only entries with at least one teacher.",
+            "in": "query",
+            "name": "has_teachers",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Only entries with at least one teacher.",
+              "title": "Has Teachers",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Only entries carrying a reliability term.",
+            "in": "query",
+            "name": "has_reliability",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Only entries carrying a reliability term.",
+              "title": "Has Reliability",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RijalEntry_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List rijal narrators with pagination + filters.",
+        "tags": ["rijal"]
+      }
+    },
+    "/api/rijal/{entry_id}": {
+      "get": {
+        "description": "Return one rijal entry by id, or raise ``ResourceNotFoundError``.",
+        "operationId": "get_rijal_api_rijal__entry_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "title": "Entry Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RijalEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get a single rijal entry by id.",
+        "tags": ["rijal"]
+      }
+    },
+    "/api/search": {
+      "get": {
+        "description": "Wrap the repo's (slice, total) into a Page[CorpusMatch] envelope.",
+        "operationId": "_search_api_search_get",
+        "parameters": [
+          {
+            "description": "Records per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Records per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Records to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Records to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Arabic phrase; folded before matching.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Arabic phrase; folded before matching.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases).",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "default": "exact",
+              "description": "Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases).",
+              "enum": ["exact", "broad"],
+              "title": "Mode",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Restrict to a category slug.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Restrict to a category slug.",
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Restrict to a book title (a work).",
+            "in": "query",
+            "name": "book",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Restrict to a book title (a work).",
+              "title": "Book",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Restrict to a volume number (0 = any).",
+            "in": "query",
+            "name": "volume",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Restrict to a volume number (0 = any).",
+              "minimum": 0,
+              "title": "Volume",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CorpusMatch_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Full-text search across all book content (diacritic-insensitive).",
+        "tags": ["search"]
+      }
+    },
+    "/api/search/books": {
+      "get": {
+        "description": "Wrap the repo's (slice, total) into a Page[Book] envelope.",
+        "operationId": "_search_books_api_search_books_get",
+        "parameters": [
+          {
+            "description": "Title or author text; folded before matching.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Title or author text; folded before matching.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Match field: title, author, or any.",
+            "in": "query",
+            "name": "field",
+            "required": false,
+            "schema": {
+              "default": "any",
+              "description": "Match field: title, author, or any.",
+              "enum": ["title", "author", "any"],
+              "title": "Field",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Records per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Records per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Records to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Records to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Book_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search book metadata by title / author (diacritic-insensitive).",
+        "tags": ["search"]
+      }
+    },
+    "/api/search/facets": {
+      "get": {
+        "description": "Return the categories, books, and volumes that hold matches for ``q``.",
+        "operationId": "_search_facets_api_search_facets_get",
+        "parameters": [
+          {
+            "description": "Arabic phrase; folded before matching.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Arabic phrase; folded before matching.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases).",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "default": "exact",
+              "description": "Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases).",
+              "enum": ["exact", "broad"],
+              "title": "Mode",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Category to scope book facets to.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Category to scope book facets to.",
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Book to scope volume facets to.",
+            "in": "query",
+            "name": "book",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Book to scope volume facets to.",
+              "title": "Book",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchFacets"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Category -> book -> volume filters available for a search query.",
+        "tags": ["search"]
+      }
+    },
+    "/api/works": {
+      "get": {
+        "description": "Wrap the repo's (slice, total) of works into a Page[Work] envelope.",
+        "operationId": "_list_works_api_works_get",
+        "parameters": [
+          {
+            "description": "Filter by category slug.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by category slug.",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "Filter by domain id.",
+            "in": "query",
+            "name": "domain",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by domain id.",
+              "title": "Domain"
+            }
+          },
+          {
+            "description": "Tradition: sunni, shia, or shared.",
+            "in": "query",
+            "name": "tradition",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tradition: sunni, shia, or shared.",
+              "title": "Tradition"
+            }
+          },
+          {
+            "description": "Search works by title or author.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Search works by title or author.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Records per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Records per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Records to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Records to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Work_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List volume-folded works, optionally filtered by category, domain, or tradition.",
+        "tags": ["works"]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Container health probe \u2014 succeeds when the process is up.",
+        "operationId": "_health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response  Health Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": " Health",
+        "tags": ["health"]
+      }
+    },
+    "/livez": {
+      "get": {
+        "description": "Kubernetes liveness probe.",
+        "operationId": "_livez_livez_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response  Livez Livez Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": " Livez",
+        "tags": ["health"]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "description": "Kubernetes readiness probe.",
+        "operationId": "_readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response  Readyz Readyz Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": " Readyz",
+        "tags": ["health"]
+      }
+    }
+  }
+}

@@ -18,15 +18,18 @@
     "harness:test": "uv run pytest .claude/tests",
     "repo:audit": "uv run python .claude/lib/repo_audit.py && pnpm exec jscpd --config .jscpd.json && pnpm exec knip --config knip.json",
     "repo:audit:rules": "uv run python .claude/lib/repo_audit.py",
+    "types:gen": "uv run python scripts/export_openapi.py && pnpm exec prettier --write frontend/openapi.json && pnpm exec openapi-typescript frontend/openapi.json -o frontend/src/lib/api/schema.d.ts",
+    "types:check": "pnpm types:gen && git diff --exit-code -- frontend/openapi.json frontend/src/lib/api/schema.d.ts",
     "fe:test": "pnpm --filter @sol-next2/frontend test",
     "fe:build": "pnpm --filter @sol-next2/frontend build",
-    "ci": "pnpm format:check && pnpm py:check && pnpm py:test && pnpm harness:test && pnpm repo:audit && pnpm fe:test && pnpm fe:build",
+    "ci": "pnpm format:check && pnpm py:check && pnpm py:test && pnpm harness:test && pnpm repo:audit && pnpm types:check && pnpm fe:test && pnpm fe:build",
     "prepare": "lefthook install || true"
   },
   "devDependencies": {
     "jscpd": "^5.0.11",
     "knip": "^6.22.0",
     "lefthook": "^1.8.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.5.3"
   }
 }
