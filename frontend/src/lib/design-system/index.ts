@@ -26,8 +26,6 @@ export type { EyebrowProps, EyebrowTracking } from "./primitives/Eyebrow";
 export { Dots } from "./primitives/Dots";
 export type { DotsProps } from "./primitives/Dots";
 
-export { RosetteOrnament } from "./components/Ornament";
-
 export { PageGlow } from "./components/PageGlow";
 
 export { UnstyledButton } from "./primitives/UnstyledButton";
