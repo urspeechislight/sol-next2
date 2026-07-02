@@ -208,6 +208,9 @@ function DrawerGroup(p: ReaderToolbarProps) {
       >
         Contents
       </Pill>
+      <Pill surface="reader" active={p.cards} icon="grid" onClick={p.onCards}>
+        Cards
+      </Pill>
       <Pill
         surface="reader"
         active={p.rightDrawer === 'isnad'}
@@ -237,6 +240,9 @@ export interface ReaderToolbarProps {
   size: number;
   leftDrawer: LeftDrawer;
   rightDrawer: RightDrawer;
+  /** Card view: framed reading units when on, continuous text when off. */
+  cards: boolean;
+  onCards: () => void;
   searchQuery: string;
   onBack: () => void;
   onPage: (p: number) => void;

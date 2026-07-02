@@ -86,8 +86,18 @@ function PageHead({ page }: { page: BookPage }) {
   );
 }
 
+// The unit noun the card head shows, by the book's domain: the same card
+// carries a hadith, a Qurʾān verse, or a fiqh ruling.
+const UNIT_NOUNS: Record<string, string> = {
+  quran: 'Verse',
+  hadith: 'Hadith',
+  fiqh: 'Ruling',
+};
+const UNIT_NOUN_DEFAULT = 'Passage';
+
 interface HadithUnitProps {
   h: Hadith;
+  noun: string;
   active: boolean;
   lang: ReaderLang;
   index: NarratorIndex;
@@ -99,6 +109,7 @@ interface HadithUnitProps {
 
 function HadithUnit({
   h,
+  noun,
   active,
   lang,
   index,
@@ -114,7 +125,8 @@ function HadithUnit({
         <span className="hadith__id">
           <span className="hadith__num">{toArabicDigits(h.n)}</span>
           <span className="hadith__meta">
-            Hadith {h.n} · {h.narrators.length} narrators
+            {noun} {h.n}
+            {h.narrators.length > 0 ? ` · ${h.narrators.length} narrators` : ''}
           </span>
         </span>
         {h.grade ? (
@@ -318,6 +330,7 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
   const [left, setLeft] = useState<LeftDrawer>('contents');
   const [right, setRight] = useState<RightDrawer>(null);
   const [activeHadith, setActiveHadith] = useState(0);
+  const [cards, setCards] = useState(true);
   const [narrator, setNarrator] = useState<NarratorRecord | null>(null);
   const [narratorError, setNarratorError] = useState<NarratorFetchError | null>(null);
   const [searchQ, setSearchQ] = useState(initialQuery);
@@ -344,14 +357,19 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
     [pageRes.data],
   );
   const index = useMemo(() => buildNarratorIndex(pageRecords), [pageRecords]);
-  // Category slugs -> human labels, from the taxonomy; the masthead badge shows
-  // the label ("Arabic Language Sciences"), never the raw slug.
-  const categoryLabels = useMemo(() => {
+  // Category slugs -> human labels + owning domain, from the taxonomy; the
+  // masthead badge shows the label ("Arabic Language Sciences"), never the raw
+  // slug, and the domain picks the unit noun the cards carry.
+  const taxonomy = useMemo(() => {
     const labels = new Map<string, string>();
+    const domains = new Map<string, string>();
     for (const domain of domainsRes.data ?? []) {
-      for (const category of domain.categories) labels.set(category.slug, category.label);
+      for (const category of domain.categories) {
+        labels.set(category.slug, category.label);
+        domains.set(category.slug, domain.id);
+      }
     }
-    return labels;
+    return { labels, domains };
   }, [domainsRes.data]);
 
   const openRecord = (record: NarratorRecord) => {
@@ -381,7 +399,9 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
   const rootStyle = { '--reader-size': `${size}px` } as CSSProperties;
 
   const book = bookRes.data;
-  const categoryLabel = book ? categoryLabels.get(book.category) : undefined;
+  const categoryLabel = book ? taxonomy.labels.get(book.category) : undefined;
+  const bookDomain = book ? taxonomy.domains.get(book.category) : undefined;
+  const unitNoun = UNIT_NOUNS[bookDomain ?? ''] ?? UNIT_NOUN_DEFAULT;
   const volume = book?.volume ?? null;
   const death = book?.death_year_ah ? `d. ${book.death_year_ah} AH` : null;
   const toc = tocRes.data;
@@ -411,6 +431,8 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
         size={size}
         leftDrawer={left}
         rightDrawer={right}
+        cards={cards}
+        onCards={() => setCards((c) => !c)}
         searchQuery={searchQ}
         onSearchQuery={setSearchQ}
         onClearSearch={() => setSearchQ('')}
@@ -441,7 +463,7 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
           {pageRes.loading ? <Spinner label="Loading page" /> : null}
           {pageRes.error ? <Unavailable title={title} /> : null}
           {pageData ? (
-            <article className="reader-article">
+            <article className="reader-article" data-cards={cards ? 'on' : 'off'}>
               <PageHead page={pageData} />
               <div>
                 {hadiths.length > 0 ? (
@@ -449,6 +471,7 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
                     <HadithUnit
                       key={h.n}
                       h={h}
+                      noun={unitNoun}
                       active={i === activeHadith}
                       lang={lang}
                       index={index}

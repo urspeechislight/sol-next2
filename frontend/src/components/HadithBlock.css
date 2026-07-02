@@ -13,6 +13,27 @@
   background: var(--color-reader-card-active);
   border-color: color-mix(in oklch, var(--color-reader-honorific) 45%, var(--color-reader-rule));
 }
+
+/* Cards off: the same units read as continuous text — no frame, no head row,
+   a hairline between units instead of the card box. */
+[data-cards='off'] .hadith {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0 0 var(--space-lg);
+  margin-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--color-reader-rule);
+}
+[data-cards='off'] .hadith:last-child {
+  border-bottom: 0;
+}
+[data-cards='off'] .hadith--active {
+  background: transparent;
+}
+[data-cards='off'] .hadith__head {
+  display: none;
+}
+
 .hadith__head {
   display: flex;
   align-items: center;
