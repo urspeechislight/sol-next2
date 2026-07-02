@@ -5,5 +5,12 @@
   "threshold": 0,
   "gitignore": true,
   "reporters": ["consoleFull"],
-  "ignore": ["**/node_modules/**", "**/dist/**", "**/.venv/**", "**/*.test.ts", "**/tests/**"]
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.venv/**",
+    "**/*.test.ts",
+    "**/tests/**",
+    "**/lib/api/schema.d.ts"
+  ]
 }
