@@ -13,14 +13,14 @@ from typing import Any
 
 import pytest
 
-from backend.core.constants import HADITH__BEHAVIOR_GENERAL_PROSE
-from backend.core.errors import SegmentError
+from backend.pipeline.errors import SegmentError
 from backend.pipeline.models import Pattern
 from backend.pipeline.segment import (
     parse_behavior_rules,
     route_behavior,
     validate_required_behaviors,
 )
+from backend.pipeline.vocab import HADITH__BEHAVIOR_GENERAL_PROSE
 
 _GENERAL = HADITH__BEHAVIOR_GENERAL_PROSE
 

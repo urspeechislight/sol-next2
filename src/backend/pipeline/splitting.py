@@ -15,9 +15,9 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from backend.core.errors import SegmentError
 from backend.core.logging import get_logger
 from backend.patterns import CompiledPattern, cached_compile
+from backend.pipeline.errors import SegmentError
 from backend.pipeline.models import ManuscriptPage
 from backend.pipeline.toc_alignment import TocAnchor
 

@@ -8,7 +8,6 @@ whole_span behavior and the gazetteer-unavailable degraded mode.
 
 from __future__ import annotations
 
-from backend.core.constants import HADITH__BEHAVIOR_GENERAL_PROSE, HADITH__BEHAVIOR_TRANSMISSION
 from backend.pipeline.config import load_config
 from backend.pipeline.extract import extract
 from backend.pipeline.models import (
@@ -19,6 +18,7 @@ from backend.pipeline.models import (
     Span,
 )
 from backend.pipeline.segment import segment
+from backend.pipeline.vocab import HADITH__BEHAVIOR_GENERAL_PROSE, HADITH__BEHAVIOR_TRANSMISSION
 
 _CFG = load_config()
 

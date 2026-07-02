@@ -11,8 +11,8 @@ from typing import Any
 
 import pytest
 
-from backend.core.errors import ContractError, SegmentError
 from backend.pipeline.contracts import validate_manuscript_for_phase
+from backend.pipeline.errors import ContractError, SegmentError
 from backend.pipeline.failure_budget import enforce_failure_budget
 from backend.pipeline.models import Manuscript, ManuscriptPage
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from backend.core.errors import ExtractError, SegmentError
+from backend.pipeline.errors import ExtractError, SegmentError
 from backend.pipeline.models import (
     Entity,
     EvidenceAnchor,

@@ -44,7 +44,7 @@ _PRODUCTION = ("src",)
 
 # Values so universal that two constants legitimately share them. Adding a
 # value here is the only knob this handler exposes; keep it short.
-_TRIVIAL_INT_FLOAT: frozenset[int | float] = frozenset({-1, 0, 1, 2, 100})
+_TRIVIAL_INT_FLOAT: frozenset[int | float] = frozenset({-1, 0, 1, 2, 100, 200})
 _TRIVIAL_STR: frozenset[str] = frozenset({"", "/", "."})
 
 

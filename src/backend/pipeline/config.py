@@ -26,9 +26,9 @@ from typing import Any, cast
 
 import yaml
 
-from backend.core.errors import ConfigError
 from backend.core.settings import get_settings
 from backend.patterns import CompiledPattern, compile_pattern_table
+from backend.pipeline.errors import ConfigError
 
 
 @dataclass(frozen=True)

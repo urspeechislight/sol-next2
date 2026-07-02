@@ -22,11 +22,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from backend.core.constants import (
-    HADITH__PATTERN_ATTRIBUTION,
-    HADITH__PATTERN_MATN_BOUNDARY_HINT,
-    HADITH__PATTERN_SPEECH_VERB_GENERIC,
-)
 from backend.core.logging import get_logger
 from backend.patterns import (
     CompiledPattern,
@@ -41,6 +36,11 @@ from backend.pipeline.persons import (
     NARRATOR__SOURCE_CHAIN_WALK,
     PersonSpec,
     emit_person_entity,
+)
+from backend.pipeline.vocab import (
+    HADITH__PATTERN_ATTRIBUTION,
+    HADITH__PATTERN_MATN_BOUNDARY_HINT,
+    HADITH__PATTERN_SPEECH_VERB_GENERIC,
 )
 
 if TYPE_CHECKING:

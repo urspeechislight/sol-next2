@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from backend.core.errors import ConfigError
 from backend.pipeline.config import load_config
+from backend.pipeline.errors import ConfigError
 
 
 def test_should_load_config_when_sol_yaml_present() -> None:

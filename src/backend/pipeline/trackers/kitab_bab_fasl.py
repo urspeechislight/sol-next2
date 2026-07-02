@@ -10,10 +10,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from backend.core.constants import HADITH__PATTERN_HEADING_MARKER
 from backend.patterns import CompiledPattern
 from backend.pipeline.models import HierarchyPath
 from backend.pipeline.trackers import TrackerProtocol
+from backend.pipeline.vocab import HADITH__PATTERN_HEADING_MARKER
 
 
 @dataclass

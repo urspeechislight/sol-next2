@@ -23,10 +23,10 @@ from __future__ import annotations
 import re
 from typing import Any, cast
 
-from backend.core.constants import HADITH__PATTERN_HEADING_MARKER as HEADING_MARKER_ID
-from backend.core.errors import SegmentError
 from backend.patterns import CompiledPattern, cached_compile
+from backend.pipeline.errors import SegmentError
 from backend.pipeline.models import Pattern
+from backend.pipeline.vocab import HADITH__PATTERN_HEADING_MARKER as HEADING_MARKER_ID
 
 _HEADING_PREFIX_CHARS_RE: CompiledPattern = cached_compile(r"[0-9٠-٩*()]")
 

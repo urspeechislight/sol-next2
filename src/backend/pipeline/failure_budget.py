@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.core.errors import SegmentError
+from backend.pipeline.errors import SegmentError
 
 
 def enforce_failure_budget(

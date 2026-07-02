@@ -14,7 +14,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from backend.core.errors import ContractError
+from backend.pipeline.errors import ContractError
 
 if TYPE_CHECKING:
     from backend.pipeline.models import Manuscript, Span

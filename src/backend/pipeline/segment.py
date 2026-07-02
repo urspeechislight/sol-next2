@@ -26,16 +26,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Final
 
-from backend.core.constants import (
-    HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER,
-    HADITH__BEHAVIOR_GENERAL_PROSE,
-    HADITH__BEHAVIOR_SECTION_HEADING,
-    HADITH__BEHAVIOR_TRANSMISSION,
-    HADITH__PATTERN_HEADING_MARKER,
-    HADITH__SPAN_TYPE_PARAGRAPH,
-    HADITH__SUBSECTION_HEADING_MAX_CHARS,
-)
-from backend.core.errors import SegmentError
 from backend.core.logging import get_logger
 from backend.patterns import CompiledPattern, cached_compile
 from backend.pipeline.boundaries import build_merge_cues, merge_isnad_continuations
@@ -46,6 +36,7 @@ from backend.pipeline.boundaries_headings import (
 )
 from backend.pipeline.config import Config
 from backend.pipeline.contracts import validate_manuscript_for_phase
+from backend.pipeline.errors import SegmentError
 from backend.pipeline.failure_budget import enforce_failure_budget
 from backend.pipeline.headings import (
     drop_heading_for_narrative,
@@ -67,6 +58,15 @@ from backend.pipeline.toc_alignment import TocAnchor, find_toc_anchors
 from backend.pipeline.trackers import TrackerOrchestrator, TrackerProtocol
 from backend.pipeline.trackers.kitab_bab_fasl import KitabBabFaslTracker, parse_hierarchy_levels
 from backend.pipeline.trackers.sanad_matn import SanadMatnTracker
+from backend.pipeline.vocab import (
+    HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER,
+    HADITH__BEHAVIOR_GENERAL_PROSE,
+    HADITH__BEHAVIOR_SECTION_HEADING,
+    HADITH__BEHAVIOR_TRANSMISSION,
+    HADITH__PATTERN_HEADING_MARKER,
+    HADITH__SPAN_TYPE_PARAGRAPH,
+    HADITH__SUBSECTION_HEADING_MAX_CHARS,
+)
 
 _logger = get_logger("shia-library.segment")
 
