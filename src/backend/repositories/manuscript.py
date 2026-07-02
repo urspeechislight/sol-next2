@@ -6,8 +6,10 @@ DTO — one Hadith per isnad/matn span, narrators projected from PERSON entities
 Returns ``[]`` when the artifact is absent so the reader serves raw page text
 until the index is built. The DDL + INSERT helpers that materialize this artifact
 live in ``backend.build.manuscript``; CENTRAL-005 permits the read SQL here.
-Narrator romanized name / grade / death year arrive with Phase 4 registry
-linking — until then name carries the Arabic form and grade is blank.
+Narrators carry their registry link (rijal_id / canonical_id) resolved at
+build time; the reader fetches the linked biography from /api/rijal or
+/api/canonical on demand. Romanized name and grade still await registry
+romanization — name carries the Arabic form and grade is blank.
 """
 
 from __future__ import annotations
@@ -62,6 +64,8 @@ class _EntityRow:
     text_ar: str
     role_in_context: str
     chain_position: int
+    rijal_id: int | None
+    canonical_id: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,11 +127,16 @@ def _unit_row(d: dict[str, Any]) -> _UnitRow:
 def _entity_row(d: dict[str, Any]) -> _EntityRow:
     """Build a _EntityRow from a fetched dict, decoding the metadata JSON."""
     metadata: dict[str, Any] = json.loads(d["metadata"])
+    link: dict[str, Any] = metadata.get("narrator_link") or {}
+    origin = str(link.get("origin", ""))
+    link_id = int(link["id"]) if "id" in link else None
     return _EntityRow(
         span_id=str(d["span_id"]),
         text_ar=str(d["text_ar"]),
         role_in_context=str(metadata.get("role_in_context", "")),
         chain_position=int(metadata.get("chain_position", _DEFAULT_CHAIN_POSITION)),
+        rijal_id=link_id if origin == "rijal" else None,
+        canonical_id=link_id if origin == "canonical" else None,
     )
 
 
@@ -188,6 +197,8 @@ def _narrators_sorted(entities: list[_EntityRow]) -> list[Narrator]:
             name_ar=entity.text_ar,
             role=entity.role_in_context,
             grade=_BLANK_GRADE,
+            rijal_id=entity.rijal_id,
+            canonical_id=entity.canonical_id,
         )
         for entity in ordered
     ]

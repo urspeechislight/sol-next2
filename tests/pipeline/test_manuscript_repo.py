@@ -24,7 +24,14 @@ def test_should_reshape_isnad_matn_and_narrators_into_hadith() -> None:
         _UnitRow(unit_id="urn_u0002", span_id="s1", unit_type="MATN_UNIT", text_ar="إنما الأعمال"),
     ]
     entities = [
-        _EntityRow(span_id="s1", text_ar="مالك", role_in_context="narrator", chain_position=0),
+        _EntityRow(
+            span_id="s1",
+            text_ar="مالك",
+            role_in_context="narrator",
+            chain_position=0,
+            rijal_id=None,
+            canonical_id=None,
+        ),
     ]
 
     hadiths = _reshape_hadiths(units, entities)
@@ -44,8 +51,22 @@ def test_should_order_narrators_by_chain_position() -> None:
         _UnitRow(unit_id="urn_u0002", span_id="s1", unit_type="MATN_UNIT", text_ar="matn"),
     ]
     entities = [
-        _EntityRow(span_id="s1", text_ar="الثاني", role_in_context="narrator", chain_position=1),
-        _EntityRow(span_id="s1", text_ar="الأول", role_in_context="narrator", chain_position=0),
+        _EntityRow(
+            span_id="s1",
+            text_ar="الثاني",
+            role_in_context="narrator",
+            chain_position=1,
+            rijal_id=None,
+            canonical_id=None,
+        ),
+        _EntityRow(
+            span_id="s1",
+            text_ar="الأول",
+            role_in_context="narrator",
+            chain_position=0,
+            rijal_id=None,
+            canonical_id=None,
+        ),
     ]
 
     hadiths = _reshape_hadiths(units, entities)
