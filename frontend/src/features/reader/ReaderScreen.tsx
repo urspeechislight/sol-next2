@@ -206,7 +206,21 @@ function narratorSource(record: NarratorRecord): string {
   return record.origin === 'canonical' ? 'Canonical narrator registry' : 'Rijāl registry';
 }
 
-function TarjamaPanel({ record, onClose }: { record: NarratorRecord; onClose: () => void }) {
+interface NarratorFetchError {
+  id: number;
+  origin: NarratorRecord['origin'];
+  message: string;
+}
+
+function TarjamaPanel({
+  record,
+  error,
+  onClose,
+}: {
+  record: NarratorRecord;
+  error: string | null;
+  onClose: () => void;
+}) {
   const sub = [record.kunya, record.nisba].filter(Boolean).join(' · ');
   const facts: [string, string | number][] = [
     ['Tradition', record.tradition || '—'],
@@ -245,6 +259,11 @@ function TarjamaPanel({ record, onClose }: { record: NarratorRecord; onClose: ()
           </div>
         ))}
       </dl>
+      {error ? (
+        <p className="narrator__error" role="alert">
+          Biography failed to load · {error}
+        </p>
+      ) : null}
       <p className="narrator__source">{narratorSource(record)}</p>
     </aside>
   );
@@ -280,6 +299,7 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
   const [right, setRight] = useState<RightDrawer>(null);
   const [activeHadith, setActiveHadith] = useState(0);
   const [narrator, setNarrator] = useState<NarratorRecord | null>(null);
+  const [narratorError, setNarratorError] = useState<NarratorFetchError | null>(null);
   const [searchQ, setSearchQ] = useState(initialQuery);
 
   // App (and the URL) own the page; reset the in-page highlight when it changes.
@@ -316,17 +336,26 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
 
   const openRecord = (record: NarratorRecord) => {
     setNarrator(record);
+    setNarratorError(null);
     setRight('tarjama');
     if (record.id < 0) return;
     const detail =
       record.origin === 'canonical'
         ? getCanonicalEntry(record.id).then(canonicalToRecord)
         : getRijalEntry(record.id).then(rijalToRecord);
-    void detail.then((full) =>
-      setNarrator((current) =>
-        current && current.id === record.id && current.origin === record.origin ? full : current,
-      ),
-    );
+    detail
+      .then((full) =>
+        setNarrator((current) =>
+          current && current.id === record.id && current.origin === record.origin ? full : current,
+        ),
+      )
+      .catch((err: unknown) =>
+        setNarratorError({
+          id: record.id,
+          origin: record.origin,
+          message: err instanceof Error ? err.message : String(err),
+        }),
+      );
   };
   const openNarrator = (n: Narrator) => openRecord(recordFromNarrator(n));
   const rootStyle = { '--reader-size': `${size}px` } as CSSProperties;
@@ -427,9 +456,17 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
         {right === 'tarjama' && narrator ? (
           <TarjamaPanel
             record={narrator}
+            error={
+              narratorError &&
+              narratorError.id === narrator.id &&
+              narratorError.origin === narrator.origin
+                ? narratorError.message
+                : null
+            }
             onClose={() => {
               setRight(null);
               setNarrator(null);
+              setNarratorError(null);
             }}
           />
         ) : null}
