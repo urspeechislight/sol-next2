@@ -2,6 +2,7 @@ import { Badge, Button, Heading, Highlight, Inline, Text } from "../../lib/desig
 import type { IconName } from "../../lib/design-system";
 import type { NavView } from "../../app/shell/nav";
 import { hadithBadge } from "../../lib/variants";
+import "../../components/HadithBlock.css";
 import "./HomeScreen.css";
 
 // A live surface: shown as a prominent column with an action. The three things
@@ -115,9 +116,9 @@ export function HomeScreen({ onNav, onOpenReader }: HomeScreenProps) {
           data-reader-theme="classical"
           aria-label="Example reading: the opening hadith of Ṣaḥīḥ al-Bukhārī"
         >
-          <div className="home-artifact__top">
+          <div className="hadith__head">
             <span className="home-artifact__id">
-              <span className="home-artifact__num">١</span>
+              <span className="hadith__num">١</span>
               Ṣaḥīḥ al-Bukhārī · Kitāb al-Īmān
             </span>
             <Badge surface="reader" variant={hadithBadge('sahih')} dot>
@@ -136,12 +137,12 @@ export function HomeScreen({ onNav, onOpenReader }: HomeScreenProps) {
           <Text as="p" className="home-artifact__en">
             “Actions are but by intentions, and each person shall have only what they intended.”
           </Text>
-          <div className="home-artifact__refs">
-            <span className="home-artifact__refs-label">Also cited</span>
+          <div className="hadith__refs">
+            <span className="hadith__refs-label">Also cited</span>
             {REFS.map((r) => (
-              <span key={r.pg} className="home-artifact__ref">
-                <span className="home-artifact__ref-ar">{r.ar}</span>
-                <span className="home-artifact__ref-pg">{r.pg}</span>
+              <span key={r.pg} className="ref-pill">
+                <span className="ref-pill__ar">{r.ar}</span>
+                <span className="ref-pill__pg">{r.pg}</span>
               </span>
             ))}
           </div>
