@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { Heading, MetaBadges, SourceRecord, Text } from '../../lib/design-system';
 import { getRijal, searchBooks } from '../../lib/api/client';
@@ -48,78 +49,38 @@ function BookResult({
   );
 }
 
-/** Books by title/author/any. Has no server facet endpoint, so the category
-    filter is derived from the returned rows (categoryFacets) and applied on the
-    client, rendered through the same ResultsFrame as every other scope. */
-function BooksScope({
-  q,
-  field,
-  onOpenReader,
-}: {
+interface FacetedScopeProps<T> {
   q: string;
-  field: BookField;
-  onOpenReader: (urn: string) => void;
-}) {
-  const res = useAsync<Page<Book>>(
-    () => searchBooks(q, { field, limit: PAGE.facetLimit }),
-    [q, field],
-  );
-  const labelOf = useCategoryLabels();
-  const [category, setCategory] = useState('');
-  useEffect(() => setCategory(''), [q, field]);
-
-  const items = res.data?.items ?? [];
-  const slugOf = (b: Book) => b.category;
-  const shown = byCategory(items, category, slugOf);
-  const total = category ? shown.length : (res.data?.total ?? 0);
-  const empty =
-    res.data && shown.length === 0
-      ? category
-        ? 'No books in this category.'
-        : `No books match “${q}”.`
-      : null;
-
-  return (
-    <ResultsFrame
-      filters={{
-        categories: categoryFacets(items, slugOf),
-        labelOf,
-        category,
-        total,
-        onCategory: setCategory,
-        onClear: () => setCategory(''),
-      }}
-      loading={res.loading}
-      loadingLabel="Searching books"
-      error={res.error ? `Book search is unavailable: ${res.error.message}` : null}
-      empty={empty}
-    >
-      {res.data
-        ? shown.map((b) => (
-            <BookResult key={b.urn} b={b} section={labelOf(b.category)} onOpen={onOpenReader} />
-          ))
-        : null}
-    </ResultsFrame>
-  );
+  /** Fetch/reset dependencies; the category filter clears when any changes. */
+  deps: readonly unknown[];
+  fetchPage: () => Promise<Page<T>>;
+  slugOf: (item: T) => string;
+  /** Lowercase plural for messages, e.g. "books" -> "No books match …". */
+  noun: string;
+  /** Capitalized singular for the error line, e.g. "Book" -> "Book search is unavailable". */
+  kind: string;
+  renderRow: (item: T, labelOf: (slug: string) => string) => ReactNode;
 }
 
-/** Narrators (rijāl). Same client-faceted frame as books, keyed on the entry's
-    category, so the scope is the books pipeline with a different row + source. */
-function NarratorsScope({ q }: { q: string }) {
-  const res = useAsync<Page<RijalEntry>>(() => getRijal({ q, limit: PAGE.facetLimit }), [q]);
+/** A search scope without a server facet endpoint: fetch one page, derive the
+    category filter from the returned rows (categoryFacets), apply it on the
+    client, and render through the shared ResultsFrame. Books and narrators are
+    this one pipeline with a different fetch, row, and noun. */
+function FacetedScope<T>({ q, deps, fetchPage, slugOf, noun, kind, renderRow }: FacetedScopeProps<T>) {
+  const res = useAsync<Page<T>>(fetchPage, deps);
   const labelOf = useCategoryLabels();
   const [category, setCategory] = useState('');
-  useEffect(() => setCategory(''), [q]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => setCategory(''), deps);
 
   const items = res.data?.items ?? [];
-  const slugOf = (e: RijalEntry) => e.category;
   const shown = byCategory(items, category, slugOf);
   const total = category ? shown.length : (res.data?.total ?? 0);
   const empty =
     res.data && shown.length === 0
       ? category
-        ? 'No narrators in this category.'
-        : `No narrators match “${q}”.`
+        ? `No ${noun} in this category.`
+        : `No ${noun} match “${q}”.`
       : null;
 
   return (
@@ -133,11 +94,11 @@ function NarratorsScope({ q }: { q: string }) {
         onClear: () => setCategory(''),
       }}
       loading={res.loading}
-      loadingLabel="Searching narrators"
-      error={res.error ? `Narrator search is unavailable: ${res.error.message}` : null}
+      loadingLabel={`Searching ${noun}`}
+      error={res.error ? `${kind} search is unavailable: ${res.error.message}` : null}
       empty={empty}
     >
-      {res.data ? shown.map((e) => <NarratorCard key={e.id} item={e} />) : null}
+      {res.data ? shown.map((item) => renderRow(item, labelOf)) : null}
     </ResultsFrame>
   );
 }
@@ -153,6 +114,7 @@ export interface SearchResultsProps {
 export function SearchResults({ query, scope, onSearch, onOpenReader }: SearchResultsProps) {
   const q = query.trim();
   const isBook = scope === 'title' || scope === 'author' || scope === 'book';
+  const field = bookField(scope);
   return (
     <section>
       <header className="scr__head">
@@ -166,13 +128,34 @@ export function SearchResults({ query, scope, onSearch, onOpenReader }: SearchRe
         <QuranScope q={q} onSearch={onSearch} onOpenReader={onOpenReader} />
       ) : null}
       {isBook ? (
-        <BooksScope
+        <FacetedScope<Book>
           q={q}
-          field={bookField(scope)}
-          onOpenReader={(urn) => onOpenReader(urn, 1, '')}
+          deps={[q, field]}
+          fetchPage={() => searchBooks(q, { field, limit: PAGE.facetLimit })}
+          slugOf={(b) => b.category}
+          noun="books"
+          kind="Book"
+          renderRow={(b, labelOf) => (
+            <BookResult
+              key={b.urn}
+              b={b}
+              section={labelOf(b.category)}
+              onOpen={(urn) => onOpenReader(urn, 1, '')}
+            />
+          )}
         />
       ) : null}
-      {scope === 'narrator' ? <NarratorsScope q={q} /> : null}
+      {scope === 'narrator' ? (
+        <FacetedScope<RijalEntry>
+          q={q}
+          deps={[q]}
+          fetchPage={() => getRijal({ q, limit: PAGE.facetLimit })}
+          slugOf={(e) => e.category}
+          noun="narrators"
+          kind="Narrator"
+          renderRow={(e) => <NarratorCard key={e.id} item={e} />}
+        />
+      ) : null}
     </section>
   );
 }

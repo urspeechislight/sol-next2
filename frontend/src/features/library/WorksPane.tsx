@@ -80,7 +80,7 @@ export function WorksPane({
         result={{ data: works, error, loading }}
         errorText="Could not load works"
         renderLoading={() => (
-          <div className="works__loading">
+          <div className="library__loading">
             <Spinner label="Loading works" />
           </div>
         )}

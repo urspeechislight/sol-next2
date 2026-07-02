@@ -194,12 +194,6 @@
   display: flex;
   flex-direction: column;
 }
-.works__loading {
-  display: flex;
-  justify-content: center;
-  padding: var(--space-xl);
-}
-
 /* ---- overview ---- */
 .overview {
   display: flex;
