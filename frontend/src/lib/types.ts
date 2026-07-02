@@ -51,7 +51,6 @@ export type BookPage = Full<S['BookPage']>;
 export type HadithGrade = NonNullable<Hadith['grade']>;
 
 // ---- daily editorial (GET /api/daily) ----
-export type DailyDate = Full<S['DailyDate']>;
 export type Tafsir = Full<S['Tafsir']>;
 export type Verse = Full<S['Verse']>;
 export type HadithSource = Full<S['HadithSource']>;
@@ -59,6 +58,11 @@ export type DailyHadith = Full<S['DailyHadith']>;
 export type OpenTo = Full<S['OpenTo']>;
 export type DailyBookPick = Full<S['DailyBookPick']>;
 export type Daily = Full<S['Daily']>;
+
+// ---- almanac (GET /api/almanac) ----
+export type Observance = Full<S['Observance']>;
+export type HistoryEvent = Full<S['HistoryEvent']>;
+export type Almanac = Full<S['Almanac']>;
 
 // ---- search (GET /api/search, /search/facets, /books/{urn}/search) ----
 export type BookSearchMatch = Full<S['BookSearchMatch']>;

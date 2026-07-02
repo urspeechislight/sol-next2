@@ -62,6 +62,9 @@ describe('routes hash SSOT', () => {
   });
 
   test('should default a missing reader page to the first page', () => {
-    expect(parseHash('#/read/sY-50TSO')).toEqual({ ...reader, reading: { urn: 'sY-50TSO', page: 1 } });
+    expect(parseHash('#/read/sY-50TSO')).toEqual({
+      ...reader,
+      reading: { urn: 'sY-50TSO', page: 1 },
+    });
   });
 });

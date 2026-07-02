@@ -1,11 +1,11 @@
-import type { ReactNode } from "react";
-import { cx } from "../../utils";
-import { Icon } from "./Icon";
-import type { IconName } from "../internal/icons";
-import type { Surface } from "../surfaces";
-import "./IconButton.css";
+import type { ReactNode } from 'react';
+import { cx } from '../../utils';
+import { Icon } from './Icon';
+import type { IconName } from '../internal/icons';
+import type { Surface } from '../surfaces';
+import './IconButton.css';
 
-export type IconButtonSize = "sm" | "md";
+export type IconButtonSize = 'sm' | 'md';
 
 export interface IconButtonProps {
   /** Accessible name (the button is icon/glyph-only). */
@@ -25,8 +25,8 @@ export interface IconButtonProps {
 export function IconButton({
   label,
   icon,
-  size = "md",
-  surface = "app",
+  size = 'md',
+  surface = 'app',
   ariaPressed,
   onClick,
   children,
@@ -37,7 +37,7 @@ export function IconButton({
       aria-label={label}
       aria-pressed={ariaPressed}
       onClick={onClick}
-      className={cx("ds-iconbtn", `ds-iconbtn--${surface}`, size === "sm" && "ds-iconbtn--sm")}
+      className={cx('ds-iconbtn', `ds-iconbtn--${surface}`, size === 'sm' && 'ds-iconbtn--sm')}
     >
       {icon ? <Icon name={icon} size="sm" /> : children}
     </button>

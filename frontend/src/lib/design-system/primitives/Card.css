@@ -38,3 +38,19 @@
   box-shadow: var(--shadow-md);
   border-color: var(--color-border-strong);
 }
+
+/* Reader surface: the card sits on the reading paper (classical or dark),
+   so background/border re-point to the reader palette; hierarchy in the dark
+   reading theme is carried by surface steps and borders, not shadows. */
+.ds-card--reader {
+  background: var(--color-reader-card);
+  border-color: var(--color-reader-rule);
+}
+.ds-card--reader.ds-card--sunken {
+  background: var(--color-reader-quote-bg);
+}
+.ds-card--reader.ds-card--interactive:hover {
+  background: var(--color-reader-card-active);
+  border-color: var(--color-reader-border);
+  box-shadow: none;
+}

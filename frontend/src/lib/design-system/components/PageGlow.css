@@ -49,3 +49,12 @@
   aspect-ratio: 1;
   opacity: 0.3;
 }
+
+/* Night reading dims the illumination: the halo softens and the rosette
+   recedes to a trace, so the decoration never competes with text at night. */
+[data-theme='dark'] .ds-pageglow__halo {
+  opacity: 0.55;
+}
+[data-theme='dark'] .ds-pageglow__rosette {
+  opacity: 0.1;
+}

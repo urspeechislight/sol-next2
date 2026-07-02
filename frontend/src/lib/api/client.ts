@@ -4,6 +4,7 @@
 import { PAGE } from '../constants';
 import { API } from '../routes';
 import type {
+  Almanac,
   Ayah,
   Book,
   BookPage,
@@ -32,7 +33,7 @@ class ApiError extends Error {
   }
 }
 
-type QueryValue = string | number | boolean;
+type QueryValue = string | number | boolean | readonly string[];
 
 async function get<T>(path: string): Promise<T> {
   const url = `${API.BASE}${path}`;
@@ -41,11 +42,16 @@ async function get<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** Build a query string, dropping empty strings and false flags. */
+/** Build a query string, dropping empty strings and false flags. An array
+    value appends one repeated param per entry (the set-valued filters). */
 function query(params: Record<string, QueryValue>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value === '' || value === false) continue;
+    if (Array.isArray(value)) {
+      for (const entry of value) search.append(key, entry);
+      continue;
+    }
     search.set(key, String(value));
   }
   const qs = search.toString();
@@ -62,12 +68,17 @@ export function getBook(urn: string): Promise<Book> {
   return get<Book>(`${API.BOOKS}/${encodeURIComponent(urn)}`);
 }
 
+// The closed set of works orderings the backend honors (an unknown value 422s).
+const WORK_SORTS = ['canonical', 'death_year_ah', 'title_ar', 'volume_count'] as const;
+export type WorkSort = (typeof WORK_SORTS)[number];
+
 export interface WorkListParams {
   category?: string;
   domain?: string;
   tradition?: string;
   canonical?: CanonicalRank;
   q?: string;
+  sort?: WorkSort;
   limit?: number;
   offset?: number;
 }
@@ -82,6 +93,7 @@ export function getWorks(params: WorkListParams = {}): Promise<Page<Work>> {
     tradition: params.tradition ?? '',
     canonical: params.canonical ?? '',
     q: params.q ?? '',
+    sort: params.sort ?? '',
     limit: params.limit ?? PAGE.defaultLimit,
     offset: params.offset ?? 0,
   });
@@ -92,6 +104,12 @@ export function getWorks(params: WorkListParams = {}): Promise<Page<Work>> {
 
 export function getToc(urn: string): Promise<Toc> {
   return get<Toc>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.TOC}`);
+}
+
+/** Every volume of the work containing ``urn``, ascending by volume number:
+    the reader's volume switcher. A single-volume work returns just itself. */
+export function getBookVolumes(urn: string): Promise<Book[]> {
+  return get<Book[]>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.VOLUMES}`);
 }
 
 export function getPage(urn: string, pageNumber: number): Promise<BookPage> {
@@ -108,15 +126,16 @@ export function searchBook(
   return get<Page<BookSearchMatch>>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.SEARCH}${qs}`);
 }
 
-// ---- search (one query, many scopes: content / title / author / book / narrator) ----
+// ---- search (one query, four scopes: works / content / narrator / quran) ----
 
-export const SEARCH_SCOPES = ['content', 'title', 'author', 'book', 'narrator', 'quran'] as const;
+export const SEARCH_SCOPES = ['content', 'works', 'narrator', 'quran'] as const;
 export type SearchScope = (typeof SEARCH_SCOPES)[number];
 export type SearchMode = 'exact' | 'broad';
 
 export interface CorpusSearchParams {
   mode?: SearchMode;
-  category?: string;
+  /** Category slugs to OR together (a UI domain pick arrives pre-expanded). */
+  categories?: readonly string[];
   book?: string;
   volume?: number;
   limit?: number;
@@ -130,7 +149,7 @@ export function searchCorpus(
   const qs = query({
     q,
     mode: params.mode ?? 'exact',
-    category: params.category ?? '',
+    category: params.categories ?? [],
     book: params.book ?? '',
     volume: params.volume ?? 0,
     limit: params.limit ?? PAGE.defaultLimit,
@@ -142,27 +161,11 @@ export function searchCorpus(
 export function searchFacets(
   q: string,
   mode: SearchMode = 'exact',
-  category = '',
+  categories: readonly string[] = [],
   book = '',
 ): Promise<SearchFacets> {
-  const qs = query({ q, mode, category, book });
+  const qs = query({ q, mode, category: categories, book });
   return get<SearchFacets>(`${API.SEARCH}${API.FACETS}${qs}`);
-}
-
-export interface BookSearchParams {
-  field?: 'title' | 'author' | 'any';
-  limit?: number;
-  offset?: number;
-}
-
-export function searchBooks(q: string, params: BookSearchParams = {}): Promise<Page<Book>> {
-  const qs = query({
-    q,
-    field: params.field ?? 'any',
-    limit: params.limit ?? PAGE.defaultLimit,
-    offset: params.offset ?? 0,
-  });
-  return get<Page<Book>>(`${API.SEARCH}${API.BOOKS}${qs}`);
 }
 
 // ---- quran ----
@@ -190,6 +193,13 @@ export function searchQuran(
 
 export function getDaily(): Promise<Daily> {
   return get<Daily>(API.DAILY);
+}
+
+// ---- almanac ----
+
+/** The full Hijri almanac; the client selects for its own "today" (hijri.ts). */
+export function getAlmanac(): Promise<Almanac> {
+  return get<Almanac>(API.ALMANAC);
 }
 
 // ---- narrator registries ----

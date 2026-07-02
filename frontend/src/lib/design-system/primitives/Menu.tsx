@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { cx } from '../../utils';
 import { Icon } from './Icon';
+import { useDismiss } from './useDismiss';
 import type { IconName } from '../internal/icons';
 import type { Surface } from '../surfaces';
 import './Menu.css';
@@ -41,22 +42,8 @@ export function Menu({
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const current = options.find((o) => o.value === value);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (root.current && !root.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(root, open, close);
 
   return (
     <div ref={root} className={cx('ds-menu', `ds-menu--${surface}`, className)}>

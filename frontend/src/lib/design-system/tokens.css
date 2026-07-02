@@ -39,7 +39,9 @@
   --palette-green-500: #2e7d5b;
   --palette-green-300: #5bb389;
   --palette-violet-500: #7a55b8;
+  --palette-violet-300: #a184d4;
   --palette-amber-500: #c07a2a;
+  --palette-amber-300: #d89a55;
   --palette-rose-500: #b14c72;
   --palette-teal-500: #2c8090;
   --palette-red-500: #c0463e;
@@ -172,6 +174,10 @@
      --radius-pill in the control primitives, so they all resolve through here. */
   --radius-control: var(--radius-sm);
 
+  /* app chrome: the sticky header's fixed height. Sticky rails must offset
+     their `top` by this or they slide under the header. */
+  --header-height: 60px;
+
   /* control heights (buttons / inputs / selects) + hairline border width */
   --control-height-xs: 22px;
   --control-height-sm: 30px;
@@ -195,6 +201,9 @@
   --text-2xl: 30px;
   --text-3xl: 40px;
   --text-display: clamp(40px, 5.2vw, 60px);
+  /* landing folio: the ayah at hero scale, the basmala under the ʿunwān */
+  --text-hero-ar: clamp(38px, 5vw, 60px);
+  --text-unwan-ar: clamp(28px, 3.4vw, 42px);
 
   --leading-tight: 1.15;
   --leading-snug: 1.4;
@@ -264,9 +273,19 @@
   --color-shia: var(--palette-green-300);
   --color-grade-ok: var(--palette-blue-300);
   --color-grade-strong: var(--palette-green-300);
+  --color-grade-weak: var(--palette-amber-300);
   --color-grade-poor: var(--palette-red-300);
   --color-isnad: var(--palette-blue-300);
   --color-matn: var(--palette-green-300);
+
+  --color-verse: var(--palette-violet-300);
+  --color-ruling: var(--palette-amber-300);
+  --color-danger: var(--palette-red-300);
+  --color-success: var(--palette-green-300);
+  --color-warning: var(--palette-amber-300);
+
+  /* QR stays paper-on-ink in dark on purpose: scanners need light-module
+     contrast, so --color-qr-bg / --color-qr-fg take no dark override. */
 
   --color-scrim: rgba(0, 0, 0, 0.62);
 

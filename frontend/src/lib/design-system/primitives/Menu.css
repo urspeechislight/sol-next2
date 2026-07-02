@@ -91,6 +91,9 @@
   background: transparent;
   border: 0;
 }
+.ds-menu--reader .ds-menu__caret {
+  color: var(--color-reader-muted);
+}
 .ds-menu--reader .ds-menu__list {
   background: var(--color-reader-card);
   border-color: var(--color-reader-rule);

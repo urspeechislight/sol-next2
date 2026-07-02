@@ -1,6 +1,13 @@
-// surahs.ts — the canonical 114 surah names. Static reference data (like the
-// Hijri month names): the corpus artifact carries verse text only, so the
-// reader's navigation names live here.
+// surahs.ts — the canonical 114 surah names plus the shared Qurʾān-query
+// helpers (verse-reference parsing, fold-insensitive verse matching). Static
+// reference data (like the Hijri month names): the corpus artifact carries
+// verse text only, so the reader's navigation names live here. Every surface
+// that accepts a Qurʾān query (the search overlay's Qurʾān scope, the Qurʾān
+// page's rail finder, the within-sūra filter) parses and matches through
+// these, never a local copy.
+
+import { foldSearch, normalizeName } from './arabic';
+import type { Ayah } from './types';
 
 export interface SurahName {
   n: number;
@@ -130,4 +137,45 @@ export function surahName(n: number): SurahName {
   const entry = SURAHS[n - 1];
   if (!entry || entry.n !== n) throw new Error(`Unknown surah number: ${n}`);
   return entry;
+}
+
+export interface VerseRef {
+  surah: number;
+  ayah: number;
+}
+
+const VERSE_REF = /^\s*(\d{1,3})\s*:\s*(\d{1,3})\s*$/;
+
+/** Parse a ``surah:ayah`` reference like ``55:5``; null when the query is
+    anything else. The one reference grammar every Qurʾān query field shares. */
+export function parseVerseRef(q: string): VerseRef | null {
+  const m = VERSE_REF.exec(q);
+  if (!m) return null;
+  return { surah: Number(m[1]), ayah: Number(m[2]) };
+}
+
+/** Surah names matching ``q``: by number, by English name (case-insensitive),
+    or by Arabic name (mark/variant-insensitive via the shared name fold). */
+export function matchSurahs(q: string): readonly SurahName[] {
+  const needle = q.trim();
+  if (!needle) return SURAHS;
+  const lower = needle.toLowerCase();
+  const folded = normalizeName(needle);
+  return SURAHS.filter(
+    (s) =>
+      s.en.toLowerCase().includes(lower) ||
+      normalizeName(s.ar).includes(folded) ||
+      String(s.n) === needle,
+  );
+}
+
+/** True when a verse contains ``q``: Arabic diacritic/variant-insensitively
+    (the same SEARCH fold the corpus index uses), or in its English rendering
+    case-insensitively. */
+export function verseMatches(v: Ayah, q: string): boolean {
+  const needle = q.trim();
+  if (!needle) return true;
+  const folded = foldSearch(needle);
+  if (folded && foldSearch(v.text_ar).includes(folded)) return true;
+  return Boolean(v.text_en && v.text_en.toLowerCase().includes(needle.toLowerCase()));
 }

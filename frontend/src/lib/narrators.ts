@@ -157,4 +157,3 @@ export function canonicalToRecord(e: CanonicalEntry): NarratorRecord {
     origin: 'canonical',
   };
 }
-

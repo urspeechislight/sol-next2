@@ -1,55 +1,49 @@
 import { describe, expect, test } from 'vitest';
 
-import { HISTORY_EVENTS, OBSERVANCES, eventForDay, observancesForMonth } from './almanac';
+import { eventForDay, observancesForMonth } from './almanac';
+import type { Almanac } from './types';
 
-describe('observance tables', () => {
-  test('should keep every entry inside the Hijri calendar bounds', () => {
-    for (const o of OBSERVANCES) {
-      expect(o.month).toBeGreaterThanOrEqual(1);
-      expect(o.month).toBeLessThanOrEqual(12);
-      expect(o.day).toBeGreaterThanOrEqual(1);
-      expect(o.day).toBeLessThanOrEqual(30);
-    }
-    for (const e of HISTORY_EVENTS) {
-      expect(e.month).toBeGreaterThanOrEqual(1);
-      expect(e.month).toBeLessThanOrEqual(12);
-      expect(e.day).toBeGreaterThanOrEqual(1);
-      expect(e.day).toBeLessThanOrEqual(30);
-    }
-  });
-});
+const ALMANAC: Almanac = {
+  observances: [
+    { month: 1, day: 10, en: 'ʿĀshūrāʾ', ar: 'عاشوراء', kind: 'mourning' },
+    { month: 1, day: 1, en: 'Hijri New Year', ar: 'رأس السنة الهجرية', kind: 'observance' },
+    { month: 12, day: 18, en: 'ʿĪd al-Ghadīr', ar: 'عيد الغدير', kind: 'eid' },
+  ],
+  events: [
+    { month: 1, day: 10, year_ah: 61, en: 'The Battle of Karbalāʾ', detail: 'Karbalāʾ.' },
+    { month: 9, day: 17, year_ah: 2, en: 'The Battle of Badr', detail: 'Badr.' },
+    { month: 12, day: 18, year_ah: 10, en: 'The pond of Ghadīr Khumm', detail: 'Ghadīr.' },
+  ],
+};
 
 describe('observancesForMonth', () => {
-  test('should return the month day-ordered', () => {
-    const days = observancesForMonth(1).map((o) => o.day);
-    expect(days.length).toBeGreaterThan(0);
-    expect(days).toEqual([...days].sort((a, b) => a - b));
+  test('should return only the month, day-ordered', () => {
+    const days = observancesForMonth(ALMANAC, 1).map((o) => o.day);
+    expect(days).toEqual([1, 10]);
   });
 
   test('should return an empty list for a month with no entries', () => {
-    expect(observancesForMonth(4).filter((o) => o.month !== 4)).toEqual([]);
+    expect(observancesForMonth(ALMANAC, 4)).toEqual([]);
   });
 });
 
 describe('eventForDay', () => {
   test('should return the exact event on an anniversary', () => {
-    const { event, onThisDay } = eventForDay(1, 10);
+    const { event, onThisDay } = eventForDay(ALMANAC, 1, 10);
     expect(onThisDay).toBe(true);
-    expect(event.yearAh).toBe(61);
+    expect(event.year_ah).toBe(61);
   });
 
   test('should fall back to a deterministic pick from the table', () => {
-    const first = eventForDay(4, 2);
-    const second = eventForDay(4, 2);
+    const first = eventForDay(ALMANAC, 4, 2);
+    const second = eventForDay(ALMANAC, 4, 2);
     expect(first.onThisDay).toBe(false);
     expect(first.event).toEqual(second.event);
-    expect(HISTORY_EVENTS).toContain(first.event);
+    expect(ALMANAC.events).toContain(first.event);
   });
 
   test('should walk different days to different fallback events', () => {
-    const picks = new Set(
-      [1, 2, 3, 4, 5].map((day) => eventForDay(4, day * 3).event.en),
-    );
+    const picks = new Set([1, 2, 3, 4, 5].map((day) => eventForDay(ALMANAC, 4, day).event.en));
     expect(picks.size).toBeGreaterThan(1);
   });
 });

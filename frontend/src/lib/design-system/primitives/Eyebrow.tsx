@@ -16,7 +16,12 @@ export interface EyebrowProps {
 /** The small tracked uppercase label that opens a panel or section. One
     definition of the eyebrow's type, casing, and tracking scale — features
     position it, never restyle it. */
-export function Eyebrow({ tracking = 'normal', tone = 'accent', className, children }: EyebrowProps) {
+export function Eyebrow({
+  tracking = 'normal',
+  tone = 'accent',
+  className,
+  children,
+}: EyebrowProps) {
   return (
     <span
       className={cx(

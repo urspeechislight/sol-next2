@@ -7,7 +7,8 @@ export interface UnstyledButtonProps {
   onClick?: () => void;
   disabled?: boolean;
   ariaLabel?: string;
-  ariaPressed?: boolean;
+  /** Toggle state; 'mixed' marks a partially-applied group toggle. */
+  ariaPressed?: boolean | 'mixed';
   title?: string;
   tabIndex?: number;
   style?: CSSProperties;

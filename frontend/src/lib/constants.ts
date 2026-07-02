@@ -15,10 +15,23 @@ export const PAGE = {
 export const BOOK = { UNKNOWN_DEATH_YEAR: 99999 } as const;
 
 // The library's category browse loads the whole scope (paged fetches of
-// PAGE.facetLimit) so it can shelve landmarks and group by era client-side;
-// categoryMax bounds the assembly and the pane says so when a scope exceeds it;
-// volumeViewMax caps the flat by-volumes ordering (the grouped views cover all).
-export const LIBRARY = { categoryMax: 600, volumeViewMax: 60 } as const;
+// PAGE.facetLimit) and filters client-side; listPageSize is the load-more
+// window of the honest list (never a cap: the foot always states the total).
+// The domain pane's schools spread previews each category with sectionSpread
+// rows after edition-dedupe, fetching sectionFetch of margin so duplicate
+// editions cannot starve a preview; the section head always states the true
+// category totals, so the preview never reads as the whole.
+// assembleMax bounds full client-side assembly of a works-search scope: true
+// facet counts need the whole scope in hand, which measures ~1s at 941 works
+// and is infeasible at the 8,872 a degenerate query matches. At or below the
+// bound the list assembles and facets; above it the surface switches to a
+// STATED canonical-ranked paged mode (never a silent cap).
+export const LIBRARY = {
+  listPageSize: 100,
+  sectionSpread: 3,
+  sectionFetch: 12,
+  assembleMax: 1000,
+} as const;
 
 // Landing-page motion: the verse reveals one word per tick, rests for the hold
 // ticks, then loops; tafsīr excerpts rotate on their own slower clock.
@@ -51,6 +64,10 @@ export const READER = {
   SIZE_STEP: 1,
   SIZE_DEFAULT: 19,
 } as const;
+
+// Continuity without accounts: the reader's last position (written by App as
+// the reader turns pages, read by the landing page's resume strip).
+export const READING = { STORAGE_KEY: 'sol-reading' } as const;
 
 // Share card formats + platform targets (consumed by ShareSheet).
 export const SHARE_FORMATS = [
