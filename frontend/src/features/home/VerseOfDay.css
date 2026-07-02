@@ -1,0 +1,242 @@
+/* VerseOfDay — the landing verse as an editorial spread: warm radial wash,
+   cornerpieces, the ayah unfurling word by word inside a cartouche, tafsīr
+   excerpts rotating beneath. Tokens only. */
+
+.vday {
+  position: relative;
+  padding: var(--space-xl) var(--space-2xl);
+  background:
+    radial-gradient(ellipse at 50% 0%, var(--color-accent-wash), transparent 70%),
+    var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm), var(--shadow-md);
+}
+.vday::before,
+.vday::after {
+  content: '✻';
+  position: absolute;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  opacity: 0.55;
+}
+.vday::before {
+  top: var(--space-sm);
+  left: var(--space-md);
+}
+.vday::after {
+  bottom: var(--space-sm);
+  right: var(--space-md);
+}
+
+.vday__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+.vday__eyebrow {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.vday__surah {
+  text-align: center;
+  font-family: var(--font-ar-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--color-text);
+  margin: 0 0 var(--space-md);
+}
+.vday__surah-en {
+  display: block;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: var(--weight-regular);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-2xs);
+}
+
+/* ---- the cartouche ------------------------------------------------------- */
+.vday__cartouche {
+  display: block;
+  width: 100%;
+  position: relative;
+  border-top: 1px solid var(--color-accent-tint);
+  border-bottom: 1px solid var(--color-accent-tint);
+  padding: var(--space-lg) var(--space-md);
+}
+.vday__cartouche::before,
+.vday__cartouche::after {
+  content: '✻';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface);
+  padding: 0 var(--space-xs);
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+.vday__cartouche::before {
+  top: -0.5em;
+}
+.vday__cartouche::after {
+  bottom: -0.5em;
+}
+
+.vday__words {
+  display: block;
+  text-align: center;
+  font-family: var(--font-ar-display);
+  font-size: var(--text-3xl);
+  line-height: var(--leading-arabic);
+  text-wrap: pretty;
+}
+.vday__word {
+  color: var(--color-text-ghost);
+  transition:
+    color var(--duration-slow) var(--ease-out),
+    text-shadow var(--duration-slow) var(--ease-out);
+}
+.vday__word--in {
+  color: var(--color-text);
+}
+.vday__word--cursor {
+  color: var(--color-accent-deep);
+  text-shadow: 0 0 18px var(--color-accent-tint);
+}
+.vday__progress {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  width: calc(var(--vday-progress, 0) * 100%);
+  background: linear-gradient(to right, transparent, var(--color-accent));
+  transition: width var(--duration-base) linear;
+}
+
+.vday__en {
+  text-align: center;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+  max-width: 44rem;
+  margin: var(--space-md) auto var(--space-lg);
+  text-wrap: pretty;
+}
+
+/* ---- tafsīr rotation ------------------------------------------------------ */
+.vday__tafsir {
+  border-top: 1px dashed var(--color-border-strong);
+  padding-top: var(--space-md);
+}
+.vday__tafsir-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+.vday__tafsir-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+}
+.vday__dots {
+  display: flex;
+  gap: var(--space-xs);
+}
+.vday__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+.vday__dot--active {
+  background: var(--color-accent);
+  transform: scale(1.25);
+}
+
+/* Cards stack in one grid cell so the stage sizes to the tallest excerpt. */
+.vday__tafsir-stage {
+  display: grid;
+}
+.vday__tafsir-card {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  text-align: left;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
+  pointer-events: none;
+}
+.vday__tafsir-card--active {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.vday__tafsir-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+.vday__tafsir-book {
+  font-family: var(--font-ar);
+  font-size: var(--text-md);
+  color: var(--color-accent-deep);
+}
+.vday__tafsir-author {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+}
+.vday__tafsir-text {
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+.vday__tafsir-go {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-accent-deep);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+.vday__tafsir-card--active:hover .vday__tafsir-go,
+.vday__tafsir-card--active:focus-visible .vday__tafsir-go {
+  opacity: 1;
+}
+
+.vday__foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-md);
+}
+
+@media (max-width: 640px) {
+  .vday {
+    padding: var(--space-lg) var(--space-md);
+  }
+  .vday__words {
+    font-size: var(--text-2xl);
+  }
+}

@@ -14,6 +14,14 @@ export const PAGE = {
 // library treats it as "no year" rather than printing it.
 export const BOOK = { UNKNOWN_DEATH_YEAR: 99999 } as const;
 
+// Landing-page motion: the verse reveals one word per tick, rests for the hold
+// ticks, then loops; tafsīr excerpts rotate on their own slower clock.
+export const HOME = {
+  VERSE_WORD_MS: 420,
+  VERSE_HOLD_TICKS: 8,
+  TAFSIR_ROTATE_MS: 8000,
+} as const;
+
 // the narrator registries that the graph browses
 export const REGISTRY = {
   RIJAL: 'rijal',

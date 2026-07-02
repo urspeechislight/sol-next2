@@ -5,7 +5,6 @@ import { SEARCH_SCOPES } from '../lib/api/client';
 import { parseHash } from '../lib/routes';
 import type { RouteState } from '../lib/routes';
 import { useHashRoute } from '../lib/useHashRoute';
-import { DailyScreen } from '../features/daily/DailyScreen';
 import { GraphScreen } from '../features/graph/GraphScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { LibraryScreen } from '../features/library/LibraryScreen';
@@ -16,9 +15,6 @@ import '../lib/design-system/tokens.css';
 import '../lib/design-system/base.css';
 import { AppShell } from './shell/AppShell';
 import type { NavView } from './shell/nav';
-
-// The book Home's "start reading" opens by default.
-const DEFAULT_URN = 'sY-50TSO';
 
 interface Reading {
   urn: string;
@@ -36,7 +32,6 @@ interface AppContentProps {
   view: NavView;
   runSearch: (next: string, nextScope: SearchScope) => void;
   openReader: (urn: string, page?: number, q?: string) => void;
-  onNav: (v: NavView) => void;
 }
 
 /** The shell's child: the search overlay when a query is submitted, otherwise the
@@ -48,7 +43,6 @@ function AppContent({
   view,
   runSearch,
   openReader,
-  onNav,
 }: AppContentProps) {
   if (searching) {
     return (
@@ -57,11 +51,8 @@ function AppContent({
   }
   return (
     <>
-      {view === 'home' ? (
-        <HomeScreen onNav={onNav} onOpenReader={() => openReader(DEFAULT_URN)} />
-      ) : null}
+      {view === 'home' ? <HomeScreen onOpenReader={openReader} /> : null}
       {view === 'library' ? <LibraryScreen onOpenReader={(urn) => openReader(urn)} /> : null}
-      {view === 'daily' ? <DailyScreen onOpenReader={(urn) => openReader(urn)} /> : null}
       {view === 'graph' ? <GraphScreen /> : null}
       {view === 'design' ? <DesignSystemScreen /> : null}
     </>
@@ -146,7 +137,6 @@ export function App() {
         view={view}
         runSearch={runSearch}
         openReader={openReader}
-        onNav={onNav}
       />
     </AppShell>
   );

@@ -20,6 +20,9 @@ export type { InlineProps } from "./primitives/Inline";
 export { Button } from "./primitives/Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./primitives/Button";
 
+export { UnstyledButton } from "./primitives/UnstyledButton";
+export type { UnstyledButtonProps } from "./primitives/UnstyledButton";
+
 export { IconButton } from "./primitives/IconButton";
 export type { IconButtonProps, IconButtonSize } from "./primitives/IconButton";
 export type { Surface } from "./surfaces";
