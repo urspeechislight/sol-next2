@@ -1,0 +1,29 @@
+/* FilterBar — combinable facets over one honest list: era FacetChips with
+   true counts, author filter, foundational toggle, explicit sort. The chip
+   visual itself is the design-system FacetChip; this file owns only the bar
+   layout. Tokens only. */
+
+.fbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.fbar__eras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.fbar__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+.fbar__author {
+  max-width: 260px;
+}
+.fbar__spacer {
+  flex: 1;
+}

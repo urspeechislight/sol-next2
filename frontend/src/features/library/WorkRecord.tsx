@@ -1,51 +1,47 @@
-import { MetaBadges, SourceRecord } from '../../lib/design-system';
+import { UnstyledButton } from '../../lib/design-system';
 import type { Work } from '../../lib/types';
 import { deathLabel } from '../../lib/utils';
+import './WorkRecord.css';
 
 export interface WorkRecordProps {
   work: Work;
-  section: string;
+  /** Optional context annotation (e.g. the category label in search results). */
+  section?: string;
   onOpen: (urn: string) => void;
 }
 
-/** One work as the shared bilingual record, its meta carried by design-system
-    badges (volume count, sect, death year, pages) on the English spine. Opening
-    it opens the first volume in the reader. The single record renderer for
-    every library listing (search, era groups, author groups, volume order). */
+/** One work as a compact catalog row: English title and author as the reading
+    voice, dotted leader, mono meta in a consistent right margin (volumes,
+    death year, a gold mark for foundational works), Arabic title on the spine
+    side. The single row renderer for every library listing. */
 export function WorkRecord({ work, section, onOpen }: WorkRecordProps) {
+  const meta = [
+    work.volume_count > 1 ? `${work.volume_count} vols` : null,
+    deathLabel(work.death_year_ah) || null,
+    section ?? null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   return (
-    <SourceRecord
-      section={section}
-      titleAr={work.title_ar}
-      titleEn={work.title_en}
-      author={work.author}
-      authorAr={work.author_ar}
-      badges={
-        <MetaBadges
-          volumeCount={work.volume_count}
-          sect={work.sect}
-          death={deathLabel(work.death_year_ah)}
-          pageCount={work.page_count}
-        />
-      }
-      onOpen={() => onOpen(work.first_urn)}
-    />
-  );
-}
-
-export interface WorkRecordListProps {
-  works: Work[];
-  section: string;
-  onOpen: (urn: string) => void;
-}
-
-/** A run of work records in the shared records container. */
-export function WorkRecordList({ works, section, onOpen }: WorkRecordListProps) {
-  return (
-    <div className="ds-records">
-      {works.map((w) => (
-        <WorkRecord key={w.stem} work={w} section={section} onOpen={onOpen} />
-      ))}
-    </div>
+    <UnstyledButton
+      className="wrow"
+      onClick={() => onOpen(work.first_urn)}
+      ariaLabel={`Open ${work.title_en ?? work.title_ar}`}
+    >
+      <span className="wrow__main">
+        {work.canonical === 'primary_reference' ? (
+          <span className="wrow__mark" title="Foundational work" aria-hidden="true">
+            ✻
+          </span>
+        ) : null}
+        <span className="wrow__en">{work.title_en ?? work.title_ar}</span>
+        {work.author ? <span className="wrow__author">{work.author}</span> : null}
+      </span>
+      <span className="wrow__leader" aria-hidden="true" />
+      <span className="wrow__meta">{meta}</span>
+      <span className="wrow__ar" dir="rtl">
+        {work.title_ar}
+      </span>
+    </UnstyledButton>
   );
 }

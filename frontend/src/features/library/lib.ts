@@ -1,6 +1,7 @@
 // Library helpers: the domain-glyph map, the tradition lens, label lookups, and
-// the corpus/work formatting used by the Fihrist rail and the works pane. Kept
-// here as single definitions so the rail, overview, and works pane never diverge.
+// the era/edition folding shared by the Fihrist rail, the panes, and the shelf.
+// Kept here as single definitions so the rail, overview, and works pane never
+// diverge.
 
 import type { IconName } from '../../lib/design-system';
 import type { Category, Domain, Tradition, Work } from '../../lib/types';
@@ -38,7 +39,8 @@ export interface EraGroup {
   works: Work[];
 }
 
-function centuryOf(work: Work): number {
+/** The Hijri century of a work's author (0 = undated / out of table range). */
+export function centuryOf(work: Work): number {
   const death = work.death_year_ah;
   if (!death) return 0;
   const century = Math.floor((death - 1) / YEARS_PER_CENTURY) + 1;
@@ -64,18 +66,14 @@ export function groupByEra(works: Work[]): EraGroup[] {
     const group = buckets.get(century) ?? [];
     group.sort(
       (a, b) =>
-        (a.death_year_ah ?? Number.MAX_SAFE_INTEGER) - (b.death_year_ah ?? Number.MAX_SAFE_INTEGER) ||
+        (a.death_year_ah ?? Number.MAX_SAFE_INTEGER) -
+          (b.death_year_ah ?? Number.MAX_SAFE_INTEGER) ||
         (a.title_en ?? a.title_ar).localeCompare(b.title_en ?? b.title_ar),
     );
     const label = CENTURY_LABELS[century];
     return { century, labelEn: label.en, labelAr: label.ar, works: group };
   });
 }
-
-// The shelf is an entry point, not coverage: the era sections below it list
-// every work, so it stays tight — one entry per title+author (editions and
-// translations collapse) and at most a card grid's worth.
-const SHELF_MAX = 9;
 
 /** One entry per title+author: editions and translations collapse to the
     first occurrence, preserving order. */
@@ -91,49 +89,12 @@ export function dedupeEditions(works: Work[]): Work[] {
   return out;
 }
 
-/** The works shelved as the category's landmarks: the canonical primary
-    references, death-year ordered, edition-deduped, capped at SHELF_MAX.
-    Empty when the scope has none. */
-export function landmarks(works: Work[]): Work[] {
-  const ranked = works
-    .filter((w) => w.canonical === 'primary_reference')
-    .sort(
-      (a, b) =>
-        (a.death_year_ah ?? Number.MAX_SAFE_INTEGER) - (b.death_year_ah ?? Number.MAX_SAFE_INTEGER),
-    );
-  return dedupeEditions(ranked).slice(0, SHELF_MAX);
-}
-
-export interface AuthorGroup {
-  author: string;
-  authorAr: string | null;
-  deathYearAh: number | null;
-  works: Work[];
-}
-
-const UNATTRIBUTED = 'Unattributed';
-
-/** Group a scope's works by author, the most prolific authors first (ties by
-    name), works within each group title-ordered. */
-export function groupByAuthor(works: Work[]): AuthorGroup[] {
-  const buckets = new Map<string, Work[]>();
-  for (const w of works) {
-    const key = w.author ?? w.author_ar ?? UNATTRIBUTED;
-    const bucket = buckets.get(key);
-    if (bucket) bucket.push(w);
-    else buckets.set(key, [w]);
-  }
-  const groups = [...buckets.entries()].map(([author, group]) => {
-    group.sort((a, b) => (a.title_en ?? a.title_ar).localeCompare(b.title_en ?? b.title_ar));
-    return {
-      author,
-      authorAr: group[0].author_ar,
-      deathYearAh: group[0].death_year_ah,
-      works: group,
-    };
-  });
-  groups.sort((a, b) => b.works.length - a.works.length || a.author.localeCompare(b.author));
-  return groups;
+/** Case-insensitive author match across both name fields, for the author
+    filter: a substring so partial names ("tusi") reach their variants. */
+export function matchesAuthor(work: Work, needle: string): boolean {
+  const low = needle.trim().toLowerCase();
+  if (!low) return true;
+  return (work.author ?? '').toLowerCase().includes(low) || (work.author_ar ?? '').includes(needle);
 }
 
 // Domain id -> a line glyph from the design-system icon set: a quiet per-domain
@@ -177,6 +138,13 @@ export function sumCount(cats: { count: number }[]): number {
   return cats.reduce((n, c) => n + c.count, 0);
 }
 
+/** A localized count with its correctly pluralized noun: "1 work", "18 works",
+    "1 category", "12 categories". The single grammar for every count label the
+    library prints, so "1 works" can never appear. */
+export function countLabel(n: number, singular: string, plural = `${singular}s`): string {
+  return `${n.toLocaleString()} ${n === 1 ? singular : plural}`;
+}
+
 function find(domains: Domain[], slug: string): Category | null {
   for (const d of domains) for (const c of d.categories) if (c.slug === slug) return c;
   return null;
@@ -193,7 +161,6 @@ export function labelArOf(domains: Domain[], slug: string): string {
 export function domainLabel(domains: Domain[], id: string): string {
   return domains.find((d) => d.id === id)?.label ?? id;
 }
-
 
 /** Corpus totals for the rail masthead. */
 export function corpusTotals(domains: Domain[]): {

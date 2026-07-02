@@ -1,22 +1,24 @@
-import { Heading, Icon, Text, UnstyledButton } from '../../lib/design-system';
+import { Heading, Icon, Text } from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
-import { domainIcon, sumCount, visibleCategories } from './lib';
+import { FoundationalShelf } from './FoundationalShelf';
+import { SchoolsSpread } from './SchoolsSpread';
+import { countLabel, domainIcon, sumCount, visibleCategories } from './lib';
 import type { TraditionLens } from './lib';
-import { RotationHero } from './RotationHero';
 
 export interface DomainPaneProps {
   domain: Domain;
   lens: TraditionLens;
   onPickCategory: (slug: string) => void;
-  onOpen: (urn: string) => void;
+  onOpen: (urn: string, page?: number) => void;
 }
 
-/** A chosen domain is a room, not a dump: its landmark rotation, its blurb,
-    and its categories as tiles, each one step deeper. The flat all-works list
-    is gone; full listings appear only once a category (or a search) narrows
-    the scope to a readable shelf. */
+/** A chosen domain is a room, not a dump, and not the rail's index again:
+    its blurb, the foundational shelf as a hand-turned spotlight, then the
+    schools spread, every category as a section of its leading works. The
+    rail carries the names and counts; this pane carries the books. */
 export function DomainPane({ domain, lens, onPickCategory, onOpen }: DomainPaneProps) {
   const categories = visibleCategories(domain, lens);
+  const tradition = lens === 'all' ? '' : lens;
   return (
     <section className="dpane">
       <header className="dpane__head">
@@ -30,8 +32,8 @@ export function DomainPane({ domain, lens, onPickCategory, onOpen }: DomainPaneP
           {domain.label_ar}
         </Heading>
         <Text as="p" size="sm" tone="muted">
-          {domain.label} · {sumCount(categories).toLocaleString()} works in {categories.length}{' '}
-          categories
+          {domain.label} · {countLabel(sumCount(categories), 'work')} in{' '}
+          {countLabel(categories.length, 'category', 'categories')}
         </Text>
         {domain.blurb ? (
           <Text as="p" size="md" tone="muted" className="dpane__blurb">
@@ -39,25 +41,8 @@ export function DomainPane({ domain, lens, onPickCategory, onOpen }: DomainPaneP
           </Text>
         ) : null}
       </header>
-      <RotationHero domain={domain.id} onOpen={onOpen} />
-      <div className="dpane__grid">
-        {categories.map((c) => (
-          <UnstyledButton
-            key={c.slug}
-            className="ds-card ds-card--p-md ds-card--interactive cat-card"
-            onClick={() => onPickCategory(c.slug)}
-            ariaLabel={`Browse ${c.label}, ${c.count.toLocaleString()} works`}
-          >
-            <span className="cat-card__ar" dir="rtl">
-              {c.label_ar}
-            </span>
-            <span className="cat-card__en">{c.label}</span>
-            <span className="cat-card__n">
-              {c.count.toLocaleString()} works · {c.volume_count.toLocaleString()} volumes
-            </span>
-          </UnstyledButton>
-        ))}
-      </div>
+      <FoundationalShelf domain={domain.id} tradition={tradition} onOpen={onOpen} />
+      <SchoolsSpread categories={categories} onPickCategory={onPickCategory} onOpen={onOpen} />
     </section>
   );
 }

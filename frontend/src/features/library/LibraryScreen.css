@@ -27,12 +27,12 @@
 /* ---- rail ---- */
 .fih-rail {
   position: sticky;
-  top: var(--space-md);
+  top: calc(var(--header-height) + var(--space-md));
   align-self: start;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  max-height: calc(100vh - var(--space-xl));
+  max-height: calc(100vh - var(--header-height) - var(--space-xl));
   overflow-y: auto;
   padding-inline-end: var(--space-md);
   border-inline-end: 1px solid var(--color-border);
@@ -100,17 +100,29 @@
   flex-direction: column;
   gap: var(--space-2xs);
 }
+
+/* The group head is two controls with one consequence each: the name link
+   selects the domain, the chevron button folds the category list. */
 .fih-dom__hd {
+  display: flex;
+  align-items: center;
+}
+.fih-dom__sel {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--space-xs);
   padding: var(--space-xs) var(--space-sm);
   color: var(--color-text);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: background var(--duration-base) var(--ease-out);
 }
-.fih-dom__hd:hover {
+.fih-dom__sel:hover {
   background: var(--color-surface-sunken);
 }
-.fih-dom__hd .ds-icon {
+.fih-dom__sel > .ds-icon {
   color: var(--color-accent);
 }
 .fih-dom__en {
@@ -134,10 +146,22 @@
 }
 .fih-dom__chev {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs);
   color: var(--color-text-ghost);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background var(--duration-base) var(--ease-out);
+}
+.fih-dom__chev:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+}
+.fih-dom__chev .ds-icon {
   transition: transform var(--duration-base) var(--ease-out);
 }
-.fih-dom__hd--open .fih-dom__chev {
+.fih-dom__hd--open .fih-dom__chev .ds-icon {
   transform: rotate(90deg);
 }
 .fih-dom__cats {
@@ -217,42 +241,8 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
-.overview__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
-  gap: var(--space-md);
-}
-.dom-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2xs);
-  text-decoration: none;
-}
-.dom-card:hover {
-  transform: translateY(-2px);
-}
-.dom-card__glyph {
-  display: inline-flex;
-  margin-bottom: var(--space-xs);
-  color: var(--color-accent);
-}
-.dom-card__ar {
-  font-family: var(--font-ar-display);
-  font-size: var(--text-xl);
-  color: var(--color-text);
-}
-.dom-card__en {
-  font-family: var(--font-serif);
-  font-size: var(--text-base);
-  color: var(--color-text-muted);
-}
-.dom-card__n {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-}
 
-/* ---- domain pane: a room of category tiles, never a flat dump ---- */
+/* ---- domain pane: shelf + schools spread, never the rail's index again ---- */
 .dpane__head {
   margin-bottom: var(--space-lg);
 }
@@ -265,166 +255,8 @@
   max-width: 40rem;
   margin-top: var(--space-sm);
 }
-.dpane__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-md);
-}
-.cat-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2xs);
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-}
-.cat-card:hover {
-  transform: translateY(-2px);
-}
-.cat-card__ar {
-  font-family: var(--font-ar-display);
-  font-size: var(--text-lg);
-  color: var(--color-text);
-}
-.cat-card__en {
-  font-family: var(--font-serif);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-.cat-card__n {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-}
-
-/* ---- category pane: landmarks shelf + era-grouped works ---- */
-.cpane__shelf {
-  margin-bottom: var(--space-lg);
-  padding: var(--space-md);
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-.cpane__shelf-label {
-  display: flex;
-  margin-bottom: var(--space-sm);
-}
-.cpane__shelf-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-sm);
-}
-.cpane__landmark {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2xs);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-}
-.cpane__landmark:hover {
-  transform: translateY(-2px);
-  border-color: var(--color-accent-tint);
-}
-.cpane__landmark-ar {
-  font-family: var(--font-ar-display);
-  font-size: var(--text-lg);
-  line-height: var(--leading-snug);
-  color: var(--color-text);
-}
-.cpane__landmark-en {
-  font-family: var(--font-serif);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-.cpane__landmark-author {
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-}
-.cpane__landmark-meta {
-  display: inline-flex;
-  gap: var(--space-xs);
-  margin-top: var(--space-2xs);
-}
-
-.cpane__modes {
-  margin-bottom: var(--space-md);
-}
 .cpane__truncated {
   margin-top: var(--space-md);
-}
-
-/* ---- collapsed work groups (eras, authors): a table of contents, not a
-   scroll — each header opens its run of records on demand ---- */
-.wgroup {
-  border-top: 1px solid var(--color-border-hair);
-}
-.wgroup:last-child {
-  border-bottom: 1px solid var(--color-border-hair);
-}
-.wgroup__head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-sm);
-  width: 100%;
-  padding: var(--space-sm) var(--space-2xs);
-  transition: background var(--duration-fast) var(--ease-out);
-}
-.wgroup__head:hover {
-  background: var(--color-accent-wash);
-}
-.wgroup__marker {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--color-accent-deep);
-  width: 1.2em;
-  flex: none;
-  text-align: center;
-}
-.wgroup__en {
-  font-family: var(--font-serif);
-  font-size: var(--text-md);
-  color: var(--color-text);
-}
-.wgroup--open .wgroup__en {
-  font-weight: var(--weight-semibold);
-  color: var(--color-accent-deep);
-}
-.wgroup__ar {
-  font-family: var(--font-ar);
-  font-size: var(--text-sm);
-  color: var(--color-text-faint);
-}
-.wgroup__meta {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-}
-.wgroup__count {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-  font-variant-numeric: tabular-nums;
-}
-.wgroup__body {
-  padding: var(--space-xs) 0 var(--space-md);
-  animation: wgroup-open var(--duration-base) var(--ease-out);
-}
-@keyframes wgroup-open {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* ---- responsive: stack the rail above the pane ---- */
@@ -442,4 +274,42 @@
     border-bottom: 1px solid var(--color-border);
     padding-bottom: var(--space-md);
   }
+}
+
+/* contents rows (corpus overview) */
+.overview__contents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+.overview__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.overview__row + .overview__row {
+  border-top: 1px solid var(--color-border-hair);
+}
+
+/* the category room's honest list */
+.cpane__eras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+.cpane__era {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.cpane__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-hair);
 }

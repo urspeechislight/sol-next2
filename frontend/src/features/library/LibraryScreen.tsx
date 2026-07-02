@@ -2,35 +2,33 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { PageGlow, Spinner, Text } from '../../lib/design-system';
 import { getWorks } from '../../lib/api/client';
-import { LIBRARY, PAGE } from '../../lib/constants';
-import type { Page, Work } from '../../lib/types';
+import { PAGE } from '../../lib/constants';
+import type { Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { useDomains } from '../../lib/useDomains';
 import { CategoryPane } from './CategoryPane';
 import { CorpusOverview } from './CorpusOverview';
 import { DomainPane } from './DomainPane';
 import { FihristRail } from './FihristRail';
-import { WorksPane } from './WorksPane';
+import { ScopeHead } from './ScopeHead';
+import { WorksQueryResults } from './WorksQueryResults';
 import { domainLabel, labelArOf, labelOf } from './lib';
 import type { TraditionLens } from './lib';
 import '../screens.css';
 import './LibraryScreen.css';
 
-const PER_PAGE = PAGE.defaultLimit;
-
 /** Rail state + handlers, kept together so every entry point shares one scope
-    discipline. Browsing (a category, a domain, the lens) and searching (the rail
-    filter) are mutually exclusive: picking a scope clears the search, and typing
-    a search clears the scope. */
+    discipline. Browsing (a category, a domain, the lens) and searching (the
+    rail filter) are mutually exclusive: picking a scope clears the search,
+    and typing a search clears the scope. Selecting and expanding are separate
+    acts with one consequence each: a domain's name selects it (the pane
+    changes), only its chevron folds the rail group open or closed. */
 function useScope(domainOfCat: Map<string, string>, initialCat = '', initialDom = '') {
   const [cat, setCat] = useState(initialCat);
   const [dom, setDom] = useState(initialDom);
   const [lens, setLens] = useState<TraditionLens>('all');
   const [filter, setFilter] = useState('');
-  const [openDomains, setOpenDomains] = useState<Set<string>>(
-    () => new Set(initialDom ? [initialDom] : []),
-  );
-  const [page, setPage] = useState(1);
+  const [openDomains, setOpenDomains] = useState<Set<string>>(() => new Set());
 
   // A deep-linked category expands its owning domain in the rail once the
   // taxonomy has loaded (the map is empty on the first render).
@@ -45,7 +43,6 @@ function useScope(domainOfCat: Map<string, string>, initialCat = '', initialDom 
       setCat(slug);
       setDom('');
       setFilter('');
-      setPage(1);
       const owner = domainOfCat.get(slug);
       if (owner) setOpenDomains((s) => new Set(s).add(owner));
     },
@@ -55,8 +52,6 @@ function useScope(domainOfCat: Map<string, string>, initialCat = '', initialDom 
     setDom(id);
     setCat('');
     setFilter('');
-    setPage(1);
-    setOpenDomains((s) => new Set(s).add(id));
   }, []);
   const toggleDomain = useCallback((id: string) => {
     setOpenDomains((s) => {
@@ -65,29 +60,22 @@ function useScope(domainOfCat: Map<string, string>, initialCat = '', initialDom 
       else next.add(id);
       return next;
     });
-    setDom(id);
-    setCat('');
-    setFilter('');
-    setPage(1);
   }, []);
   const changeLens = useCallback((next: TraditionLens) => {
     setLens(next);
     setCat('');
     setDom('');
     setFilter('');
-    setPage(1);
   }, []);
   const changeFilter = useCallback((value: string) => {
     setFilter(value);
     setCat('');
     setDom('');
-    setPage(1);
   }, []);
   const reset = useCallback(() => {
     setCat('');
     setDom('');
     setFilter('');
-    setPage(1);
   }, []);
 
   return {
@@ -96,9 +84,7 @@ function useScope(domainOfCat: Map<string, string>, initialCat = '', initialDom 
     lens,
     filter,
     openDomains,
-    page,
     scoped: Boolean(cat || dom || filter.trim()),
-    setPage,
     changeFilter,
     pickCategory,
     pickDomain,
@@ -108,29 +94,17 @@ function useScope(domainOfCat: Map<string, string>, initialCat = '', initialDom 
   };
 }
 
-function useSearchWorks(lens: TraditionLens, page: number, filter: string) {
-  return useAsync<Page<Work> | null>(() => {
-    const q = filter.trim();
-    if (!q) return Promise.resolve(null);
-    return getWorks({
-      q,
-      tradition: lens === 'all' ? '' : lens,
-      limit: PER_PAGE,
-      offset: (page - 1) * PER_PAGE,
-    });
-  }, [lens, page, filter]);
-}
-
-/** Assemble a whole category (paged fetches of PAGE.facetLimit) so the pane can
-    shelve landmarks and group by era. Bounded by LIBRARY.categoryMax; the pane
-    says so when a scope is larger. */
+/** Assemble a whole category (paged fetches of PAGE.facetLimit) so the pane
+    can filter and section it truthfully. Uncapped by design: a capped fetch
+    made seven of nine century counts wrong in the largest scopes, and the
+    full fetch of the biggest category measures ~1s. */
 function useCategoryWorks(cat: string, lens: TraditionLens) {
   return useAsync<{ items: Work[]; total: number } | null>(async () => {
     if (!cat) return null;
     const tradition = lens === 'all' ? '' : lens;
     const first = await getWorks({ category: cat, tradition, limit: PAGE.facetLimit, offset: 0 });
     const items = [...first.items];
-    while (items.length < first.total && items.length < LIBRARY.categoryMax) {
+    while (items.length < first.total) {
       const next = await getWorks({
         category: cat,
         tradition,
@@ -145,16 +119,19 @@ function useCategoryWorks(cat: string, lens: TraditionLens) {
 }
 
 export interface LibraryScreenProps {
-  onOpenReader: (urn: string) => void;
+  onOpenReader: (urn: string, page?: number) => void;
   /** Deep-link scope from the URL / home hero: at most one of the two. */
   initialCategory?: string;
   initialDomain?: string;
 }
 
 /** The Library as a two-column reading room with progressive depth: the
-    corpus overview (domain cards), a domain as category tiles, a category as
-    a landmarks shelf over era-grouped works, and the rail search as a flat
-    paged result list. Each step narrows; nothing dumps the whole scope. */
+    corpus overview (domain contents rows), a domain as its foundational
+    shelf plus the schools spread (each category as a section of its leading
+    works, never the rail's index repeated), a category as one honest
+    filtered list, and the rail search as the same canonical-ranked works
+    results the header's Works scope uses. Each step narrows; nothing dumps
+    the whole scope and nothing is silently capped. */
 export function LibraryScreen({
   onOpenReader,
   initialCategory = '',
@@ -168,7 +145,6 @@ export function LibraryScreen({
     return map;
   }, [list]);
   const sc = useScope(domainOfCat, initialCategory, initialDomain);
-  const search = useSearchWorks(sc.lens, sc.page, sc.filter);
   const category = useCategoryWorks(sc.cat, sc.lens);
 
   if (domains.loading) {
@@ -204,30 +180,31 @@ export function LibraryScreen({
           scoped={sc.scoped}
           onLens={sc.changeLens}
           onFilter={sc.changeFilter}
+          onSelectDomain={sc.pickDomain}
           onToggleDomain={sc.toggleDomain}
           onPickCategory={sc.pickCategory}
           onReset={sc.reset}
         />
         <div className="library__pane">
           {searching ? (
-            <WorksPane
-              breadcrumb="Library / Search"
-              scopeLabel={`“${sc.filter.trim()}”`}
-              scopeLabelAr="بحث"
-              works={search.data ?? null}
-              loading={search.loading}
-              error={search.error}
-              page={sc.page}
-              perPage={PER_PAGE}
-              labelFor={(slug) => labelOf(list, slug)}
-              onPage={sc.setPage}
-              onOpen={onOpenReader}
-            />
+            <section className="works">
+              <ScopeHead
+                breadcrumb="Library / Search"
+                labelAr="بحث"
+                line={`Results for “${sc.filter.trim()}”`}
+              />
+              <WorksQueryResults
+                q={sc.filter}
+                tradition={sc.lens === 'all' ? '' : sc.lens}
+                onOpen={onOpenReader}
+              />
+            </section>
           ) : sc.cat ? (
             <CategoryPane
               breadcrumb={`Library / ${domainLabel(list, parentDom)} / ${labelOf(list, sc.cat)}`}
               scopeLabel={labelOf(list, sc.cat)}
               scopeLabelAr={labelArOf(list, sc.cat)}
+              category={sc.cat}
               works={category.data?.items ?? null}
               total={category.data?.total ?? 0}
               loading={category.loading}
@@ -242,7 +219,7 @@ export function LibraryScreen({
               onOpen={onOpenReader}
             />
           ) : (
-            <CorpusOverview domains={list} onPickDomain={sc.pickDomain} onOpen={onOpenReader} />
+            <CorpusOverview domains={list} lens={sc.lens} onPickDomain={sc.pickDomain} />
           )}
         </div>
       </div>

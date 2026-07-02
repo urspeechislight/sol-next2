@@ -1,4 +1,13 @@
-import { Divider, Heading, Icon, Input, Link, Segmented, Text } from '../../lib/design-system';
+import {
+  Divider,
+  Heading,
+  Icon,
+  Input,
+  Link,
+  Segmented,
+  Text,
+  UnstyledButton,
+} from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
 import { viewHref } from '../../lib/routes';
 import { corpusTotals, domainIcon, sumCount, visibleCategories } from './lib';
@@ -43,11 +52,24 @@ interface DomainGroupProps {
   open: boolean;
   active: boolean;
   activeCat: string;
+  onSelect: (id: string) => void;
   onToggle: (id: string) => void;
   onPick: (slug: string) => void;
 }
 
-function DomainGroup({ domain, lens, open, active, activeCat, onToggle, onPick }: DomainGroupProps) {
+/** One rail group with one consequence per control: the domain's name row
+    selects it (the pane opens its room), the chevron alone folds the
+    category list open or closed. */
+function DomainGroup({
+  domain,
+  lens,
+  open,
+  active,
+  activeCat,
+  onSelect,
+  onToggle,
+  onPick,
+}: DomainGroupProps) {
   const cats = visibleCategories(domain, lens);
   if (cats.length === 0) return null;
   const count = sumCount(cats);
@@ -55,22 +77,30 @@ function DomainGroup({ domain, lens, open, active, activeCat, onToggle, onPick }
     'fih-dom__hd' + (open ? ' fih-dom__hd--open' : '') + (active ? ' fih-dom__hd--active' : '');
   return (
     <div className="fih-dom">
-      <Link
-        href={viewHref('library')}
-        className={cls}
-        ariaLabel={`${domain.label}, ${count.toLocaleString()} works`}
-        onActivate={() => onToggle(domain.id)}
-      >
-        <Icon name={domainIcon(domain.id)} size="sm" />
-        <span className="fih-dom__en">{domain.label}</span>
-        <span className="fih-dom__ar" dir="rtl">
-          {domain.label_ar}
-        </span>
-        <span className="fih-dom__n">{count.toLocaleString()}</span>
-        <span className="fih-dom__chev">
+      <div className={cls}>
+        <Link
+          href={viewHref('library')}
+          className="fih-dom__sel"
+          ariaCurrent={active}
+          ariaLabel={`${domain.label}, ${count.toLocaleString()} works`}
+          onActivate={() => onSelect(domain.id)}
+        >
+          <Icon name={domainIcon(domain.id)} size="sm" />
+          <span className="fih-dom__en">{domain.label}</span>
+          <span className="fih-dom__ar" dir="rtl">
+            {domain.label_ar}
+          </span>
+          <span className="fih-dom__n">{count.toLocaleString()}</span>
+        </Link>
+        <UnstyledButton
+          className="fih-dom__chev"
+          onClick={() => onToggle(domain.id)}
+          ariaPressed={open}
+          ariaLabel={`${open ? 'Collapse' : 'Expand'} ${domain.label} categories`}
+        >
           <Icon name="chevron-right" size="sm" />
-        </span>
-      </Link>
+        </UnstyledButton>
+      </div>
       {open ? (
         <div className="fih-dom__cats">
           {cats.map((c) => (
@@ -100,6 +130,7 @@ export interface FihristRailProps {
   scoped: boolean;
   onLens: (lens: TraditionLens) => void;
   onFilter: (filter: string) => void;
+  onSelectDomain: (id: string) => void;
   onToggleDomain: (id: string) => void;
   onPickCategory: (slug: string) => void;
   onReset: () => void;
@@ -118,6 +149,7 @@ export function FihristRail({
   scoped,
   onLens,
   onFilter,
+  onSelectDomain,
   onToggleDomain,
   onPickCategory,
   onReset,
@@ -172,6 +204,7 @@ export function FihristRail({
             open={openDomains.has(d.id)}
             active={d.id === activeDomain}
             activeCat={activeCat}
+            onSelect={onSelectDomain}
             onToggle={onToggleDomain}
             onPick={onPickCategory}
           />

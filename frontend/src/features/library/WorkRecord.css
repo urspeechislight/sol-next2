@@ -1,0 +1,92 @@
+/* WorkRecord — the compact catalog row: one line per work, ~44px, 15+ per
+   screen. Same grammar as IndexRow (EN voice, leader, mono margin, AR spine)
+   at listing density. Tokens only. */
+
+.wrows {
+  display: flex;
+  flex-direction: column;
+}
+
+.wrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto minmax(120px, auto);
+  align-items: baseline;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-sm) var(--space-sm);
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+.wrow:hover {
+  background: var(--color-accent-wash);
+}
+.wrow + .wrow {
+  border-top: 1px solid var(--color-border-hair);
+}
+
+.wrow__main {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+.wrow__mark {
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+}
+.wrow__en {
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wrow:hover .wrow__en {
+  color: var(--color-accent-deep);
+}
+.wrow__author {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wrow__leader {
+  align-self: center;
+  min-width: var(--space-xl);
+  border-bottom: 1px dotted var(--color-border-strong);
+  opacity: 0.7;
+}
+
+.wrow__meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.wrow__ar {
+  font-family: var(--font-ar);
+  font-size: var(--text-md);
+  color: var(--color-text-muted);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 720px) {
+  .wrow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .wrow__leader,
+  .wrow__ar {
+    display: none;
+  }
+}
