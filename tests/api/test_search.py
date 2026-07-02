@@ -89,7 +89,30 @@ def test_should_reject_an_unknown_search_mode_with_422(client: TestClient) -> No
     assert response.status_code == 422
 
 
-def test_should_reject_an_unknown_book_search_field_with_422(client: TestClient) -> None:
-    """An out-of-set ?field= on /search/books is rejected, not treated as any."""
-    response = client.get("/api/search/books", params={"q": "x", "field": "not-a-field"})
+def test_should_union_repeated_category_params(client: TestClient) -> None:
+    """Repeated ?category= values OR together: the union total is bounded by
+    each part and their sum, and every hit's category is in the selected set."""
+    cats = client.get("/api/search/facets", params={"q": FACET_QUERY}).json()["categories"]
+    slugs = [cats[0]["slug"], cats[1]["slug"]]
+    one = client.get("/api/search", params={"q": FACET_QUERY, "category": slugs[0]}).json()
+    both = client.get("/api/search", params={"q": FACET_QUERY, "category": slugs}).json()
+    assert one["total"] <= both["total"] <= cats[0]["count"] + cats[1]["count"]
+    assert all(item["category"] in set(slugs) for item in both["items"])
+
+
+def test_should_scope_book_facets_to_the_selected_category_set(client: TestClient) -> None:
+    """A category set on /search/facets fills the books level across the set."""
+    cats = client.get("/api/search/facets", params={"q": FACET_QUERY}).json()["categories"]
+    slugs = [cats[0]["slug"], cats[1]["slug"]]
+    payload = client.get("/api/search/facets", params={"q": FACET_QUERY, "category": slugs}).json()
+    assert payload["books"]
+    assert payload["books"][0]["count"] >= 1
+
+
+def test_should_reject_an_unknown_category_in_the_set_with_422(client: TestClient) -> None:
+    """One unknown slug among repeated ?category= values is a client error."""
+    cats = client.get("/api/search/facets", params={"q": FACET_QUERY}).json()["categories"]
+    response = client.get(
+        "/api/search", params={"q": KNOWN_PHRASE, "category": [cats[0]["slug"], "not-a-slug"]}
+    )
     assert response.status_code == 422

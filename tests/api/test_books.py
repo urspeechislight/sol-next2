@@ -1,4 +1,5 @@
-"""Tests for ``GET /api/books`` (paginated) and ``GET /api/books/{urn}``."""
+"""Tests for ``GET /api/books`` (paginated), ``GET /api/books/{urn}``, and
+``GET /api/books/{urn}/volumes``."""
 
 from __future__ import annotations
 
@@ -18,6 +19,12 @@ PAGINATION_OFFSET_SAMPLE = 5
 # A stable URN from the ingested index. Picked from the first arabic-language
 # -sciences entry which is the alphabetically-first category.
 SAMPLE_BOOK_URN = "sY-50TSO"
+
+# A middle volume of a stable multi-volume work (Mukhtasar al-Mizan), so the
+# volumes route must reach siblings on both sides of it.
+MULTIVOLUME_SAMPLE_URN = "tGliqc8O_02"
+MULTIVOLUME_SAMPLE_STEM = "tGliqc8O"
+MULTIVOLUME_MIN_COUNT = 2
 
 
 def test_should_return_paginated_envelope_when_listing(client: TestClient) -> None:
@@ -87,6 +94,32 @@ def test_should_serialize_arabic_title_round_trip(client: TestClient) -> None:
     response = client.get(f"/api/books/{SAMPLE_BOOK_URN}")
     payload = response.json()
     assert any("؀" <= c <= "ۿ" for c in payload["title_ar"])
+
+
+def test_should_list_every_volume_of_a_multivolume_work(client: TestClient) -> None:
+    """Any member volume's `/volumes` returns the whole work, ascending."""
+    response = client.get(f"/api/books/{MULTIVOLUME_SAMPLE_URN}/volumes")
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) >= MULTIVOLUME_MIN_COUNT
+    assert all(book["urn"].startswith(MULTIVOLUME_SAMPLE_STEM) for book in payload)
+    assert MULTIVOLUME_SAMPLE_URN in [book["urn"] for book in payload]
+    numbers = [book["volume"] for book in payload]
+    assert numbers == sorted(numbers)
+
+
+def test_should_list_only_itself_for_a_single_volume_book(client: TestClient) -> None:
+    """A suffix-less URN is its own work: `/volumes` is a one-element list."""
+    response = client.get(f"/api/books/{SAMPLE_BOOK_URN}/volumes")
+    assert response.status_code == 200
+    payload = response.json()
+    assert [book["urn"] for book in payload] == [SAMPLE_BOOK_URN]
+
+
+def test_should_return_404_for_volumes_of_unknown_urn(client: TestClient) -> None:
+    """An unknown URN 404s on `/volumes` just as it does on the detail route."""
+    response = client.get("/api/books/no-such-book/volumes")
+    assert response.status_code == 404
 
 
 def test_should_raise_when_index_missing_books_key(monkeypatch: pytest.MonkeyPatch) -> None:

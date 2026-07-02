@@ -1,15 +1,14 @@
-"""HTTP routes for cross-corpus full-text search + book/facet lookups.
+"""HTTP routes for cross-corpus full-text search + facet lookups.
 
 All routes register via ``add_api_route``. ``/search`` is the content search
 (FTS5 over page text, ``exact``/``broad`` mode, filtered by category -> book ->
 volume) -> ``Page[CorpusMatch]``. ``/search/facets`` returns the categories/
-books/volumes that have matches. ``/search/books`` searches book metadata by
-title / author -> ``Page[Book]``. The paginated routes take the shared
-``PageParams``; narrators are searched via the rijal route.
+books/volumes that have matches. The paginated routes take the shared
+``PageParams``. Catalog search lives on ``/works?q=`` (volume-folded works);
+narrators are searched via the rijal route.
 
-``SearchMode`` and ``SearchField`` are closed ``Literal`` sets, so FastAPI
-rejects an unknown mode/field with 422 rather than the repo silently defaulting
-it to ``exact`` / ``any``.
+``SearchMode`` is a closed ``Literal`` set, so FastAPI rejects an unknown mode
+with 422 rather than the repo silently defaulting it to ``exact``.
 """
 
 from __future__ import annotations
@@ -20,18 +19,31 @@ from fastapi import APIRouter, Depends, Query
 
 from backend.api._pagination import PageDep
 from backend.api._routes import as_page, get_route
-from backend.models.book import Book
+from backend.api._validation import reject_unknown
 from backend.models.pagination import Page
 from backend.models.search import CorpusMatch, SearchFacets
-from backend.repositories import books as books_repo
+from backend.repositories import _taxonomy
 from backend.repositories import corpus as corpus_repo
 
 router = APIRouter(tags=["search"])
 
 SearchMode = Literal["exact", "broad"]
-SearchField = Literal["title", "author", "any"]
 
 _MODE_DESC = "Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases)."
+
+
+_CATEGORY_DESC = "Restrict to these category slugs (repeatable; values OR together)."
+
+
+def _checked_categories(category: list[str] | None) -> tuple[str, ...]:
+    """Validate every repeated ``category`` value against the taxonomy (422 on
+    an unknown slug) and freeze the set for the repo query. ``None`` is the
+    absent-param default and means no category constraint."""
+    if category is None:
+        return ()
+    for slug in category:
+        reject_unknown("category", slug, _taxonomy.is_known_category)
+    return tuple(category)
 
 
 class SearchParams:
@@ -41,12 +53,12 @@ class SearchParams:
         self,
         q: str = Query(default="", description="Arabic phrase; folded before matching."),
         mode: Annotated[SearchMode, Query(description=_MODE_DESC)] = "exact",
-        category: str = Query(default="", description="Restrict to a category slug."),
+        category: Annotated[list[str] | None, Query(description=_CATEGORY_DESC)] = None,
         book: str = Query(default="", description="Restrict to a book title (a work)."),
         volume: int = Query(default=0, ge=0, description="Restrict to a volume number (0 = any)."),
     ) -> None:
         self.query = corpus_repo.SearchQuery(
-            q=q, mode=mode, category=category, book=book, volume=volume
+            q=q, mode=mode, categories=_checked_categories(category), book=book, volume=volume
         )
 
 
@@ -65,24 +77,11 @@ async def _search(
 async def _search_facets(
     q: str = Query(default="", description="Arabic phrase; folded before matching."),
     mode: Annotated[SearchMode, Query(description=_MODE_DESC)] = "exact",
-    category: str = Query(default="", description="Category to scope book facets to."),
+    category: Annotated[list[str] | None, Query(description=_CATEGORY_DESC)] = None,
     book: str = Query(default="", description="Book to scope volume facets to."),
 ) -> SearchFacets:
     """Return the categories, books, and volumes that hold matches for ``q``."""
-    return corpus_repo.facets(q=q, mode=mode, category=category, book=book)
-
-
-async def _search_books(
-    page: PageDep,
-    q: str = Query(default="", description="Title or author text; folded before matching."),
-    field: Annotated[SearchField, Query(description="Match field: title, author, or any.")] = "any",
-) -> Page[Book]:
-    """Wrap the repo's (slice, total) into a Page[Book] envelope."""
-    return as_page(
-        Page[Book],
-        page,
-        books_repo.search_books(q=q, field=field, limit=page.limit, offset=page.offset),
-    )
+    return corpus_repo.facets(q=q, mode=mode, categories=_checked_categories(category), book=book)
 
 
 get_route(
@@ -98,11 +97,4 @@ get_route(
     _search_facets,
     response_model=SearchFacets,
     summary="Category -> book -> volume filters available for a search query.",
-)
-get_route(
-    router,
-    "/search/books",
-    _search_books,
-    response_model=Page[Book],
-    summary="Search book metadata by title / author (diacritic-insensitive).",
 )

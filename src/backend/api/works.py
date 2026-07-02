@@ -5,32 +5,21 @@ One row per work (not per volume), scoped by category, domain, or tradition.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 from backend.api._pagination import PageDep
 from backend.api._routes import as_page, get_route
-from backend.core.http import status
+from backend.api._validation import reject_unknown
 from backend.models.book import Canonical
 from backend.models.pagination import Page
 from backend.models.work import Work
 from backend.repositories import _taxonomy
 from backend.repositories import books as books_repo
+from backend.repositories.books import WorkSort
 
 router = APIRouter(tags=["works"])
-
-
-def _reject_unknown(param: str, value: str | None, predicate: Callable[[str], bool]) -> None:
-    """Reject an unknown closed-set query value with 422 — the FastAPI validation-
-    error convention shared with the Literal mode/field params — instead of letting
-    it silently filter to an empty list. No-op when the value is absent (None)."""
-    if value is not None and not predicate(value):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f"Unknown {param}: {value!r}.",
-        )
 
 
 async def _list_works(
@@ -40,17 +29,31 @@ async def _list_works(
     tradition: str | None = Query(default=None, description="Tradition: sunni, shia, or shared."),
     canonical: Annotated[Canonical | None, Query(description="Filter to a canonical rank.")] = None,
     q: str = Query(default="", description="Search works by title or author."),
+    sort: Annotated[
+        WorkSort | None,
+        Query(
+            description=(
+                "Ordering: canonical (rank tier, then death year), "
+                "death_year_ah (undated last), title_ar, or volume_count."
+            )
+        ),
+    ] = None,
 ) -> Page[Work]:
     """Wrap the repo's (slice, total) of works into a Page[Work] envelope."""
-    _reject_unknown("domain", domain, _taxonomy.is_known_domain)
-    _reject_unknown("category", category, _taxonomy.is_known_category)
-    _reject_unknown("tradition", tradition, _taxonomy.is_known_tradition)
+    reject_unknown("domain", domain, _taxonomy.is_known_domain)
+    reject_unknown("category", category, _taxonomy.is_known_category)
+    reject_unknown("tradition", tradition, _taxonomy.is_known_tradition)
     return as_page(
         Page[Work],
         page,
         books_repo.list_works(
             books_repo.WorksQuery(
-                category=category, domain=domain, tradition=tradition, canonical=canonical, q=q
+                category=category,
+                domain=domain,
+                tradition=tradition,
+                canonical=canonical,
+                q=q,
+                sort=sort,
             ),
             limit=page.limit,
             offset=page.offset,

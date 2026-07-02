@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/almanac": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Hijri almanac: observances and chronicle events.
+         * @description Return the full almanac; the client selects for its own "today".
+         */
+        get: operations["get_almanac_api_almanac_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/books": {
         parameters: {
             query?: never;
@@ -114,6 +134,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/books/{urn}/volumes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List every volume of the work containing this book, ascending.
+         * @description Return every volume of the work containing ``urn``, ascending by volume
+         *     number: the reader's volume switcher. A single-volume work returns just
+         *     that book. The membership comes from the same fold :func:`list_works`
+         *     serves, so the two views can never disagree; a fold entry missing from the
+         *     index would be an invariant breach and raises KeyError loudly.
+         */
+        get: operations["list_volumes_api_books__urn__volumes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/canonical": {
         parameters: {
             query?: never;
@@ -162,8 +206,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Today's verse, hadith, and book pick.
-         * @description Return today's curated Daily payload.
+         * Today's verse, hadith, and book pick, rotated by date.
+         * @description Return the Daily selection for the current UTC date.
          */
         get: operations["get_today_api_daily_get"];
         put?: never;
@@ -318,26 +362,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/search/books": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Search book metadata by title / author (diacritic-insensitive).
-         * @description Wrap the repo's (slice, total) into a Page[Book] envelope.
-         */
-        get: operations["_search_books_api_search_books_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/search/facets": {
         parameters: {
             query?: never;
@@ -442,6 +466,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Almanac
+         * @description The served almanac: every observance + every chronicle entry.
+         */
+        Almanac: {
+            /** Events */
+            events: components["schemas"]["HistoryEvent"][];
+            /** Observances */
+            observances: components["schemas"]["Observance"][];
+        };
         /**
          * Ayah
          * @description One Qurʾān verse, resolved from a surah:ayah reference.
@@ -833,14 +867,11 @@ export interface components {
         };
         /**
          * Daily
-         * @description Top-level Daily payload.
+         * @description Top-level Daily payload: today's selection from each pool.
          */
         Daily: {
             book: components["schemas"]["DailyBookPick"];
-            date: components["schemas"]["DailyDate"];
             hadith: components["schemas"]["DailyHadith"];
-            /** Rotation */
-            rotation: string[];
             verse: components["schemas"]["Verse"];
         };
         /**
@@ -853,18 +884,6 @@ export interface components {
             rationale: string;
             /** Urn */
             urn: string;
-        };
-        /**
-         * DailyDate
-         * @description Date display values for the editorial header.
-         */
-        DailyDate: {
-            /** Gregorian */
-            gregorian: string;
-            /** Hijri */
-            hijri: string;
-            /** Hijri Short */
-            hijri_short: string;
         };
         /**
          * DailyHadith
@@ -981,6 +1000,8 @@ export interface components {
              * @description Report number within the source (often non-integer like '1/34/h.1').
              */
             n: string;
+            /** Page */
+            page?: number | null;
             /** Sect */
             sect: string;
             /** Urn */
@@ -1000,10 +1021,31 @@ export interface components {
              * @description Report number within the source (often non-integer like '1/34/h.1').
              */
             n: string;
+            /** Page */
+            page?: number | null;
             /** Sect */
             sect: string;
             /** Urn */
             urn?: string | null;
+        };
+        /**
+         * HistoryEvent
+         * @description One chronicle entry keyed to a Hijri month + day.
+         */
+        HistoryEvent: {
+            /** Day */
+            day: number;
+            /** Detail */
+            detail: string;
+            /** En */
+            en: string;
+            /** Month */
+            month: number;
+            /**
+             * Year Ah
+             * @description 0 marks an event before the hijra.
+             */
+            year_ah: number;
         };
         /**
          * Narrator
@@ -1045,6 +1087,25 @@ export interface components {
              * @description Role / position in the chain (companion, transmitter, ...).
              */
             role: string;
+        };
+        /**
+         * Observance
+         * @description One recurring date in the Hijri year.
+         */
+        Observance: {
+            /** Ar */
+            ar: string;
+            /** Day */
+            day: number;
+            /** En */
+            en: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "eid" | "mourning" | "birth" | "night" | "observance";
+            /** Month */
+            month: number;
         };
         /**
          * OpenTo
@@ -1371,8 +1432,10 @@ export interface components {
             excerpt_ar: string;
             /** Excerpt En */
             excerpt_en: string;
+            /** Page */
+            page?: number | null;
             /** Urn */
-            urn: string;
+            urn?: string | null;
         };
         /**
          * Toc
@@ -1432,19 +1495,15 @@ export interface components {
         };
         /**
          * Verse
-         * @description Verse of the day with one or more tafsir excerpts.
+         * @description Verse of the day as served: pool curation plus the canonical text.
          */
         Verse: {
             /** Ayah Ar */
             ayah_ar: string;
             /** Ayah En */
-            ayah_en: string;
+            ayah_en?: string | null;
             /** Ayah N */
             ayah_n: number;
-            /** Surah */
-            surah: string;
-            /** Surah Ar */
-            surah_ar: string;
             /** Surah N */
             surah_n: number;
             /** Tafsirs */
@@ -1552,6 +1611,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_almanac_api_almanac_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Almanac"];
+                };
+            };
+        };
+    };
     _list_books_api_books_get: {
         parameters: {
             query?: {
@@ -1707,6 +1786,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Book"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_volumes_api_books__urn__volumes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                urn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Book"][];
                 };
             };
             /** @description Validation Error */
@@ -2014,8 +2124,8 @@ export interface operations {
                 q?: string;
                 /** @description Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases). */
                 mode?: "exact" | "broad";
-                /** @description Restrict to a category slug. */
-                category?: string;
+                /** @description Restrict to these category slugs (repeatable; values OR together). */
+                category?: string[] | null;
                 /** @description Restrict to a book title (a work). */
                 book?: string;
                 /** @description Restrict to a volume number (0 = any). */
@@ -2047,44 +2157,6 @@ export interface operations {
             };
         };
     };
-    _search_books_api_search_books_get: {
-        parameters: {
-            query?: {
-                /** @description Title or author text; folded before matching. */
-                q?: string;
-                /** @description Match field: title, author, or any. */
-                field?: "title" | "author" | "any";
-                /** @description Records per page. */
-                limit?: number;
-                /** @description Records to skip. */
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_Book_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     _search_facets_api_search_facets_get: {
         parameters: {
             query?: {
@@ -2092,8 +2164,8 @@ export interface operations {
                 q?: string;
                 /** @description Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases). */
                 mode?: "exact" | "broad";
-                /** @description Category to scope book facets to. */
-                category?: string;
+                /** @description Restrict to these category slugs (repeatable; values OR together). */
+                category?: string[] | null;
                 /** @description Book to scope volume facets to. */
                 book?: string;
             };
@@ -2136,6 +2208,8 @@ export interface operations {
                 canonical?: ("primary" | "primary_reference" | "secondary" | "tertiary") | null;
                 /** @description Search works by title or author. */
                 q?: string;
+                /** @description Ordering: canonical (rank tier, then death year), death_year_ah (undated last), title_ar, or volume_count. */
+                sort?: ("canonical" | "death_year_ah" | "title_ar" | "volume_count") | null;
                 /** @description Records per page. */
                 limit?: number;
                 /** @description Records to skip. */

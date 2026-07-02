@@ -1,6 +1,30 @@
 {
   "components": {
     "schemas": {
+      "Almanac": {
+        "description": "The served almanac: every observance + every chronicle entry.",
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryEvent"
+            },
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          },
+          "observances": {
+            "items": {
+              "$ref": "#/components/schemas/Observance"
+            },
+            "minItems": 1,
+            "title": "Observances",
+            "type": "array"
+          }
+        },
+        "required": ["observances", "events"],
+        "title": "Almanac",
+        "type": "object"
+      },
       "Ayah": {
         "description": "One Qur\u02be\u0101n verse, resolved from a surah:ayah reference.\n\n``text_ar`` carries the diacritized recitation text; ``text_plain`` is the\nsame verse with vowel marks stripped, so a reader sees both the pointed and\nthe bare forms that corpus quotations may use. The diacritic-insensitive\nmatching against book content is handled by the search FTS tokenizer, so\neither form locates the same passages.",
         "properties": {
@@ -612,29 +636,19 @@
         "type": "object"
       },
       "Daily": {
-        "description": "Top-level Daily payload.",
+        "description": "Top-level Daily payload: today's selection from each pool.",
         "properties": {
           "book": {
             "$ref": "#/components/schemas/DailyBookPick"
           },
-          "date": {
-            "$ref": "#/components/schemas/DailyDate"
-          },
           "hadith": {
             "$ref": "#/components/schemas/DailyHadith"
-          },
-          "rotation": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Rotation",
-            "type": "array"
           },
           "verse": {
             "$ref": "#/components/schemas/Verse"
           }
         },
-        "required": ["date", "verse", "hadith", "book", "rotation"],
+        "required": ["verse", "hadith", "book"],
         "title": "Daily",
         "type": "object"
       },
@@ -655,26 +669,6 @@
         },
         "required": ["urn", "rationale", "open_to"],
         "title": "DailyBookPick",
-        "type": "object"
-      },
-      "DailyDate": {
-        "description": "Date display values for the editorial header.",
-        "properties": {
-          "gregorian": {
-            "title": "Gregorian",
-            "type": "string"
-          },
-          "hijri": {
-            "title": "Hijri",
-            "type": "string"
-          },
-          "hijri_short": {
-            "title": "Hijri Short",
-            "type": "string"
-          }
-        },
-        "required": ["hijri", "hijri_short", "gregorian"],
-        "title": "DailyDate",
         "type": "object"
       },
       "DailyHadith": {
@@ -859,6 +853,18 @@
             "title": "N",
             "type": "string"
           },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
           "sect": {
             "title": "Sect",
             "type": "string"
@@ -895,6 +901,18 @@
             "title": "N",
             "type": "string"
           },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
           "sect": {
             "title": "Sect",
             "type": "string"
@@ -913,6 +931,40 @@
         },
         "required": ["book", "book_ar", "n", "sect"],
         "title": "HadithSource",
+        "type": "object"
+      },
+      "HistoryEvent": {
+        "description": "One chronicle entry keyed to a Hijri month + day.",
+        "properties": {
+          "day": {
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Day",
+            "type": "integer"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "en": {
+            "title": "En",
+            "type": "string"
+          },
+          "month": {
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Month",
+            "type": "integer"
+          },
+          "year_ah": {
+            "description": "0 marks an event before the hijra.",
+            "minimum": 0.0,
+            "title": "Year Ah",
+            "type": "integer"
+          }
+        },
+        "required": ["month", "day", "year_ah", "en", "detail"],
+        "title": "HistoryEvent",
         "type": "object"
       },
       "Narrator": {
@@ -977,6 +1029,39 @@
         },
         "required": ["name", "name_ar", "role", "grade"],
         "title": "Narrator",
+        "type": "object"
+      },
+      "Observance": {
+        "description": "One recurring date in the Hijri year.",
+        "properties": {
+          "ar": {
+            "title": "Ar",
+            "type": "string"
+          },
+          "day": {
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Day",
+            "type": "integer"
+          },
+          "en": {
+            "title": "En",
+            "type": "string"
+          },
+          "kind": {
+            "enum": ["eid", "mourning", "birth", "night", "observance"],
+            "title": "Kind",
+            "type": "string"
+          },
+          "month": {
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Month",
+            "type": "integer"
+          }
+        },
+        "required": ["month", "day", "en", "ar", "kind"],
+        "title": "Observance",
         "type": "object"
       },
       "OpenTo": {
@@ -1407,12 +1492,31 @@
             "title": "Excerpt En",
             "type": "string"
           },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
           "urn": {
-            "title": "Urn",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urn"
           }
         },
-        "required": ["book", "book_ar", "author", "urn", "excerpt_en", "excerpt_ar"],
+        "required": ["book", "book_ar", "author", "excerpt_en", "excerpt_ar"],
         "title": "Tafsir",
         "type": "object"
       },
@@ -1511,28 +1615,27 @@
         "type": "object"
       },
       "Verse": {
-        "description": "Verse of the day with one or more tafsir excerpts.",
+        "description": "Verse of the day as served: pool curation plus the canonical text.",
         "properties": {
           "ayah_ar": {
             "title": "Ayah Ar",
             "type": "string"
           },
           "ayah_en": {
-            "title": "Ayah En",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ayah En"
           },
           "ayah_n": {
             "minimum": 1.0,
             "title": "Ayah N",
             "type": "integer"
-          },
-          "surah": {
-            "title": "Surah",
-            "type": "string"
-          },
-          "surah_ar": {
-            "title": "Surah Ar",
-            "type": "string"
           },
           "surah_n": {
             "maximum": 114.0,
@@ -1548,7 +1651,7 @@
             "type": "array"
           }
         },
-        "required": ["surah", "surah_ar", "surah_n", "ayah_n", "ayah_ar", "ayah_en", "tafsirs"],
+        "required": ["surah_n", "ayah_n", "ayah_ar", "tafsirs"],
         "title": "Verse",
         "type": "object"
       },
@@ -1724,6 +1827,26 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/almanac": {
+      "get": {
+        "description": "Return the full almanac; the client selects for its own \"today\".",
+        "operationId": "get_almanac_api_almanac_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Almanac"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "The Hijri almanac: observances and chronicle events.",
+        "tags": ["almanac"]
+      }
+    },
     "/api/books": {
       "get": {
         "description": "Wrap the repo's (slice, total) into a Page[Book] envelope.",
@@ -2013,6 +2136,51 @@
         "tags": ["books"]
       }
     },
+    "/api/books/{urn}/volumes": {
+      "get": {
+        "description": "Return every volume of the work containing ``urn``, ascending by volume\nnumber: the reader's volume switcher. A single-volume work returns just\nthat book. The membership comes from the same fold :func:`list_works`\nserves, so the two views can never disagree; a fold entry missing from the\nindex would be an invariant breach and raises KeyError loudly.",
+        "operationId": "list_volumes_api_books__urn__volumes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "urn",
+            "required": true,
+            "schema": {
+              "title": "Urn",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Book"
+                  },
+                  "title": "Response List Volumes Api Books  Urn  Volumes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List every volume of the work containing this book, ascending.",
+        "tags": ["books"]
+      }
+    },
     "/api/canonical": {
       "get": {
         "description": "Wrap the repo's (slice, total) into a Page[CanonicalEntry] envelope.",
@@ -2139,7 +2307,7 @@
     },
     "/api/daily": {
       "get": {
-        "description": "Return today's curated Daily payload.",
+        "description": "Return the Daily selection for the current UTC date.",
         "operationId": "get_today_api_daily_get",
         "responses": {
           "200": {
@@ -2153,7 +2321,7 @@
             "description": "Successful Response"
           }
         },
-        "summary": "Today's verse, hadith, and book pick.",
+        "summary": "Today's verse, hadith, and book pick, rotated by date.",
         "tags": ["daily"]
       }
     },
@@ -2561,15 +2729,24 @@
             }
           },
           {
-            "description": "Restrict to a category slug.",
+            "description": "Restrict to these category slugs (repeatable; values OR together).",
             "in": "query",
             "name": "category",
             "required": false,
             "schema": {
-              "default": "",
-              "description": "Restrict to a category slug.",
-              "title": "Category",
-              "type": "string"
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to these category slugs (repeatable; values OR together).",
+              "title": "Category"
             }
           },
           {
@@ -2624,90 +2801,6 @@
         "tags": ["search"]
       }
     },
-    "/api/search/books": {
-      "get": {
-        "description": "Wrap the repo's (slice, total) into a Page[Book] envelope.",
-        "operationId": "_search_books_api_search_books_get",
-        "parameters": [
-          {
-            "description": "Title or author text; folded before matching.",
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "default": "",
-              "description": "Title or author text; folded before matching.",
-              "title": "Q",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Match field: title, author, or any.",
-            "in": "query",
-            "name": "field",
-            "required": false,
-            "schema": {
-              "default": "any",
-              "description": "Match field: title, author, or any.",
-              "enum": ["title", "author", "any"],
-              "title": "Field",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Records per page.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "default": 24,
-              "description": "Records per page.",
-              "maximum": 200,
-              "minimum": 1,
-              "title": "Limit",
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Records to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "description": "Records to skip.",
-              "minimum": 0,
-              "title": "Offset",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Page_Book_"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Search book metadata by title / author (diacritic-insensitive).",
-        "tags": ["search"]
-      }
-    },
     "/api/search/facets": {
       "get": {
         "description": "Return the categories, books, and volumes that hold matches for ``q``.",
@@ -2739,15 +2832,24 @@
             }
           },
           {
-            "description": "Category to scope book facets to.",
+            "description": "Restrict to these category slugs (repeatable; values OR together).",
             "in": "query",
             "name": "category",
             "required": false,
             "schema": {
-              "default": "",
-              "description": "Category to scope book facets to.",
-              "title": "Category",
-              "type": "string"
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to these category slugs (repeatable; values OR together).",
+              "title": "Category"
             }
           },
           {
@@ -2877,6 +2979,25 @@
               "description": "Search works by title or author.",
               "title": "Q",
               "type": "string"
+            }
+          },
+          {
+            "description": "Ordering: canonical (rank tier, then death year), death_year_ah (undated last), title_ar, or volume_count.",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": ["canonical", "death_year_ah", "title_ar", "volume_count"],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ordering: canonical (rank tier, then death year), death_year_ah (undated last), title_ar, or volume_count.",
+              "title": "Sort"
             }
           },
           {
