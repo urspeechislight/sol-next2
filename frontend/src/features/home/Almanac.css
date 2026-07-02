@@ -16,9 +16,7 @@
   box-shadow: var(--shadow-sm);
 }
 .almanac__eyebrow {
-  display: block;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  display: flex;
   margin-bottom: var(--space-sm);
 }
 

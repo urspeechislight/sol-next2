@@ -36,10 +36,6 @@
   gap: var(--space-md);
   margin-bottom: var(--space-md);
 }
-.vday__eyebrow {
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
 
 .vday__surah {
   text-align: center;
@@ -148,24 +144,6 @@
   text-transform: uppercase;
   color: var(--color-accent-deep);
 }
-.vday__dots {
-  display: flex;
-  gap: var(--space-xs);
-}
-.vday__dot {
-  width: 7px;
-  height: 7px;
-  border-radius: var(--radius-pill);
-  background: var(--color-border-strong);
-  transition:
-    background var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
-}
-.vday__dot--active {
-  background: var(--color-accent);
-  transform: scale(1.25);
-}
-
 /* Cards stack in one grid cell so the stage sizes to the tallest excerpt. */
 .vday__tafsir-stage {
   display: grid;

@@ -20,6 +20,15 @@ export type { InlineProps } from "./primitives/Inline";
 export { Button } from "./primitives/Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./primitives/Button";
 
+export { Eyebrow } from "./primitives/Eyebrow";
+export type { EyebrowProps, EyebrowTracking } from "./primitives/Eyebrow";
+
+export { Dots } from "./primitives/Dots";
+export type { DotsProps } from "./primitives/Dots";
+
+export { CornerOrnament, RosetteOrnament, RuleOrnament } from "./components/Ornament";
+export type { OrnamentCornerPos } from "./components/Ornament";
+
 export { UnstyledButton } from "./primitives/UnstyledButton";
 export type { UnstyledButtonProps } from "./primitives/UnstyledButton";
 

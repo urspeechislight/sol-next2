@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { ShareButton, Text, UnstyledButton } from '../../lib/design-system';
+import { Dots, Eyebrow, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
 import { HOME } from '../../lib/constants';
 import { requestShare } from '../../lib/share';
 import type { Verse } from '../../lib/types';
@@ -40,9 +40,7 @@ export function VerseOfDay({ verse, onOpenReader }: VerseOfDayProps) {
   return (
     <section className="vday" aria-labelledby="vday-surah">
       <header className="vday__head">
-        <Text size="xs" tone="accent" weight="semibold" className="vday__eyebrow">
-          Verse of the day · آية اليوم
-        </Text>
+        <Eyebrow>Verse of the day · آية اليوم</Eyebrow>
         <Text size="xs" tone="faint" font="mono">
           Qurʾān {verse.surah_n}:{verse.ayah_n}
         </Text>
@@ -86,16 +84,12 @@ export function VerseOfDay({ verse, onOpenReader }: VerseOfDayProps) {
         <div className="vday__tafsir-head">
           <span className="vday__tafsir-label">Tafsīr</span>
           {verse.tafsirs.length > 1 ? (
-            <div className="vday__dots" aria-label="Tafsīr excerpts">
-              {verse.tafsirs.map((t, i) => (
-                <UnstyledButton
-                  key={t.book}
-                  className={i === tafsirIdx ? 'vday__dot vday__dot--active' : 'vday__dot'}
-                  onClick={() => setTafsirIdx(i)}
-                  ariaLabel={`Show tafsīr from ${t.book}`}
-                />
-              ))}
-            </div>
+            <Dots
+              count={verse.tafsirs.length}
+              active={tafsirIdx}
+              labelFor={(i) => `Show tafsīr from ${verse.tafsirs[i].book}`}
+              onPick={setTafsirIdx}
+            />
           ) : null}
         </div>
         <div className="vday__tafsir-stage">

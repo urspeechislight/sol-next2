@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MetaBadges, NavArrow, Text, UnstyledButton } from '../../lib/design-system';
+import { Dots, Eyebrow, MetaBadges, NavArrow, Text, UnstyledButton } from '../../lib/design-system';
 import { getWorks } from '../../lib/api/client';
 import { PAGE } from '../../lib/constants';
 import { useAsync } from '../../lib/useAsync';
@@ -55,9 +55,7 @@ export function RotationHero({ domain, category, onOpen }: RotationHeroProps) {
     <section className="rotor" aria-label="Primary sources on rotation">
       <div className="rotor__halo" aria-hidden="true" />
       <header className="rotor__head">
-        <Text size="xs" tone="accent" weight="semibold" className="rotor__eyebrow">
-          Primary sources · أمهات الكتب
-        </Text>
+        <Eyebrow>Primary sources · أمهات الكتب</Eyebrow>
         <span className="rotor__index">
           {idx + 1} / {shelf.length}
         </span>
@@ -106,16 +104,12 @@ export function RotationHero({ domain, category, onOpen }: RotationHeroProps) {
 
       <footer className="rotor__foot">
         <NavArrow direction="back" label="Previous work" onClick={() => go(-1)} />
-        <div className="rotor__dots">
-          {shelf.map((w, i) => (
-            <UnstyledButton
-              key={w.stem}
-              className={i === idx ? 'rotor__dot rotor__dot--active' : 'rotor__dot'}
-              onClick={() => setIdx(i)}
-              ariaLabel={`Show ${w.title_en ?? w.title_ar}`}
-            />
-          ))}
-        </div>
+        <Dots
+          count={shelf.length}
+          active={idx}
+          labelFor={(i) => `Show ${shelf[i].title_en ?? shelf[i].title_ar}`}
+          onPick={setIdx}
+        />
         <NavArrow direction="forward" label="Next work" onClick={() => go(1)} />
       </footer>
     </section>

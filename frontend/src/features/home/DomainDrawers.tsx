@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Text, UnstyledButton } from '../../lib/design-system';
+import { Eyebrow, Text, UnstyledButton } from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
 import { sumCount } from '../library/lib';
 import './DomainDrawers.css';
@@ -10,10 +10,10 @@ export interface DomainDrawersProps {
   onOpenDomain: (id: string) => void;
 }
 
-/** The domain cabinet: a row of vertical drawers (glyphless niches with the
-    Arabic caption written vertically), each one keyed to a domain. Hover
-    previews, click pins; the open drawer fans its categories out in a tray
-    beneath. Escape or a click outside closes the pinned drawer. */
+/** The domain arcade: a row of arched niches, each keyed to a domain, its
+    Arabic caption written vertically like a spine. Hover previews, click
+    pins; the open niche fans its categories out in a tray beneath. Escape or
+    a click outside closes the pinned niche. */
 export function DomainDrawers({ domains, onOpenCategory, onOpenDomain }: DomainDrawersProps) {
   const [pinned, setPinned] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -41,7 +41,7 @@ export function DomainDrawers({ domains, onOpenCategory, onOpenDomain }: DomainD
   return (
     <section className="cab" aria-label="Domains of knowledge" ref={rootRef}>
       <header className="cab__head">
-        <span className="cab__mark">§ I</span>
+        <Eyebrow tracking="section">§ I</Eyebrow>
         <h2 className="cab__title">
           <em>Domains</em> of knowledge
         </h2>

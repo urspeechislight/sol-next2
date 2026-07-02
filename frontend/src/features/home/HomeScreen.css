@@ -23,33 +23,11 @@
   padding: 0 var(--space-2xl) var(--space-xl);
 }
 
-/* Soft gold rule with a diamond ornament between plate sections. */
+/* The rule between plate sections is the design system's ornament; this
+   wrapper only lifts it above the glow layer. */
 .home2__rule {
   position: relative;
   z-index: 1;
-  height: 1px;
-  width: min(960px, 80%);
-  margin: var(--space-xs) auto;
-  background: linear-gradient(
-    to right,
-    transparent 0%,
-    color-mix(in srgb, var(--palette-gold-500) 25%, transparent) 30%,
-    color-mix(in srgb, var(--palette-gold-500) 50%, transparent) 50%,
-    color-mix(in srgb, var(--palette-gold-500) 25%, transparent) 70%,
-    transparent 100%
-  );
-}
-.home2__rule::after {
-  content: '✦';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: var(--text-xs);
-  line-height: 1;
-  color: var(--color-accent-deep);
-  background: var(--color-bg);
-  padding: 0 var(--space-xs);
 }
 
 /* ---- the day's reading band ---- */
@@ -65,12 +43,6 @@
   border-bottom: 1px solid var(--color-border);
   padding-bottom: var(--space-md);
   margin-bottom: var(--space-lg);
-}
-.home2__daily-mark {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.22em;
-  color: var(--color-accent-deep);
 }
 .home2__daily-title {
   margin: 0;

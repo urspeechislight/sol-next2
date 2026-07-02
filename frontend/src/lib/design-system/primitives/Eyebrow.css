@@ -1,0 +1,23 @@
+/* Eyebrow — the tracked uppercase section label. The single definition of its
+   type and tracking scale. */
+
+.ds-eyebrow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-accent-deep);
+}
+.ds-eyebrow--wide {
+  letter-spacing: 0.18em;
+}
+.ds-eyebrow--section {
+  font-family: var(--font-mono);
+  letter-spacing: 0.22em;
+}
+.ds-eyebrow--muted {
+  color: var(--color-text-faint);
+}

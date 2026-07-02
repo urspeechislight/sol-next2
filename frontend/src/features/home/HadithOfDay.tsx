@@ -1,4 +1,4 @@
-import { Badge, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
+import { Badge, Eyebrow, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
 import { requestShare } from '../../lib/share';
 import type { DailyHadith } from '../../lib/types';
 import { hadithBadge } from '../../lib/variants';
@@ -17,9 +17,7 @@ export function HadithOfDay({ hadith, onOpenReader }: HadithOfDayProps) {
   return (
     <section className="hday" aria-label="Hadith of the day">
       <header className="hday__head">
-        <Text size="xs" tone="accent" weight="semibold" className="hday__eyebrow">
-          Hadith of the day · حديث اليوم
-        </Text>
+        <Eyebrow>Hadith of the day · حديث اليوم</Eyebrow>
         <Badge variant={hadithBadge(hadith.grade)} dot>
           <span dir="rtl">{hadith.grade_label}</span>
         </Badge>

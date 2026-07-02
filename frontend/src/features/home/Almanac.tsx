@@ -1,4 +1,4 @@
-import { Text } from '../../lib/design-system';
+import { Eyebrow, Text } from '../../lib/design-system';
 import { eventForDay, observancesForMonth } from '../../lib/almanac';
 import type { HijriToday } from '../../lib/hijri';
 import './Almanac.css';
@@ -22,9 +22,7 @@ function HijriCard({ today }: { today: HijriToday }) {
   const month = observancesForMonth(today.month);
   return (
     <article className="almanac__card" aria-label="Hijri calendar">
-      <Text size="xs" tone="accent" weight="semibold" className="almanac__eyebrow">
-        The calendar · التقويم
-      </Text>
+      <Eyebrow className="almanac__eyebrow">The calendar · التقويم</Eyebrow>
       <p className="almanac__today">
         <span className="almanac__today-day">{today.day}</span>
         <span className="almanac__today-month" dir="rtl">
@@ -73,9 +71,9 @@ function HistoryCard({ today }: { today: HijriToday }) {
   const { event, onThisDay } = eventForDay(today.month, today.day);
   return (
     <article className="almanac__card" aria-label="Today in history">
-      <Text size="xs" tone="accent" weight="semibold" className="almanac__eyebrow">
+      <Eyebrow className="almanac__eyebrow">
         {onThisDay ? 'On this day · حدث في مثل هذا اليوم' : 'From the chronicles · من التاريخ'}
-      </Text>
+      </Eyebrow>
       <p className="almanac__event-when">
         {event.day} {monthName(event.month)} · {event.yearAh > 0 ? `${event.yearAh} AH` : 'before the hijra'}
       </p>

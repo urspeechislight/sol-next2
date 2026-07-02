@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Badge, Segmented, Spinner, Text, UnstyledButton } from '../../lib/design-system';
+import { Badge, Eyebrow, Segmented, Spinner, Text, UnstyledButton } from '../../lib/design-system';
 import { LIBRARY } from '../../lib/constants';
 import type { Work } from '../../lib/types';
 import { deathLabel } from '../../lib/utils';
@@ -101,9 +101,7 @@ export function CategoryPane({
 
       {shelf.length > 0 ? (
         <div className="cpane__shelf" aria-label="Landmark works">
-          <Text size="xs" tone="accent" weight="semibold" className="cpane__shelf-label">
-            Begin here · أمهات الكتب
-          </Text>
+          <Eyebrow className="cpane__shelf-label">Begin here · أمهات الكتب</Eyebrow>
           <div className="cpane__shelf-row">
             {shelf.map((w) => (
               <UnstyledButton

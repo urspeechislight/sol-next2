@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { Spinner, Text } from '../../lib/design-system';
+import { CornerOrnament, Eyebrow, RuleOrnament, Spinner, Text } from '../../lib/design-system';
 import { getDaily } from '../../lib/api/client';
 import { hijriToday } from '../../lib/hijri';
 import type { Daily } from '../../lib/types';
@@ -8,8 +8,8 @@ import { useDomains } from '../../lib/useDomains';
 import { Almanac } from './Almanac';
 import { DomainDrawers } from './DomainDrawers';
 import { HadithOfDay } from './HadithOfDay';
+import { HomeGlow } from './HomeGlow';
 import { HomeHero } from './HomeHero';
-import { Cornerpiece, HomeSky } from './HomeSky';
 import { VerseOfDay } from './VerseOfDay';
 import './HomeScreen.css';
 
@@ -19,8 +19,8 @@ export interface HomeScreenProps {
   onOpenDomain: (id: string) => void;
 }
 
-/** The landing page in two registers: the illuminated frontispiece (the glow
-    canvas, hero copy, the astrolabe of domains, the drawer cabinet) and the
+/** The landing page in two registers: the illuminated frontispiece (glow
+    canvas, hero copy over a real reading artifact, the domain arcade) and the
     day's reading below it — verse, hadith and almanac as one compact
     three-panel band. */
 export function HomeScreen({ onOpenReader, onOpenCategory, onOpenDomain }: HomeScreenProps) {
@@ -33,18 +33,19 @@ export function HomeScreen({ onOpenReader, onOpenCategory, onOpenDomain }: HomeS
   return (
     <div className="home2">
       <div className="home2__plate">
-        <HomeSky />
-        <Cornerpiece pos="tl" />
-        <Cornerpiece pos="tr" />
-        <Cornerpiece pos="bl" />
-        <Cornerpiece pos="br" />
+        <HomeGlow />
+        <CornerOrnament pos="tl" />
+        <CornerOrnament pos="tr" />
+        <CornerOrnament pos="bl" />
+        <CornerOrnament pos="br" />
         <HomeHero
           domains={domains.data ?? []}
-          onOpenDomain={onOpenDomain}
           onBrowse={() => onOpenDomain('')}
           onToday={scrollToDaily}
         />
-        <div className="home2__rule" aria-hidden="true" />
+        <div className="home2__rule">
+          <RuleOrnament />
+        </div>
         {domains.error ? (
           <Text as="p" size="sm" tone="danger" className="home2__domains-error">
             Could not load the domains: {domains.error.message}
@@ -60,7 +61,7 @@ export function HomeScreen({ onOpenReader, onOpenCategory, onOpenDomain }: HomeS
 
       <section className="home2__daily" ref={dailyRef} aria-label="Today's reading">
         <header className="home2__daily-head">
-          <span className="home2__daily-mark">§ II</span>
+          <Eyebrow tracking="section">§ II</Eyebrow>
           <h2 className="home2__daily-title">
             <em>Today’s</em> reading
           </h2>

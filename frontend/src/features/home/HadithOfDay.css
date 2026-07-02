@@ -20,10 +20,6 @@
   gap: var(--space-md);
   margin-bottom: var(--space-md);
 }
-.hday__eyebrow {
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
 
 .hday__isnad {
   font-family: var(--font-ar);
