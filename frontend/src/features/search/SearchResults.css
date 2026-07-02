@@ -14,3 +14,13 @@
   margin-top: var(--space-sm);
   line-height: var(--leading-arabic);
 }
+
+/* The honest foot under a scope's rows: count line left, load-more right. */
+.scr__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border-hair);
+}
