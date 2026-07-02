@@ -50,7 +50,6 @@ from backend.pipeline.models import (
     Unit,
     ValidationIssue,
 )
-from backend.pipeline.ner import is_circuit_open
 from backend.pipeline.persons import (
     NARRATOR__ROLE_NARRATOR,
     NARRATOR__SOURCE_ISNAD_BACK_REFERENCE,
@@ -60,7 +59,6 @@ from backend.pipeline.persons import (
 from backend.pipeline.text import split_footnote_entries, strip_footnote_markers
 
 _logger = get_logger("shia-library.pipeline.extract")
-_DEGRADED_SEVERITY_WARNING = "warning"
 _DEGRADED_SEVERITY_INFO = "info"
 
 
@@ -97,7 +95,6 @@ def extract(manuscript: Manuscript, config: Config) -> Manuscript:
     for span in manuscript.spans:
         unit_counter = _extract_span(span, run, unit_counter)
     unit_counter = _handle_isnad_back_references(manuscript, unit_counter, config)
-    _record_ner_state(run)
     _logger.info(
         "extract_done",
         manifestation_id=manuscript.manifestation_id,
@@ -219,23 +216,6 @@ def _extract_entities(
     for extractor_fn in registry.get(behavior, []):
         entities.extend(extractor_fn(span, config))
     return entities
-
-
-def _record_ner_state(run: _ExtractRun) -> None:
-    """Flag the NER-unavailable degraded mode when the NER circuit breaker is open."""
-    if not run.config.services.get("ner", {}).get("enabled"):
-        return
-    if not is_circuit_open():
-        return
-    run.manuscript.degraded_modes.add(DegradedMode.NER_UNAVAILABLE)
-    run.manuscript.validation_issues.append(
-        _degraded_issue(
-            DegradedMode.NER_UNAVAILABLE,
-            None,
-            "NER circuit breaker tripped; name validation weakened",
-            _DEGRADED_SEVERITY_WARNING,
-        )
-    )
 
 
 def _degraded_issue(

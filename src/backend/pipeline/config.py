@@ -78,7 +78,6 @@ class Config:
     atomicizers: dict[str, Any]
     extractors: dict[str, list[str]]
     thresholds: Thresholds
-    services: dict[str, Any]
     raw: dict[str, Any]
     compiled_patterns: tuple[tuple[str, CompiledPattern], ...]
 
@@ -118,7 +117,6 @@ def load_config(path: Path | None = None) -> Config:
         atomicizers=raw_dict["atomicizers"],
         extractors=raw_dict["extractors"],
         thresholds=_build_thresholds(raw_dict["thresholds"], config_path),
-        services=raw_dict.get("services", {}),
         raw=raw_dict,
         compiled_patterns=compiled_patterns,
     )
@@ -148,7 +146,6 @@ def _validate_config(raw: dict[str, Any], path: Path) -> None:
         if gate is not None and not isinstance(gate, list):
             raise ValueError(f"Behavior '{behavior['id']}' genre_gate must be a list")
 
-    _validate_services(raw.get("services", {}))
     _validate_narrator_extraction(raw, has_narrator)
     _validate_toc_sections(raw)
 
@@ -186,31 +183,6 @@ def _validate_atomicizer_rules(atomicizers: dict[str, Any], behavior_ids: set[An
                         f"Atomicizer '{behavior_id}' uses sanad_matn_split "
                         f"but missing '{required_key}'"
                     )
-
-
-def _validate_services(services: dict[str, Any]) -> None:
-    """Validate each enabled service block carries its required keys."""
-    ruvector_cfg = services.get("ruvector", {})
-    if ruvector_cfg.get("enabled"):
-        for required_key in ("url", "collection", "dimensions"):
-            if required_key not in ruvector_cfg:
-                raise ValueError(
-                    f"services.ruvector.enabled is true but '{required_key}' is missing"
-                )
-
-    gaz_cfg = services.get("gazetteer", {})
-    if gaz_cfg.get("enabled") and "narrator_path" not in gaz_cfg:
-        raise ValueError("services.gazetteer.enabled is true but 'narrator_path' is missing")
-
-    ner_cfg = services.get("ner", {})
-    if ner_cfg.get("enabled"):
-        for required_key in ("url", "timeout_seconds", "endpoint", "verify_ssl"):
-            if required_key not in ner_cfg:
-                raise ValueError(f"services.ner.enabled is true but '{required_key}' is missing")
-
-    quran_cfg = services.get("quran", {})
-    if quran_cfg.get("enabled") and "index_path" not in quran_cfg:
-        raise ValueError("services.quran.enabled is true but 'index_path' is missing")
 
 
 def _validate_narrator_extraction(raw: dict[str, Any], has_narrator_extractor: bool) -> None:

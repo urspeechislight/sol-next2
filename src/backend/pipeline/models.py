@@ -16,9 +16,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from backend.core.constants import HADITH__ENTITY_PERSON
+
+if TYPE_CHECKING:
+    from backend.pipeline.config import Config
 
 
 @dataclass
@@ -186,13 +189,13 @@ class ManuscriptPage:
 
 
 class DegradedMode(Enum):
-    """Quality compromises the pipeline tracks explicitly rather than silently."""
+    """Quality compromises the pipeline tracks explicitly rather than silently.
 
-    NER_UNAVAILABLE = auto()
-    RIJAL_UNAVAILABLE = auto()
-    TRANSLATION_FAILED = auto()
-    EMBEDDING_PARTIAL = auto()
-    CHAIN_GRADE_PRELIMINARY = auto()
+    Only the modes current phases can actually enter carry members; each
+    future phase (NER validation, rijal linking, enrich, graph) brings its
+    modes back with it.
+    """
+
     ISNAD_SPLIT_FALLBACK = auto()
 
 
@@ -235,42 +238,33 @@ class Manuscript:
         return [e for s in self.spans if s.entities for e in s.entities]
 
 
-@dataclass(frozen=True, slots=True)
-class EntityInputs:
-    """Inputs to create_entity, regrouped to stay under the function param-count cap.
-
-    Carries the entity's type/text/offsets, the anchoring span, the producing
-    extractor id, the pipeline config (for the evidence-context threshold), the
-    phase number (from PHASE_CONTRACTS), and the optional metadata/confidence/
-    text_source fields.
-    """
-
-    entity_type: str
-    text: str
-    char_start: int
-    char_end: int
-    span: Span
-    extractor_id: str
-    config: Any
-    phase: int
-    metadata: dict[str, Any] | None = None
-    confidence: float | None = None
-    text_source: str | None = None
-
-
-def create_entity(inputs: EntityInputs) -> Entity:
+def create_entity(
+    *,
+    entity_type: str,
+    text: str,
+    char_start: int,
+    char_end: int,
+    span: Span,
+    extractor_id: str,
+    config: Config,
+    phase: int,
+    metadata: dict[str, Any] | None = None,
+    confidence: float | None = None,
+    text_source: str | None = None,
+) -> Entity:
     """Factory: an Entity with automatic provenance and evidence anchoring.
 
     Builds the EvidenceAnchor from the span's location (context window sized by
     config.thresholds.evidence_context_chars) and the ExtractionProvenance
     from the span's detected patterns. The entity_id is left empty; the calling
-    phase assigns ids scoped to the producing span.
+    phase assigns ids scoped to the producing span. Keyword-only because the
+    call sites read better naming every field than positionally threading
+    eleven values.
     """
-    span = inputs.span
-    context_chars = inputs.config.thresholds.evidence_context_chars
-    source_text = inputs.text_source if inputs.text_source is not None else span.text
-    context_before = source_text[max(0, inputs.char_start - context_chars) : inputs.char_start]
-    context_after = source_text[inputs.char_end : inputs.char_end + context_chars]
+    context_chars = config.thresholds.evidence_context_chars
+    source_text = text_source if text_source is not None else span.text
+    context_before = source_text[max(0, char_start - context_chars) : char_start]
+    context_after = source_text[char_end : char_end + context_chars]
     evidence = EvidenceAnchor(
         span_id=span.span_id,
         page_start=span.page_start,
@@ -280,18 +274,18 @@ def create_entity(inputs: EntityInputs) -> Entity:
         context_after=context_after,
     )
     provenance = ExtractionProvenance(
-        extractor_id=inputs.extractor_id,
-        phase=inputs.phase,
+        extractor_id=extractor_id,
+        phase=phase,
         pattern_ids=[pattern.pattern_id for pattern in span.patterns],
     )
     return Entity(
         entity_id="",
-        entity_type=inputs.entity_type,
-        text=inputs.text,
-        char_start=inputs.char_start,
-        char_end=inputs.char_end,
-        metadata=inputs.metadata or {},
+        entity_type=entity_type,
+        text=text,
+        char_start=char_start,
+        char_end=char_end,
+        metadata=metadata or {},
         provenance=provenance,
         evidence=evidence,
-        confidence=inputs.confidence,
+        confidence=confidence,
     )

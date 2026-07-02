@@ -14,14 +14,25 @@ Two distinct fold capabilities live here, each with one definition:
 Both share ``_fold_letters`` so the letter-folding rule exists once.
 ``strip_diacritics`` is display-only (verse bare form); it folds nothing.
 
-The two mark classes the folds strip are defined once here. ``ARABIC_MARKS``
-covers the name-fold marks: the harakat (fathatan through sukun), the
-superscript alef, and tatweel. ``SEARCH_MARKS`` is the wider display-only set
-stripped before search: the Arabic signs (U+0610..U+061A), the harakat
-(U+064B..U+0652), the superscript alef (U+0670), the Quranic sajdah/waqf/
-small-high annotation signs (U+06D6..U+06ED), and tatweel (U+0640). It is a
-superset of ``ARABIC_MARKS`` so a pasted verse's waqf signs stay out of both
-the index and the query, and it is codepoint-built so the class is unambiguous.
+The three mark classes are defined once here, side by side, so their
+divergence is visible. ``ARABIC_MARKS`` covers the name-fold marks: the
+harakat (fathatan through sukun), the superscript alef, and tatweel.
+``SEARCH_MARKS`` is the wider display-only set stripped before search: the
+Arabic signs (U+0610..U+061A), the harakat (U+064B..U+0652), the superscript
+alef (U+0670), the Quranic sajdah/waqf/small-high annotation signs
+(U+06D6..U+06ED), and tatweel (U+0640). It is a superset of ``ARABIC_MARKS``
+so a pasted verse's waqf signs stay out of both the index and the query, and
+it is codepoint-built so the class is unambiguous. ``TASHKEEL_MARKS`` is the
+pipeline's TOC-title class (used by ``strip_tashkeel``), carried from
+sol-next so TOC alignment folds titles exactly as the upstream extraction
+did; it overlaps ``SEARCH_MARKS`` but is not equal to it, and unifying them
+would change which TOC anchors match. Both combining-mark classes are
+codepoint-built deliberately: a retyped literal of combining characters gets
+silently reordered by bidi rendering, which corrupts the ranges.
+
+``FOOTNOTE_MARKER`` is the one definition of the inline ``(N)`` footnote
+reference shape; the pipeline's splitter, stripper, and tail regexes all
+derive from it.
 """
 
 from __future__ import annotations
@@ -45,10 +56,24 @@ _SEARCH_MARK_CPS: Final[tuple[int, ...]] = (
 SEARCH_MARKS: Final[re.Pattern[str]] = re.compile(
     "[" + "".join(chr(c) for c in _SEARCH_MARK_CPS) + "]"
 )
+_TASHKEEL_CPS: Final[tuple[int, ...]] = (
+    *range(0x0610, 0x061B),
+    *range(0x064B, 0x0660),
+    0x0670,
+    *range(0x06D6, 0x06DD),
+    *range(0x06DF, 0x06E5),
+    0x06E7,
+    0x06E8,
+    *range(0x06EA, 0x06EE),
+)
+TASHKEEL_MARKS: Final[re.Pattern[str]] = re.compile(
+    "[" + "".join(chr(c) for c in _TASHKEEL_CPS) + "]"
+)
 ARABIC_ALEF: Final[re.Pattern[str]] = re.compile("[أإآ]")
 ARABIC_ALEF_MAQSURA: Final[re.Pattern[str]] = re.compile("ى")
 ARABIC_TAA_MARBUTA: Final[re.Pattern[str]] = re.compile("ة")
 WHITESPACE: Final[re.Pattern[str]] = re.compile(r"\s+")
+FOOTNOTE_MARKER: Final[str] = r"\((\d+)\)"
 
 
 def _fold_letters(text: str) -> str:
@@ -86,6 +111,16 @@ def strip_diacritics(text: str) -> str:
     verse in both its pointed and bare forms.
     """
     return ARABIC_MARKS.sub("", text)
+
+
+def strip_tashkeel(text: str) -> str:
+    """Remove Arabic diacritics via the pipeline's TOC-title mark class.
+
+    Used for diacritic-insensitive TOC title matching in the segment phase;
+    see the module docstring for why this class stays distinct from
+    ``ARABIC_MARKS`` and ``SEARCH_MARKS``.
+    """
+    return TASHKEEL_MARKS.sub("", text)
 
 
 @lru_cache(maxsize=SEARCH__PATTERN_CACHE_MAX)

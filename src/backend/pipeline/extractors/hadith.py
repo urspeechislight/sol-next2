@@ -35,7 +35,7 @@ from backend.patterns import (
     escape_pattern,
 )
 from backend.pipeline.models import Entity, Pattern, Span
-from backend.pipeline.name_extraction import NameOptions, extract_person_name
+from backend.pipeline.name_extraction import extract_person_name
 from backend.pipeline.persons import (
     NARRATOR__ROLE_NARRATOR,
     NARRATOR__SOURCE_CHAIN_WALK,
@@ -149,22 +149,10 @@ def _emit_one_narrator(
 ) -> tuple[Entity | None, int]:
     """Clean, validate, and emit one narrator; return (entity or None, advanced search).
 
-    The clitic/compound/dangling cleanup is disabled here — the patronymic regex
-    already bounded the name, so only footnote/punctuation cleanup (clean_name_text)
-    and the content-boundary crop apply.
+    The patronymic regex already bounded the name, so only the content-boundary
+    crop and the footnote/punctuation cleanup (clean_name_text) apply.
     """
-    cleaned = extract_person_name(
-        part,
-        0,
-        len(part),
-        NameOptions(
-            boundary_regex=ctx.name_content_boundary_regex,
-            clitic_min_word_chars=0,
-            extend_compound_prefix=False,
-            strip_clitic=False,
-            strip_dangling_connector=False,
-        ),
-    )
+    cleaned = extract_person_name(part, 0, len(part), ctx.name_content_boundary_regex)
     if cleaned is None:
         return None, part_search
     name_text, part_lo, part_hi = cleaned

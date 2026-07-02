@@ -528,60 +528,20 @@ atomicizers:
 extractors:
   HADITH_TRANSMISSION:
     - narrator_extractor
-    - quran_verse_extractor
-    - citation_extractor
-    - date_expression_extractor
-    - gazetteer_person_extractor
-    - ner_person_extractor
-  AUTHOR_COMMENTARY:
-    - quran_verse_extractor
-    - citation_extractor
-    - date_expression_extractor
-    - gazetteer_person_extractor
-    - ner_person_extractor
-  QURAN_VERSE:
-    - quran_verse_extractor
-  BIOGRAPHY:
-    - person_extractor
-    - date_extractor
-    - quran_verse_extractor
-    - citation_extractor
-    - date_expression_extractor
-    - gazetteer_person_extractor
-    - ner_person_extractor
+  AUTHOR_COMMENTARY: []
+  QURAN_VERSE: []
+  BIOGRAPHY: []
   RIJAL_ENTRY:
-    - rijal_entry_extractor
     - narrator_extractor
-    - date_extractor
-    - gazetteer_person_extractor
-    - ner_person_extractor
-  FIQH_RULING:
-    - quran_verse_extractor
-    - citation_extractor
-    - date_expression_extractor
-    - gazetteer_person_extractor
-    - ner_person_extractor
-  SECTION_HEADING:
-    - quran_verse_extractor
-    - theme_extractor
+  FIQH_RULING: []
+  SECTION_HEADING: []
   BASMALA: []
-  NUMBERED_ENTRY:
-    - gazetteer_person_extractor
-    - ner_person_extractor
+  NUMBERED_ENTRY: []
   POETRY: []
-  GENERAL_PROSE:
-    - quran_verse_extractor
-    - citation_extractor
-    - date_expression_extractor
-    - gazetteer_person_extractor
-    - ner_person_extractor
-  HISTORICAL_NARRATIVE:
-    - citation_extractor
-    - date_expression_extractor
-    - quran_verse_extractor
-    - gazetteer_person_extractor
-    - ner_person_extractor
+  GENERAL_PROSE: []
+  HISTORICAL_NARRATIVE: []
   EDITORIAL_FRONTMATTER: []
+
 thresholds:
   min_span_chars: 20
   narrative_heading_max_chars: 300
@@ -955,30 +915,3 @@ narrator_extraction:
     - "وقال"
     - "قال"
     - "من"
-services:
-  # sol-next2 port: the upstream services are disabled here. ruvector and ner
-  # are substituted (narrator linking goes through registry.db; NER is off for
-  # the v1 port). gazetteer and quran index loaders are wired in later
-  # milestones once their data is vendored. The domain sections above this
-  # block are ported verbatim from sol-next.
-  ruvector:
-    url: "http://127.0.0.1:6333"
-    collection: "narrators"
-    dimensions: 384
-    enabled: false
-
-  gazetteer:
-    narrator_path: "data/sanadset/narrator_gazetteer_final.txt"
-    sira_persons_path: "data/sira_persons/gazetteer.txt"
-    enabled: false
-
-  ner:
-    url: "https://camel.fkhome.local"
-    endpoint: "/farasa/ner"
-    timeout_seconds: 45
-    verify_ssl: false
-    enabled: false
-
-  quran:
-    index_path: "data/quran/quran_clearquran.json"
-    enabled: false

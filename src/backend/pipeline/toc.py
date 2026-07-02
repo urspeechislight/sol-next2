@@ -9,8 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.patterns import CompiledPattern, cached_compile
-from backend.pipeline.text import strip_tashkeel
+from backend.patterns import CompiledPattern, cached_compile, strip_tashkeel
 
 _BRACKET_STRIP: CompiledPattern = cached_compile(r"[\[\](){}«»]")
 

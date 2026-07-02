@@ -17,9 +17,8 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from backend.core.logging import get_logger
-from backend.patterns import CompiledPattern, cached_compile, escape_pattern
+from backend.patterns import CompiledPattern, cached_compile, escape_pattern, strip_tashkeel
 from backend.pipeline.models import ManuscriptPage
-from backend.pipeline.text import strip_tashkeel
 
 _logger = get_logger("shia-library.toc-alignment")
 

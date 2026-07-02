@@ -1,25 +1,21 @@
-"""Arabic text helpers for the ported pipeline.
+"""Footnote-entry parsing and (N)-marker handling for the ported pipeline.
 
-Minimal segment-phase surface: tashkeel stripping for diacritic-insensitive TOC
-title matching, plus the footnote-entry parsing and (N)-marker attachment the
-segment phase consumes. Every regex compiles through the central
-backend.patterns.cached_compile helper, never inline.
+The segment phase splits combined footnote blocks into entries and attaches
+them to the spans whose text references them; extract strips the inline
+markers out of unit body text. Every regex derives from the one
+``FOOTNOTE_MARKER`` definition in backend.patterns and compiles through
+``cached_compile``, never inline. The tashkeel stripper lives in
+backend.patterns beside the other Arabic mark classes.
 """
 
 from __future__ import annotations
 
-from backend.patterns import CompiledPattern, cached_compile
+from backend.patterns import FOOTNOTE_MARKER, CompiledPattern, cached_compile
 
-_ARABIC_DIACRITICS: CompiledPattern = cached_compile(r"[ؐ-ًؚ-ٰٟۖ-ۜ۟-ۤۧ-۪ۨ-ۭ]")
-
-
-def strip_tashkeel(text: str) -> str:
-    """Remove Arabic diacritics (tashkeel) for diacritic-insensitive matching."""
-    return _ARABIC_DIACRITICS.sub("", text)
-
-
-_FOOTNOTE_SPLIT_REGEX: CompiledPattern = cached_compile(r"(?:^|\n)\s*\((\d+)\)\s*")
-_FOOTNOTE_MARKER_REGEX: CompiledPattern = cached_compile(r"\((\d+)\)")
+_FOOTNOTE_SPLIT_REGEX: CompiledPattern = cached_compile(rf"(?:^|\n)\s*{FOOTNOTE_MARKER}\s*")
+_FOOTNOTE_MARKER_REGEX: CompiledPattern = cached_compile(FOOTNOTE_MARKER)
+_FOOTNOTE_MARKER_STRIP_REGEX: CompiledPattern = cached_compile(rf"\s*{FOOTNOTE_MARKER}\s*")
+_REPEATED_SPACES_REGEX: CompiledPattern = cached_compile(r" {2,}")
 
 
 def split_footnote_entries(footnote_text: str) -> list[tuple[str, str]]:
@@ -59,10 +55,6 @@ def attach_footnote_text(span_text: str, footnote_entries: dict[str, str]) -> st
             matched.append(f"({marker}) {footnote_entries[marker]}")
             seen.add(marker)
     return "\n".join(matched) if matched else None
-
-
-_FOOTNOTE_MARKER_STRIP_REGEX: CompiledPattern = cached_compile(r"\s*\(\d+\)\s*")
-_REPEATED_SPACES_REGEX: CompiledPattern = cached_compile(r" {2,}")
 
 
 def replace_footnote_markers(text: str, replacement: str = " ") -> str:

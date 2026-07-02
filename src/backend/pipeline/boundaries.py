@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from backend.patterns import (
+    FOOTNOTE_MARKER,
     CompiledPattern,
     cached_compile,
     cached_compile_alternation,
@@ -38,7 +39,7 @@ patronymic_tail: CompiledPattern = cached_compile(r"(?:بن|ابن|بنت)\s+\S+
 kunya_tail: CompiledPattern = cached_compile(r"(?:أبو|أبي|أبا)\s+\S+(?:\s+\S+)?[\s،,]*$")
 trailing_comma: CompiledPattern = cached_compile(r"[،,]\s*$")
 sentence_end: CompiledPattern = cached_compile(r'[.؟؟»"\]\)]\s*$')
-footnote_tail: CompiledPattern = cached_compile(r"\s*\(\d+\)\s*$")
+footnote_tail: CompiledPattern = cached_compile(rf"\s*{FOOTNOTE_MARKER}\s*$")
 
 
 def build_chain_continuation_re(prepositional_exclusions: Sequence[str]) -> CompiledPattern:
