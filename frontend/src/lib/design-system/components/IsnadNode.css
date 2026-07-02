@@ -64,3 +64,21 @@
   text-align: right;
   max-width: 44%;
 }
+
+/* Flow: a compact pill row — dot and names only, the chain read as a strip. */
+.ds-isnad-node--flow {
+  align-items: center;
+  padding: var(--space-sm);
+  background: var(--color-reader-pill-bg);
+  border: 1px solid var(--color-reader-rule);
+  border-radius: var(--radius-md);
+}
+
+/* Card: each narrator framed on the reader surface. */
+.ds-isnad-node--card {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-reader-bg);
+  border: 1px solid color-mix(in oklch, var(--color-reader-honorific) 55%, var(--color-reader-rule));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}

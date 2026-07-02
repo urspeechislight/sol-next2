@@ -7,6 +7,7 @@ import {
   IconButton,
   IsnadNode,
   NarratorLink,
+  Segmented,
   Spinner,
   Text,
 } from '../../lib/design-system';
@@ -168,24 +169,43 @@ function HadithUnit({
   );
 }
 
+const ISNAD_VIEWS = [
+  { value: 'tree', label: 'Tree' },
+  { value: 'flow', label: 'Flow' },
+  { value: 'cards', label: 'Cards' },
+];
+type IsnadView = 'tree' | 'flow' | 'cards';
+
 function IsnadPanel({ hadith, onNarrator }: { hadith: Hadith; onNarrator: (n: Narrator) => void }) {
+  const [view, setView] = useState<IsnadView>('tree');
   return (
     <aside className="reader-isnad" aria-label="Isnād, transmission chain">
       <div className="reader-isnad__head">
         <p className="reader-isnad__label">Isnād · transmission chain</p>
         <p className="reader-isnad__sub">
-          {hadith.narrators.length} narrators{hadith.grade ? ` · ${hadith.grade}` : ''}
+          Hadith {hadith.n} · {hadith.narrators.length} narrators
+          {hadith.grade ? ` · ${hadith.grade}` : ''}
         </p>
+      </div>
+      <div className="reader-isnad__views">
+        <Segmented
+          surface="reader"
+          label="Isnād layout"
+          value={view}
+          options={ISNAD_VIEWS}
+          onChange={(v) => setView(v as IsnadView)}
+        />
       </div>
       {hadith.narrators.length === 0 ? (
         <p className="reader-isnad__empty">No transmission chain recorded for this unit.</p>
       ) : (
-        <div className="isnad-chain">
+        <div className={`isnad-chain isnad-chain--${view}`}>
           {hadith.narrators.map((n, i) => (
             <IsnadNode
               key={i}
+              variant={view === 'cards' ? 'card' : view === 'flow' ? 'flow' : 'tree'}
               index={i}
-              showLine={i < hadith.narrators.length - 1}
+              showLine={view === 'tree' && i < hadith.narrators.length - 1}
               nameEn={n.name || n.name_ar}
               nameAr={n.name_ar}
               died={n.d}

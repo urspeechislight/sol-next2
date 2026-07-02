@@ -3,7 +3,11 @@ import { Badge } from '../primitives/Badge';
 import type { BadgeVariant } from '../primitives/Badge';
 import './IsnadNode.css';
 
+export type IsnadNodeVariant = 'tree' | 'flow' | 'card';
+
 export interface IsnadNodeProps {
+  /** Layout: 'tree' rows with connectors, 'flow' compact pills, 'card' framed. */
+  variant?: IsnadNodeVariant;
   /** Position in the chain; 0 is the origin (shown as a star). */
   index: number;
   /** Draw the connector down to the next node. */
@@ -21,6 +25,7 @@ export interface IsnadNodeProps {
 
 /** One node of an isnād transmission chain: dot, narrator, optional grade. */
 export function IsnadNode({
+  variant = 'tree',
   index,
   showLine,
   nameEn,
@@ -33,17 +38,23 @@ export function IsnadNode({
 }: IsnadNodeProps) {
   const origin = index === 0;
   return (
-    <button type="button" className="ds-isnad-node" onClick={onClick}>
+    <button
+      type="button"
+      className={cx('ds-isnad-node', variant !== 'tree' && `ds-isnad-node--${variant}`)}
+      onClick={onClick}
+    >
       {showLine ? <span className="ds-isnad-node__line" /> : null}
       <span className={cx('ds-isnad-node__dot', origin && 'ds-isnad-node__dot--origin')}>
         {origin ? '★' : index}
       </span>
       <div className="ds-isnad-node__body">
         <p className="ds-isnad-node__en">{nameEn}</p>
-        <p className="ds-isnad-node__meta">
-          {died ? `d. ${died}` : '—'} · {role}
-        </p>
-        {grade ? (
+        {variant !== 'flow' ? (
+          <p className="ds-isnad-node__meta">
+            {died ? `d. ${died}` : '—'} · {role}
+          </p>
+        ) : null}
+        {variant !== 'flow' && grade ? (
           <Badge surface="reader" variant={gradeVariant}>
             {grade}
           </Badge>

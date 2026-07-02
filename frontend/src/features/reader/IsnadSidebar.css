@@ -30,6 +30,16 @@
   display: flex;
   flex-direction: column;
 }
+.isnad-chain--flow {
+  gap: var(--space-xs);
+}
+.isnad-chain--cards {
+  gap: var(--space-sm);
+}
+
+.reader-isnad__views {
+  margin-bottom: var(--space-lg);
+}
 
 @media (max-width: 760px) {
   .reader-isnad {
