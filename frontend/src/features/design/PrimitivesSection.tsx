@@ -3,8 +3,10 @@ import { useState } from 'react';
 import {
   Badge,
   Button,
+  Checkbox,
   Chip,
   Divider,
+  FacetChip,
   Heading,
   Highlight,
   Icon,
@@ -97,6 +99,23 @@ function ControlsDemo() {
           فتح القدير
         </Chip>
         <Chip icon="bookmark">All volumes</Chip>
+      </Spec>
+      <Spec label="FacetChip · toggleable facet token">
+        <FacetChip label="3rd c." count={12} on={false} onToggle={() => undefined} />
+        <FacetChip label="Fiqh" count={771} on onToggle={() => undefined} />
+        <FacetChip label="Hadith" count={380} on={false} partial onToggle={() => undefined} />
+        <FacetChip label="✻ Foundational" on={false} onToggle={() => undefined} />
+      </Spec>
+      <Spec label="Checkbox · multi-select row">
+        <Checkbox checked onToggle={() => undefined} count={187}>
+          Sunni Tafsir
+        </Checkbox>
+        <Checkbox checked="mixed" onToggle={() => undefined} count={755}>
+          Fiqh
+        </Checkbox>
+        <Checkbox checked={false} onToggle={() => undefined} count={108}>
+          Sciences
+        </Checkbox>
       </Spec>
     </>
   );

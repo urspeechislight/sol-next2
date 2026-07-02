@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { SearchScope } from '../lib/api/client';
 import { SEARCH_SCOPES } from '../lib/api/client';
 import { parseHash } from '../lib/routes';
 import type { RouteState } from '../lib/routes';
+import { saveReading } from '../lib/reading';
 import { useHashRoute } from '../lib/useHashRoute';
 import { GraphScreen } from '../features/graph/GraphScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
@@ -29,8 +30,14 @@ interface LibScope {
   dom: string;
 }
 
-const coerceScope = (scope: string): SearchScope =>
-  (SEARCH_SCOPES as readonly string[]).includes(scope) ? (scope as SearchScope) : 'content';
+/** The catalog scopes that predated the folded works search; an old URL's
+    scope lands on its one successor instead of silently becoming content. */
+const LEGACY_WORKS_SCOPES = ['title', 'author', 'book'] as const;
+
+const coerceScope = (scope: string): SearchScope => {
+  if ((LEGACY_WORKS_SCOPES as readonly string[]).includes(scope)) return 'works';
+  return (SEARCH_SCOPES as readonly string[]).includes(scope) ? (scope as SearchScope) : 'content';
+};
 
 interface AppContentProps {
   searching: boolean;
@@ -55,7 +62,12 @@ function AppContent({
 }: AppContentProps) {
   if (searching) {
     return (
-      <SearchResults query={submitted} scope={scope} onSearch={runSearch} onOpenReader={openReader} />
+      <SearchResults
+        query={submitted}
+        scope={scope}
+        onSearch={runSearch}
+        onOpenReader={openReader}
+      />
     );
   }
   return (
@@ -66,10 +78,10 @@ function AppContent({
           key={`${lib.cat}|${lib.dom}`}
           initialCategory={lib.cat}
           initialDomain={lib.dom}
-          onOpenReader={(urn) => openReader(urn)}
+          onOpenReader={openReader}
         />
       ) : null}
-      {view === 'quran' ? <QuranScreen /> : null}
+      {view === 'quran' ? <QuranScreen query={submitted} /> : null}
       {view === 'graph' ? <GraphScreen /> : null}
       {view === 'design' ? <DesignSystemScreen /> : null}
     </>
@@ -81,7 +93,8 @@ function AppContent({
     on Enter — never live as you type — so a slow corpus query runs once when you
     finish, not once per word. ``query`` is just the live input text; ``submitted``
     is the single source the SearchResults overlay and the URL read from. The Reader
-    is a full-screen takeover bound to a book URN + page. */
+    is a full-screen takeover bound to a book URN + page; every position it reaches
+    is persisted (reading.ts) so the landing page can offer re-entry. */
 export function App() {
   const initial = parseHash(window.location.hash);
   const [view, setView] = useState<NavView>(initial.view);
@@ -93,8 +106,19 @@ export function App() {
     initial.reading ? { ...initial.reading, query: '' } : null,
   );
 
+  useEffect(() => {
+    if (reading) saveReading(reading.urn, reading.page);
+  }, [reading]);
+
   const route: RouteState = reading
-    ? { view, query: '', scope, cat: '', dom: '', reading: { urn: reading.urn, page: reading.page } }
+    ? {
+        view,
+        query: '',
+        scope,
+        cat: '',
+        dom: '',
+        reading: { urn: reading.urn, page: reading.page },
+      }
     : { view, query: submitted, scope, cat: lib.cat, dom: lib.dom, reading: null };
   const applyRoute = useCallback((next: RouteState) => {
     setView(next.view);
@@ -113,6 +137,7 @@ export function App() {
         page={reading.page}
         initialQuery={reading.query}
         onPage={(p) => setReading((r) => (r ? { ...r, page: p } : r))}
+        onVolume={(u) => setReading((r) => (r ? { ...r, urn: u, page: 1 } : r))}
         onBack={() => setReading(null)}
       />
     );
@@ -138,17 +163,22 @@ export function App() {
     setQuery(next);
     setSubmitted(next);
   };
-  const searching = submitted.trim().length > 0;
+  // On the Qurʾān page the header search is sūra-scoped: the submitted term
+  // filters the open sūra in place instead of opening the overlay, and the
+  // field's clear button restores the unfiltered page.
+  const searching = submitted.trim().length > 0 && view !== 'quran';
 
   return (
     <AppShell
       active={view}
       query={query}
       scope={scope}
+      scopeLock={view === 'quran' ? 'this sūra' : undefined}
       onNav={onNav}
       onQuery={onQuery}
       onSearch={onSearch}
       onScope={setScope}
+      onClear={() => onQuery('')}
     >
       <AppContent
         searching={searching}
