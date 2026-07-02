@@ -18,6 +18,7 @@ from typing import Any
 
 from backend.build import manuscript as manuscript_build
 from backend.build import runner
+from backend.build.narrator_link import NarratorLinker, annotate_manuscript
 from backend.core.paths import data_path
 from backend.models.book import Book
 from backend.pipeline.config import Config, load_config
@@ -62,13 +63,20 @@ def _process_book(book: Book, config: Config) -> Manuscript | None:
 
 
 def _build(args: argparse.Namespace) -> dict[str, object]:
-    """Run segment+extract over the catalog and materialize the span store."""
+    """Run segment+extract over the catalog and materialize the span store.
+
+    Narrator entities are linked to the registry at build time (the join the
+    reader used to approximate in the browser against a 600-row sample); the
+    link rides in entity metadata, so the artifact schema is unchanged.
+    """
     config = load_config()
+    linker = NarratorLinker.from_registry()
 
     def _project(book: Book) -> dict[str, list[dict[str, Any]]] | None:
         manuscript = _process_book(book, config)
         if manuscript is None or not manuscript.spans:
             return None
+        annotate_manuscript(manuscript, linker)
         return {
             "span": manuscript_build.span_rows(manuscript),
             "entity": manuscript_build.entity_rows(manuscript),

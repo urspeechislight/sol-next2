@@ -12,15 +12,15 @@ import {
 } from '../../lib/design-system';
 import {
   getBook,
-  getNarratorIndex,
+  getCanonicalEntry,
+  getRijalEntry,
   getPage,
   getToc,
   searchBook,
 } from '../../lib/api/client';
 import { READER } from '../../lib/constants';
 import { hadithBadge, reliabilityBadge } from '../../lib/variants';
-import { normalizeName } from '../../lib/arabic';
-import { annotateText, buildNarratorIndex } from '../../lib/narrators';
+import { annotateText, buildNarratorIndex, canonicalToRecord, rijalToRecord } from '../../lib/narrators';
 import type { NarratorIndex } from '../../lib/narrators';
 import type {
   BookPage,
@@ -30,7 +30,7 @@ import type {
   NarratorRecord,
   Page,
 } from '../../lib/types';
-import { useAsync, useCachedAsync } from '../../lib/useAsync';
+import { useAsync } from '../../lib/useAsync';
 import { useDomains } from '../../lib/useDomains';
 import { clamp, cx, toArabicDigits } from '../../lib/utils';
 import { MatchList, TocDrawer } from './ReaderDrawers';
@@ -45,11 +45,12 @@ import './NarratorTarjama.css';
 const MIN_QUERY = 2;
 const EMPTY_MATCHES: Page<BookSearchMatch> = { items: [], total: 0, limit: 0, offset: 0 };
 
-/** Promote a per-hadith narrator to a registry-shaped record (used when the
-    name is not present in the rijāl index). */
+/** Promote a served narrator to a registry-shaped record. A linked narrator
+    carries its registry id (resolved at build time); the click handler then
+    fetches the full biography. An unlinked one shows name-only (id -1). */
 function recordFromNarrator(n: Narrator): NarratorRecord {
   return {
-    id: -1,
+    id: n.rijal_id ?? n.canonical_id ?? -1,
     full_name: n.name_ar || n.name,
     kunya: '',
     nisba: '',
@@ -59,7 +60,7 @@ function recordFromNarrator(n: Narrator): NarratorRecord {
     teacher_count: 0,
     student_count: 0,
     reliability_term: n.grade,
-    origin: 'rijal',
+    origin: n.canonical_id != null ? 'canonical' : 'rijal',
   };
 }
 
@@ -200,6 +201,11 @@ function IsnadPanel({ hadith, onNarrator }: { hadith: Hadith; onNarrator: (n: Na
   );
 }
 
+function narratorSource(record: NarratorRecord): string {
+  if (record.id < 0) return 'Extracted from the text · no registry entry';
+  return record.origin === 'canonical' ? 'Canonical narrator registry' : 'Rijāl registry';
+}
+
 function TarjamaPanel({ record, onClose }: { record: NarratorRecord; onClose: () => void }) {
   const sub = [record.kunya, record.nisba].filter(Boolean).join(' · ');
   const facts: [string, string | number][] = [
@@ -239,7 +245,7 @@ function TarjamaPanel({ record, onClose }: { record: NarratorRecord; onClose: ()
           </div>
         ))}
       </dl>
-      <p className="narrator__source">Rijāl registry · linked by name</p>
+      <p className="narrator__source">{narratorSource(record)}</p>
     </aside>
   );
 }
@@ -283,7 +289,6 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
 
   const bookRes = useAsync(() => getBook(urn), [urn]);
   const tocRes = useAsync(() => getToc(urn), [urn]);
-  const indexRes = useCachedAsync('narrator-index', getNarratorIndex);
   const domainsRes = useDomains();
   const pageRes = useAsync<BookPage>(() => getPage(urn, page), [urn, page]);
   const searchRes = useAsync<Page<BookSearchMatch>>(
@@ -294,12 +299,11 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
     [urn, searchQ],
   );
 
-  const records = indexRes.data ?? [];
-  const index = useMemo(() => buildNarratorIndex(records), [records]);
-  const nameMap = useMemo(
-    () => new Map(records.map((r) => [normalizeName(r.full_name), r])),
-    [records],
+  const pageRecords = useMemo(
+    () => (pageRes.data?.hadiths ?? []).flatMap((h) => h.narrators).map(recordFromNarrator),
+    [pageRes.data],
   );
+  const index = useMemo(() => buildNarratorIndex(pageRecords), [pageRecords]);
   // Category slugs -> human labels, from the taxonomy; the masthead badge shows
   // the label ("Arabic Language Sciences"), never the raw slug.
   const categoryLabels = useMemo(() => {
@@ -313,9 +317,18 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
   const openRecord = (record: NarratorRecord) => {
     setNarrator(record);
     setRight('tarjama');
+    if (record.id < 0) return;
+    const detail =
+      record.origin === 'canonical'
+        ? getCanonicalEntry(record.id).then(canonicalToRecord)
+        : getRijalEntry(record.id).then(rijalToRecord);
+    void detail.then((full) =>
+      setNarrator((current) =>
+        current && current.id === record.id && current.origin === record.origin ? full : current,
+      ),
+    );
   };
-  const openNarrator = (n: Narrator) =>
-    openRecord(nameMap.get(normalizeName(n.name_ar)) ?? recordFromNarrator(n));
+  const openNarrator = (n: Narrator) => openRecord(recordFromNarrator(n));
   const rootStyle = { '--reader-size': `${size}px` } as CSSProperties;
 
   const book = bookRes.data;
@@ -378,11 +391,6 @@ export function ReaderScreen({ urn, page, initialQuery = '', onPage, onBack }: R
         <main className="reader-main">
           {pageRes.loading ? <Spinner label="Loading page" /> : null}
           {pageRes.error ? <Unavailable title={title} /> : null}
-          {indexRes.error ? (
-            <Text as="p" size="sm" tone="danger">
-              Narrator linkage is unavailable; isnād names are shown as plain text.
-            </Text>
-          ) : null}
           {pageData ? (
             <article className="reader-article">
               <PageHead page={pageData} />

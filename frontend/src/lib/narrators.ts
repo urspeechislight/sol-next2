@@ -158,14 +158,3 @@ export function canonicalToRecord(e: CanonicalEntry): NarratorRecord {
   };
 }
 
-/** Merge rijal + canonical records, deduped by normalized full_name (rijal wins
-   :it carries the reliability grading the tarjama needs). */
-export function mergeNarrators(
-  rijal: NarratorRecord[],
-  canonical: NarratorRecord[],
-): NarratorRecord[] {
-  const byKey = new Map<string, NarratorRecord>();
-  for (const r of canonical) byKey.set(normalizeName(r.full_name), r);
-  for (const r of rijal) byKey.set(normalizeName(r.full_name), r);
-  return [...byKey.values()];
-}

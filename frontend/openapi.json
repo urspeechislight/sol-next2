@@ -918,6 +918,18 @@
       "Narrator": {
         "description": "One narrator in an isnad.",
         "properties": {
+          "canonical_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Registry link: id in /api/canonical, when the name resolved to a canonical profile instead of a rijal entry. Mutually exclusive with rijal_id.",
+            "title": "Canonical Id"
+          },
           "d": {
             "anyOf": [
               {
@@ -944,6 +956,18 @@
             "description": "Name in Arabic.",
             "title": "Name Ar",
             "type": "string"
+          },
+          "rijal_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Registry link: id in /api/rijal, resolved at build time by normalized-name match. None when the registry does not know this narrator; the reader shows the name unlinked rather than guessing.",
+            "title": "Rijal Id"
           },
           "role": {
             "description": "Role / position in the chain (companion, transmitter, ...).",
