@@ -1,4 +1,4 @@
-"""HTTP route: ``GET /api/daily`` — curated editorial picks for today."""
+"""HTTP route: ``GET /api/daily`` — curated editorial picks, rotated by date."""
 
 from __future__ import annotations
 
@@ -15,5 +15,5 @@ get_route(
     "/daily",
     daily_repo.get_today,
     response_model=Daily,
-    summary="Today's verse, hadith, and book pick.",
+    summary="Today's verse, hadith, and book pick, rotated by date.",
 )

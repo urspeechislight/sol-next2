@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from backend.api.almanac import router as almanac_router
 from backend.api.books import router as books_router
 from backend.api.canonical import router as canonical_router
 from backend.api.daily import router as daily_router
@@ -25,6 +26,7 @@ api_router.include_router(books_router)
 api_router.include_router(works_router)
 api_router.include_router(reader_router)
 api_router.include_router(daily_router)
+api_router.include_router(almanac_router)
 api_router.include_router(rijal_router)
 api_router.include_router(canonical_router)
 api_router.include_router(search_router)

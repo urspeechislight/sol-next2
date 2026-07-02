@@ -8,7 +8,9 @@ through many books. ``CORPUS__SNIPPET_WINDOW_CHARS`` and
 ``CORPUS__SNIPPET_HEAD_CHARS`` set the excerpt geometry for the fold-aware
 snippet built in ``repositories/corpus.py``: the characters kept on each side
 of a match, and the head length shown on the guard path when the matched
-window cannot be located.
+window cannot be located. ``QURAN__SURAH_COUNT`` is the canonical chapter
+count, the upper bound of every surah-number field; the ``CALENDAR__*``
+bounds validate Hijri month/day references in the almanac.
 """
 
 from __future__ import annotations
@@ -34,3 +36,8 @@ SEARCH__PATTERN_CACHE_MAX: Final[int] = 512
 CORPUS__SNIPPET_WINDOW_CHARS: Final[int] = 48
 CORPUS__SNIPPET_HEAD_CHARS: Final[int] = 160
 BUILD__COMMIT_EVERY: Final[int] = 400
+
+QURAN__SURAH_COUNT: Final[int] = 114
+
+CALENDAR__HIJRI_MONTHS: Final[int] = 12
+CALENDAR__HIJRI_MONTH_DAY_MAX: Final[int] = 30
