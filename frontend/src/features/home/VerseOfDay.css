@@ -1,215 +1,187 @@
-/* VerseOfDay — one compact panel of the daily band: warm radial wash,
-   cornerpieces, the ayah unfurling word by word inside a cartouche, tafsīr
-   excerpts rotating beneath. Tokens only. */
+/* VerseOfDay — the folio's matn. Open composition on the page ground: no card
+   box; the ayah at hero scale is the picture. Tokens only. */
 
-.vday {
-  position: relative;
-  padding: var(--space-md) var(--space-lg);
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm), var(--shadow-md);
-}
-.vday::before,
-.vday::after {
-  content: '✻';
-  position: absolute;
-  color: var(--color-accent);
-  font-size: var(--text-sm);
-  opacity: 0.55;
-}
-.vday::before {
-  top: var(--space-sm);
-  left: var(--space-md);
-}
-.vday::after {
-  bottom: var(--space-sm);
-  right: var(--space-md);
+.vhero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
 }
 
-.vday__head {
+.vhero__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-md);
-  margin-bottom: var(--space-md);
 }
 
-.vday__surah {
-  text-align: center;
-  font-family: var(--font-ar-display);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-snug);
-  color: var(--color-text);
-  margin: 0 0 var(--space-sm);
-}
-.vday__surah-en {
-  display: block;
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: var(--weight-regular);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  margin-top: var(--space-2xs);
-}
-
-/* ---- the cartouche ------------------------------------------------------- */
-.vday__cartouche {
+.vhero__cartouche {
   display: block;
   width: 100%;
   position: relative;
-  border-top: 1px solid var(--color-accent-tint);
-  border-bottom: 1px solid var(--color-accent-tint);
-  padding: var(--space-md) var(--space-sm);
-}
-.vday__cartouche::before,
-.vday__cartouche::after {
-  content: '✻';
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--color-accent);
-  font-size: var(--text-xs);
-  line-height: 1;
-}
-.vday__cartouche::before {
-  top: -0.5em;
-}
-.vday__cartouche::after {
-  bottom: -0.5em;
+  text-align: center;
+  padding: var(--space-lg) var(--space-md) var(--space-md);
+  cursor: pointer;
 }
 
-.vday__words {
+.vhero__words {
   display: block;
+  font-family: var(--font-ar-display);
+  font-size: var(--text-hero-ar);
+  line-height: var(--leading-arabic);
+  color: var(--color-text);
+}
+.vhero__word {
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+.vhero__word--in {
+  opacity: 1;
+}
+.vhero__word--cursor {
+  color: var(--color-accent-deep);
+}
+
+.vhero__progress {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  translate: -50% 0;
+  width: min(46%, 300px);
+  height: 2px;
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.vhero__progress::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform-origin: right center;
+  transform: scaleX(var(--vday-progress, 0));
+  background: var(--color-accent);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.vhero__surah {
+  margin: 0;
   text-align: center;
   font-family: var(--font-ar-display);
   font-size: var(--text-xl);
-  line-height: var(--leading-arabic);
-  text-wrap: pretty;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-md);
 }
-.vday__word {
-  color: var(--color-text-ghost);
-  transition:
-    color var(--duration-slow) var(--ease-out),
-    text-shadow var(--duration-slow) var(--ease-out);
-}
-.vday__word--in {
-  color: var(--color-text);
-}
-.vday__word--cursor {
-  color: var(--color-accent-deep);
-  text-shadow: 0 0 18px var(--color-accent-tint);
-}
-.vday__progress {
-  position: absolute;
-  left: 0;
-  bottom: -1px;
-  height: 2px;
-  width: calc(var(--vday-progress, 0) * 100%);
-  background: linear-gradient(to right, transparent, var(--color-accent));
-  transition: width var(--duration-base) linear;
-}
-
-.vday__en {
-  text-align: center;
+.vhero__surah-en {
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: var(--text-sm);
-  line-height: var(--leading-relaxed);
-  color: var(--color-text-muted);
-  margin: var(--space-sm) auto var(--space-md);
-  text-wrap: pretty;
+  font-size: var(--text-md);
+  color: var(--color-text-faint);
 }
 
-/* ---- tafsīr rotation ------------------------------------------------------ */
-.vday__tafsir {
-  border-top: 1px dashed var(--color-border-strong);
-  padding-top: var(--space-md);
+.vhero__en {
+  margin: 0 auto;
+  max-width: 62ch;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
 }
-.vday__tafsir-head {
+
+/* footnote apparatus */
+.vhero__tafsir {
+  margin-top: var(--space-md);
+}
+.vhero__tafsir-rule {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-sm);
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
 }
-.vday__tafsir-label {
+.vhero__tafsir-rule::before,
+.vhero__tafsir-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-accent) 30%,
+    var(--color-accent) 70%,
+    transparent
+  );
+  opacity: 0.45;
+}
+.vhero__tafsir-label {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-accent-deep);
+  white-space: nowrap;
 }
-/* Cards stack in one grid cell so the stage sizes to the tallest excerpt. */
-.vday__tafsir-stage {
+
+.vhero__tafsir-cols {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-lg);
+  align-items: start;
 }
-.vday__tafsir-card {
-  grid-area: 1 / 1;
+
+.vhero__excerpt {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-xs);
-  text-align: left;
-  opacity: 0;
-  transform: translateY(6px);
-  transition:
-    opacity var(--duration-slow) var(--ease-out),
-    transform var(--duration-slow) var(--ease-out);
-  pointer-events: none;
-}
-.vday__tafsir-card--active {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-}
-.vday__tafsir-meta {
-  display: inline-flex;
-  align-items: baseline;
   gap: var(--space-sm);
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    translate var(--duration-base) var(--ease-out);
 }
-.vday__tafsir-book {
+.vhero__excerpt:not(:disabled):hover {
+  background: var(--color-accent-wash);
+  translate: 0 -2px;
+  cursor: pointer;
+}
+.vhero__excerpt:disabled {
+  cursor: default;
+}
+
+.vhero__excerpt-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+.vhero__excerpt-book {
   font-family: var(--font-ar);
   font-size: var(--text-md);
-  color: var(--color-accent-deep);
+  color: var(--color-text);
 }
-.vday__tafsir-author {
+.vhero__excerpt-author {
   font-family: var(--font-serif);
   font-style: italic;
   font-size: var(--text-sm);
   color: var(--color-text-faint);
 }
-.vday__tafsir-text {
-  font-family: var(--font-serif);
-  font-size: var(--text-md);
-  line-height: var(--leading-relaxed);
+.vhero__excerpt-text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
   color: var(--color-text-muted);
-  text-wrap: pretty;
 }
-.vday__tafsir-go {
+.vhero__excerpt-go {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--color-accent-deep);
-  opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-.vday__tafsir-card--active:hover .vday__tafsir-go,
-.vday__tafsir-card--active:focus-visible .vday__tafsir-go {
-  opacity: 1;
 }
 
-.vday__foot {
+.vhero__foot {
   display: flex;
   justify-content: flex-end;
-  margin-top: var(--space-md);
-}
-
-@media (max-width: 640px) {
-  .vday {
-    padding: var(--space-lg) var(--space-md);
-  }
-  .vday__words {
-    font-size: var(--text-2xl);
-  }
 }

@@ -1,71 +1,133 @@
-/* HomeScreen — the day's reading over one page-wide glow: a 2x2 band of
-   translucent cards (verse | hadith, then history | calendar). This file owns
-   placement; surfaces and decor come from the design system. */
+/* HomeScreen — the landing folio over one page-wide glow. This file owns
+   placement and the load choreography; components own their own surfaces. */
 
-.home2 {
+.home3 {
   position: relative;
   isolation: isolate;
 }
 
-.home2__daily {
+.home3__inner {
   position: relative;
   z-index: 1;
-  padding: var(--space-xl) 0 var(--space-3xl);
-}
-.home2__daily-head {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-lg);
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--space-md);
-  margin-bottom: var(--space-lg);
-}
-.home2__daily-title {
-  margin: 0;
-  flex: 1;
-  min-width: 0;
-  font-family: var(--font-serif);
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-medium);
-  letter-spacing: -0.02em;
-  color: var(--color-text);
-}
-.home2__daily-title em {
-  font-style: italic;
-  font-weight: var(--weight-regular);
-  color: var(--color-accent-deep);
-}
-.home2__daily-date {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-sm);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-text-faint);
-}
-.home2__daily-hijri {
-  font-family: var(--font-ar);
-  font-size: var(--text-md);
-  letter-spacing: 0;
-  color: var(--color-accent-deep);
-}
-.home2__daily-sep {
-  color: var(--color-accent);
+  flex-direction: column;
+  gap: var(--space-2xl);
+  padding: var(--space-lg) 0 var(--space-2xl);
 }
 
-/* 2x2: verse | hadith on the first row, history | calendar beneath them.
-   Rows stretch, so the pairs stay the same size. */
-.home2__band {
+/* The daily spread: verse and hadith as equal columns either side of a
+   center rule, like the two pages of an opened codex. */
+.home3__folio {
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-lg);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: calc(2 * var(--space-2xl));
+  align-items: start;
+}
+.home3__folio::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: var(--space-md);
+  bottom: var(--space-md);
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-accent) 25%,
+    var(--color-accent) 75%,
+    transparent
+  );
+  opacity: 0.35;
 }
 
-@media (max-width: 760px) {
-  .home2__band {
+@media (max-width: 920px) {
+  .home3__folio {
     grid-template-columns: 1fr;
+    row-gap: var(--space-2xl);
+  }
+  .home3__folio::before {
+    display: none;
+  }
+}
+
+/* colophon */
+.home3__colophon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-top: var(--space-xl);
+  position: relative;
+}
+.home3__colophon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% 0;
+  width: min(52%, 380px);
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-accent) 30%,
+    var(--color-accent) 70%,
+    transparent
+  );
+  opacity: 0.5;
+}
+.home3__colophon-mark {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+}
+.home3__colophon-line {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+  text-align: center;
+}
+
+/* One orchestrated page load: the ʿunwān draws itself (its own animation),
+   then each band rises in turn. Backwards fill keeps late bands hidden until
+   their turn; the whole sequence settles inside 1.2s, then stillness. */
+.home3__inner > * {
+  animation: home3-rise 560ms var(--ease-out) backwards;
+}
+.home3__inner > :nth-child(2) {
+  animation-delay: 160ms;
+}
+.home3__inner > :nth-child(3) {
+  animation-delay: 260ms;
+}
+.home3__inner > :nth-child(4) {
+  animation-delay: 340ms;
+}
+.home3__inner > :nth-child(5) {
+  animation-delay: 420ms;
+}
+.home3__inner > :nth-child(6) {
+  animation-delay: 500ms;
+}
+.home3__inner > :nth-child(7) {
+  animation-delay: 580ms;
+}
+
+@keyframes home3-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home3__inner > * {
+    animation: none;
   }
 }

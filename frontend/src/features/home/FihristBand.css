@@ -1,0 +1,36 @@
+/* FihristBand — the landing page's contents band; rows come from the shared
+   IndexRow component. Tokens only. */
+
+.fihrist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.fihrist__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-sm);
+}
+.fihrist__title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.fihrist__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fihrist__item + .fihrist__item {
+  border-top: 1px solid var(--color-border-hair);
+}

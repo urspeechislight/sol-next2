@@ -1,0 +1,72 @@
+/* Unwan — the illuminated headpiece band. Gold strokes on the page ground;
+   every stroke uses pathLength="1" so one dash rule draws them all in. */
+
+.unwan {
+  width: min(100%, 1040px);
+  margin: 0 auto;
+}
+.unwan__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.unwan__draw line,
+.unwan__draw path,
+.unwan__draw circle,
+.unwan__rosette circle,
+.unwan__rosette path {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.unwan__finial {
+  fill: color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+.unwan__rosette path {
+  fill: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+.unwan__rosette circle:last-of-type {
+  fill: color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+/* One ceremonial draw on load, then stillness. */
+.unwan__draw line,
+.unwan__draw path,
+.unwan__draw circle {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: unwan-draw 900ms var(--ease-out) forwards;
+}
+.unwan__rosette circle,
+.unwan__rosette path {
+  opacity: 0;
+  animation: unwan-bloom var(--duration-slow) var(--ease-out) 480ms forwards;
+}
+
+@keyframes unwan-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes unwan-bloom {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unwan__draw line,
+  .unwan__draw path,
+  .unwan__draw circle {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .unwan__rosette circle,
+  .unwan__rosette path {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -1,21 +1,66 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { Dots, Eyebrow, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
+import { Eyebrow, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
 import { HOME } from '../../lib/constants';
 import { requestShare } from '../../lib/share';
-import type { Verse } from '../../lib/types';
+import { surahName } from '../../lib/surahs';
+import type { Tafsir, Verse } from '../../lib/types';
 import './VerseOfDay.css';
 
 export interface VerseOfDayProps {
   verse: Verse;
-  onOpenReader: (urn: string) => void;
+  onOpenReader: (urn: string, page?: number) => void;
 }
 
-/** The landing verse: the ayah unfurls word by word on a slow loop (click the
-    cartouche to replay), the translation sits beneath it, and the tafsīr
-    excerpts rotate — each one a doorway into its commentary in the reader. */
+/** The folio's matn: today's ayah at display scale, unfurling word by word
+    (click to replay), the translation beneath it, and the two tafsīr excerpts
+    set as a footnote apparatus — the cross-tradition pairing side by side,
+    each linked into its commentary at the cited page. Open composition, no
+    card chrome: the verse is the page, not a widget on it. */
 export function VerseOfDay({ verse, onOpenReader }: VerseOfDayProps) {
-  const words = useMemo(() => verse.ayah_ar.split(' ').filter(Boolean), [verse.ayah_ar]);
+  const surah = surahName(verse.surah_n);
+  return (
+    <article className="vhero" aria-label="Verse of the day">
+      <header className="vhero__head">
+        <Eyebrow>Verse of the day · آية اليوم</Eyebrow>
+        <Text size="xs" tone="faint" font="mono">
+          Qurʾān {verse.surah_n}:{verse.ayah_n}
+        </Text>
+      </header>
+
+      <AyahCartouche ayahAr={verse.ayah_ar} />
+
+      <p className="vhero__surah" dir="rtl">
+        {surah.ar}
+        <span className="vhero__surah-en" dir="ltr">
+          Sūrat {surah.en}
+        </span>
+      </p>
+
+      {verse.ayah_en ? <p className="vhero__en">{verse.ayah_en}</p> : null}
+
+      <TafsirApparatus tafsirs={verse.tafsirs} onOpenReader={onOpenReader} />
+
+      <footer className="vhero__foot">
+        <ShareButton
+          content={{
+            kicker: `Qurʾān · ${surah.en} ${verse.surah_n}:${verse.ayah_n}`,
+            arabic: verse.ayah_ar,
+            latin: verse.ayah_en ?? '',
+            source: `Qurʾān ${verse.surah_n}:${verse.ayah_n}`,
+            url: window.location.origin,
+          }}
+          requestShare={requestShare}
+        />
+      </footer>
+    </article>
+  );
+}
+
+/** The ayah itself: hero-scale Arabic that reveals one word per tick, resting
+    between loops. Clicking replays the recitation from the first word. */
+function AyahCartouche({ ayahAr }: { ayahAr: string }) {
+  const words = useMemo(() => ayahAr.split(' ').filter(Boolean), [ayahAr]);
   const cycle = words.length + HOME.VERSE_HOLD_TICKS;
 
   const [tick, setTick] = useState(0);
@@ -24,110 +69,71 @@ export function VerseOfDay({ verse, onOpenReader }: VerseOfDayProps) {
     return () => clearInterval(id);
   }, [cycle]);
   const shown = Math.min(tick + 1, words.length);
-
-  const [tafsirIdx, setTafsirIdx] = useState(0);
-  useEffect(() => {
-    if (verse.tafsirs.length < 2) return;
-    const id = setInterval(
-      () => setTafsirIdx((i) => (i + 1) % verse.tafsirs.length),
-      HOME.TAFSIR_ROTATE_MS,
-    );
-    return () => clearInterval(id);
-  }, [verse.tafsirs.length]);
-
   const progressStyle = { '--vday-progress': shown / words.length } as CSSProperties;
 
   return (
-    <section className="vday" aria-labelledby="vday-surah">
-      <header className="vday__head">
-        <Eyebrow>Verse of the day · آية اليوم</Eyebrow>
-        <Text size="xs" tone="faint" font="mono">
-          Qurʾān {verse.surah_n}:{verse.ayah_n}
-        </Text>
-      </header>
+    <UnstyledButton
+      className="vhero__cartouche"
+      onClick={() => setTick(0)}
+      title="Replay the recitation"
+    >
+      <span className="vhero__words" dir="rtl">
+        {words.map((w, i) => (
+          <span
+            key={i}
+            className={
+              i < shown
+                ? i === shown - 1
+                  ? 'vhero__word vhero__word--in vhero__word--cursor'
+                  : 'vhero__word vhero__word--in'
+                : 'vhero__word'
+            }
+          >
+            {w}
+            {i < words.length - 1 ? ' ' : ''}
+          </span>
+        ))}
+      </span>
+      <span className="vhero__progress" style={progressStyle} aria-hidden="true" />
+    </UnstyledButton>
+  );
+}
 
-      <h2 id="vday-surah" className="vday__surah" dir="rtl">
-        {verse.surah_ar}
-        <span className="vday__surah-en" dir="ltr">
-          Sūrat {verse.surah}
-        </span>
-      </h2>
+interface TafsirApparatusProps {
+  tafsirs: Tafsir[];
+  onOpenReader: (urn: string, page?: number) => void;
+}
 
-      <UnstyledButton
-        className="vday__cartouche"
-        onClick={() => setTick(0)}
-        title="Replay the recitation"
-      >
-        <span className="vday__words" dir="rtl">
-          {words.map((w, i) => (
-            <span
-              key={i}
-              className={
-                i < shown
-                  ? i === shown - 1
-                    ? 'vday__word vday__word--in vday__word--cursor'
-                    : 'vday__word vday__word--in'
-                  : 'vday__word'
-              }
-            >
-              {w}
-              {i < words.length - 1 ? ' ' : ''}
-            </span>
-          ))}
-        </span>
-        <span className="vday__progress" style={progressStyle} aria-hidden="true" />
-      </UnstyledButton>
-
-      <p className="vday__en">{verse.ayah_en}</p>
-
-      <div className="vday__tafsir">
-        <div className="vday__tafsir-head">
-          <span className="vday__tafsir-label">Tafsīr</span>
-          {verse.tafsirs.length > 1 ? (
-            <Dots
-              count={verse.tafsirs.length}
-              active={tafsirIdx}
-              labelFor={(i) => `Show tafsīr from ${verse.tafsirs[i].book}`}
-              onPick={setTafsirIdx}
-            />
-          ) : null}
-        </div>
-        <div className="vday__tafsir-stage">
-          {verse.tafsirs.map((t, i) => (
-            <UnstyledButton
-              key={t.book}
-              className={
-                i === tafsirIdx ? 'vday__tafsir-card vday__tafsir-card--active' : 'vday__tafsir-card'
-              }
-              onClick={() => (t.urn ? onOpenReader(t.urn) : undefined)}
-              disabled={!t.urn}
-              tabIndex={i === tafsirIdx ? 0 : -1}
-            >
-              <span className="vday__tafsir-meta">
-                <span className="vday__tafsir-book" dir="rtl">
-                  {t.book_ar}
-                </span>
-                <span className="vday__tafsir-author">{t.author}</span>
-              </span>
-              <span className="vday__tafsir-text">{t.excerpt_en}</span>
-              {t.urn ? <span className="vday__tafsir-go">Read the commentary →</span> : null}
-            </UnstyledButton>
-          ))}
-        </div>
+/** The footnote apparatus: every excerpt visible at once, side by side, the
+    way a manuscript sets commentary under the matn. A cited work the corpus
+    holds links into the reader at its page; one it does not hold is quoted
+    and left unlinked. */
+function TafsirApparatus({ tafsirs, onOpenReader }: TafsirApparatusProps) {
+  return (
+    <div className="vhero__tafsir">
+      <div className="vhero__tafsir-rule" aria-hidden="true">
+        <span className="vhero__tafsir-label">Tafsīr · التفسير</span>
       </div>
-
-      <footer className="vday__foot">
-        <ShareButton
-          content={{
-            kicker: `Qurʾān · ${verse.surah} ${verse.surah_n}:${verse.ayah_n}`,
-            arabic: verse.ayah_ar,
-            latin: verse.ayah_en,
-            source: `Qurʾān ${verse.surah_n}:${verse.ayah_n}`,
-            url: window.location.origin,
-          }}
-          requestShare={requestShare}
-        />
-      </footer>
-    </section>
+      <div className="vhero__tafsir-cols">
+        {tafsirs.map((t) => (
+          <UnstyledButton
+            key={t.book}
+            className="vhero__excerpt"
+            onClick={() => (t.urn ? onOpenReader(t.urn, t.page ?? undefined) : undefined)}
+            disabled={!t.urn}
+            title={t.urn ? 'Read the commentary in the reader' : 'Not yet in the corpus'}
+          >
+            <span className="vhero__excerpt-meta">
+              <span className="vhero__excerpt-book" dir="rtl">
+                {t.book_ar}
+              </span>
+              <span className="vhero__excerpt-author">{t.author}</span>
+            </span>
+            <span className="vhero__excerpt-text">{t.excerpt_en}</span>
+            {t.urn ? <span className="vhero__excerpt-go">Read the commentary →</span> : null}
+          </UnstyledButton>
+        ))}
+      </div>
+    </div>
   );
 }

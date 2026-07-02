@@ -1,14 +1,11 @@
-/* HadithOfDay — one compact panel of the daily band: isnād above a dashed
-   hairline, matn in both languages beneath, sources as pills that open the
-   reader. Tokens only. */
+/* HadithOfDay — the verse's peer on the folio spread: same open composition,
+   same centered axis, the matn at display scale. Tokens only. */
 
 .hday {
-  position: relative;
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md) var(--space-lg);
-  box-shadow: var(--shadow-sm), var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
 }
 
 .hday__head {
@@ -16,49 +13,81 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-md);
-  margin-bottom: var(--space-md);
 }
 
 .hday__isnad {
+  margin: var(--space-lg) 0 0;
+  text-align: center;
   font-family: var(--font-ar);
   font-size: var(--text-md);
   line-height: var(--leading-arabic);
-  color: var(--color-isnad);
-  margin: 0 0 var(--space-sm);
-  padding-bottom: var(--space-sm);
-  border-bottom: 1px dashed var(--color-border-strong);
+  color: var(--color-text-faint);
 }
 
 .hday__matn {
+  margin: 0;
+  text-align: center;
   font-family: var(--font-ar-display);
-  font-size: var(--text-xl);
+  font-size: var(--text-3xl);
   line-height: var(--leading-arabic);
-  color: var(--color-matn);
-  margin: 0 0 var(--space-sm);
+  color: var(--color-text);
   text-wrap: pretty;
 }
+
 .hday__en {
+  margin: 0 auto;
+  max-width: 48ch;
+  text-align: center;
   font-family: var(--font-serif);
-  font-style: italic;
-  font-size: var(--text-sm);
+  font-size: var(--text-lg);
   line-height: var(--leading-relaxed);
   color: var(--color-text-muted);
-  margin: 0 0 var(--space-md);
 }
 
 .hday__note {
-  border-inline-start: 2px solid var(--color-accent-tint);
-  padding-inline-start: var(--space-sm);
-  margin: 0 0 var(--space-md);
+  margin: 0 auto;
+  max-width: 52ch;
+  text-align: center;
 }
 
-.hday__sources {
+.hday__refs {
+  margin-top: var(--space-md);
+}
+.hday__refs-rule {
   display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+.hday__refs-rule::before,
+.hday__refs-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-accent) 30%,
+    var(--color-accent) 70%,
+    transparent
+  );
+  opacity: 0.45;
+}
+.hday__refs-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+  white-space: nowrap;
+}
+
+.hday__pills {
+  display: flex;
+  justify-content: center;
   align-items: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--space-md);
 }
 .hday__pill {
   transition: transform var(--duration-fast) var(--ease-out);
@@ -69,12 +98,8 @@
 .hday__pill:disabled {
   opacity: 0.6;
 }
-.hday__share {
-  margin-left: auto;
-}
 
-@media (max-width: 640px) {
-  .hday {
-    padding: var(--space-md);
-  }
+.hday__foot {
+  display: flex;
+  justify-content: flex-end;
 }

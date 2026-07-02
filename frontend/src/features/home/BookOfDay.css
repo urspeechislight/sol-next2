@@ -1,0 +1,121 @@
+/* BookOfDay — an alive editorial shelf band beneath the daily spread:
+   translucent surface, warm wash, gold cornerpieces, hover lift; on wide
+   viewports the lockup, rationale, and action sit side by side. Tokens
+   only. */
+
+.bday {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  background:
+    radial-gradient(
+      120% 90% at 50% 0%,
+      color-mix(in srgb, var(--color-accent-wash) 65%, transparent),
+      transparent 70%
+    ),
+    color-mix(in srgb, var(--color-surface) 72%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm), var(--shadow-md);
+  transition:
+    box-shadow var(--duration-base) var(--ease-out),
+    translate var(--duration-base) var(--ease-out);
+}
+.bday:hover {
+  translate: 0 -2px;
+  box-shadow: var(--shadow-md), var(--shadow-lg);
+}
+.bday::before,
+.bday::after {
+  content: '✻';
+  position: absolute;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  opacity: 0.55;
+}
+.bday::before {
+  top: var(--space-sm);
+  left: var(--space-md);
+}
+.bday::after {
+  bottom: var(--space-sm);
+  right: var(--space-md);
+}
+
+.bday__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.bday__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.bday__lockup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+@media (min-width: 721px) {
+  .bday__body {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.6fr) auto;
+    align-items: center;
+    column-gap: var(--space-xl);
+  }
+  .bday__reason {
+    margin: 0;
+  }
+  .bday__open {
+    margin: 0;
+    justify-self: end;
+  }
+}
+
+.bday__title {
+  margin: 0;
+  font-family: var(--font-ar-display);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
+  color: var(--color-text);
+}
+.bday__title-en {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  color: var(--color-text-muted);
+}
+.bday__author {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+}
+
+.bday__reason {
+  margin: var(--space-xs) 0 0;
+  padding: 0 var(--space-md);
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  color: var(--color-text-muted);
+  position: relative;
+}
+.bday__reason::before {
+  content: '❝';
+  position: absolute;
+  left: calc(-1 * var(--space-2xs));
+  top: 0;
+  color: var(--color-accent);
+}
+
+.bday__open {
+  margin-top: var(--space-xs);
+}
