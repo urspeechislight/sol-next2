@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
+from backend.models._base import FrozenModel
 from backend.models.grades import HadithGrade
 
 
-class TocEntry(BaseModel):
+class TocEntry(FrozenModel):
     """One row in a book's table of contents."""
-
-    model_config = ConfigDict(frozen=True)
 
     page: int = Field(ge=1, description="Page number where this section begins.")
     title: str = Field(description="Arabic section title.")
@@ -20,19 +19,15 @@ class TocEntry(BaseModel):
     )
 
 
-class Toc(BaseModel):
+class Toc(FrozenModel):
     """The full table of contents for one book."""
-
-    model_config = ConfigDict(frozen=True)
 
     book_urn: str = Field(description="URN of the book this TOC belongs to.")
     entries: list[TocEntry] = Field(description="Ordered TOC rows.")
 
 
-class Narrator(BaseModel):
+class Narrator(FrozenModel):
     """One narrator in an isnad."""
-
-    model_config = ConfigDict(frozen=True)
 
     name: str = Field(description="Name in romanized form.")
     name_ar: str = Field(description="Name in Arabic.")
@@ -41,10 +36,8 @@ class Narrator(BaseModel):
     d: int | None = Field(default=None, description="Death year, Hijri.")
 
 
-class CrossRef(BaseModel):
+class CrossRef(FrozenModel):
     """Pointer to a parallel narration in another collection."""
-
-    model_config = ConfigDict(frozen=True)
 
     book: str = Field(description="Source book (English transliteration).")
     book_ar: str = Field(description="Source book (Arabic).")
@@ -52,10 +45,8 @@ class CrossRef(BaseModel):
     page: int | None = Field(default=None, description="Page number in the source book.")
 
 
-class Hadith(BaseModel):
+class Hadith(FrozenModel):
     """One hadith record: isnad + matn + narrators + cross-references."""
-
-    model_config = ConfigDict(frozen=True)
 
     n: int = Field(ge=1, description="Sequence number on the page.")
     isnad_ar: str = Field(description="Chain of transmission in Arabic.")
@@ -74,10 +65,8 @@ class Hadith(BaseModel):
     )
 
 
-class BookPage(BaseModel):
+class BookPage(FrozenModel):
     """One book page: parsed hadiths, or raw page text when none are parsed yet."""
-
-    model_config = ConfigDict(frozen=True)
 
     page_number: int = Field(ge=1)
     total_pages: int = Field(ge=1)
@@ -104,10 +93,8 @@ class BookPage(BaseModel):
     )
 
 
-class BookSearchMatch(BaseModel):
+class BookSearchMatch(FrozenModel):
     """One in-book search hit: the page and a short Arabic excerpt."""
-
-    model_config = ConfigDict(frozen=True)
 
     page: int = Field(ge=1, description="Page the match occurs on.")
     snippet: str = Field(description="Excerpt of the matching unit (Arabic).")

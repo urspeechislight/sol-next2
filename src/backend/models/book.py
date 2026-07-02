@@ -19,17 +19,16 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
 from backend.core.constants import BOOK__DEATH_YEAR_AH_MAX
+from backend.models._base import FrozenModel
 
 Canonical = Literal["primary", "primary_reference", "secondary", "tertiary"]
 
 
-class BibRecord(BaseModel):
+class BibRecord(FrozenModel):
     """Bibliographic fields shared by a book volume and a folded work."""
-
-    model_config = ConfigDict(frozen=True)
 
     title_ar: str = Field(description="Arabic title.")
     title_en: str | None = Field(default=None, description="English title, if available.")

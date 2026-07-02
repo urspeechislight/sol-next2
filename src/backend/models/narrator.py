@@ -8,13 +8,13 @@ records by name; the graph screens browse them directly.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from backend.models._base import FrozenModel
 
 
-class RijalEntry(BaseModel):
+class RijalEntry(FrozenModel):
     """One narrator in the rijal registry (reliability-graded)."""
-
-    model_config = ConfigDict(frozen=True)
 
     id: int = Field(ge=0, description="Stable corpus index, also the detail-route key.")
     full_name: str = Field(description="Full name in Arabic.")
@@ -33,10 +33,8 @@ class RijalEntry(BaseModel):
     book_path: str = Field(default="", description="Relative path of the source corpus file.")
 
 
-class CanonicalEntry(BaseModel):
+class CanonicalEntry(FrozenModel):
     """A canonicalized person, merging one identity across sources."""
-
-    model_config = ConfigDict(frozen=True)
 
     canonical_id: int = Field(ge=0, description="Stable canonical identity id + detail-route key.")
     full_name: str = Field(description="Full name in Arabic.")

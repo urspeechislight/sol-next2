@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from backend.models._base import FrozenModel
 
 
-class Ayah(BaseModel):
+class Ayah(FrozenModel):
     """One Qurʾān verse, resolved from a surah:ayah reference.
 
     ``text_ar`` carries the diacritized recitation text; ``text_plain`` is the
@@ -14,8 +16,6 @@ class Ayah(BaseModel):
     matching against book content is handled by the search FTS tokenizer, so
     either form locates the same passages.
     """
-
-    model_config = ConfigDict(frozen=True)
 
     surah: int = Field(ge=1, description="Surah number.")
     ayah: int = Field(ge=1, description="Ayah number within the surah.")

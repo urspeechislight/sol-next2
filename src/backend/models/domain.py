@@ -13,15 +13,15 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from backend.models._base import FrozenModel
 
 Tradition = Literal["sunni", "shia", "shared"]
 
 
-class Category(BaseModel):
+class Category(FrozenModel):
     """One category leaf under a domain in the IA taxonomy."""
-
-    model_config = ConfigDict(frozen=True)
 
     slug: str = Field(description="URL-safe identifier, e.g. 'shia-hadith-fiqh'.")
     label: str = Field(description="English label.")
@@ -31,10 +31,8 @@ class Category(BaseModel):
     tradition: Tradition = Field(default="shared", description="Sunni, Shia, or shared/neutral.")
 
 
-class Domain(BaseModel):
+class Domain(FrozenModel):
     """One top-level domain of knowledge (e.g. Hadith, Fiqh, Theology)."""
-
-    model_config = ConfigDict(frozen=True)
 
     id: str = Field(description="Domain id, e.g. 'hadith'.")
     label: str = Field(description="English label.")

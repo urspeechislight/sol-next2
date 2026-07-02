@@ -7,13 +7,13 @@ boring and consistent across every paginated endpoint.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from backend.models._base import FrozenModel
 
 
-class Page[T](BaseModel):
+class Page[T](FrozenModel):
     """One slice of a larger collection."""
-
-    model_config = ConfigDict(frozen=True)
 
     items: list[T] = Field(description="Records in this slice.")
     total: int = Field(ge=0, description="Total records matching the query, across all pages.")

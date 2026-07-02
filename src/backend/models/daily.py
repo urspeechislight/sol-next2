@@ -2,25 +2,22 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
+from backend.models._base import FrozenModel
 from backend.models.grades import HadithGrade
 
 
-class DailyDate(BaseModel):
+class DailyDate(FrozenModel):
     """Date display values for the editorial header."""
-
-    model_config = ConfigDict(frozen=True)
 
     hijri: str
     hijri_short: str
     gregorian: str
 
 
-class Tafsir(BaseModel):
+class Tafsir(FrozenModel):
     """One tafsir excerpt attached to the verse of the day."""
-
-    model_config = ConfigDict(frozen=True)
 
     book: str
     book_ar: str
@@ -30,10 +27,8 @@ class Tafsir(BaseModel):
     excerpt_ar: str
 
 
-class Verse(BaseModel):
+class Verse(FrozenModel):
     """Verse of the day with one or more tafsir excerpts."""
-
-    model_config = ConfigDict(frozen=True)
 
     surah: str
     surah_ar: str
@@ -44,10 +39,8 @@ class Verse(BaseModel):
     tafsirs: list[Tafsir]
 
 
-class HadithSource(BaseModel):
+class HadithSource(FrozenModel):
     """The originating book of a hadith of the day."""
-
-    model_config = ConfigDict(frozen=True)
 
     book: str
     book_ar: str
@@ -62,10 +55,8 @@ class HadithParallel(HadithSource):
     """A parallel narration in another collection."""
 
 
-class DailyHadith(BaseModel):
+class DailyHadith(FrozenModel):
     """Hadith of the day with source + parallels + grade."""
-
-    model_config = ConfigDict(frozen=True)
 
     matn_ar: str
     matn_en: str
@@ -77,29 +68,23 @@ class DailyHadith(BaseModel):
     note: str
 
 
-class OpenTo(BaseModel):
+class OpenTo(FrozenModel):
     """Where to open the recommended book."""
-
-    model_config = ConfigDict(frozen=True)
 
     page: int = Field(ge=1)
     chapter_en: str
 
 
-class DailyBookPick(BaseModel):
+class DailyBookPick(FrozenModel):
     """The 'book of the day' pick."""
-
-    model_config = ConfigDict(frozen=True)
 
     urn: str
     rationale: str
     open_to: OpenTo
 
 
-class Daily(BaseModel):
+class Daily(FrozenModel):
     """Top-level Daily payload."""
-
-    model_config = ConfigDict(frozen=True)
 
     date: DailyDate
     verse: Verse
