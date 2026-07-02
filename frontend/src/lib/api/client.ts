@@ -9,6 +9,7 @@ import type {
   BookPage,
   BookSearchMatch,
   CanonicalEntry,
+  CanonicalRank,
   CorpusMatch,
   Daily,
   Domain,
@@ -65,18 +66,21 @@ export interface WorkListParams {
   category?: string;
   domain?: string;
   tradition?: string;
+  canonical?: CanonicalRank;
   q?: string;
   limit?: number;
   offset?: number;
 }
 
 /** Volume-folded works for the Library: one entry per work, scoped by
-    category, domain, and/or tradition. */
+    category, domain, and/or tradition, optionally narrowed to one canonical
+    rank (the landmark rotations ask for primary_reference). */
 export function getWorks(params: WorkListParams = {}): Promise<Page<Work>> {
   const qs = query({
     category: params.category ?? '',
     domain: params.domain ?? '',
     tradition: params.tradition ?? '',
+    canonical: params.canonical ?? '',
     q: params.q ?? '',
     limit: params.limit ?? PAGE.defaultLimit,
     offset: params.offset ?? 0,

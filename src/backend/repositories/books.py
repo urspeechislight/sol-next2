@@ -21,7 +21,7 @@ from typing import Any, cast
 from backend.core.constants import HTTP__DEFAULT_PAGE_SIZE
 from backend.core.errors import ResourceNotFoundError
 from backend.core.settings import get_settings
-from backend.models.book import Book
+from backend.models.book import Book, Canonical
 from backend.models.work import Work
 from backend.patterns import normalize_arabic
 from backend.repositories import _taxonomy
@@ -141,6 +141,7 @@ class WorksQuery:
     category: str | None = None
     domain: str | None = None
     tradition: str | None = None
+    canonical: Canonical | None = None
     q: str = ""
 
 
@@ -150,10 +151,14 @@ def list_works(
     offset: int = 0,
 ) -> tuple[list[Work], int]:
     """Return ``(slice, total)`` of volume-folded works, scoped by category,
-    domain, and/or tradition, and optionally text-matched on ``q`` (title or
-    author, diacritic-insensitive for Arabic and lower-cased for Latin)."""
+    domain, and/or tradition, optionally narrowed to one canonical rank (the
+    Library's landmark rotations ask for ``primary_reference``), and optionally
+    text-matched on ``q`` (title or author, diacritic-insensitive for Arabic
+    and lower-cased for Latin)."""
     scope = _scope_slugs(query.category, query.domain, query.tradition)
     works = list(_works()) if scope is None else [w for w in _works() if w.category in scope]
+    if query.canonical is not None:
+        works = [w for w in works if w.canonical == query.canonical]
     needle = query.q.strip()
     if needle:
         fold = normalize_arabic(needle)

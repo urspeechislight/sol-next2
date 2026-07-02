@@ -2,6 +2,7 @@ import { Heading, Icon, Link, Text } from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
 import { viewHref } from '../../lib/routes';
 import { domainIcon, sumCount } from './lib';
+import { RotationHero } from './RotationHero';
 
 interface DomainCardProps {
   domain: Domain;
@@ -32,11 +33,13 @@ function DomainCard({ domain, onPick }: DomainCardProps) {
 export interface CorpusOverviewProps {
   domains: Domain[];
   onPickDomain: (id: string) => void;
+  onOpen: (urn: string) => void;
 }
 
-/** The calm default right-pane state when nothing is selected: the corpus as a
-    grid of illuminated domain cards that double as the start-here map. */
-export function CorpusOverview({ domains, onPickDomain }: CorpusOverviewProps) {
+/** The calm default right-pane state when nothing is selected: the landmark
+    rotation over the corpus, then the domains as illuminated cards that double
+    as the start-here map. */
+export function CorpusOverview({ domains, onPickDomain, onOpen }: CorpusOverviewProps) {
   return (
     <section className="overview">
       <header className="overview__head">
@@ -49,6 +52,7 @@ export function CorpusOverview({ domains, onPickDomain }: CorpusOverviewProps) {
           alongside. Choose one to begin, or open a category from the index.
         </Text>
       </header>
+      <RotationHero onOpen={onOpen} />
       <div className="overview__grid">
         {domains.map((d) => (
           <DomainCard key={d.id} domain={d} onPick={onPickDomain} />

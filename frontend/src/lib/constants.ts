@@ -16,8 +16,9 @@ export const BOOK = { UNKNOWN_DEATH_YEAR: 99999 } as const;
 
 // The library's category browse loads the whole scope (paged fetches of
 // PAGE.facetLimit) so it can shelve landmarks and group by era client-side;
-// categoryMax bounds the assembly and the pane says so when a scope exceeds it.
-export const LIBRARY = { categoryMax: 600 } as const;
+// categoryMax bounds the assembly and the pane says so when a scope exceeds it;
+// volumeViewMax caps the flat by-volumes ordering (the grouped views cover all).
+export const LIBRARY = { categoryMax: 600, volumeViewMax: 60 } as const;
 
 // Landing-page motion: the verse reveals one word per tick, rests for the hold
 // ticks, then loops; tafsīr excerpts rotate on their own slower clock.

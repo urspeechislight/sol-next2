@@ -77,6 +77,20 @@ export function groupByEra(works: Work[]): EraGroup[] {
 // translations collapse) and at most a card grid's worth.
 const SHELF_MAX = 9;
 
+/** One entry per title+author: editions and translations collapse to the
+    first occurrence, preserving order. */
+export function dedupeEditions(works: Work[]): Work[] {
+  const seen = new Set<string>();
+  const out: Work[] = [];
+  for (const w of works) {
+    const key = `${w.title_en ?? w.title_ar}|${w.author ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(w);
+  }
+  return out;
+}
+
 /** The works shelved as the category's landmarks: the canonical primary
     references, death-year ordered, edition-deduped, capped at SHELF_MAX.
     Empty when the scope has none. */
@@ -87,16 +101,39 @@ export function landmarks(works: Work[]): Work[] {
       (a, b) =>
         (a.death_year_ah ?? Number.MAX_SAFE_INTEGER) - (b.death_year_ah ?? Number.MAX_SAFE_INTEGER),
     );
-  const seen = new Set<string>();
-  const shelf: Work[] = [];
-  for (const w of ranked) {
-    const key = `${w.title_en ?? w.title_ar}|${w.author ?? ''}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    shelf.push(w);
-    if (shelf.length >= SHELF_MAX) break;
+  return dedupeEditions(ranked).slice(0, SHELF_MAX);
+}
+
+export interface AuthorGroup {
+  author: string;
+  authorAr: string | null;
+  deathYearAh: number | null;
+  works: Work[];
+}
+
+const UNATTRIBUTED = 'Unattributed';
+
+/** Group a scope's works by author, the most prolific authors first (ties by
+    name), works within each group title-ordered. */
+export function groupByAuthor(works: Work[]): AuthorGroup[] {
+  const buckets = new Map<string, Work[]>();
+  for (const w of works) {
+    const key = w.author ?? w.author_ar ?? UNATTRIBUTED;
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(w);
+    else buckets.set(key, [w]);
   }
-  return shelf;
+  const groups = [...buckets.entries()].map(([author, group]) => {
+    group.sort((a, b) => (a.title_en ?? a.title_ar).localeCompare(b.title_en ?? b.title_ar));
+    return {
+      author,
+      authorAr: group[0].author_ar,
+      deathYearAh: group[0].death_year_ah,
+      works: group,
+    };
+  });
+  groups.sort((a, b) => b.works.length - a.works.length || a.author.localeCompare(b.author));
+  return groups;
 }
 
 // Domain id -> a line glyph from the design-system icon set: a quiet per-domain

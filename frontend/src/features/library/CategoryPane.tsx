@@ -1,17 +1,21 @@
-import { useMemo } from 'react';
-import {
-  Badge,
-  Heading,
-  MetaBadges,
-  SourceRecord,
-  Spinner,
-  Text,
-  UnstyledButton,
-} from '../../lib/design-system';
+import { useMemo, useState } from 'react';
+import { Badge, Segmented, Spinner, Text, UnstyledButton } from '../../lib/design-system';
+import { LIBRARY } from '../../lib/constants';
 import type { Work } from '../../lib/types';
 import { deathLabel } from '../../lib/utils';
-import { groupByEra, landmarks } from './lib';
+import { groupByAuthor, groupByEra, landmarks } from './lib';
 import { ScopeHead } from './ScopeHead';
+import type { WorkGroup } from './WorkGroups';
+import { WorkGroups } from './WorkGroups';
+import { WorkRecordList } from './WorkRecord';
+
+type BrowseMode = 'era' | 'author' | 'volume';
+
+const BROWSE_MODES = [
+  { value: 'era', label: 'By era' },
+  { value: 'author', label: 'By author' },
+  { value: 'volume', label: 'By volumes' },
+];
 
 export interface CategoryPaneProps {
   breadcrumb: string;
@@ -25,8 +29,9 @@ export interface CategoryPaneProps {
 }
 
 /** A category reads as a curated room: the landmark references shelved first,
-    then every work grouped by Hijri century with era chips to jump. No pager,
-    no flat dump; the era structure is the navigation. */
+    then the whole scope as collapsed groups — by Hijri century, by author
+    (most prolific first), or flat by volume count. Nothing scrolls endlessly:
+    groups open on demand. */
 export function CategoryPane({
   breadcrumb,
   scopeLabel,
@@ -37,8 +42,39 @@ export function CategoryPane({
   error,
   onOpen,
 }: CategoryPaneProps) {
+  const [mode, setMode] = useState<BrowseMode>('era');
   const shelf = useMemo(() => (works ? landmarks(works) : []), [works]);
-  const eras = useMemo(() => (works ? groupByEra(works) : []), [works]);
+  const eraGroups = useMemo<WorkGroup[]>(
+    () =>
+      (works ? groupByEra(works) : []).map((e) => ({
+        key: `era-${e.century}`,
+        labelEn: e.labelEn,
+        labelAr: e.labelAr,
+        meta: null,
+        works: e.works,
+      })),
+    [works],
+  );
+  const authorGroups = useMemo<WorkGroup[]>(
+    () =>
+      (works ? groupByAuthor(works) : []).map((a) => ({
+        key: `author-${a.author}`,
+        labelEn: a.author,
+        labelAr: a.authorAr,
+        meta: deathLabel(a.deathYearAh) || null,
+        works: a.works,
+      })),
+    [works],
+  );
+  const byVolumes = useMemo(
+    () =>
+      [...(works ?? [])]
+        .sort(
+          (a, b) => b.volume_count - a.volume_count || (b.page_count ?? 0) - (a.page_count ?? 0),
+        )
+        .slice(0, LIBRARY.volumeViewMax),
+    [works],
+  );
 
   if (loading) {
     return (
@@ -54,9 +90,6 @@ export function CategoryPane({
       </Text>
     );
   }
-
-  const jumpTo = (century: number) =>
-    document.getElementById(`era-${century}`)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
     <section className="works cpane">
@@ -96,54 +129,28 @@ export function CategoryPane({
         </div>
       ) : null}
 
-      {eras.length > 1 ? (
-        <nav className="cpane__eras" aria-label="Jump to century">
-          {eras.map((e) => (
-            <UnstyledButton
-              key={e.century}
-              className="cpane__era-chip"
-              onClick={() => jumpTo(e.century)}
-            >
-              {e.labelEn.replace(' century AH', ' c.')} · {e.works.length}
-            </UnstyledButton>
-          ))}
-        </nav>
-      ) : null}
+      <div className="cpane__modes">
+        <Segmented
+          label="Browse the category"
+          value={mode}
+          options={BROWSE_MODES}
+          onChange={(v) => setMode(v as BrowseMode)}
+        />
+      </div>
 
-      {eras.map((e) => (
-        <section key={e.century} id={`era-${e.century}`} className="cpane__era">
-          <header className="cpane__era-head">
-            <Heading level={3} className="cpane__era-en">
-              {e.labelEn}
-            </Heading>
-            <span className="cpane__era-ar" dir="rtl">
-              {e.labelAr}
-            </span>
-            <span className="cpane__era-n">{e.works.length}</span>
-          </header>
-          <div className="ds-records">
-            {e.works.map((w) => (
-              <SourceRecord
-                key={w.stem}
-                section={e.labelEn}
-                titleAr={w.title_ar}
-                titleEn={w.title_en}
-                author={w.author}
-                authorAr={w.author_ar}
-                badges={
-                  <MetaBadges
-                    volumeCount={w.volume_count}
-                    sect={w.sect}
-                    death={deathLabel(w.death_year_ah)}
-                    pageCount={w.page_count}
-                  />
-                }
-                onOpen={() => onOpen(w.first_urn)}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
+      {mode === 'era' ? <WorkGroups groups={eraGroups} onOpen={onOpen} /> : null}
+      {mode === 'author' ? <WorkGroups groups={authorGroups} onOpen={onOpen} /> : null}
+      {mode === 'volume' ? (
+        <>
+          <WorkRecordList works={byVolumes} section="Largest works" onOpen={onOpen} />
+          {works.length > byVolumes.length ? (
+            <Text as="p" size="xs" tone="faint" className="cpane__truncated">
+              Showing the {byVolumes.length} largest of {works.length.toLocaleString()} works; the
+              era and author views cover the rest.
+            </Text>
+          ) : null}
+        </>
+      ) : null}
 
       {works.length < total ? (
         <Text as="p" size="xs" tone="faint" className="cpane__truncated">

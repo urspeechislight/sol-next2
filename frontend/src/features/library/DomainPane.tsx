@@ -2,17 +2,20 @@ import { Heading, Icon, Text, UnstyledButton } from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
 import { domainIcon, sumCount, visibleCategories } from './lib';
 import type { TraditionLens } from './lib';
+import { RotationHero } from './RotationHero';
 
 export interface DomainPaneProps {
   domain: Domain;
   lens: TraditionLens;
   onPickCategory: (slug: string) => void;
+  onOpen: (urn: string) => void;
 }
 
-/** A chosen domain is a room, not a dump: its blurb and its categories as
-    tiles, each one step deeper. The flat all-works list is gone; works appear
-    only once a category (or a search) narrows the scope to a readable shelf. */
-export function DomainPane({ domain, lens, onPickCategory }: DomainPaneProps) {
+/** A chosen domain is a room, not a dump: its landmark rotation, its blurb,
+    and its categories as tiles, each one step deeper. The flat all-works list
+    is gone; full listings appear only once a category (or a search) narrows
+    the scope to a readable shelf. */
+export function DomainPane({ domain, lens, onPickCategory, onOpen }: DomainPaneProps) {
   const categories = visibleCategories(domain, lens);
   return (
     <section className="dpane">
@@ -36,6 +39,7 @@ export function DomainPane({ domain, lens, onPickCategory }: DomainPaneProps) {
           </Text>
         ) : null}
       </header>
+      <RotationHero domain={domain.id} onOpen={onOpen} />
       <div className="dpane__grid">
         {categories.map((c) => (
           <UnstyledButton

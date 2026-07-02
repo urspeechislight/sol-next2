@@ -217,9 +217,14 @@ export function LibraryScreen({ onOpenReader }: LibraryScreenProps) {
               onOpen={onOpenReader}
             />
           ) : activeDomain ? (
-            <DomainPane domain={activeDomain} lens={sc.lens} onPickCategory={sc.pickCategory} />
+            <DomainPane
+              domain={activeDomain}
+              lens={sc.lens}
+              onPickCategory={sc.pickCategory}
+              onOpen={onOpenReader}
+            />
           ) : (
-            <CorpusOverview domains={list} onPickDomain={sc.pickDomain} />
+            <CorpusOverview domains={list} onPickDomain={sc.pickDomain} onOpen={onOpenReader} />
           )}
         </div>
       </div>

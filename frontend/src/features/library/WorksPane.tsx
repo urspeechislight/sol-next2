@@ -1,38 +1,9 @@
-import { MetaBadges, Pager, SourceRecord, Spinner, Text } from '../../lib/design-system';
+import { Pager, Spinner, Text } from '../../lib/design-system';
 import type { Page, Work } from '../../lib/types';
 import { DataView } from '../../lib/DataView';
-import { deathLabel, pageCount } from '../../lib/utils';
+import { pageCount } from '../../lib/utils';
 import { ScopeHead } from './ScopeHead';
-
-interface WorkRecordProps {
-  work: Work;
-  section: string;
-  onOpen: (urn: string) => void;
-}
-
-/** One work as the shared bilingual record, its meta carried by design-system
-    badges (volume count, sect, death year, pages) on the English spine. Opening
-    it opens the first volume in the reader. */
-function WorkRecord({ work, section, onOpen }: WorkRecordProps) {
-  return (
-    <SourceRecord
-      section={section}
-      titleAr={work.title_ar}
-      titleEn={work.title_en}
-      author={work.author}
-      authorAr={work.author_ar}
-      badges={
-        <MetaBadges
-          volumeCount={work.volume_count}
-          sect={work.sect}
-          death={deathLabel(work.death_year_ah)}
-          pageCount={work.page_count}
-        />
-      }
-      onOpen={() => onOpen(work.first_urn)}
-    />
-  );
-}
+import { WorkRecord } from './WorkRecord';
 
 export interface WorksPaneProps {
   breadcrumb: string;

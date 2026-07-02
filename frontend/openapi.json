@@ -2849,6 +2849,25 @@
             }
           },
           {
+            "description": "Filter to a canonical rank.",
+            "in": "query",
+            "name": "canonical",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": ["primary", "primary_reference", "secondary", "tertiary"],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter to a canonical rank.",
+              "title": "Canonical"
+            }
+          },
+          {
             "description": "Search works by title or author.",
             "in": "query",
             "name": "q",

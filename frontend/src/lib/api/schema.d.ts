@@ -2132,6 +2132,8 @@ export interface operations {
                 domain?: string | null;
                 /** @description Tradition: sunni, shia, or shared. */
                 tradition?: string | null;
+                /** @description Filter to a canonical rank. */
+                canonical?: ("primary" | "primary_reference" | "secondary" | "tertiary") | null;
                 /** @description Search works by title or author. */
                 q?: string;
                 /** @description Records per page. */
