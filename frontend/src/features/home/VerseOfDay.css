@@ -1,10 +1,10 @@
-/* VerseOfDay — the landing verse as an editorial spread: warm radial wash,
+/* VerseOfDay — one compact panel of the daily band: warm radial wash,
    cornerpieces, the ayah unfurling word by word inside a cartouche, tafsīr
    excerpts rotating beneath. Tokens only. */
 
 .vday {
   position: relative;
-  padding: var(--space-xl) var(--space-2xl);
+  padding: var(--space-md) var(--space-lg);
   background:
     radial-gradient(ellipse at 50% 0%, var(--color-accent-wash), transparent 70%),
     var(--color-surface);
@@ -44,11 +44,11 @@
 .vday__surah {
   text-align: center;
   font-family: var(--font-ar-display);
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
   color: var(--color-text);
-  margin: 0 0 var(--space-md);
+  margin: 0 0 var(--space-sm);
 }
 .vday__surah-en {
   display: block;
@@ -67,7 +67,7 @@
   position: relative;
   border-top: 1px solid var(--color-accent-tint);
   border-bottom: 1px solid var(--color-accent-tint);
-  padding: var(--space-lg) var(--space-md);
+  padding: var(--space-md) var(--space-sm);
 }
 .vday__cartouche::before,
 .vday__cartouche::after {
@@ -92,7 +92,7 @@
   display: block;
   text-align: center;
   font-family: var(--font-ar-display);
-  font-size: var(--text-3xl);
+  font-size: var(--text-xl);
   line-height: var(--leading-arabic);
   text-wrap: pretty;
 }
@@ -123,11 +123,10 @@
   text-align: center;
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: var(--text-lg);
+  font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--color-text-muted);
-  max-width: 44rem;
-  margin: var(--space-md) auto var(--space-lg);
+  margin: var(--space-sm) auto var(--space-md);
   text-wrap: pretty;
 }
 

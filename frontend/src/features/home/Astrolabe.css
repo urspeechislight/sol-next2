@@ -1,0 +1,205 @@
+/* Astrolabe — the domains of knowledge as a slowly turning instrument,
+   engraved in gold ink on the app's paper surface. Motion is CSS-only;
+   every colour is a token. */
+
+.astro {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.astro__svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 0 40px color-mix(in srgb, var(--palette-gold-400) 22%, transparent));
+}
+
+.astro__glow {
+  fill: color-mix(in srgb, var(--palette-gold-300) 12%, transparent);
+}
+
+.astro__ring {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.astro__ring--outer {
+  animation: astro-spin 120s linear infinite;
+}
+.astro__ring--mid {
+  animation: astro-spin-reverse 160s linear infinite;
+}
+@keyframes astro-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes astro-spin-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.astro__ring-line {
+  fill: none;
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.6;
+  opacity: 0.7;
+}
+.astro__tick {
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.3;
+  opacity: 0.35;
+}
+.astro__tick--major {
+  stroke-width: 0.6;
+  opacity: 0.7;
+}
+.astro__orbit {
+  fill: none;
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.4;
+  stroke-dasharray: 0.8 1.2;
+  opacity: 0.5;
+}
+.astro__inner-line {
+  fill: none;
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.5;
+  opacity: 0.6;
+}
+.astro__inner-line--faint {
+  stroke-width: 0.4;
+  opacity: 0.4;
+}
+.astro__cross {
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.3;
+  opacity: 0.4;
+}
+.astro__medallion {
+  fill: var(--color-surface);
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.6;
+}
+.astro__medallion-glyph {
+  font-family: var(--font-ar-display);
+  font-size: 6px;
+  font-weight: var(--weight-semibold);
+  fill: var(--color-accent-deep);
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.astro__ray {
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.3;
+  stroke-dasharray: 0.4 0.6;
+  opacity: 0.25;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+.astro__ray--hot {
+  opacity: 0.9;
+}
+
+.astro__node {
+  cursor: pointer;
+  outline: none;
+}
+.astro__node-inner {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--duration-fast) var(--ease-out);
+  color: var(--color-accent-deep);
+}
+.astro__node--hot .astro__node-inner,
+.astro__node:focus-visible .astro__node-inner {
+  transform: scale(1.22);
+  color: var(--color-on-accent);
+}
+.astro__node-pulse {
+  fill: none;
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.5;
+  opacity: 0.5;
+}
+.astro__node--hot .astro__node-pulse {
+  opacity: 0.9;
+}
+.astro__node-disc {
+  fill: var(--color-surface);
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.8;
+  transition: fill var(--duration-fast) var(--ease-out);
+}
+.astro__node--hot .astro__node-disc,
+.astro__node:focus-visible .astro__node-disc {
+  fill: var(--color-accent);
+}
+.astro__glyph {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.astro__glyph-dot {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* ---- legend ---- */
+.astro__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  padding: var(--space-xs) var(--space-md);
+  min-height: 44px;
+  min-width: 300px;
+  border-top: 1px solid var(--color-accent-tint);
+  border-bottom: 1px solid var(--color-accent-tint);
+  background: color-mix(in srgb, var(--color-surface) 65%, transparent);
+  backdrop-filter: blur(8px);
+}
+.astro__legend-num {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  color: var(--color-accent-deep);
+}
+.astro__legend-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.astro__legend-en {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-lg);
+  line-height: var(--leading-tight);
+  color: var(--color-text);
+}
+.astro__legend-ar {
+  font-family: var(--font-ar);
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
+  color: var(--color-text-muted);
+}
+.astro__legend-cta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+}
+.astro__legend-hint {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+}

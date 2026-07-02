@@ -1,48 +1,126 @@
-/* HomeScreen — "Today's reading": the landing page is the day itself, not a
-   brochure. A thin date strip, the verse as the opening spread, then the
-   hadith beside the almanac rail. Tokens only. */
+/* HomeScreen — two registers: the illuminated frontispiece (glow canvas, hero,
+   astrolabe, drawers) breaking out to the full viewport width, and the day's
+   reading below it as one compact three-panel band. Tokens only. */
 
-.home {
+.home2 {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
-  padding: var(--space-lg) 0 var(--space-3xl);
 }
 
-/* ---- date strip ---------------------------------------------------------- */
-.home-date {
+/* ---- the illuminated plate: full-bleed breakout from the app container ---- */
+.home2__plate {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-inline: calc(50% - 50vw);
+  border-bottom: 1px solid var(--color-accent-tint);
+}
+.home2__domains-error {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--space-2xl) var(--space-xl);
+}
+
+/* Soft gold rule with a diamond ornament between plate sections. */
+.home2__rule {
+  position: relative;
+  z-index: 1;
+  height: 1px;
+  width: min(960px, 80%);
+  margin: var(--space-xs) auto;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    color-mix(in srgb, var(--palette-gold-500) 25%, transparent) 30%,
+    color-mix(in srgb, var(--palette-gold-500) 50%, transparent) 50%,
+    color-mix(in srgb, var(--palette-gold-500) 25%, transparent) 70%,
+    transparent 100%
+  );
+}
+.home2__rule::after {
+  content: '✦';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--text-xs);
+  line-height: 1;
+  color: var(--color-accent-deep);
+  background: var(--color-bg);
+  padding: 0 var(--space-xs);
+}
+
+/* ---- the day's reading band ---- */
+.home2__daily {
+  padding: var(--space-xl) 0 var(--space-3xl);
+  scroll-margin-top: var(--space-lg);
+}
+.home2__daily-head {
   display: flex;
   align-items: baseline;
-  justify-content: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.home2__daily-mark {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.22em;
+  color: var(--color-accent-deep);
+}
+.home2__daily-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+.home2__daily-title em {
+  font-style: italic;
+  font-weight: var(--weight-regular);
+  color: var(--color-accent-deep);
+}
+.home2__daily-date {
+  display: inline-flex;
+  align-items: baseline;
   gap: var(--space-sm);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-text-faint);
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--space-md);
 }
-.home-date__hijri {
+.home2__daily-hijri {
   font-family: var(--font-ar);
   font-size: var(--text-md);
   letter-spacing: 0;
   color: var(--color-accent-deep);
 }
-.home-date__sep {
+.home2__daily-sep {
   color: var(--color-accent);
 }
 
-/* ---- hadith + almanac band ----------------------------------------------- */
-.home-band {
+.home2__band {
   display: grid;
-  grid-template-columns: 1.25fr 0.75fr;
-  gap: var(--space-xl);
+  grid-template-columns: 1.1fr 1fr 0.9fr;
+  gap: var(--space-lg);
   align-items: start;
 }
 
-@media (max-width: 980px) {
-  .home-band {
+@media (max-width: 1080px) {
+  .home2__band {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .home2__band {
     grid-template-columns: 1fr;
   }
 }

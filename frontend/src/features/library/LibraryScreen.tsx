@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Spinner, Text } from '../../lib/design-system';
 import { getWorks } from '../../lib/api/client';
@@ -22,13 +22,23 @@ const PER_PAGE = PAGE.defaultLimit;
     discipline. Browsing (a category, a domain, the lens) and searching (the rail
     filter) are mutually exclusive: picking a scope clears the search, and typing
     a search clears the scope. */
-function useScope(domainOfCat: Map<string, string>) {
-  const [cat, setCat] = useState('');
-  const [dom, setDom] = useState('');
+function useScope(domainOfCat: Map<string, string>, initialCat = '', initialDom = '') {
+  const [cat, setCat] = useState(initialCat);
+  const [dom, setDom] = useState(initialDom);
   const [lens, setLens] = useState<TraditionLens>('all');
   const [filter, setFilter] = useState('');
-  const [openDomains, setOpenDomains] = useState<Set<string>>(() => new Set());
+  const [openDomains, setOpenDomains] = useState<Set<string>>(
+    () => new Set(initialDom ? [initialDom] : []),
+  );
   const [page, setPage] = useState(1);
+
+  // A deep-linked category expands its owning domain in the rail once the
+  // taxonomy has loaded (the map is empty on the first render).
+  useEffect(() => {
+    if (!cat) return;
+    const owner = domainOfCat.get(cat);
+    if (owner) setOpenDomains((s) => (s.has(owner) ? s : new Set(s).add(owner)));
+  }, [cat, domainOfCat]);
 
   const pickCategory = useCallback(
     (slug: string) => {
@@ -136,13 +146,20 @@ function useCategoryWorks(cat: string, lens: TraditionLens) {
 
 export interface LibraryScreenProps {
   onOpenReader: (urn: string) => void;
+  /** Deep-link scope from the URL / home hero: at most one of the two. */
+  initialCategory?: string;
+  initialDomain?: string;
 }
 
 /** The Library as a two-column reading room with progressive depth: the
     corpus overview (domain cards), a domain as category tiles, a category as
     a landmarks shelf over era-grouped works, and the rail search as a flat
     paged result list. Each step narrows; nothing dumps the whole scope. */
-export function LibraryScreen({ onOpenReader }: LibraryScreenProps) {
+export function LibraryScreen({
+  onOpenReader,
+  initialCategory = '',
+  initialDomain = '',
+}: LibraryScreenProps) {
   const domains = useDomains();
   const list = domains.data ?? [];
   const domainOfCat = useMemo(() => {
@@ -150,7 +167,7 @@ export function LibraryScreen({ onOpenReader }: LibraryScreenProps) {
     for (const d of list) for (const c of d.categories) map.set(c.slug, d.id);
     return map;
   }, [list]);
-  const sc = useScope(domainOfCat);
+  const sc = useScope(domainOfCat, initialCategory, initialDomain);
   const search = useSearchWorks(sc.lens, sc.page, sc.filter);
   const category = useCategoryWorks(sc.cat, sc.lens);
 

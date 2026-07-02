@@ -1,16 +1,15 @@
-/* RotationHero — the rotating spotlight of primary sources: a night panel with
-   a warm halo, one landmark work presented large beside its codex face.
-   Deliberately dark on every app theme, like a lit vitrine. Tokens only. */
+/* RotationHero — the rotating spotlight of primary sources: a warm gilded
+   vitrine in the app's own paper-and-gold voice, one landmark work presented
+   large beside its codex face. Tokens only. */
 
 .rotor {
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(170deg, var(--palette-night-600) 0%, var(--palette-night-800) 100%);
-  border: 1px solid color-mix(in srgb, var(--palette-gold-400) 35%, transparent);
+  background: linear-gradient(170deg, var(--color-surface) 0%, var(--color-surface-sunken) 100%);
+  border: 1px solid color-mix(in srgb, var(--palette-gold-400) 45%, transparent);
   border-radius: var(--radius-lg);
   padding: var(--space-md) var(--space-lg) var(--space-sm);
-  color: var(--palette-paper-50);
   box-shadow: var(--shadow-md);
   margin-bottom: var(--space-lg);
 }
@@ -20,7 +19,7 @@
   z-index: -1;
   background: radial-gradient(
     ellipse 70% 90% at 78% 30%,
-    color-mix(in srgb, var(--palette-gold-400) 22%, transparent),
+    color-mix(in srgb, var(--palette-gold-300) 30%, transparent),
     transparent 70%
   );
 }
@@ -35,13 +34,12 @@
 .rotor__eyebrow {
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--palette-gold-300);
 }
 .rotor__index {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   letter-spacing: 0.08em;
-  color: color-mix(in srgb, var(--palette-gold-200) 70%, transparent);
+  color: var(--color-text-faint);
   font-variant-numeric: tabular-nums;
 }
 
@@ -71,7 +69,7 @@
   font-size: var(--text-3xl);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
-  color: var(--palette-gold-200);
+  color: var(--color-accent-deep);
   margin: 0 0 var(--space-2xs);
   text-wrap: balance;
 }
@@ -79,7 +77,7 @@
   font-family: var(--font-serif);
   font-style: italic;
   font-size: var(--text-lg);
-  color: var(--palette-paper-100);
+  color: var(--color-text);
   margin: 0 0 var(--space-xs);
 }
 .rotor__author {
@@ -87,12 +85,12 @@
   align-items: baseline;
   gap: var(--space-sm);
   font-size: var(--text-sm);
-  color: color-mix(in srgb, var(--palette-paper-100) 75%, transparent);
+  color: var(--color-text-muted);
   margin: 0 0 var(--space-sm);
 }
 .rotor__author-ar {
   font-family: var(--font-ar);
-  color: var(--palette-gold-300);
+  color: var(--color-accent-deep);
 }
 .rotor__meta {
   margin-bottom: var(--space-md);
@@ -103,23 +101,23 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-md);
-  border: 1px solid color-mix(in srgb, var(--palette-gold-400) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--palette-gold-500) 50%, transparent);
   border-radius: var(--radius-sm);
   font-family: var(--font-serif);
   font-style: italic;
   font-size: var(--text-md);
-  color: var(--palette-paper-50);
+  color: var(--color-text);
   transition:
     background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out);
 }
 .rotor__cta:hover {
-  background: color-mix(in srgb, var(--palette-gold-400) 12%, transparent);
-  border-color: var(--palette-gold-400);
+  background: var(--color-accent-wash);
+  border-color: var(--color-accent);
 }
 .rotor__cta-arrow {
   font-family: var(--font-mono);
-  color: var(--palette-gold-300);
+  color: var(--color-accent-deep);
 }
 
 /* ---- codex face ------------------------------------------------------------ */
@@ -140,17 +138,17 @@
   border-radius: var(--radius-xs);
   background: linear-gradient(
     135deg,
-    var(--palette-night-400) 0%,
-    var(--palette-night-600) 55%,
-    var(--palette-night-700) 100%
+    var(--palette-gold-tint) 0%,
+    var(--palette-gold-wash) 55%,
+    var(--color-surface) 100%
   );
-  border: 1px solid color-mix(in srgb, var(--palette-gold-400) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--palette-gold-500) 60%, transparent);
   box-shadow:
-    var(--shadow-lg),
-    inset 0 0 0 3px color-mix(in srgb, var(--palette-gold-400) 18%, transparent);
+    var(--shadow-md),
+    inset 0 0 0 3px color-mix(in srgb, var(--palette-gold-400) 30%, transparent);
 }
 .rotor__cover-medallion {
-  color: var(--palette-gold-300);
+  color: var(--color-accent-deep);
   font-size: var(--text-lg);
 }
 .rotor__cover-title {
@@ -158,7 +156,7 @@
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-snug);
-  color: var(--palette-gold-200);
+  color: var(--color-accent-deep);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -167,12 +165,12 @@
 .rotor__cover-rule {
   width: 40%;
   height: 1px;
-  background: color-mix(in srgb, var(--palette-gold-400) 55%, transparent);
+  background: color-mix(in srgb, var(--palette-gold-500) 55%, transparent);
 }
 .rotor__cover-author {
   font-family: var(--font-ar);
   font-size: var(--text-xs);
-  color: color-mix(in srgb, var(--palette-gold-200) 75%, transparent);
+  color: var(--color-text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -187,7 +185,7 @@
   gap: var(--space-md);
   margin-top: var(--space-sm);
   padding-top: var(--space-xs);
-  border-top: 1px solid color-mix(in srgb, var(--palette-gold-400) 20%, transparent);
+  border-top: 1px solid var(--color-accent-tint);
 }
 .rotor__dots {
   display: flex;
@@ -199,13 +197,13 @@
   width: 7px;
   height: 7px;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--palette-gold-300) 30%, transparent);
+  background: color-mix(in srgb, var(--palette-gold-500) 30%, transparent);
   transition:
     background var(--duration-fast) var(--ease-out),
     transform var(--duration-fast) var(--ease-out);
 }
 .rotor__dot--active {
-  background: var(--palette-gold-300);
+  background: var(--color-accent);
   transform: scale(1.3);
 }
 

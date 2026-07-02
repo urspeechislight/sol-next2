@@ -39,6 +39,10 @@ export interface RouteState {
   view: NavView;
   query: string;
   scope: string;
+  /** Library deep-link: open scoped to this category slug ('' = none). */
+  cat: string;
+  /** Library deep-link: open scoped to this domain id ('' = none). */
+  dom: string;
   reading: { urn: string; page: number } | null;
 }
 
@@ -59,6 +63,10 @@ export function buildHash(state: RouteState): string {
     params.set('q', q);
     if (state.scope) params.set('scope', state.scope);
   }
+  if (state.view === 'library') {
+    if (state.cat) params.set('cat', state.cat);
+    else if (state.dom) params.set('dom', state.dom);
+  }
   const qs = params.toString();
   return `#${path}${qs ? `?${qs}` : ''}`;
 }
@@ -67,7 +75,7 @@ export function buildHash(state: RouteState): string {
     same serializer as navigation, so a middle-click or copy-link round-trips
     through parseHash instead of relying on parser mercy (#/ , not #home). */
 export function viewHref(view: NavView): string {
-  return buildHash({ view, query: '', scope: '', reading: null });
+  return buildHash({ view, query: '', scope: '', cat: '', dom: '', reading: null });
 }
 
 /** Parse a hash fragment back to app location. Unknown shapes fall back to the
@@ -84,6 +92,8 @@ export function parseHash(hash: string): RouteState {
       view: DEFAULT_VIEW,
       query: '',
       scope: '',
+      cat: '',
+      dom: '',
       reading: {
         urn: decodeURIComponent(segments[1]),
         page: Number.isFinite(page) && page > 0 ? page : 1,
@@ -91,10 +101,13 @@ export function parseHash(hash: string): RouteState {
     };
   }
   const view = segments[0] ?? DEFAULT_VIEW;
+  const resolved = isNavView(view) ? view : DEFAULT_VIEW;
   return {
-    view: isNavView(view) ? view : DEFAULT_VIEW,
+    view: resolved,
     query: params.get('q') ?? '',
     scope: params.get('scope') ?? '',
+    cat: resolved === 'library' ? (params.get('cat') ?? '') : '',
+    dom: resolved === 'library' ? (params.get('dom') ?? '') : '',
     reading: null,
   };
 }

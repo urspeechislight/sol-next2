@@ -1,0 +1,121 @@
+/* HomeSky — the illuminated canvas behind the landing hero: the app's own
+   paper surface warmed by layered gold halos, a faint chart grid, and a field
+   of gilded motes. The techniques (glow, layering, overlay) come from the
+   reference design; every colour is the app's own token. */
+
+.hsky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.hsky__base {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 90% 70% at 50% 0%,
+    var(--palette-gold-wash) 0%,
+    var(--color-bg) 60%,
+    var(--color-surface-sunken) 100%
+  );
+}
+.hsky__halo {
+  position: absolute;
+  border-radius: var(--radius-pill);
+  filter: blur(60px);
+}
+.hsky__halo--n {
+  top: -30%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--palette-gold-300) 26%, transparent) 0%,
+    color-mix(in srgb, var(--palette-gold-300) 9%, transparent) 35%,
+    transparent 65%
+  );
+}
+.hsky__halo--s {
+  bottom: -35%;
+  right: -20%;
+  width: 65%;
+  height: 65%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--palette-sand-300) 30%, transparent) 0%,
+    color-mix(in srgb, var(--palette-sand-300) 10%, transparent) 40%,
+    transparent 70%
+  );
+}
+.hsky__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--palette-gold-500) 9%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--palette-gold-500) 9%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 100% 80% at 50% 40%, black 0%, black 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(
+    ellipse 100% 80% at 50% 40%,
+    black 0%,
+    black 30%,
+    transparent 100%
+  );
+}
+.hsky__stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.hsky__star {
+  fill: var(--palette-gold-500);
+}
+
+/* ---- corner cartouches ---- */
+.hsky-corner {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+.hsky-corner__lines {
+  fill: none;
+  stroke: var(--palette-gold-500);
+  stroke-width: 0.6;
+  opacity: 0.55;
+}
+.hsky-corner--tl {
+  top: var(--space-lg);
+  left: var(--space-lg);
+}
+.hsky-corner--tr {
+  top: var(--space-lg);
+  right: var(--space-lg);
+  transform: rotate(90deg);
+}
+.hsky-corner--br {
+  bottom: var(--space-lg);
+  right: var(--space-lg);
+  transform: rotate(180deg);
+}
+.hsky-corner--bl {
+  bottom: var(--space-lg);
+  left: var(--space-lg);
+  transform: rotate(270deg);
+}
+
+@media (max-width: 640px) {
+  .hsky-corner {
+    display: none;
+  }
+}

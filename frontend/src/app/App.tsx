@@ -23,6 +23,12 @@ interface Reading {
   query: string;
 }
 
+/** Library deep-link scope: at most one of category / domain is set. */
+interface LibScope {
+  cat: string;
+  dom: string;
+}
+
 const coerceScope = (scope: string): SearchScope =>
   (SEARCH_SCOPES as readonly string[]).includes(scope) ? (scope as SearchScope) : 'content';
 
@@ -31,8 +37,11 @@ interface AppContentProps {
   submitted: string;
   scope: SearchScope;
   view: NavView;
+  lib: LibScope;
   runSearch: (next: string, nextScope: SearchScope) => void;
   openReader: (urn: string, page?: number, q?: string) => void;
+  openCategory: (slug: string) => void;
+  openDomain: (id: string) => void;
 }
 
 /** The shell's child: the search overlay when a query is submitted, otherwise the
@@ -42,8 +51,11 @@ function AppContent({
   submitted,
   scope,
   view,
+  lib,
   runSearch,
   openReader,
+  openCategory,
+  openDomain,
 }: AppContentProps) {
   if (searching) {
     return (
@@ -52,8 +64,21 @@ function AppContent({
   }
   return (
     <>
-      {view === 'home' ? <HomeScreen onOpenReader={openReader} /> : null}
-      {view === 'library' ? <LibraryScreen onOpenReader={(urn) => openReader(urn)} /> : null}
+      {view === 'home' ? (
+        <HomeScreen
+          onOpenReader={openReader}
+          onOpenCategory={openCategory}
+          onOpenDomain={openDomain}
+        />
+      ) : null}
+      {view === 'library' ? (
+        <LibraryScreen
+          key={`${lib.cat}|${lib.dom}`}
+          initialCategory={lib.cat}
+          initialDomain={lib.dom}
+          onOpenReader={(urn) => openReader(urn)}
+        />
+      ) : null}
       {view === 'quran' ? <QuranScreen /> : null}
       {view === 'graph' ? <GraphScreen /> : null}
       {view === 'design' ? <DesignSystemScreen /> : null}
@@ -73,18 +98,20 @@ export function App() {
   const [query, setQuery] = useState(initial.reading ? '' : initial.query);
   const [submitted, setSubmitted] = useState(initial.reading ? '' : initial.query);
   const [scope, setScope] = useState<SearchScope>(coerceScope(initial.scope));
+  const [lib, setLib] = useState<LibScope>({ cat: initial.cat, dom: initial.dom });
   const [reading, setReading] = useState<Reading | null>(
     initial.reading ? { ...initial.reading, query: '' } : null,
   );
 
   const route: RouteState = reading
-    ? { view, query: '', scope, reading: { urn: reading.urn, page: reading.page } }
-    : { view, query: submitted, scope, reading: null };
+    ? { view, query: '', scope, cat: '', dom: '', reading: { urn: reading.urn, page: reading.page } }
+    : { view, query: submitted, scope, cat: lib.cat, dom: lib.dom, reading: null };
   const applyRoute = useCallback((next: RouteState) => {
     setView(next.view);
     setScope(coerceScope(next.scope));
     setQuery(next.reading ? '' : next.query);
     setSubmitted(next.reading ? '' : next.query);
+    setLib({ cat: next.cat, dom: next.dom });
     setReading(next.reading ? { ...next.reading, query: '' } : null);
   }, []);
   useHashRoute(route, applyRoute);
@@ -106,6 +133,20 @@ export function App() {
     setView(v);
     setQuery('');
     setSubmitted('');
+    setLib({ cat: '', dom: '' });
+  };
+  // The home hero's astrolabe and drawers open the Library pre-scoped.
+  const openCategory = (slug: string) => {
+    setView('library');
+    setQuery('');
+    setSubmitted('');
+    setLib({ cat: slug, dom: '' });
+  };
+  const openDomain = (id: string) => {
+    setView('library');
+    setQuery('');
+    setSubmitted('');
+    setLib({ cat: '', dom: id });
   };
   // Typing only updates the field; clearing it closes the results. Enter commits.
   const onQuery = (next: string) => {
@@ -137,8 +178,11 @@ export function App() {
         submitted={submitted}
         scope={scope}
         view={view}
+        lib={lib}
         runSearch={runSearch}
         openReader={openReader}
+        openCategory={openCategory}
+        openDomain={openDomain}
       />
     </AppShell>
   );
