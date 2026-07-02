@@ -11,8 +11,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.api._pagination import PageParams
-from backend.core.http import status
+from backend.api._pagination import PageDep
+from backend.api._routes import as_page, get_route
 from backend.models.narrator import RijalEntry
 from backend.models.pagination import Page
 from backend.repositories import registry
@@ -47,27 +47,28 @@ class RijalFilterParams:
 
 
 async def _list_rijal(
-    page: Annotated[PageParams, Depends()],
+    page: PageDep,
     filters: Annotated[RijalFilterParams, Depends()],
 ) -> Page[RijalEntry]:
     """Wrap the repo's (slice, total) into a Page[RijalEntry] envelope."""
-    items, total = registry.list_rijal(filters.filter, limit=page.limit, offset=page.offset)
-    return Page[RijalEntry](items=items, total=total, limit=page.limit, offset=page.offset)
+    return as_page(
+        Page[RijalEntry],
+        page,
+        registry.list_rijal(filters.filter, limit=page.limit, offset=page.offset),
+    )
 
 
-router.add_api_route(
+get_route(
+    router,
     "/rijal",
     _list_rijal,
-    methods=["GET"],
     response_model=Page[RijalEntry],
-    status_code=status.HTTP_200_OK,
     summary="List rijal narrators with pagination + filters.",
 )
-router.add_api_route(
+get_route(
+    router,
     "/rijal/{entry_id}",
     registry.get_rijal,
-    methods=["GET"],
     response_model=RijalEntry,
-    status_code=status.HTTP_200_OK,
     summary="Get a single rijal entry by id.",
 )

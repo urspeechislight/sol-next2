@@ -8,12 +8,10 @@ with 404s from the global handler.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, Query
 
-from fastapi import APIRouter, Depends, Query
-
-from backend.api._pagination import PageParams
-from backend.core.http import status
+from backend.api._pagination import PageDep
+from backend.api._routes import as_page, get_route
 from backend.models.book import Book
 from backend.models.pagination import Page
 from backend.repositories import books as books_repo
@@ -22,27 +20,28 @@ router = APIRouter(tags=["books"])
 
 
 async def _list_books(
-    page: Annotated[PageParams, Depends()],
+    page: PageDep,
     category: str | None = Query(default=None, description="Filter by category slug."),
 ) -> Page[Book]:
     """Wrap the repo's (slice, total) into a Page[Book] envelope."""
-    items, total = books_repo.list_books(category=category, limit=page.limit, offset=page.offset)
-    return Page[Book](items=items, total=total, limit=page.limit, offset=page.offset)
+    return as_page(
+        Page[Book],
+        page,
+        books_repo.list_books(category=category, limit=page.limit, offset=page.offset),
+    )
 
 
-router.add_api_route(
+get_route(
+    router,
     "/books",
     _list_books,
-    methods=["GET"],
     response_model=Page[Book],
-    status_code=status.HTTP_200_OK,
     summary="List books with pagination, optionally filtered by category slug.",
 )
-router.add_api_route(
+get_route(
+    router,
     "/books/{urn}",
     books_repo.get_book,
-    methods=["GET"],
     response_model=Book,
-    status_code=status.HTTP_200_OK,
     summary="Get a single book by URN.",
 )

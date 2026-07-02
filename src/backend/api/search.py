@@ -18,8 +18,8 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.api._pagination import PageParams
-from backend.core.http import status
+from backend.api._pagination import PageDep
+from backend.api._routes import as_page, get_route
 from backend.models.book import Book
 from backend.models.pagination import Page
 from backend.models.search import CorpusMatch, SearchFacets
@@ -51,12 +51,15 @@ class SearchParams:
 
 
 async def _search(
-    page: Annotated[PageParams, Depends()],
+    page: PageDep,
     params: Annotated[SearchParams, Depends()],
 ) -> Page[CorpusMatch]:
     """Wrap the repo's (slice, total) into a Page[CorpusMatch] envelope."""
-    items, total = corpus_repo.search(params.query, limit=page.limit, offset=page.offset)
-    return Page[CorpusMatch](items=items, total=total, limit=page.limit, offset=page.offset)
+    return as_page(
+        Page[CorpusMatch],
+        page,
+        corpus_repo.search(params.query, limit=page.limit, offset=page.offset),
+    )
 
 
 async def _search_facets(
@@ -70,36 +73,36 @@ async def _search_facets(
 
 
 async def _search_books(
-    page: Annotated[PageParams, Depends()],
+    page: PageDep,
     q: str = Query(default="", description="Title or author text; folded before matching."),
     field: Annotated[SearchField, Query(description="Match field: title, author, or any.")] = "any",
 ) -> Page[Book]:
     """Wrap the repo's (slice, total) into a Page[Book] envelope."""
-    items, total = books_repo.search_books(q=q, field=field, limit=page.limit, offset=page.offset)
-    return Page[Book](items=items, total=total, limit=page.limit, offset=page.offset)
+    return as_page(
+        Page[Book],
+        page,
+        books_repo.search_books(q=q, field=field, limit=page.limit, offset=page.offset),
+    )
 
 
-router.add_api_route(
+get_route(
+    router,
     "/search",
     _search,
-    methods=["GET"],
     response_model=Page[CorpusMatch],
-    status_code=status.HTTP_200_OK,
     summary="Full-text search across all book content (diacritic-insensitive).",
 )
-router.add_api_route(
+get_route(
+    router,
     "/search/facets",
     _search_facets,
-    methods=["GET"],
     response_model=SearchFacets,
-    status_code=status.HTTP_200_OK,
     summary="Category -> book -> volume filters available for a search query.",
 )
-router.add_api_route(
+get_route(
+    router,
     "/search/books",
     _search_books,
-    methods=["GET"],
     response_model=Page[Book],
-    status_code=status.HTTP_200_OK,
     summary="Search book metadata by title / author (diacritic-insensitive).",
 )

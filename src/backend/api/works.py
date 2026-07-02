@@ -6,11 +6,11 @@ One row per work (not per volume), scoped by category, domain, or tradition.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 
-from backend.api._pagination import PageParams
+from backend.api._pagination import PageDep
+from backend.api._routes import as_page, get_route
 from backend.core.http import status
 from backend.models.pagination import Page
 from backend.models.work import Work
@@ -32,7 +32,7 @@ def _reject_unknown(param: str, value: str | None, predicate: Callable[[str], bo
 
 
 async def _list_works(
-    page: Annotated[PageParams, Depends()],
+    page: PageDep,
     category: str | None = Query(default=None, description="Filter by category slug."),
     domain: str | None = Query(default=None, description="Filter by domain id."),
     tradition: str | None = Query(default=None, description="Tradition: sunni, shia, or shared."),
@@ -42,19 +42,21 @@ async def _list_works(
     _reject_unknown("domain", domain, _taxonomy.is_known_domain)
     _reject_unknown("category", category, _taxonomy.is_known_category)
     _reject_unknown("tradition", tradition, _taxonomy.is_known_tradition)
-    items, total = books_repo.list_works(
-        books_repo.WorksQuery(category=category, domain=domain, tradition=tradition, q=q),
-        limit=page.limit,
-        offset=page.offset,
+    return as_page(
+        Page[Work],
+        page,
+        books_repo.list_works(
+            books_repo.WorksQuery(category=category, domain=domain, tradition=tradition, q=q),
+            limit=page.limit,
+            offset=page.offset,
+        ),
     )
-    return Page[Work](items=items, total=total, limit=page.limit, offset=page.offset)
 
 
-router.add_api_route(
+get_route(
+    router,
     "/works",
     _list_works,
-    methods=["GET"],
     response_model=Page[Work],
-    status_code=status.HTTP_200_OK,
     summary="List volume-folded works, optionally filtered by category, domain, or tradition.",
 )

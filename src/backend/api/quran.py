@@ -10,12 +10,10 @@ to surface passages quoting the verse) and any other query to the term search.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, Query
 
-from fastapi import APIRouter, Depends, Query
-
-from backend.api._pagination import PageParams
-from backend.core.http import status
+from backend.api._pagination import PageDep
+from backend.api._routes import as_page, get_route
 from backend.models.pagination import Page
 from backend.models.quran import Ayah
 from backend.repositories import quran as quran_repo
@@ -24,28 +22,27 @@ router = APIRouter(tags=["quran"])
 
 
 async def _search_verses(
-    page: Annotated[PageParams, Depends()],
+    page: PageDep,
     q: str = Query(default="", description="Arabic term or phrase to find in the Qurʾān."),
 ) -> Page[Ayah]:
     """Wrap the repo's ``(slice, total)`` of matching ayat into a Page[Ayah]."""
-    items, total = quran_repo.search_verses(q=q, limit=page.limit, offset=page.offset)
-    return Page[Ayah](items=items, total=total, limit=page.limit, offset=page.offset)
+    return as_page(
+        Page[Ayah], page, quran_repo.search_verses(q=q, limit=page.limit, offset=page.offset)
+    )
 
 
-router.add_api_route(
+get_route(
+    router,
     "/quran/search",
     _search_verses,
-    methods=["GET"],
     response_model=Page[Ayah],
-    status_code=status.HTTP_200_OK,
     summary="Find Qurʾān verses containing an Arabic term or phrase.",
 )
 
-router.add_api_route(
+get_route(
+    router,
     "/quran/{surah}/{ayah}",
     quran_repo.get_verse,
-    methods=["GET"],
     response_model=Ayah,
-    status_code=status.HTTP_200_OK,
     summary="Resolve a Qurʾān verse by surah:ayah reference.",
 )
