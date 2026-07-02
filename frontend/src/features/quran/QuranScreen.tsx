@@ -1,20 +1,24 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Card,
+  Highlight,
   IconButton,
-  Input,
   NavArrow,
+  PageGlow,
   Pill,
   Segmented,
   Spinner,
   Text,
-  UnstyledButton,
 } from '../../lib/design-system';
 import { getSurah } from '../../lib/api/client';
-import { SURAHS, surahName } from '../../lib/surahs';
+import { surahName, verseMatches } from '../../lib/surahs';
 import type { SurahName } from '../../lib/surahs';
 import type { Ayah, Surah } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
+import { useTheme } from '../../lib/useTheme';
 import { clamp, cx, toArabicDigits } from '../../lib/utils';
+import { countLabel } from '../library/lib';
+import { SuraFinder } from './SuraFinder';
 import '../../components/HadithBlock.css';
 import './QuranScreen.css';
 
@@ -46,63 +50,51 @@ const TAFSIR_SOURCES = [
 
 const BASMALA = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
 
-/** The dedicated Qurʾān reader: a surah rail, verse cards on the reader
-    surface, and a bottom research drawer (tafsīr, lexicon, morphology) that
-    opens from any verse. */
-export function QuranScreen() {
+export interface QuranScreenProps {
+  /** The header's sūra-scoped search term (submitted, not live): filters the
+      open sūra's āyāt in place; '' shows the whole sūra. */
+  query?: string;
+}
+
+/** The dedicated Qurʾān reader: a surah rail with the shared Qurʾān finder,
+    verse cards on the reader surface (filterable in place by the header's
+    sūra-scoped search), and a bottom research drawer (tafsīr, lexicon,
+    morphology) that opens from any verse. */
+export function QuranScreen({ query = '' }: QuranScreenProps) {
+  const { dark } = useTheme();
   const [surahN, setSurahN] = useState(SURAH_MIN);
   const [lang, setLang] = useState<QuranLang>('both');
   const [cards, setCards] = useState(true);
-  const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState<Ayah | null>(null);
+  const [focusAyah, setFocusAyah] = useState<number | null>(null);
   const [tab, setTab] = useState<ResearchTab>('tafsir');
 
   const res = useAsync<Surah>(() => getSurah(surahN), [surahN]);
   const name = surahName(surahN);
 
-  const list = useMemo(() => {
-    const q = filter.trim();
-    if (!q) return SURAHS;
-    const lower = q.toLowerCase();
-    return SURAHS.filter(
-      (s) => s.en.toLowerCase().includes(lower) || s.ar.includes(q) || String(s.n) === q,
-    );
-  }, [filter]);
-
-  const goSurah = (n: number) => {
+  const goSurah = (n: number, focus: number | null = null) => {
     setSurahN(clamp(n, SURAH_MIN, SURAH_MAX));
     setSelected(null);
+    setFocusAyah(focus);
   };
 
+  const q = query.trim();
+  const verses = res.data?.verses ?? [];
+  const shown = q ? verses.filter((v) => verseMatches(v, q)) : verses;
+
+  // A finder jump scrolls its verse into view once the sūra has loaded.
+  useEffect(() => {
+    if (focusAyah === null || !res.data) return;
+    document
+      .getElementById(`aya-${focusAyah}`)
+      ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [focusAyah, res.data]);
+
   return (
-    <div className="quran" data-reader-theme="classical" data-lang={lang}>
+    <div className="quran" data-reader-theme={dark ? 'dark' : 'classical'} data-lang={lang}>
+      <PageGlow />
       <aside className="quran__rail" aria-label="Surahs">
-        <Input
-          value={filter}
-          type="search"
-          icon="search"
-          surface="reader"
-          hideLabel
-          label="Find a sūra"
-          placeholder="Find a sūra…"
-          onInput={setFilter}
-        />
-        <ul className="quran__list">
-          {list.map((s) => (
-            <li key={s.n}>
-              <UnstyledButton
-                className={cx('quran__surah', s.n === surahN && 'quran__surah--current')}
-                onClick={() => goSurah(s.n)}
-              >
-                <span className="quran__surah-n">{s.n}</span>
-                <span className="quran__surah-en">{s.en}</span>
-                <span className="quran__surah-ar" dir="rtl">
-                  {s.ar}
-                </span>
-              </UnstyledButton>
-            </li>
-          ))}
-        </ul>
+        <SuraFinder currentSurah={surahN} onPick={goSurah} onJump={goSurah} />
       </aside>
 
       <main className="quran__main">
@@ -160,13 +152,27 @@ export function QuranScreen() {
               Could not load the sūra: {res.error.message}
             </Text>
           ) : null}
-          {res.data?.verses.map((v) => (
+          {q && res.data ? (
+            <Text as="p" size="sm" tone="muted" className="quran__matchline">
+              {countLabel(shown.length, 'āya', 'āyāt')} of {verses.length} match “{q}”
+            </Text>
+          ) : null}
+          {q && res.data && shown.length === 0 ? (
+            <Text as="p" size="sm" tone="muted">
+              Nothing in this sūra contains “{q}”. The finder on the left searches the whole Qurʾān.
+            </Text>
+          ) : null}
+          {shown.map((v) => (
             <VerseCard
               key={v.ayah}
               v={v}
               lang={lang}
-              active={selected?.ayah === v.ayah}
-              onSelect={() => setSelected(v)}
+              query={q}
+              active={selected?.ayah === v.ayah || focusAyah === v.ayah}
+              onSelect={() => {
+                setSelected(v);
+                setFocusAyah(null);
+              }}
             />
           ))}
         </article>
@@ -188,13 +194,20 @@ export function QuranScreen() {
 interface VerseCardProps {
   v: Ayah;
   lang: QuranLang;
+  /** The active sūra-scoped search term; matches highlight in both scripts. */
+  query?: string;
   active: boolean;
   onSelect: () => void;
 }
 
-function VerseCard({ v, lang, active, onSelect }: VerseCardProps) {
+function VerseCard({ v, lang, query = '', active, onSelect }: VerseCardProps) {
   return (
-    <section className={cx('hadith', active && 'hadith--active')} tabIndex={0} onClick={onSelect}>
+    <section
+      id={`aya-${v.ayah}`}
+      className={cx('hadith', active && 'hadith--active')}
+      tabIndex={0}
+      onClick={onSelect}
+    >
       <header className="hadith__head">
         <span className="hadith__id">
           <span className="hadith__num">{toArabicDigits(v.ayah)}</span>
@@ -204,10 +217,14 @@ function VerseCard({ v, lang, active, onSelect }: VerseCardProps) {
         </span>
       </header>
       <div className={cx('hadith__body', lang === 'both' && v.text_en && 'hadith__body--grid')}>
-        {lang !== 'ar' && v.text_en ? <p className="hadith__matn-en">{v.text_en}</p> : null}
+        {lang !== 'ar' && v.text_en ? (
+          <p className="hadith__matn-en">
+            <Highlight text={v.text_en} query={query} />
+          </p>
+        ) : null}
         {lang !== 'en' ? (
           <p className="hadith__matn-ar" dir="rtl">
-            {v.text_ar}
+            <Highlight text={v.text_ar} query={query} />
           </p>
         ) : null}
       </div>
@@ -229,7 +246,11 @@ interface ResearchDrawerProps {
 function ResearchDrawer({ verse, name, tab, onTab, onClose }: ResearchDrawerProps) {
   const words = verse.text_plain.split(' ').filter(Boolean);
   return (
-    <div className="quran-drawer" role="dialog" aria-label={`Research ${verse.surah}:${verse.ayah}`}>
+    <div
+      className="quran-drawer"
+      role="dialog"
+      aria-label={`Research ${verse.surah}:${verse.ayah}`}
+    >
       <header className="quran-drawer__head">
         <div className="quran-drawer__ref">
           <p className="quran-drawer__label">
@@ -252,7 +273,7 @@ function ResearchDrawer({ verse, name, tab, onTab, onClose }: ResearchDrawerProp
         {tab === 'tafsir' ? (
           <div className="quran-drawer__sources">
             {TAFSIR_SOURCES.map((t) => (
-              <article key={t.en} className="quran-drawer__source">
+              <Card key={t.en} as="article" surface="reader" pad="sm">
                 <p className="quran-drawer__source-name">
                   <span dir="rtl">{t.ar}</span>
                   <span className="quran-drawer__source-en">{t.en}</span>
@@ -260,7 +281,7 @@ function ResearchDrawer({ verse, name, tab, onTab, onClose }: ResearchDrawerProp
                 <Text as="p" size="sm" tone="muted">
                   Commentary on this āya lands here when the tafsīr corpus is ingested.
                 </Text>
-              </article>
+              </Card>
             ))}
           </div>
         ) : (
