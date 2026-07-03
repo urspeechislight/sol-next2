@@ -3,7 +3,9 @@
 For each requested URN we look up the source file path via
 ``books.source_path(urn)``, open the source JSON, and shape its
 ``toc`` / ``content`` blocks into our Pydantic ``Toc`` / ``BookPage``
-models. Source-file reads are cached per (urn, page_number).
+models. Source-file reads are cached per (urn, page_number). A row's
+``footnote`` block is split into the page apparatus by the one canonical
+splitter in ``backend.pipeline.text`` and served on every page shape.
 
 Rich fields (parsed isnad, narrators, English matn, cross-refs, grades)
 are **not populated** for corpus-sourced books — the source files don't
@@ -21,7 +23,8 @@ from typing import Any, NamedTuple, cast
 from backend.core.constants import READER__SOURCE_CACHE_MAX
 from backend.core.errors import ResourceNotFoundError
 from backend.core.logging import get_logger
-from backend.models.reader import BookPage, Toc, TocEntry
+from backend.models.reader import BookPage, Footnote, Toc, TocEntry
+from backend.pipeline.text import split_footnote_block
 from backend.repositories import books as books_repo
 from backend.repositories import manuscript as manuscript_repo
 
@@ -82,10 +85,13 @@ def _content_rows(doc: dict[str, Any]) -> list[Any]:
 
 
 class PageRow(NamedTuple):
-    """One validated (page number, content) row from a book's source file."""
+    """One validated (page number, content, footnote block) row from a book's
+    source file. ``footnote`` is the raw combined block as digitized, or None
+    when the page prints no notes."""
 
     page: int
     content: str
+    footnote: str | None = None
 
 
 def _require_source(book_urn: str, kind: str) -> Path:
@@ -97,9 +103,33 @@ def _require_source(book_urn: str, kind: str) -> Path:
     return src
 
 
+def _row_footnote(book_urn: str, page: int, row_dict: dict[str, Any]) -> str | None:
+    """Validate and normalize one row's raw footnote block.
+
+    A non-string, non-null value is source corruption and raises loudly
+    (wrong is worse than absent); a blank block normalizes to None, the
+    explicit no-notes signal.
+    """
+    fn_raw = row_dict.get("footnote")
+    if fn_raw is None:
+        return None
+    if not isinstance(fn_raw, str):
+        _logger.error(
+            "page-row-corrupt",
+            urn=book_urn,
+            page_number=page,
+            footnote_type=type(fn_raw).__name__,
+        )
+        raise ReaderSourceError(
+            f"Corrupt page in {book_urn}: footnote is {type(fn_raw).__name__}, expected str"
+        )
+    stripped = fn_raw.strip()
+    return stripped if stripped else None
+
+
 def page_rows(book_urn: str) -> list[PageRow]:
-    """The single source of a book's (page, content) rows: load the source file
-    and return its validated content rows in source order. Raises
+    """The single source of a book's (page, content, footnote) rows: load the
+    source file and return its validated content rows in source order. Raises
     ``ResourceNotFoundError`` when the book has no source file. Consumed by
     ``get_page`` and the corpus index builder so the page extraction lives once.
     """
@@ -119,7 +149,8 @@ def page_rows(book_urn: str) -> list[PageRow]:
             raise ReaderSourceError(
                 f"Corrupt page in {book_urn}: content present but page_number is {page!r}"
             )
-        rows.append(PageRow(page=page, content=body))
+        footnote = _row_footnote(book_urn, page, row_dict)
+        rows.append(PageRow(page=page, content=body, footnote=footnote))
     return rows
 
 
@@ -191,7 +222,9 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
     carries the raw page text honestly — for prose pages, or before the index is
     built. ``text_en`` is the single wiring point for an English rendering: the
     corpus has no English column yet, so it stays ``None`` and the reader shows a
-    labelled preview; set it here the moment translations land.
+    labelled preview; set it here the moment translations land. ``footnotes``
+    carries the page's printed apparatus on both shapes: the notes annotate the
+    printed page, not the extraction.
     """
     rows = page_rows(book_urn)
     if not rows:
@@ -200,6 +233,14 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
     if match is None:
         raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
     hadiths = manuscript_repo.hadiths_for_page(book_urn, page_number)
+    footnotes = (
+        [
+            Footnote(marker=marker, text=text)
+            for marker, text in split_footnote_block(match.footnote)
+        ]
+        if match.footnote
+        else []
+    )
     return BookPage(
         page_number=page_number,
         total_pages=len(rows),
@@ -210,6 +251,7 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
         hadiths=hadiths,
         text_ar=None if hadiths else match.content,
         text_en=None,
+        footnotes=footnotes,
     )
 
 

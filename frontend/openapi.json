@@ -281,6 +281,14 @@
             ],
             "title": "Chapter Title En"
           },
+          "footnotes": {
+            "description": "The page's footnote apparatus in printed order; empty when the source row carries no footnote block. Served for raw and hadith-parsed pages alike: the notes annotate the printed page, not the extraction.",
+            "items": {
+              "$ref": "#/components/schemas/Footnote"
+            },
+            "title": "Footnotes",
+            "type": "array"
+          },
           "hadiths": {
             "items": {
               "$ref": "#/components/schemas/Hadith"
@@ -757,6 +765,31 @@
         },
         "required": ["id", "label", "label_ar", "blurb", "categories"],
         "title": "Domain",
+        "type": "object"
+      },
+      "Footnote": {
+        "description": "One entry in a page's footnote apparatus: the editor's notes as printed.\n\nThe apparatus is page-local, mirroring the print edition: an entry is\nserved with the page whose foot it is printed on. Roughly 1% of corpus\nmarkers reference an entry printed on the neighboring page; those entries\nstill appear on their own page, exactly as the edition prints them.",
+        "properties": {
+          "marker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Entry number as printed in the edition ('1', '2', ...). None for unnumbered note text: a free-form editorial block, or the continuation of the previous page's entry in continuously numbered editions. The block split is lossless, so None never means a parse failure.",
+            "title": "Marker"
+          },
+          "text": {
+            "description": "Arabic note text as printed.",
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": ["text"],
+        "title": "Footnote",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -1940,7 +1973,7 @@
     },
     "/api/books/{book_urn}/pages/{page_number}": {
       "get": {
-        "description": "Return the requested page or raise ``ResourceNotFoundError``.\n\nStructured ``hadiths`` (isnad + matn + narrators) come from the manuscript\nindex built by Phase 3 extract, via ``manuscript.hadiths_for_page``. When the\npage has parsed hadiths they are served and ``text_ar`` is ``None`` (the two\nare mutually exclusive per the ``BookPage`` contract); otherwise ``text_ar``\ncarries the raw page text honestly \u2014 for prose pages, or before the index is\nbuilt. ``text_en`` is the single wiring point for an English rendering: the\ncorpus has no English column yet, so it stays ``None`` and the reader shows a\nlabelled preview; set it here the moment translations land.",
+        "description": "Return the requested page or raise ``ResourceNotFoundError``.\n\nStructured ``hadiths`` (isnad + matn + narrators) come from the manuscript\nindex built by Phase 3 extract, via ``manuscript.hadiths_for_page``. When the\npage has parsed hadiths they are served and ``text_ar`` is ``None`` (the two\nare mutually exclusive per the ``BookPage`` contract); otherwise ``text_ar``\ncarries the raw page text honestly \u2014 for prose pages, or before the index is\nbuilt. ``text_en`` is the single wiring point for an English rendering: the\ncorpus has no English column yet, so it stays ``None`` and the reader shows a\nlabelled preview; set it here the moment translations land. ``footnotes``\ncarries the page's printed apparatus on both shapes: the notes annotate the\nprinted page, not the extraction.",
         "operationId": "get_page_api_books__book_urn__pages__page_number__get",
         "parameters": [
           {

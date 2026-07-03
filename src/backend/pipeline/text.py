@@ -2,7 +2,8 @@
 
 The segment phase splits combined footnote blocks into entries and attaches
 them to the spans whose text references them; extract strips the inline
-markers out of unit body text. Every regex derives from the one
+markers out of unit body text; the reader serving path splits the same blocks
+into the page apparatus it serves. Every regex derives from the one
 ``FOOTNOTE_MARKER`` definition in backend.patterns and compiles through
 ``cached_compile``, never inline. The tashkeel stripper lives in
 backend.patterns beside the other Arabic mark classes.
@@ -12,26 +13,52 @@ from __future__ import annotations
 
 from backend.patterns import FOOTNOTE_MARKER, CompiledPattern, cached_compile
 
-_FOOTNOTE_SPLIT_REGEX: CompiledPattern = cached_compile(rf"(?:^|\n)\s*{FOOTNOTE_MARKER}\s*")
+_FOOTNOTE_SPLIT_REGEX: CompiledPattern = cached_compile(rf"(?:^|\n)\s*{FOOTNOTE_MARKER}[ \t]*")
+"""Entry-head split: a line-start ``(N)`` followed by horizontal space only.
+A greedy trailing ``\\s*`` would swallow the newline before a consecutive
+head, merging a dangling empty entry like ``(1)`` with the next entry's
+text; keeping the trailing class horizontal preserves every head."""
+
 _FOOTNOTE_MARKER_REGEX: CompiledPattern = cached_compile(FOOTNOTE_MARKER)
 _FOOTNOTE_MARKER_STRIP_REGEX: CompiledPattern = cached_compile(rf"\s*{FOOTNOTE_MARKER}\s*")
 _REPEATED_SPACES_REGEX: CompiledPattern = cached_compile(r" {2,}")
 
 
-def split_footnote_entries(footnote_text: str) -> list[tuple[str, str]]:
-    """Split a combined footnote block into (number, text) entries.
+def split_footnote_block(footnote_text: str) -> list[tuple[str | None, str]]:
+    """Split a footnote block into ordered (marker, text) entries, losslessly.
 
-    The block is shaped ``(1) first\\n(2) second``. The split regex yields
-    [preamble, num, text, num, text, ...]; entries with empty text are skipped.
+    The block is shaped ``(1) first\\n(2) second``, optionally led by text
+    before the first ``(N)`` head. That lead text is a real part of the
+    apparatus (an unnumbered editorial note, or the continuation of the
+    previous page's entry in continuously numbered editions, ~17% of corpus
+    fields) and is preserved as a leading ``(None, text)`` entry. A block with
+    no ``(N)`` heads at all yields a single ``(None, block)`` entry. Every
+    non-empty piece of the block lands in exactly one entry, so a ``None``
+    marker always means "the edition printed no number here", never a parse
+    failure.
     """
     parts = _FOOTNOTE_SPLIT_REGEX.split(footnote_text)
-    entries: list[tuple[str, str]] = []
+    entries: list[tuple[str | None, str]] = []
+    preamble = parts[0].strip()
+    if preamble:
+        entries.append((None, preamble))
     for index in range(1, len(parts) - 1, 2):
-        number = parts[index]
         text = parts[index + 1].strip()
         if text:
-            entries.append((number, text))
+            entries.append((parts[index], text))
     return entries
+
+
+def split_footnote_entries(footnote_text: str) -> list[tuple[str, str]]:
+    """Split a combined footnote block into numbered (number, text) entries.
+
+    The numbered projection of :func:`split_footnote_block`: pipeline callers
+    attach entries to spans by number, so unnumbered lead text has no
+    attachment target and is projected out here.
+    """
+    return [
+        (marker, text) for marker, text in split_footnote_block(footnote_text) if marker is not None
+    ]
 
 
 def split_footnote_entries_to_dict(footnote_text: str) -> dict[str, str]:

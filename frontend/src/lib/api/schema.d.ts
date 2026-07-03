@@ -62,7 +62,9 @@ export interface paths {
          *     carries the raw page text honestly — for prose pages, or before the index is
          *     built. ``text_en`` is the single wiring point for an English rendering: the
          *     corpus has no English column yet, so it stays ``None`` and the reader shows a
-         *     labelled preview; set it here the moment translations land.
+         *     labelled preview; set it here the moment translations land. ``footnotes``
+         *     carries the page's printed apparatus on both shapes: the notes annotate the
+         *     printed page, not the extraction.
          */
         get: operations["get_page_api_books__book_urn__pages__page_number__get"];
         put?: never;
@@ -630,6 +632,11 @@ export interface components {
             chapter_title: string;
             /** Chapter Title En */
             chapter_title_en?: string | null;
+            /**
+             * Footnotes
+             * @description The page's footnote apparatus in printed order; empty when the source row carries no footnote block. Served for raw and hadith-parsed pages alike: the notes annotate the printed page, not the extraction.
+             */
+            footnotes?: components["schemas"]["Footnote"][];
             /** Hadiths */
             hadiths: components["schemas"]["Hadith"][];
             /** Page Number */
@@ -939,6 +946,27 @@ export interface components {
              * @description Arabic label.
              */
             label_ar: string;
+        };
+        /**
+         * Footnote
+         * @description One entry in a page's footnote apparatus: the editor's notes as printed.
+         *
+         *     The apparatus is page-local, mirroring the print edition: an entry is
+         *     served with the page whose foot it is printed on. Roughly 1% of corpus
+         *     markers reference an entry printed on the neighboring page; those entries
+         *     still appear on their own page, exactly as the edition prints them.
+         */
+        Footnote: {
+            /**
+             * Marker
+             * @description Entry number as printed in the edition ('1', '2', ...). None for unnumbered note text: a free-form editorial block, or the continuation of the previous page's entry in continuously numbered editions. The block split is lossless, so None never means a parse failure.
+             */
+            marker?: string | null;
+            /**
+             * Text
+             * @description Arabic note text as printed.
+             */
+            text: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
