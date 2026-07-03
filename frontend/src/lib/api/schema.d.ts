@@ -136,6 +136,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/books/{urn}/pages/{page}/citations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Auto-linkable Qur'an citations located in a page's text.
+         * @description Verse-verified Qur'an citations on one page, ordered by position.
+         */
+        get: operations["_page_citations_api_books__urn__pages__page__citations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/books/{urn}/volumes": {
         parameters: {
             query?: never;
@@ -192,6 +212,26 @@ export interface paths {
          * @description Return one canonical profile by id, or raise ``ResourceNotFoundError``.
          */
         get: operations["get_canonical_api_canonical__canonical_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/citations/{surah}/{aya}/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count of distinct books citing a given surah:aya (reverse concordance).
+         * @description Reverse concordance: how many distinct books cite ``surah:aya``.
+         */
+        get: operations["_books_citing_api_citations__surah___aya__books_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -798,6 +838,43 @@ export interface components {
              * @description Category slug (resolve label via the domain taxonomy).
              */
             slug: string;
+        };
+        /**
+         * Citation
+         * @description One verse-verified Qur'an citation located in a page's Arabic text.
+         */
+        Citation: {
+            /**
+             * Aya End
+             * @description Last aya (equals aya_start for a single verse).
+             */
+            aya_end: number;
+            /**
+             * Aya Start
+             * @description First aya of the reference.
+             */
+            aya_start: number;
+            /**
+             * Length
+             * @description Character length of the citation marker.
+             */
+            length: number;
+            /**
+             * Offset
+             * @description Character offset of the marker in the page text.
+             */
+            offset: number;
+            /**
+             * Surah
+             * @description Resolved surah number.
+             */
+            surah: number;
+            /**
+             * Verse Match
+             * @description How the quoted text was confirmed against the cited verse.
+             * @enum {string}
+             */
+            verse_match: "exact" | "short" | "neighbor";
         };
         /**
          * CorpusMatch
@@ -1832,6 +1909,38 @@ export interface operations {
             };
         };
     };
+    _page_citations_api_books__urn__pages__page__citations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                urn: string;
+                page: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Citation"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_volumes_api_books__urn__volumes_get: {
         parameters: {
             query?: never;
@@ -1919,6 +2028,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CanonicalEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    _books_citing_api_citations__surah___aya__books_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                surah: number;
+                aya: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
                 };
             };
             /** @description Validation Error */

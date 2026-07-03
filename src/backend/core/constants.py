@@ -53,6 +53,7 @@ CALENDAR__HIJRI_MONTH_DAY_MAX: Final[int] = 30
 ARTIFACT__CORPUS_DB: Final[str] = "corpus.db"
 ARTIFACT__MANUSCRIPT_DB: Final[str] = "manuscript.db"
 ARTIFACT__REGISTRY_DB: Final[str] = "registry.db"
+ARTIFACT__CITATIONS_DB: Final[str] = "citations.db"
 ARTIFACT__BOOKS_INDEX: Final[str] = "books_index.json"
 
 NARRATOR_LINK__METADATA_KEY: Final[str] = "narrator_link"

@@ -536,6 +536,51 @@
         "title": "CategoryFacet",
         "type": "object"
       },
+      "Citation": {
+        "description": "One verse-verified Qur'an citation located in a page's Arabic text.",
+        "properties": {
+          "aya_end": {
+            "description": "Last aya (equals aya_start for a single verse).",
+            "minimum": 1.0,
+            "title": "Aya End",
+            "type": "integer"
+          },
+          "aya_start": {
+            "description": "First aya of the reference.",
+            "minimum": 1.0,
+            "title": "Aya Start",
+            "type": "integer"
+          },
+          "length": {
+            "description": "Character length of the citation marker.",
+            "minimum": 1.0,
+            "title": "Length",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Character offset of the marker in the page text.",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "surah": {
+            "description": "Resolved surah number.",
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Surah",
+            "type": "integer"
+          },
+          "verse_match": {
+            "description": "How the quoted text was confirmed against the cited verse.",
+            "enum": ["exact", "short", "neighbor"],
+            "title": "Verse Match",
+            "type": "string"
+          }
+        },
+        "required": ["offset", "length", "surah", "aya_start", "aya_end", "verse_match"],
+        "title": "Citation",
+        "type": "object"
+      },
       "CorpusMatch": {
         "description": "One full-text hit: the book it occurs in, the page, and an excerpt.",
         "properties": {
@@ -2183,6 +2228,60 @@
         "tags": ["books"]
       }
     },
+    "/api/books/{urn}/pages/{page}/citations": {
+      "get": {
+        "description": "Verse-verified Qur'an citations on one page, ordered by position.",
+        "operationId": "_page_citations_api_books__urn__pages__page__citations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "urn",
+            "required": true,
+            "schema": {
+              "title": "Urn",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page",
+            "required": true,
+            "schema": {
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Citation"
+                  },
+                  "title": "Response  Page Citations Api Books  Urn  Pages  Page  Citations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Auto-linkable Qur'an citations located in a page's text.",
+        "tags": ["citations"]
+      }
+    },
     "/api/books/{urn}/volumes": {
       "get": {
         "description": "Return every volume of the work containing ``urn``, ascending by volume\nnumber: the reader's volume switcher. A single-volume work returns just\nthat book. The membership comes from the same fold :func:`list_works`\nserves, so the two views can never disagree; a fold entry missing from the\nindex would be an invariant breach and raises KeyError loudly.",
@@ -2350,6 +2449,60 @@
         },
         "summary": "Get a single canonical profile by id.",
         "tags": ["canonical"]
+      }
+    },
+    "/api/citations/{surah}/{aya}/books": {
+      "get": {
+        "description": "Reverse concordance: how many distinct books cite ``surah:aya``.",
+        "operationId": "_books_citing_api_citations__surah___aya__books_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "surah",
+            "required": true,
+            "schema": {
+              "title": "Surah",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "aya",
+            "required": true,
+            "schema": {
+              "title": "Aya",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response  Books Citing Api Citations  Surah   Aya  Books Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Count of distinct books citing a given surah:aya (reverse concordance).",
+        "tags": ["citations"]
       }
     },
     "/api/daily": {
