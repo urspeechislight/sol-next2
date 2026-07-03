@@ -79,6 +79,13 @@ def _make_ayah(surah: int, ayah: int, verse_count: int, text_ar: str, text_en: s
     )
 
 
+def _search_fold(text: str) -> str:
+    """The one searchable form of Qurʾān text: diacritic-folded via the search
+    SSOT with whitespace collapsed. Index build and query MUST fold identically
+    or every search silently misses, so both call this."""
+    return WHITESPACE.sub(" ", fold_search(text)).strip()
+
+
 @lru_cache(maxsize=1)
 def _folded_index() -> tuple[tuple[int, int, int, str, str, str | None], ...]:
     """Every numbered ayah as ``(surah, ayah, verse_count, text_ar, folded_ar,
@@ -95,7 +102,7 @@ def _folded_index() -> tuple[tuple[int, int, int, str, str, str | None], ...]:
                 continue
             verse = verses[str(ayah)]
             text_ar = verse["ar"]
-            folded = WHITESPACE.sub(" ", fold_search(text_ar)).strip()
+            folded = _search_fold(text_ar)
             rows.append((surah, ayah, verse_count, text_ar, folded, verse.get("en")))
     return tuple(rows)
 
@@ -104,7 +111,7 @@ def search_verses(q: str, limit: int, offset: int) -> tuple[list[Ayah], int]:
     """Find every ayah whose folded text contains the folded query, in surah:ayah
     order, returning the ``(slice, total)`` the route wraps in a Page. A blank
     query matches nothing rather than every verse."""
-    needle = WHITESPACE.sub(" ", fold_search(q)).strip()
+    needle = _search_fold(q)
     if not needle:
         return [], 0
     hits = [

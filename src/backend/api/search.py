@@ -13,7 +13,7 @@ with 422 rather than the repo silently defaulting it to ``exact``.
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
@@ -21,13 +21,11 @@ from backend.api._pagination import PageDep
 from backend.api._routes import as_page, get_route
 from backend.api._validation import reject_unknown
 from backend.models.pagination import Page
-from backend.models.search import CorpusMatch, SearchFacets
+from backend.models.search import CorpusMatch, SearchFacets, SearchMode
 from backend.repositories import _taxonomy
 from backend.repositories import corpus as corpus_repo
 
 router = APIRouter(tags=["search"])
-
-SearchMode = Literal["exact", "broad"]
 
 _MODE_DESC = "Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases)."
 

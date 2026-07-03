@@ -33,7 +33,7 @@ async def _not_found(_request: Request, exc: Exception) -> JSONResponse:
         raise exc
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
-        content={"detail": f"No {exc.kind} with identifier={exc.identifier!r}."},
+        content={"detail": str(exc)},
     )
 
 

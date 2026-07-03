@@ -11,6 +11,14 @@ of a match, and the head length shown on the guard path when the matched
 window cannot be located. ``QURAN__SURAH_COUNT`` is the canonical chapter
 count, the upper bound of every surah-number field; the ``CALENDAR__*``
 bounds validate Hijri month/day references in the almanac.
+
+``ARTIFACT__*`` names the build artifacts under ``data/``. Each filename is
+the coupling point between the script that writes the artifact and the
+repository that reads it, so it is declared once here and imported by both
+sides. ``NARRATOR_LINK__*`` is the metadata contract between the writer
+(``build/narrator_link.py`` stamps entity metadata) and the reader
+(``repositories/manuscript.py`` resolves it back to registry ids); the key
+and origin tokens live here so a rename cannot desynchronise the two sides.
 """
 
 from __future__ import annotations
@@ -41,3 +49,14 @@ QURAN__SURAH_COUNT: Final[int] = 114
 
 CALENDAR__HIJRI_MONTHS: Final[int] = 12
 CALENDAR__HIJRI_MONTH_DAY_MAX: Final[int] = 30
+
+ARTIFACT__CORPUS_DB: Final[str] = "corpus.db"
+ARTIFACT__MANUSCRIPT_DB: Final[str] = "manuscript.db"
+ARTIFACT__REGISTRY_DB: Final[str] = "registry.db"
+ARTIFACT__BOOKS_INDEX: Final[str] = "books_index.json"
+
+NARRATOR_LINK__METADATA_KEY: Final[str] = "narrator_link"
+NARRATOR_LINK__ORIGIN_KEY: Final[str] = "origin"
+NARRATOR_LINK__ID_KEY: Final[str] = "id"
+NARRATOR_LINK__ORIGIN_RIJAL: Final[str] = "rijal"
+NARRATOR_LINK__ORIGIN_CANONICAL: Final[str] = "canonical"

@@ -19,6 +19,7 @@ from typing import Any
 from backend.build import manuscript as manuscript_build
 from backend.build import runner
 from backend.build.narrator_link import NarratorLinker, annotate_manuscript
+from backend.core.constants import ARTIFACT__MANUSCRIPT_DB
 from backend.core.paths import data_path
 from backend.models.book import Book
 from backend.pipeline.config import Config, load_config
@@ -96,7 +97,7 @@ def main() -> None:
     """Run the manuscript index build CLI."""
     runner.run_build_cli(
         "Build the manuscript span/entity/unit store via segment+extract.",
-        data_path("manuscript.db"),
+        data_path(ARTIFACT__MANUSCRIPT_DB),
         _build,
     )
 

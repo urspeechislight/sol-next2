@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, get_args
 
 from backend.core.constants import BOOK__DEATH_YEAR_AH_MAX
 from backend.core.logging import get_logger
@@ -41,12 +41,7 @@ _logger = get_logger("shia-library.build")
 
 _EXCLUSIONS_FILE = "catalog_exclusions.json"
 
-_CANONICAL_MAP: dict[str, Canonical] = {
-    "primary_reference": "primary_reference",
-    "primary": "primary",
-    "secondary": "secondary",
-    "tertiary": "tertiary",
-}
+_CANONICAL_MAP: dict[str, Canonical] = {rank: rank for rank in get_args(Canonical)}
 _SECT_MAP: dict[str, str] = {
     "sunni": "Sunni",
     "shia": "Imami",

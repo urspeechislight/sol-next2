@@ -19,21 +19,24 @@ from backend.models._base import FrozenModel
 ObservanceKind = Literal["eid", "mourning", "birth", "night", "observance"]
 
 
-class Observance(FrozenModel):
-    """One recurring date in the Hijri year."""
+class HijriDate(FrozenModel):
+    """A month + day reference in the Hijri year, the key both entry kinds share."""
 
     month: int = Field(ge=1, le=CALENDAR__HIJRI_MONTHS)
     day: int = Field(ge=1, le=CALENDAR__HIJRI_MONTH_DAY_MAX)
+
+
+class Observance(HijriDate):
+    """One recurring date in the Hijri year."""
+
     en: str
     ar: str
     kind: ObservanceKind
 
 
-class HistoryEvent(FrozenModel):
+class HistoryEvent(HijriDate):
     """One chronicle entry keyed to a Hijri month + day."""
 
-    month: int = Field(ge=1, le=CALENDAR__HIJRI_MONTHS)
-    day: int = Field(ge=1, le=CALENDAR__HIJRI_MONTH_DAY_MAX)
     year_ah: int = Field(ge=0, description="0 marks an event before the hijra.")
     en: str
     detail: str

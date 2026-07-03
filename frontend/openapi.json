@@ -108,7 +108,7 @@
           "canonical": {
             "anyOf": [
               {
-                "enum": ["primary", "primary_reference", "secondary", "tertiary"],
+                "enum": ["primary_reference", "primary", "secondary", "tertiary"],
                 "type": "string"
               },
               {
@@ -407,7 +407,7 @@
           },
           "kunya": {
             "default": "",
-            "description": "Teknonym, if recorded.",
+            "description": "Teknonym (Abu/Umm ...), if recorded.",
             "title": "Kunya",
             "type": "string"
           },
@@ -425,7 +425,7 @@
           },
           "nisba": {
             "default": "",
-            "description": "Attributive name, if recorded.",
+            "description": "Attributive name (tribe/place), if recorded.",
             "title": "Nisba",
             "type": "string"
           },
@@ -455,8 +455,8 @@
           }
         },
         "required": [
-          "canonical_id",
           "full_name",
+          "canonical_id",
           "entry_count",
           "source_count",
           "teacher_count",
@@ -1405,7 +1405,7 @@
             "type": "string"
           }
         },
-        "required": ["id", "full_name", "teacher_count", "student_count"],
+        "required": ["full_name", "id", "teacher_count", "student_count"],
         "title": "RijalEntry",
         "type": "object"
       },
@@ -1615,7 +1615,7 @@
         "type": "object"
       },
       "Verse": {
-        "description": "Verse of the day as served: pool curation plus the canonical text.",
+        "description": "Verse of the day as served: the pool curation plus the canonical text.",
         "properties": {
           "ayah_ar": {
             "title": "Ayah Ar",
@@ -1651,7 +1651,7 @@
             "type": "array"
           }
         },
-        "required": ["surah_n", "ayah_n", "ayah_ar", "tafsirs"],
+        "required": ["surah_n", "ayah_n", "tafsirs", "ayah_ar"],
         "title": "Verse",
         "type": "object"
       },
@@ -1698,7 +1698,7 @@
           "canonical": {
             "anyOf": [
               {
-                "enum": ["primary", "primary_reference", "secondary", "tertiary"],
+                "enum": ["primary_reference", "primary", "secondary", "tertiary"],
                 "type": "string"
               },
               {
@@ -1707,6 +1707,19 @@
             ],
             "description": "Editorial rank, or None.",
             "title": "Canonical"
+          },
+          "canonical_tier": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Editorial-rank tier derived from `canonical`, 0 = most authoritative; null when unranked. Served so client-side ordering and server-side `sort=canonical` paging share one tier table instead of each owning a copy.",
+            "readOnly": true,
+            "title": "Canonical Tier"
           },
           "category": {
             "description": "Category slug (matches Domain.categories[].slug).",
@@ -1813,7 +1826,8 @@
           "stem",
           "volume_count",
           "volumes",
-          "first_urn"
+          "first_urn",
+          "canonical_tier"
         ],
         "title": "Work",
         "type": "object"
@@ -2958,7 +2972,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "enum": ["primary", "primary_reference", "secondary", "tertiary"],
+                  "enum": ["primary_reference", "primary", "secondary", "tertiary"],
                   "type": "string"
                 },
                 {

@@ -39,14 +39,11 @@ class VersePick(FrozenModel):
     tafsirs: list[Tafsir]
 
 
-class Verse(FrozenModel):
-    """Verse of the day as served: pool curation plus the canonical text."""
+class Verse(VersePick):
+    """Verse of the day as served: the pool curation plus the canonical text."""
 
-    surah_n: int = Field(ge=1, le=QURAN__SURAH_COUNT)
-    ayah_n: int = Field(ge=1)
     ayah_ar: str
     ayah_en: str | None = None
-    tafsirs: list[Tafsir]
 
 
 class HadithSource(FrozenModel):

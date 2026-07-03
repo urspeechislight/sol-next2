@@ -214,27 +214,20 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
 
 
 def _chapter_title_at(book_urn: str, page_number: int) -> str:
-    """Best-effort chapter title for ``page_number`` — the latest TOC entry
-    whose page <= page_number. Best-effort by design: an absent or malformed
-    TOC yields an empty title rather than failing the page load. The loud TOC
-    validation lives in ``get_toc``.
+    """Chapter title for ``page_number``: the latest TOC entry whose page is
+    at most ``page_number``, or ``""`` for a book with no TOC section.
+
+    Consumes the same ``try_get_toc`` parse as the TOC endpoint, so there is
+    exactly one reading of the raw TOC rows. A corrupt TOC therefore raises
+    ``ReaderSourceError`` here exactly as it does there: wrong is worse than
+    absent, and a source file with a broken TOC section needs fixing, not
+    masking behind an empty title.
     """
-    src = books_repo.source_path(book_urn)
-    if src is None:
-        return ""
-    toc_raw = _load_source(src).get("toc")
-    if not isinstance(toc_raw, dict) or not toc_raw:
-        return ""
-    toc_dict = cast(dict[str, Any], toc_raw)
-    rows = next(iter(toc_dict.values()))
-    if not isinstance(rows, list):
+    toc = try_get_toc(book_urn)
+    if toc is None:
         return ""
     current = ""
-    for row in cast(list[Any], rows):
-        if not isinstance(row, dict):
-            continue
-        row_dict = cast(dict[str, Any], row)
-        rp = row_dict.get("page_number")
-        if isinstance(rp, int) and rp <= page_number:
-            current = (row_dict.get("title") or "").strip()
+    for entry in toc.entries:
+        if entry.page <= page_number:
+            current = entry.title
     return current

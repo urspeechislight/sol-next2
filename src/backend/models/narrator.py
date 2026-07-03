@@ -13,14 +13,25 @@ from pydantic import Field
 from backend.models._base import FrozenModel
 
 
-class RijalEntry(FrozenModel):
-    """One narrator in the rijal registry (reliability-graded)."""
+class NarratorBase(FrozenModel):
+    """Identity fields shared by a raw rijal entry and a canonicalized person.
 
-    id: int = Field(ge=0, description="Stable corpus index, also the detail-route key.")
+    Only the fields whose semantics are identical on both sides live here; the
+    teacher/student count fields stay per-model because they mean different
+    things (counts recorded on one source entry vs. the union across the
+    entries merged into one identity).
+    """
+
     full_name: str = Field(description="Full name in Arabic.")
     kunya: str = Field(default="", description="Teknonym (Abu/Umm ...), if recorded.")
     nisba: str = Field(default="", description="Attributive name (tribe/place), if recorded.")
     tradition: str = Field(default="", description="Sunni / shia / both, when classified.")
+
+
+class RijalEntry(NarratorBase):
+    """One narrator in the rijal registry (reliability-graded)."""
+
+    id: int = Field(ge=0, description="Stable corpus index, also the detail-route key.")
     death_year: str = Field(default="", description="Death year as recorded (Hijri, free-form).")
     birth_year: str = Field(default="", description="Birth year as recorded (Hijri, free-form).")
     category: str = Field(default="clean", description="Data-quality class (clean, editorial).")
@@ -33,14 +44,10 @@ class RijalEntry(FrozenModel):
     book_path: str = Field(default="", description="Relative path of the source corpus file.")
 
 
-class CanonicalEntry(FrozenModel):
+class CanonicalEntry(NarratorBase):
     """A canonicalized person, merging one identity across sources."""
 
     canonical_id: int = Field(ge=0, description="Stable canonical identity id + detail-route key.")
-    full_name: str = Field(description="Full name in Arabic.")
-    kunya: str = Field(default="", description="Teknonym, if recorded.")
-    nisba: str = Field(default="", description="Attributive name, if recorded.")
-    tradition: str = Field(default="", description="Sunni / shia / both, when classified.")
     death_year: int | None = Field(default=None, description="Death year, Hijri, when known.")
     birth_year: int | None = Field(default=None, description="Birth year, Hijri, when known.")
     entry_count: int = Field(ge=0, description="Raw corpus entries merged into this identity.")

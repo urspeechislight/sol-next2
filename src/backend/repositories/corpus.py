@@ -31,6 +31,7 @@ from functools import lru_cache
 from typing import Any, Final
 
 from backend.core.constants import (
+    ARTIFACT__CORPUS_DB,
     CORPUS__SNIPPET_HEAD_CHARS,
     CORPUS__SNIPPET_WINDOW_CHARS,
     HTTP__DEFAULT_PAGE_SIZE,
@@ -38,7 +39,14 @@ from backend.core.constants import (
 from backend.core.logging import get_logger
 from backend.models.book import Book
 from backend.models.reader import BookSearchMatch
-from backend.models.search import BookFacet, CategoryFacet, CorpusMatch, SearchFacets, VolumeFacet
+from backend.models.search import (
+    BookFacet,
+    CategoryFacet,
+    CorpusMatch,
+    SearchFacets,
+    SearchMode,
+    VolumeFacet,
+)
 from backend.patterns import fold_search
 from backend.repositories import books as books_repo
 from backend.repositories import reader as reader_repo
@@ -46,8 +54,6 @@ from backend.repositories._data_loader import open_ro_db, slice_page
 
 _logger = get_logger("shia-library.corpus")
 
-_DB_FILE = "corpus.db"
-_BROAD = "broad"
 _BROAD_WINDOW: Final[int] = 4
 
 _FILTER = (
@@ -90,7 +96,8 @@ _FACET_VOLUMES = (
 def _connect() -> sqlite3.Connection:
     """Open the corpus index read-only via the shared artifact opener."""
     return open_ro_db(
-        _DB_FILE, "Corpus index not built; run scripts/build_corpus_index.py to materialize it"
+        ARTIFACT__CORPUS_DB,
+        "Corpus index not built; run scripts/build_corpus_index.py to materialize it",
     )
 
 
@@ -109,7 +116,7 @@ def _title_en_by_ar() -> dict[str, str | None]:
     return {b.title_ar: b.title_en for b in _meta().values()}
 
 
-def search_windows(q: str, mode: str) -> list[str]:
+def search_windows(q: str, mode: SearchMode) -> list[str]:
     """Fold the query and return the phrase windows to match + locate. ``exact``
     -> one window (the whole phrase). ``broad`` -> overlapping ``_BROAD_WINDOW``
     word windows when the query is longer than one window, else the whole
@@ -123,7 +130,7 @@ def search_windows(q: str, mode: str) -> list[str]:
     words = [w for w in fold_search(q).replace('"', " ").split() if w]
     if not words:
         return []
-    if mode == _BROAD and len(words) > _BROAD_WINDOW:
+    if mode == "broad" and len(words) > _BROAD_WINDOW:
         return [
             " ".join(words[i : i + _BROAD_WINDOW]) for i in range(len(words) - _BROAD_WINDOW + 1)
         ]
@@ -178,7 +185,7 @@ class SearchQuery:
     """The query text + scope filters for a cross-corpus content search."""
 
     q: str = ""
-    mode: str = "exact"
+    mode: SearchMode = "exact"
     categories: tuple[str, ...] = ()
     book: str = ""
     volume: int = 0
@@ -260,7 +267,10 @@ def search(
 
 
 def facets(
-    q: str = "", mode: str = "exact", categories: tuple[str, ...] = (), book: str = ""
+    q: str = "",
+    mode: SearchMode = "exact",
+    categories: tuple[str, ...] = (),
+    book: str = "",
 ) -> SearchFacets:
     """Drill-down facets for the active match mode: categories (over q, always
     the query-global distribution), books (within the selected category set),

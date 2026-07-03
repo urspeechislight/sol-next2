@@ -542,7 +542,7 @@ export interface components {
              * Canonical
              * @description Editorial rank, or None.
              */
-            canonical?: ("primary" | "primary_reference" | "secondary" | "tertiary") | null;
+            canonical?: ("primary_reference" | "primary" | "secondary" | "tertiary") | null;
             /**
              * Category
              * @description Category slug (matches Domain.categories[].slug).
@@ -699,7 +699,7 @@ export interface components {
             full_name: string;
             /**
              * Kunya
-             * @description Teknonym, if recorded.
+             * @description Teknonym (Abu/Umm ...), if recorded.
              * @default
              */
             kunya: string;
@@ -710,7 +710,7 @@ export interface components {
             merge_confidence?: number | null;
             /**
              * Nisba
-             * @description Attributive name, if recorded.
+             * @description Attributive name (tribe/place), if recorded.
              * @default
              */
             nisba: string;
@@ -1495,7 +1495,7 @@ export interface components {
         };
         /**
          * Verse
-         * @description Verse of the day as served: pool curation plus the canonical text.
+         * @description Verse of the day as served: the pool curation plus the canonical text.
          */
         Verse: {
             /** Ayah Ar */
@@ -1545,7 +1545,12 @@ export interface components {
              * Canonical
              * @description Editorial rank, or None.
              */
-            canonical?: ("primary" | "primary_reference" | "secondary" | "tertiary") | null;
+            canonical?: ("primary_reference" | "primary" | "secondary" | "tertiary") | null;
+            /**
+             * Canonical Tier
+             * @description Editorial-rank tier derived from `canonical`, 0 = most authoritative; null when unranked. Served so client-side ordering and server-side `sort=canonical` paging share one tier table instead of each owning a copy.
+             */
+            readonly canonical_tier: number | null;
             /**
              * Category
              * @description Category slug (matches Domain.categories[].slug).
@@ -2205,7 +2210,7 @@ export interface operations {
                 /** @description Tradition: sunni, shia, or shared. */
                 tradition?: string | null;
                 /** @description Filter to a canonical rank. */
-                canonical?: ("primary" | "primary_reference" | "secondary" | "tertiary") | null;
+                canonical?: ("primary_reference" | "primary" | "secondary" | "tertiary") | null;
                 /** @description Search works by title or author. */
                 q?: string;
                 /** @description Ordering: canonical (rank tier, then death year), death_year_ah (undated last), title_ar, or volume_count. */

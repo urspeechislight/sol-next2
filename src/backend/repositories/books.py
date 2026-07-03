@@ -18,9 +18,10 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal, cast
 
+from backend.core.constants import ARTIFACT__BOOKS_INDEX
 from backend.core.errors import ResourceNotFoundError
 from backend.core.settings import get_settings
-from backend.models.book import Book, Canonical
+from backend.models.book import CANONICAL_TIERS, Book, Canonical
 from backend.models.work import Work
 from backend.patterns import normalize_arabic
 from backend.repositories import _taxonomy
@@ -35,16 +36,16 @@ def _index() -> tuple[tuple[Book, ...], dict[str, str]]:
     shape would otherwise serve an empty catalogue as a success. Fail loud
     instead so a corrupt index is fixed, not silently served.
     """
-    raw = load_json("books_index.json")
+    raw = load_json(ARTIFACT__BOOKS_INDEX)
     if not isinstance(raw, dict):
-        raise DataLoadError("books_index.json is not a JSON object")
+        raise DataLoadError(f"{ARTIFACT__BOOKS_INDEX} is not a JSON object")
     raw_dict = cast(dict[str, Any], raw)
     books_raw = raw_dict.get("books")
     sources_raw = raw_dict.get("sources")
     if not isinstance(books_raw, list):
-        raise DataLoadError("books_index.json is missing a 'books' list")
+        raise DataLoadError(f"{ARTIFACT__BOOKS_INDEX} is missing a 'books' list")
     if not isinstance(sources_raw, dict):
-        raise DataLoadError("books_index.json is missing a 'sources' map")
+        raise DataLoadError(f"{ARTIFACT__BOOKS_INDEX} is missing a 'sources' map")
     books = tuple(Book.model_validate(entry) for entry in cast(list[Any], books_raw))
     return books, dict(cast(dict[str, str], sources_raw))
 
@@ -135,23 +136,13 @@ def _scope_slugs(
 
 WorkSort = Literal["canonical", "death_year_ah", "title_ar", "volume_count"]
 
-_CANONICAL_TIERS: dict[Canonical, int] = {
-    "primary_reference": 0,
-    "primary": 1,
-    "secondary": 2,
-    "tertiary": 3,
-}
-_UNRANKED_TIER = len(_CANONICAL_TIERS)
+_UNRANKED_TIER = len(CANONICAL_TIERS)
 
 
 def _canonical_tier(work: Work) -> int:
-    """The work's editorial-rank tier, most authoritative first.
-
-    The tier table is keyed off the ``Canonical`` literal so a new rank value
-    fails loud here (KeyError) instead of silently landing in the wrong tier;
-    unranked works sort after every ranked tier.
-    """
-    return _UNRANKED_TIER if work.canonical is None else _CANONICAL_TIERS[work.canonical]
+    """The work's served editorial-rank tier, with unranked works after every
+    ranked tier so the sort key is total."""
+    return _UNRANKED_TIER if work.canonical_tier is None else work.canonical_tier
 
 
 @dataclass(frozen=True, slots=True)
