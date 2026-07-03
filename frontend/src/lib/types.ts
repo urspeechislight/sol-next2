@@ -60,6 +60,7 @@ export type Toc = Full<S['Toc']>;
 export type Narrator = Full<S['Narrator']>;
 export type CrossRef = Full<S['CrossRef']>;
 export type Hadith = Full<S['Hadith']>;
+export type Footnote = Full<S['Footnote']>;
 export type BookPage = Full<S['BookPage']>;
 export type HadithGrade = NonNullable<Hadith['grade']>;
 

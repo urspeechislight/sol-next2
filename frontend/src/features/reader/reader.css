@@ -300,3 +300,76 @@
   display: grid;
   gap: 0.75rem;
 }
+
+/* Footnote apparatus: the editor's notes as printed at the foot of the page.
+   A short rule at the reading (right, RTL) edge separates it from the body;
+   the entries run smaller and quieter than the text so the page keeps
+   primacy. 72% of the reading size tracks the size control, matching how the
+   bilingual column derives from --reader-size. Interactive numbers are the
+   FootnoteRef design-system component; the plain span here is the
+   non-interactive number for entries whose marker never occurs in the body
+   (22.6% of numbered corpus pages). */
+.reader-footnotes {
+  position: relative;
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-lg);
+}
+.reader-footnotes::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 96px;
+  height: 1px;
+  background: var(--color-reader-rule);
+}
+.reader-footnotes__label {
+  margin: 0 0 var(--space-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--color-reader-muted);
+  text-align: right;
+}
+.reader-footnotes__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.reader-footnotes__entry {
+  font-family: var(--font-ar);
+  font-size: calc(var(--reader-size) * 0.72);
+  line-height: 1.9;
+  color: var(--color-reader-muted);
+  white-space: pre-wrap;
+  border-radius: var(--radius-xs);
+}
+.reader-footnotes__num {
+  font-weight: var(--weight-semibold);
+  margin-left: var(--space-2xs);
+  color: var(--color-reader-muted);
+}
+.reader-footnotes__entry .ds-fnref--entry {
+  margin-left: var(--space-2xs);
+}
+
+/* Jump feedback: one gold wash that decays; replaying the class restarts it. */
+.fn-pulse {
+  animation: fn-pulse 1.4s ease-out both;
+}
+@keyframes fn-pulse {
+  from {
+    background-color: color-mix(in oklch, var(--color-reader-honorific) 24%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fn-pulse {
+    animation: none;
+  }
+}

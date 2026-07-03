@@ -1,17 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 
-import {
-  Badge,
-  Highlight,
-  IconButton,
-  IsnadNode,
-  NarratorLink,
-  RefPill,
-  Segmented,
-  Spinner,
-  Text,
-} from '../../lib/design-system';
+import { Spinner, Text } from '../../lib/design-system';
 import {
   getBook,
   getBookVolumes,
@@ -22,28 +12,25 @@ import {
   searchBook,
 } from '../../lib/api/client';
 import { READER } from '../../lib/constants';
+import { matchedMarkers } from '../../lib/footnotes';
 import { useTheme } from '../../lib/useTheme';
-import { hadithBadge, reliabilityBadge } from '../../lib/variants';
-import {
-  annotateText,
-  buildNarratorIndex,
-  canonicalToRecord,
-  rijalToRecord,
-} from '../../lib/narrators';
-import type { NarratorIndex } from '../../lib/narrators';
+import { buildNarratorIndex, canonicalToRecord, rijalToRecord } from '../../lib/narrators';
 import type {
   Book,
   BookPage,
   BookSearchMatch,
-  Hadith,
   Narrator,
   NarratorRecord,
   Page,
 } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { useDomains } from '../../lib/useDomains';
-import { clamp, cx, deathLabel, joinDots, toArabicDigits } from '../../lib/utils';
+import { clamp, deathLabel } from '../../lib/utils';
+import { HadithUnit, UNIT_NOUN_DEFAULT, UNIT_NOUNS } from './HadithUnit';
+import { PageFootnotes, pulseFootnoteTarget } from './PageFootnotes';
 import { MatchList, TocDrawer } from './ReaderDrawers';
+import { IsnadPanel, TarjamaPanel } from './ReaderPanels';
+import type { NarratorFetchError } from './ReaderPanels';
 import { RawPageText } from './RawPageText';
 import { ReaderToolbar } from './ReaderToolbar';
 import type { LeftDrawer, ReaderLang, ReaderTheme, RightDrawer } from './ReaderToolbar';
@@ -54,6 +41,7 @@ import './NarratorTarjama.css';
 
 const MIN_QUERY = 2;
 const EMPTY_MATCHES: Page<BookSearchMatch> = { items: [], total: 0, limit: 0, offset: 0 };
+const NO_MARKERS: ReadonlySet<string> = new Set<string>();
 
 /** Promote a served narrator to a registry-shaped record. A linked narrator
     carries its registry id (resolved at build time); the click handler then
@@ -92,216 +80,6 @@ function PageHead({ page }: { page: BookPage }) {
       ) : null}
       {page.section_title_en ? <p className="reader-section-en">{page.section_title_en}</p> : null}
     </header>
-  );
-}
-
-// The unit noun the card head shows, by the book's domain: the same card
-// carries a hadith, a Qurʾān verse, or a fiqh ruling.
-const UNIT_NOUNS: Record<string, string> = {
-  quran: 'Verse',
-  hadith: 'Hadith',
-  fiqh: 'Ruling',
-};
-const UNIT_NOUN_DEFAULT = 'Passage';
-
-interface HadithUnitProps {
-  h: Hadith;
-  noun: string;
-  active: boolean;
-  lang: ReaderLang;
-  index: NarratorIndex;
-  activeNarrator: string;
-  highlight: string;
-  onSelect: () => void;
-  onNarrator: (record: NarratorRecord) => void;
-}
-
-function HadithUnit({
-  h,
-  noun,
-  active,
-  lang,
-  index,
-  activeNarrator,
-  highlight,
-  onSelect,
-  onNarrator,
-}: HadithUnitProps) {
-  const segs = annotateText(h.isnad_ar, index);
-  return (
-    <section className={cx('hadith', active && 'hadith--active')} tabIndex={0} onClick={onSelect}>
-      <header className="hadith__head">
-        <span className="hadith__id">
-          <span className="hadith__num">{toArabicDigits(h.n)}</span>
-          <span className="hadith__meta">
-            {noun} {h.n}
-            {h.narrators.length > 0 ? ` · ${h.narrators.length} narrators` : ''}
-          </span>
-        </span>
-        {h.grade ? (
-          <Badge surface="reader" variant={hadithBadge(h.grade)} dot dir="rtl">
-            {h.grade}
-          </Badge>
-        ) : null}
-      </header>
-      {lang !== 'en' && h.isnad_ar ? (
-        <p className="hadith__isnad" dir="rtl">
-          {segs.map((s, i) =>
-            s.type === 'narrator' ? (
-              <NarratorLink
-                key={i}
-                active={activeNarrator === s.record.full_name}
-                onActivate={() => onNarrator(s.record)}
-              >
-                {s.value}
-              </NarratorLink>
-            ) : (
-              <span key={i}>{s.value}</span>
-            ),
-          )}
-        </p>
-      ) : null}
-      <div className={cx('hadith__body', lang === 'both' && 'hadith__body--grid')}>
-        {lang !== 'ar' && h.matn_en ? (
-          <p className="hadith__matn-en">
-            <Highlight text={h.matn_en} query={highlight} />
-          </p>
-        ) : null}
-        {lang !== 'en' ? (
-          <p className="hadith__matn-ar" dir="rtl">
-            <Highlight text={h.matn_ar} query={highlight} />
-          </p>
-        ) : null}
-      </div>
-      {h.cross_refs.length ? (
-        <div className="hadith__refs">
-          <span className="hadith__refs-label">Parallels</span>
-          {h.cross_refs.map((r, i) => (
-            <RefPill key={i} ar={r.book_ar} label={r.page ? String(r.page) : null} />
-          ))}
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-const ISNAD_VIEWS = [
-  { value: 'tree', label: 'Tree' },
-  { value: 'flow', label: 'Flow' },
-  { value: 'cards', label: 'Cards' },
-];
-type IsnadView = 'tree' | 'flow' | 'cards';
-
-function IsnadPanel({ hadith, onNarrator }: { hadith: Hadith; onNarrator: (n: Narrator) => void }) {
-  const [view, setView] = useState<IsnadView>('tree');
-  return (
-    <aside className="reader-isnad" aria-label="Isnād, transmission chain">
-      <div className="reader-isnad__head">
-        <p className="reader-isnad__label">Isnād · transmission chain</p>
-        <p className="reader-isnad__sub">
-          Hadith {hadith.n} · {hadith.narrators.length} narrators
-          {hadith.grade ? ` · ${hadith.grade}` : ''}
-        </p>
-      </div>
-      <div className="reader-isnad__views">
-        <Segmented
-          surface="reader"
-          label="Isnād layout"
-          value={view}
-          options={ISNAD_VIEWS}
-          onChange={(v) => setView(v as IsnadView)}
-        />
-      </div>
-      {hadith.narrators.length === 0 ? (
-        <p className="reader-isnad__empty">No transmission chain recorded for this unit.</p>
-      ) : (
-        <div className={`isnad-chain isnad-chain--${view}`}>
-          {hadith.narrators.map((n, i) => (
-            <IsnadNode
-              key={i}
-              variant={view === 'cards' ? 'card' : view === 'flow' ? 'flow' : 'tree'}
-              index={i}
-              showLine={view === 'tree' && i < hadith.narrators.length - 1}
-              nameEn={n.name || n.name_ar}
-              nameAr={n.name_ar}
-              died={n.d}
-              role={n.role}
-              grade={n.grade}
-              gradeVariant={reliabilityBadge(n.grade)}
-              onClick={() => onNarrator(n)}
-            />
-          ))}
-        </div>
-      )}
-    </aside>
-  );
-}
-
-function narratorSource(record: NarratorRecord): string {
-  if (record.id < 0) return 'Extracted from the text · no registry entry';
-  return record.origin === 'canonical' ? 'Canonical narrator registry' : 'Rijāl registry';
-}
-
-interface NarratorFetchError {
-  id: number;
-  origin: NarratorRecord['origin'];
-  message: string;
-}
-
-function TarjamaPanel({
-  record,
-  error,
-  onClose,
-}: {
-  record: NarratorRecord;
-  error: string | null;
-  onClose: () => void;
-}) {
-  const sub = joinDots(record.kunya, record.nisba);
-  const facts: [string, string | number][] = [
-    ['Tradition', record.tradition || '—'],
-    ['Died', record.death_year || '—'],
-    ['Teachers', record.teacher_count],
-    ['Students', record.student_count],
-    ...(record.evaluator ? ([['Evaluator', record.evaluator]] as [string, string][]) : []),
-    ['Source', record.source_label || '—'],
-  ];
-  return (
-    <aside className="narrator" aria-label="Narrator biography">
-      <div className="narrator__head">
-        <p className="narrator__label">Tarjama · ترجمة</p>
-        <IconButton surface="reader" size="sm" label="Close" icon="close" onClick={onClose} />
-      </div>
-      <p className="narrator__name" dir="rtl">
-        {record.full_name}
-      </p>
-      {sub ? (
-        <p className="narrator__sub" dir="rtl">
-          {sub}
-        </p>
-      ) : null}
-      {record.reliability_term ? (
-        <div className="narrator__grade">
-          <Badge surface="reader" variant={reliabilityBadge(record.reliability_term)} dir="rtl">
-            {record.reliability_term}
-          </Badge>
-        </div>
-      ) : null}
-      <dl className="narrator__facts">
-        {facts.map(([k, v]) => (
-          <div key={k} className="narrator__fact">
-            <dt>{k}</dt>
-            <dd>{v}</dd>
-          </div>
-        ))}
-      </dl>
-      {error ? (
-        <p className="narrator__error" role="alert">
-          Biography failed to load · {error}
-        </p>
-      ) : null}
-      <p className="narrator__source">{narratorSource(record)}</p>
-    </aside>
   );
 }
 
@@ -348,6 +126,7 @@ export function ReaderScreen({
   const [narrator, setNarrator] = useState<NarratorRecord | null>(null);
   const [narratorError, setNarratorError] = useState<NarratorFetchError | null>(null);
   const [searchQ, setSearchQ] = useState(initialQuery);
+  const articleRef = useRef<HTMLElement | null>(null);
 
   // App (and the URL) own the page; reset the in-page highlight when it changes.
   useEffect(() => {
@@ -386,6 +165,23 @@ export function ReaderScreen({
     }
     return { labels, domains };
   }, [domainsRes.data]);
+
+  // The page's numbered apparatus entries gate the marker tokenizer; the
+  // markers actually found in the body decide which entries link back.
+  const entryMarkers = useMemo(() => {
+    const numbered = (pageRes.data?.footnotes ?? [])
+      .map((f) => f.marker)
+      .filter((m): m is string => m !== null);
+    return numbered.length > 0 ? new Set(numbered) : NO_MARKERS;
+  }, [pageRes.data]);
+  const linkedMarkers = useMemo(
+    () => (pageRes.data?.text_ar ? matchedMarkers(pageRes.data.text_ar, entryMarkers) : NO_MARKERS),
+    [pageRes.data, entryMarkers],
+  );
+  const jumpToEntry = (marker: string) =>
+    pulseFootnoteTarget(articleRef.current, `[data-fn-entry="${marker}"]`);
+  const jumpToMarker = (marker: string) =>
+    pulseFootnoteTarget(articleRef.current, `[data-fn-ref="${marker}"]`);
 
   const openRecord = (record: NarratorRecord) => {
     setNarrator(record);
@@ -481,7 +277,7 @@ export function ReaderScreen({
           {pageRes.loading ? <Spinner label="Loading page" /> : null}
           {pageRes.error ? <Unavailable title={title} /> : null}
           {pageData ? (
-            <article className="reader-article" data-cards={cards ? 'on' : 'off'}>
+            <article className="reader-article" data-cards={cards ? 'on' : 'off'} ref={articleRef}>
               <PageHead page={pageData} />
               <div>
                 {hadiths.length > 0 ? (
@@ -505,9 +301,17 @@ export function ReaderScreen({
                     textEn={pageData.text_en}
                     lang={lang}
                     highlight={highlight}
+                    markers={entryMarkers}
+                    onMarker={jumpToEntry}
                   />
                 ) : null}
               </div>
+              <PageFootnotes
+                footnotes={pageData.footnotes}
+                linked={linkedMarkers}
+                lang={lang}
+                onBacklink={jumpToMarker}
+              />
             </article>
           ) : null}
         </main>

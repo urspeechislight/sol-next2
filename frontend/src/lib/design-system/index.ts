@@ -90,6 +90,8 @@ export type { TocItemProps } from './components/TocItem';
 export { MatchRow } from './components/MatchRow';
 export type { MatchRowProps } from './components/MatchRow';
 
+export { FootnoteRef } from './components/FootnoteRef';
+export type { FootnoteRefProps } from './components/FootnoteRef';
 export { NarratorLink } from './components/NarratorLink';
 export type { NarratorLinkProps } from './components/NarratorLink';
 

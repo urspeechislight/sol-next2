@@ -1,4 +1,5 @@
-import { Highlight } from '../../lib/design-system';
+import { FootnoteRef, Highlight } from '../../lib/design-system';
+import { footnoteSegments } from '../../lib/footnotes';
 import type { ReaderLang } from './ReaderToolbar';
 
 const PLACEHOLDER_EN =
@@ -12,6 +13,41 @@ export interface RawPageTextProps {
   textEn: string | null;
   lang: ReaderLang;
   highlight: string;
+  /** Numbered apparatus entries on this page; body candidates outside this set stay text. */
+  markers: ReadonlySet<string>;
+  onMarker: (marker: string) => void;
+}
+
+interface ArabicBodyProps {
+  text: string;
+  highlight: string;
+  markers: ReadonlySet<string>;
+  onMarker: (marker: string) => void;
+}
+
+/** The Arabic column: footnote markers wrapped (printed glyphs kept, styled
+    gold and raised) and everything else highlighted for in-book search. The
+    marker split runs first, the search highlight inside each text segment, so
+    the two segmenters never fight over one range. */
+function ArabicBody({ text, highlight, markers, onMarker }: ArabicBodyProps) {
+  return (
+    <p className="reader-rawtext" dir="rtl">
+      {footnoteSegments(text, markers).map((seg, i) =>
+        seg.type === 'marker' ? (
+          <FootnoteRef
+            key={i}
+            label={`Footnote ${seg.marker}`}
+            refMarker={seg.marker}
+            onActivate={() => onMarker(seg.marker)}
+          >
+            {seg.value}
+          </FootnoteRef>
+        ) : (
+          <Highlight key={i} text={seg.value} query={highlight} />
+        ),
+      )}
+    </p>
+  );
 }
 
 /** Raw (un-parsed) page text, rendered for the active language mode. AR shows the
@@ -19,13 +55,19 @@ export interface RawPageTextProps {
     Arabic. The English column carries a real translation (text_en) when the corpus
     has one, or a labelled preview until then — both through the same elements, so a
     real translation drops in identically. The preview is never highlighted. */
-export function RawPageText({ textAr, textEn, lang, highlight }: RawPageTextProps) {
+export function RawPageText({
+  textAr,
+  textEn,
+  lang,
+  highlight,
+  markers,
+  onMarker,
+}: RawPageTextProps) {
+  const arabic = (
+    <ArabicBody text={textAr} highlight={highlight} markers={markers} onMarker={onMarker} />
+  );
   if (lang === 'ar') {
-    return (
-      <p className="reader-rawtext" dir="rtl">
-        <Highlight text={textAr} query={highlight} />
-      </p>
-    );
+    return arabic;
   }
   const hasEn = Boolean(textEn);
   const enText = textEn ? textEn : PLACEHOLDER_EN;
@@ -48,9 +90,7 @@ export function RawPageText({ textAr, textEn, lang, highlight }: RawPageTextProp
         <p className="reader-bi__en">
           <Highlight text={enText} query={enHighlight} />
         </p>
-        <p className="reader-rawtext" dir="rtl">
-          <Highlight text={textAr} query={highlight} />
-        </p>
+        {arabic}
       </div>
     </>
   );
