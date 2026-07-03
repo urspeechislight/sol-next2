@@ -28,6 +28,16 @@ describe('footnoteSegments', () => {
     expect(segs[1]).toEqual({ type: 'marker', value: '(1)', marker: '1' });
   });
 
+  it('should tokenize a spaced mid-line paren marker and preserve its spacing', () => {
+    const segs = footnoteSegments('وبأسرار علمهم أينعت ( 1 ) ثمار العرفان', ENTRIES);
+    expect(segs[1]).toEqual({ type: 'marker', value: '( 1 )', marker: '1' });
+  });
+
+  it('should not let a paren candidate span a line break', () => {
+    const segs = footnoteSegments('نص (\n1) بعده', ENTRIES);
+    expect(segs).toEqual([{ type: 'text', value: 'نص (\n1) بعده' }]);
+  });
+
   it('should exclude a line-start paren candidate as a leaked entry head', () => {
     const segs = footnoteSegments('سطر أول\n(1) نص حاشية مسرب\nسطر ثان «2» نهاية', ENTRIES);
     const markers = segs.filter((s) => s.type === 'marker');
@@ -50,7 +60,7 @@ describe('footnoteSegments', () => {
   });
 
   it('should round-trip the input exactly when segment values are concatenated', () => {
-    const text = 'أ «1» ب (2) ج\n(1) سطر مسرب\nد « 2 » ه (1984)';
+    const text = 'أ «1» ب (2) ج\n(1) سطر مسرب\nد « 2 » ه ( 1 ) و (1984)';
     const joined = footnoteSegments(text, ENTRIES)
       .map((s) => s.value)
       .join('');
@@ -60,7 +70,7 @@ describe('footnoteSegments', () => {
 
 describe('matchedMarkers', () => {
   it('should collect each matched number once across repeated occurrences', () => {
-    const found = matchedMarkers('«1» ثم (1) ثم «2»', ENTRIES);
+    const found = matchedMarkers('«1» ثم (1) ثم « 2 » و ( 2 )', ENTRIES);
     expect([...found].sort()).toEqual(['1', '2']);
   });
 

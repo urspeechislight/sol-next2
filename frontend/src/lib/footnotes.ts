@@ -1,18 +1,21 @@
 // footnotes.ts: the reader's footnote-marker tokenizer. Splits page text into
-// text / marker segments so the printed marker characters («1», spaced « 1 »,
-// or mid-line (1)) can be wrapped and styled WITHOUT being rewritten: copied
-// text stays byte-identical to the corpus. A candidate counts as a marker only
+// text / marker segments so the printed marker characters («1», « 1 », (1),
+// or ( 1 )) can be wrapped and styled WITHOUT being rewritten: copied text
+// stays byte-identical to the corpus. A candidate counts as a marker only
 // when its number has a numbered apparatus entry on the page (the entry-set
 // gate) and, for the paren form, when it does not open a line: a line-start
 // (N) is a digitized footnote-entry head that leaked into body text (~1% of
-// corpus pages), not a reference. Both rules were measured corpus-wide before
-// freezing (2026-07-03 dry run over 3.2M numbered footnote pages). Pure.
+// corpus pages), not a reference. Both paren spacings are real: measured
+// corpus-wide (2026-07-03 dry runs over 3.2M numbered footnote pages), the
+// spaced body form ( 1 ) is nearly as common as the tight form, while
+// footnote-field entry heads are always tight. Inner space tolerance is
+// horizontal only, so a candidate never spans a line break. Pure.
 
 export type FootnoteSegment =
   | { type: 'text'; value: string }
   | { type: 'marker'; value: string; marker: string };
 
-const CANDIDATE = /«\s*(\d+)\s*»|\((\d+)\)/g;
+const CANDIDATE = /«[ \t]*(\d+)[ \t]*»|\([ \t]*(\d+)[ \t]*\)/g;
 
 function opensLine(text: string, index: number): boolean {
   const lineStart = text.lastIndexOf('\n', index - 1) + 1;
