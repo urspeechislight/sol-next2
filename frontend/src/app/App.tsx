@@ -48,6 +48,7 @@ interface AppContentProps {
   scope: SearchScope;
   view: NavView;
   lib: LibScope;
+  quranFocus: { surah: number; aya: number } | null;
   runSearch: (next: string, nextScope: SearchScope) => void;
   openReader: (urn: string, page?: number, q?: string) => void;
   contentFilters: ContentFilters;
@@ -61,6 +62,7 @@ function AppContent({
   scope,
   view,
   lib,
+  quranFocus,
   runSearch,
   openReader,
   contentFilters,
@@ -87,7 +89,7 @@ function AppContent({
           onOpenReader={openReader}
         />
       ) : null}
-      {view === 'quran' ? <QuranScreen query={submitted} /> : null}
+      {view === 'quran' ? <QuranScreen query={submitted} focus={quranFocus} /> : null}
       {view === 'graph' ? <GraphScreen /> : null}
       {view === 'design' ? <DesignSystemScreen /> : null}
     </>
@@ -116,6 +118,7 @@ export function App() {
   const [reading, setReading] = useState<Reading | null>(
     initial.reading ? { ...initial.reading } : null,
   );
+  const [quranFocus, setQuranFocus] = useState(initial.focus);
 
   useEffect(() => {
     if (reading) saveReading(reading.urn, reading.page);
@@ -135,6 +138,7 @@ export function App() {
         cat: lib.cat,
         dom: lib.dom,
         reading: null,
+        focus: view === 'quran' ? quranFocus : null,
         ...contentFilters.route,
       };
   const applyRoute = useCallback(
@@ -145,11 +149,22 @@ export function App() {
       setSubmitted(next.reading ? '' : next.query);
       setLib({ cat: next.cat, dom: next.dom });
       setReading(next.reading ? { ...next.reading } : null);
+      setQuranFocus(next.focus);
       contentFilters.restore(next);
     },
     [contentFilters.restore],
   );
   useHashRoute(route, applyRoute);
+
+  // A Qurʾān citation in the reader closes the takeover and opens the Qurʾān
+  // view focused on that verse.
+  const openVerse = (surah: number, aya: number) => {
+    setReading(null);
+    setView('quran');
+    setQuery('');
+    setSubmitted('');
+    setQuranFocus({ surah, aya });
+  };
 
   if (reading) {
     return (
@@ -159,6 +174,7 @@ export function App() {
         initialQuery={reading.query}
         onPage={(p) => setReading((r) => (r ? { ...r, page: p } : r))}
         onVolume={(u) => setReading((r) => (r ? { ...r, urn: u, page: 1 } : r))}
+        onCite={openVerse}
         onBack={() => setReading(null)}
       />
     );
@@ -170,6 +186,7 @@ export function App() {
     setQuery('');
     setSubmitted('');
     setLib({ cat: '', dom: '' });
+    setQuranFocus(null);
     contentFilters.reset();
   };
   // Typing only updates the field; clearing it closes the results. Enter commits.
@@ -215,6 +232,7 @@ export function App() {
         scope={scope}
         view={view}
         lib={lib}
+        quranFocus={quranFocus}
         runSearch={runSearch}
         openReader={openReader}
         contentFilters={contentFilters.filters}

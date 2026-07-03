@@ -15,6 +15,7 @@ import type {
   Daily,
   Domain,
   Page,
+  QuranCitation,
   RijalEntry,
   SearchFacets,
   SearchMode,
@@ -112,6 +113,14 @@ export function getBookVolumes(urn: string): Promise<Book[]> {
 
 export function getPage(urn: string, pageNumber: number): Promise<BookPage> {
   return get<BookPage>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.PAGES}/${pageNumber}`);
+}
+
+/** Verse-verified Qur'an citations located in a page's Arabic text: the
+    auto-linkable set from the citation sidecar, each anchored by character
+    offset so the reader can link the printed reference in place. */
+export function getPageCitations(urn: string, pageNumber: number): Promise<QuranCitation[]> {
+  const path = `${API.BOOKS}/${encodeURIComponent(urn)}${API.PAGES}/${pageNumber}${API.CITATIONS}`;
+  return get<QuranCitation[]>(path);
 }
 
 export function searchBook(

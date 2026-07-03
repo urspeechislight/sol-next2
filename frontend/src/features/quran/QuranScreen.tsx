@@ -54,13 +54,15 @@ export interface QuranScreenProps {
   /** The header's sūra-scoped search term (submitted, not live): filters the
       open sūra's āyāt in place; '' shows the whole sūra. */
   query?: string;
+  /** A verse to open focused, e.g. from a citation link in the reader. */
+  focus?: { surah: number; aya: number } | null;
 }
 
 /** The dedicated Qurʾān reader: a surah rail with the shared Qurʾān finder,
     verse cards on the reader surface (filterable in place by the header's
     sūra-scoped search), and a bottom research drawer (tafsīr, lexicon,
     morphology) that opens from any verse. */
-export function QuranScreen({ query = '' }: QuranScreenProps) {
+export function QuranScreen({ query = '', focus = null }: QuranScreenProps) {
   const { dark } = useTheme();
   const [surahN, setSurahN] = useState(SURAH_MIN);
   const [lang, setLang] = useState<QuranLang>('both');
@@ -72,11 +74,22 @@ export function QuranScreen({ query = '' }: QuranScreenProps) {
   const res = useAsync<Surah>(() => getSurah(surahN), [surahN]);
   const name = surahName(surahN);
 
-  const goSurah = (n: number, focus: number | null = null) => {
+  const goSurah = (n: number, focusAya: number | null = null) => {
     setSurahN(clamp(n, SURAH_MIN, SURAH_MAX));
     setSelected(null);
-    setFocusAyah(focus);
+    setFocusAyah(focusAya);
   };
+
+  // A citation link (or any external focus) opens that sūra with the āya set as
+  // the scroll target; keyed on the primitives so it fires once per verse.
+  const focusSurah = focus?.surah ?? null;
+  const focusAya = focus?.aya ?? null;
+  useEffect(() => {
+    if (focusSurah === null || focusAya === null) return;
+    setSurahN(clamp(focusSurah, SURAH_MIN, SURAH_MAX));
+    setSelected(null);
+    setFocusAyah(focusAya);
+  }, [focusSurah, focusAya]);
 
   const q = query.trim();
   const verses = res.data?.verses ?? [];

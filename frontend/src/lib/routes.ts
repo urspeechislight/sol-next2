@@ -17,6 +17,7 @@ export const API = {
   TOC: '/toc',
   PAGES: '/pages',
   VOLUMES: '/volumes',
+  CITATIONS: '/citations',
   SEARCH: '/search',
   FACETS: '/facets',
   QURAN: '/quran',
@@ -60,6 +61,9 @@ export interface RouteState {
   mode: string;
   categories: string[];
   book: string;
+  /** Qurʾān deep-link: the verse to open focused (e.g. from a citation link in
+      the reader). Only meaningful, and only serialized, when view === 'quran'. */
+  focus: { surah: number; aya: number } | null;
 }
 
 function isNavView(value: string): value is NavView {
@@ -78,6 +82,7 @@ export const EMPTY_ROUTE: Omit<RouteState, 'view'> = {
   mode: SEARCH.DEFAULT_MODE,
   categories: [],
   book: '',
+  focus: null,
 };
 
 /** The reader's path segment (no query string): shared by readingHref below
@@ -123,6 +128,10 @@ export function buildHash(state: RouteState): string {
     if (state.cat) params.set('cat', state.cat);
     else if (state.dom) params.set('dom', state.dom);
   }
+  if (state.view === 'quran' && state.focus) {
+    params.set('s', String(state.focus.surah));
+    params.set('a', String(state.focus.aya));
+  }
   const qs = params.toString();
   return `#${path}${qs ? `?${qs}` : ''}`;
 }
@@ -162,6 +171,8 @@ export function parseHash(hash: string): RouteState {
       },
     };
   }
+  const surah = Number(params.get('s'));
+  const aya = Number(params.get('a'));
   const view = segments[0] ?? DEFAULT_VIEW;
   const resolved = isNavView(view) ? view : DEFAULT_VIEW;
   return {
@@ -174,5 +185,7 @@ export function parseHash(hash: string): RouteState {
     mode: params.get('mode') ?? SEARCH.DEFAULT_MODE,
     categories: params.getAll('category'),
     book: fromBase64Url(params.get('book') ?? ''),
+    focus:
+      resolved === 'quran' && surah >= 1 && aya >= 1 ? { surah, aya } : null,
   };
 }

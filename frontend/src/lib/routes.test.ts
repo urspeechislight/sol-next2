@@ -14,6 +14,7 @@ const reader: RouteState = {
   mode: 'exact',
   categories: [],
   book: '',
+  focus: null,
 };
 
 const home: RouteState = {
@@ -26,6 +27,7 @@ const home: RouteState = {
   mode: 'exact',
   categories: [],
   book: '',
+  focus: null,
 };
 
 describe('routes hash SSOT', () => {
@@ -79,6 +81,12 @@ describe('routes hash SSOT', () => {
 
   test('should ignore library scope params on other views', () => {
     expect(parseHash('#/graph?cat=shia-hadith-general')).toEqual({ ...home, view: 'graph' });
+  });
+
+  test('should round-trip a Qurʾān verse deep-link', () => {
+    const focused: RouteState = { ...home, view: 'quran', focus: { surah: 2, aya: 255 } };
+    expect(buildHash(focused)).toBe('#/quran?s=2&a=255');
+    expect(parseHash('#/quran?s=2&a=255')).toEqual(focused);
   });
 
   test('should fall back to the default view for unknown or empty hashes', () => {

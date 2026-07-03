@@ -85,6 +85,15 @@
   width: 12px;
   height: 12px;
 }
+
+/* A multi-volume work can run past a hundred volumes (Bihar al-Anwar: 110).
+   The switcher popover holds a fixed height and scrolls internally, opening
+   centred on the current volume, so every volume stays reachable and the
+   list never bleeds past the viewport. */
+.reader-badge-menu .ds-menu__list {
+  max-height: min(340px, 60vh);
+  overflow-y: auto;
+}
 .reader-badge--cat {
   color: var(--color-reader-honorific);
   border-color: color-mix(in oklch, var(--color-reader-honorific) 40%, var(--color-reader-rule));
@@ -164,13 +173,36 @@
 }
 
 /* Raw page text, shown when the page has no parsed hadiths yet (BookPage.text_ar).
-   Scales with the reader size control; line breaks in the corpus text are kept. */
+   One paragraph per display block from lib/paragraphs: structural breaks keep
+   their boundary, print-margin newlines stay in the text and collapse under
+   normal whitespace so prose flows at any column width. Scales with the size
+   control. */
 .reader-rawtext {
   margin: 0;
   font-family: var(--font-ar);
   font-size: var(--reader-size);
   line-height: 2;
-  white-space: pre-wrap;
+  white-space: normal;
+}
+.reader-rawtext + .reader-rawtext {
+  margin-top: var(--space-md);
+}
+
+/* Qurʾān citation link: the printed reference glyphs kept in place, marked as a
+   verse link (dotted underline in the honorific colour) that opens the Qurʾān
+   reader at that verse. */
+.reader-cite {
+  font: inherit;
+  color: var(--color-reader-honorific);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.reader-cite:hover {
+  color: var(--color-reader-progress);
 }
 
 /* Bilingual raw page text: English (serif) left, Arabic right, for the EN | AR

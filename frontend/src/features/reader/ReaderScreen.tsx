@@ -8,6 +8,7 @@ import {
   getCanonicalEntry,
   getRijalEntry,
   getPage,
+  getPageCitations,
   getToc,
   searchBook,
 } from '../../lib/api/client';
@@ -22,6 +23,7 @@ import type {
   Narrator,
   NarratorRecord,
   Page,
+  QuranCitation,
 } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { useDomains } from '../../lib/useDomains';
@@ -42,6 +44,7 @@ import './NarratorTarjama.css';
 const MIN_QUERY = 2;
 const EMPTY_MATCHES: Page<BookSearchMatch> = { items: [], total: 0, limit: 0, offset: 0 };
 const NO_MARKERS: ReadonlySet<string> = new Set<string>();
+const EMPTY_CITATIONS: QuranCitation[] = [];
 
 /** Promote a served narrator to a registry-shaped record. A linked narrator
     carries its registry id (resolved at build time); the click handler then
@@ -104,6 +107,8 @@ export interface ReaderScreenProps {
   onPage: (page: number) => void;
   /** Open a sibling volume of the same work (from the masthead's volume menu). */
   onVolume: (urn: string) => void;
+  /** Open the Qurʾān reader focused on a verse (from an in-text citation link). */
+  onCite: (surah: number, aya: number) => void;
   onBack: () => void;
 }
 
@@ -113,6 +118,7 @@ export function ReaderScreen({
   initialQuery = '',
   onPage,
   onVolume,
+  onCite,
   onBack,
 }: ReaderScreenProps) {
   const { dark } = useTheme();
@@ -138,6 +144,7 @@ export function ReaderScreen({
   const tocRes = useAsync(() => getToc(urn), [urn]);
   const domainsRes = useDomains();
   const pageRes = useAsync<BookPage>(() => getPage(urn, page), [urn, page]);
+  const citationsRes = useAsync<QuranCitation[]>(() => getPageCitations(urn, page), [urn, page]);
   const searchRes = useAsync<Page<BookSearchMatch>>(
     () =>
       searchQ.trim().length >= MIN_QUERY
@@ -303,6 +310,8 @@ export function ReaderScreen({
                     highlight={highlight}
                     markers={entryMarkers}
                     onMarker={jumpToEntry}
+                    citations={citationsRes.data ?? EMPTY_CITATIONS}
+                    onCite={onCite}
                   />
                 ) : null}
               </div>
