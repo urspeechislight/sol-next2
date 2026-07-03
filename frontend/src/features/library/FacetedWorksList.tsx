@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Button, Text } from '../../lib/design-system';
+import { LoadMoreFoot } from '../../lib/LoadMoreFoot';
 import { LIBRARY } from '../../lib/constants';
 import type { Work } from '../../lib/types';
+import { countLabel, formatCount } from '../../lib/utils';
 import { Apparatus } from './Apparatus';
 import { FilterBar } from './FilterBar';
 import { WorkRecord } from './WorkRecord';
-import { countLabel, groupByEra } from './lib';
+import { groupByEra } from './lib';
 import { DEFAULT_FILTERS, applyFilters } from './worksFilter';
 import type { Filters, SortMode } from './worksFilter';
 
@@ -83,9 +84,7 @@ function EraSections({ works, allFiltered, onOpen }: EraSectionsProps) {
     <div className="cpane__eras">
       {groups.map((g) => (
         <section key={g.century} className="cpane__era">
-          <Apparatus
-            marginalia={`${(fullCounts.get(g.century) ?? g.works.length).toLocaleString()}`}
-          >
+          <Apparatus marginalia={formatCount(fullCounts.get(g.century) ?? g.works.length)}>
             {g.labelEn} · {g.labelAr}
           </Apparatus>
           <div className="wrows">
@@ -109,18 +108,9 @@ interface ListFootProps {
 
 /** The honesty line + load-more: always says how much of what is on screen. */
 function ListFoot({ shown, matched, fetched, total, onMore }: ListFootProps) {
-  return (
-    <footer className="cpane__foot">
-      <Text size="xs" tone="faint" font="mono">
-        Showing {shown.toLocaleString()} of {matched.toLocaleString()}
-        {matched !== fetched ? ` matching (${fetched.toLocaleString()} in scope)` : ''}
-        {fetched < total ? ` · ${countLabel(total, 'work')} on the server` : ''}
-      </Text>
-      {shown < matched ? (
-        <Button variant="secondary" size="sm" onClick={onMore}>
-          Show more
-        </Button>
-      ) : null}
-    </footer>
-  );
+  const line =
+    `Showing ${formatCount(shown)} of ${formatCount(matched)}` +
+    (matched !== fetched ? ` matching (${formatCount(fetched)} in scope)` : '') +
+    (fetched < total ? ` · ${countLabel(total, 'work')} on the server` : '');
+  return <LoadMoreFoot line={line} hasMore={shown < matched} onMore={onMore} />;
 }

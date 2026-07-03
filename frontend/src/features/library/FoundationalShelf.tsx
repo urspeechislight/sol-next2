@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Dots, NavArrow, Spinner, Text, UnstyledButton } from '../../lib/design-system';
+import { Dots, NavArrow, UnstyledButton } from '../../lib/design-system';
+import { DataView } from '../../lib/DataView';
 import { getToc, getWorks } from '../../lib/api/client';
 import { PAGE } from '../../lib/constants';
 import type { Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
-import { deathLabel } from '../../lib/utils';
+import { deathLabel, joinDots, volumesLabel } from '../../lib/utils';
 import { Apparatus } from './Apparatus';
 import { shelfOrder, shelfPolicy } from './shelf';
 import './FoundationalShelf.css';
@@ -50,37 +51,39 @@ export function FoundationalShelf({ domain, category, tradition, onOpen }: Found
   const [idx, setIdx] = useState(0);
   useEffect(() => setIdx(0), [works.length]);
 
-  if (res.loading) return <Spinner label="Fetching the foundational works" />;
-  if (res.error) {
-    return (
-      <Text as="p" size="sm" tone="danger">
-        Could not load the foundational works: {res.error.message}
-      </Text>
-    );
-  }
-  if (works.length === 0) return null;
-
-  const work = works[Math.min(idx, works.length - 1)];
+  const work = works.length > 0 ? works[Math.min(idx, works.length - 1)] : null;
   const go = (delta: number) => setIdx((i) => (i + delta + works.length) % works.length);
   return (
-    <section className="shelf" aria-label="Foundational works">
-      <Apparatus marginalia={`${idx + 1} / ${works.length}`}>
-        Foundational works · أمهات الكتب
-      </Apparatus>
-      <ShelfStage work={work} onOpen={onOpen} />
-      {works.length > 1 ? (
-        <footer className="shelf__foot">
-          <NavArrow direction="back" label="Previous work" onClick={() => go(-1)} />
-          <Dots
-            count={works.length}
-            active={idx}
-            labelFor={(i) => `Show ${works[i].title_en ?? works[i].title_ar}`}
-            onPick={setIdx}
-          />
-          <NavArrow direction="forward" label="Next work" onClick={() => go(1)} />
-        </footer>
-      ) : null}
-    </section>
+    <DataView
+      result={res}
+      loadingLabel="Fetching the foundational works"
+      errorText="Could not load the foundational works"
+      isEmpty={(data) => data.works.length === 0}
+      renderEmpty={() => null}
+    >
+      {() =>
+        work ? (
+          <section className="shelf" aria-label="Foundational works">
+            <Apparatus marginalia={`${idx + 1} / ${works.length}`}>
+              Foundational works · أمهات الكتب
+            </Apparatus>
+            <ShelfStage work={work} onOpen={onOpen} />
+            {works.length > 1 ? (
+              <footer className="shelf__foot">
+                <NavArrow direction="back" label="Previous work" onClick={() => go(-1)} />
+                <Dots
+                  count={works.length}
+                  active={idx}
+                  labelFor={(i) => `Show ${works[i].title_en ?? works[i].title_ar}`}
+                  onPick={setIdx}
+                />
+                <NavArrow direction="forward" label="Next work" onClick={() => go(1)} />
+              </footer>
+            ) : null}
+          </section>
+        ) : null
+      }
+    </DataView>
   );
 }
 
@@ -112,8 +115,7 @@ function ShelfStage({ work, onOpen }: ShelfStageProps) {
         {work.title_en ? <span className="shelf__en">{work.title_en}</span> : null}
         <span className="shelf__author">{work.author ?? work.author_ar}</span>
         <span className="shelf__meta">
-          {deathLabel(work.death_year_ah)}
-          {work.volume_count > 1 ? ` · ${work.volume_count} vols` : ''}
+          {joinDots(deathLabel(work.death_year_ah), volumesLabel(work.volume_count))}
         </span>
         <span className="shelf__go">Open the book →</span>
       </UnstyledButton>

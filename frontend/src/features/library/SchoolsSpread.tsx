@@ -1,10 +1,12 @@
-import { Spinner, Text, UnstyledButton } from '../../lib/design-system';
+import { UnstyledButton } from '../../lib/design-system';
+import { DataView } from '../../lib/DataView';
 import { getWorks } from '../../lib/api/client';
 import { LIBRARY } from '../../lib/constants';
 import type { Category, Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
+import { countLabel } from '../../lib/utils';
 import { Apparatus } from './Apparatus';
-import { countLabel, dedupeEditions } from './lib';
+import { dedupeEditions } from './lib';
 import { WorkRecord } from './WorkRecord';
 import './SchoolsSpread.css';
 
@@ -80,19 +82,19 @@ interface SectionBodyProps {
 /** The section's rows in their three honest states: fetching, failed (loud,
     per no-silent-fallback), or the leading works as catalog rows. */
 function SectionBody({ works, loading, error, onOpen }: SectionBodyProps) {
-  if (loading) return <Spinner label="Fetching the leading works" />;
-  if (error || !works) {
-    return (
-      <Text as="p" size="sm" tone="danger">
-        Could not load this category&apos;s works{error ? `: ${error.message}` : ''}.
-      </Text>
-    );
-  }
   return (
-    <div className="spread__rows">
-      {works.map((w) => (
-        <WorkRecord key={w.stem} work={w} onOpen={onOpen} />
-      ))}
-    </div>
+    <DataView
+      result={{ data: works, error, loading }}
+      loadingLabel="Fetching the leading works"
+      errorText="Could not load this category's works"
+    >
+      {(data) => (
+        <div className="spread__rows">
+          {data.map((w) => (
+            <WorkRecord key={w.stem} work={w} onOpen={onOpen} />
+          ))}
+        </div>
+      )}
+    </DataView>
   );
 }

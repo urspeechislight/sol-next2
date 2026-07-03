@@ -1,6 +1,6 @@
 import { UnstyledButton } from '../../lib/design-system';
 import type { Work } from '../../lib/types';
-import { deathLabel } from '../../lib/utils';
+import { deathLabel, joinDots, volumesLabel } from '../../lib/utils';
 import './WorkRecord.css';
 
 export interface WorkRecordProps {
@@ -15,13 +15,7 @@ export interface WorkRecordProps {
     death year, a gold mark for foundational works), Arabic title on the spine
     side. The single row renderer for every library listing. */
 export function WorkRecord({ work, section, onOpen }: WorkRecordProps) {
-  const meta = [
-    work.volume_count > 1 ? `${work.volume_count} vols` : null,
-    deathLabel(work.death_year_ah) || null,
-    section ?? null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const meta = joinDots(volumesLabel(work.volume_count), deathLabel(work.death_year_ah), section);
   return (
     <UnstyledButton
       className="wrow"

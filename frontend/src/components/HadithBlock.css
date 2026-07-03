@@ -129,21 +129,3 @@
   letter-spacing: 0.04em;
   font-weight: var(--weight-semibold);
 }
-.ref-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: var(--text-xs);
-  padding: 3px 8px;
-  background: var(--color-reader-pill-bg);
-  color: var(--color-reader-pill-fg);
-  border: 1px solid var(--color-reader-rule);
-  border-radius: var(--radius-pill);
-}
-.ref-pill__ar {
-  font-family: var(--font-ar);
-}
-.ref-pill__pg {
-  color: var(--color-reader-muted);
-  font-family: var(--font-mono);
-}

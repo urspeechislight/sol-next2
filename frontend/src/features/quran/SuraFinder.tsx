@@ -1,13 +1,13 @@
 import { useState } from 'react';
 
-import { Button, Highlight, Input, Spinner, Text, UnstyledButton } from '../../lib/design-system';
+import { Highlight, Input, Spinner, Text, UnstyledButton } from '../../lib/design-system';
+import { LoadMoreFoot } from '../../lib/LoadMoreFoot';
 import { searchQuran } from '../../lib/api/client';
 import { PAGE } from '../../lib/constants';
 import { SURAHS, matchSurahs, parseVerseRef, surahName } from '../../lib/surahs';
 import type { VerseRef } from '../../lib/surahs';
 import { usePaged } from '../../lib/usePaged';
-import { countLabel } from '../library/lib';
-import { cx } from '../../lib/utils';
+import { countLabel, cx, formatCount } from '../../lib/utils';
 import './SuraFinder.css';
 
 const EMPTY_PAGE = { items: [], total: 0, limit: 0, offset: 0 };
@@ -118,17 +118,15 @@ export function SuraFinder({ currentSurah, onPick, onJump }: SuraFinderProps) {
             ))}
           </ul>
           {verses.total !== null && verses.total > 0 ? (
-            <footer className="qfind__foot">
-              <Text size="xs" tone="faint" font="mono">
-                Showing {verses.items.length.toLocaleString()} of{' '}
-                {countLabel(verses.total, 'verse')}
-              </Text>
-              {!verses.loading && verses.hasMore ? (
-                <Button variant="link" onClick={verses.more}>
-                  More
-                </Button>
-              ) : null}
-            </footer>
+            <LoadMoreFoot
+              line={`Showing ${formatCount(verses.items.length)} of ${countLabel(verses.total, 'verse')}`}
+              loading={verses.loading}
+              spinnerLabel="Loading more verses"
+              hasMore={verses.hasMore}
+              onMore={verses.more}
+              moreLabel="More"
+              moreVariant="link"
+            />
           ) : null}
         </div>
       ) : (

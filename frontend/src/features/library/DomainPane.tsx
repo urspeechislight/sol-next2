@@ -2,7 +2,9 @@ import { Heading, Icon, Text } from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
 import { FoundationalShelf } from './FoundationalShelf';
 import { SchoolsSpread } from './SchoolsSpread';
-import { countLabel, domainIcon, sumCount, visibleCategories } from './lib';
+import { sumCount } from '../../lib/taxonomy';
+import { countLabel } from '../../lib/utils';
+import { domainIcon, visibleCategories } from './lib';
 import type { TraditionLens } from './lib';
 
 export interface DomainPaneProps {

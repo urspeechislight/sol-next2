@@ -1,6 +1,26 @@
 import type { ReactNode } from 'react';
 import { Spinner, Text } from './design-system';
 
+/** The one danger-toned error line. DataView renders it for failed loads and
+    ResultsFrame for failed searches, so an error can't read muted in one
+    surface and danger in another. */
+export function ErrorText({ children }: { children: ReactNode }) {
+  return (
+    <Text as="p" size="sm" tone="danger">
+      {children}
+    </Text>
+  );
+}
+
+/** The one muted empty-state line, shared the same way. */
+export function EmptyText({ children }: { children: ReactNode }) {
+  return (
+    <Text as="p" size="sm" tone="muted">
+      {children}
+    </Text>
+  );
+}
+
 /** The shape useAsync returns (data | error | loading), accepted structurally so
     a screen holding the pieces as separate props can pass `{ data, error, loading }`. */
 export interface AsyncLike<T> {
@@ -50,19 +70,15 @@ export function DataView<T>({
   if (result.error) {
     if (renderError) return <>{renderError(result.error)}</>;
     return (
-      <Text as="p" size="sm" tone="danger">
+      <ErrorText>
         {errorText ?? 'Could not load this'}: {result.error.message}
-      </Text>
+      </ErrorText>
     );
   }
   if (result.data === null) return null;
   if (isEmpty?.(result.data)) {
     if (renderEmpty) return <>{renderEmpty()}</>;
-    return (
-      <Text as="p" size="sm" tone="muted">
-        {emptyText ?? 'Nothing here yet.'}
-      </Text>
-    );
+    return <EmptyText>{emptyText ?? 'Nothing here yet.'}</EmptyText>;
   }
   return <>{children(result.data)}</>;
 }

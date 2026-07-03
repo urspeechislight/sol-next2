@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cx } from '../../utils';
+import { cx, formatCount } from '../../utils';
 import { Icon } from './Icon';
 import './Checkbox.css';
 
@@ -36,9 +36,7 @@ export function Checkbox({ checked, onToggle, children, count, ariaLabel }: Chec
         {checked === 'mixed' ? <span className="ds-checkbox__dash" /> : null}
       </span>
       <span className="ds-checkbox__label">{children}</span>
-      {count !== undefined ? (
-        <span className="ds-checkbox__n">{count.toLocaleString()}</span>
-      ) : null}
+      {count !== undefined ? <span className="ds-checkbox__n">{formatCount(count)}</span> : null}
     </button>
   );
 }

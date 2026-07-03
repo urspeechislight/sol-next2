@@ -10,7 +10,9 @@ import {
 } from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
 import { viewHref } from '../../lib/routes';
-import { corpusTotals, domainIcon, sumCount, visibleCategories } from './lib';
+import { corpusTotals, sumCount } from '../../lib/taxonomy';
+import { formatCount } from '../../lib/utils';
+import { domainIcon, visibleCategories } from './lib';
 import type { TraditionLens } from './lib';
 
 const TRADITIONS = [
@@ -34,14 +36,14 @@ function CategoryRow({ slug, label, labelAr, count, active, onPick }: CategoryRo
       href={viewHref('library')}
       className={active ? 'fih-cat fih-cat--on' : 'fih-cat'}
       ariaCurrent={active}
-      ariaLabel={`${label}, ${count.toLocaleString()} works`}
+      ariaLabel={`${label}, ${formatCount(count)} works`}
       onActivate={() => onPick(slug)}
     >
       <span className="fih-cat__en">{label}</span>
       <span className="fih-cat__ar" dir="rtl">
         {labelAr}
       </span>
-      <span className="fih-cat__n">{count.toLocaleString()}</span>
+      <span className="fih-cat__n">{formatCount(count)}</span>
     </Link>
   );
 }
@@ -82,7 +84,7 @@ function DomainGroup({
           href={viewHref('library')}
           className="fih-dom__sel"
           ariaCurrent={active}
-          ariaLabel={`${domain.label}, ${count.toLocaleString()} works`}
+          ariaLabel={`${domain.label}, ${formatCount(count)} works`}
           onActivate={() => onSelect(domain.id)}
         >
           <Icon name={domainIcon(domain.id)} size="sm" />
@@ -90,7 +92,7 @@ function DomainGroup({
           <span className="fih-dom__ar" dir="rtl">
             {domain.label_ar}
           </span>
-          <span className="fih-dom__n">{count.toLocaleString()}</span>
+          <span className="fih-dom__n">{formatCount(count)}</span>
         </Link>
         <UnstyledButton
           className="fih-dom__chev"
@@ -165,7 +167,7 @@ export function FihristRail({
           The Library · الفِهرِست
         </Text>
         <Text as="p" size="xs" tone="faint" font="mono" className="fih-mast__stat">
-          {t.works.toLocaleString()} works · {t.volumes.toLocaleString()} volumes · {t.domains}{' '}
+          {formatCount(t.works)} works · {formatCount(t.volumes)} volumes · {t.domains}{' '}
           domains · {t.categories} categories
         </Text>
       </header>
@@ -193,7 +195,7 @@ export function FihristRail({
         onActivate={onReset}
       >
         <span>All works</span>
-        <span className="fih-all__n">{t.works.toLocaleString()}</span>
+        <span className="fih-all__n">{formatCount(t.works)}</span>
       </Link>
       <nav className="fih-doms" aria-label="Domains">
         {domains.map((d) => (

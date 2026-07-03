@@ -105,6 +105,9 @@ export type { SourceRecordProps } from './components/SourceRecord';
 export { IndexRow } from './components/IndexRow';
 export type { IndexRowProps } from './components/IndexRow';
 
+export { RefPill } from './components/RefPill';
+export type { RefPillProps } from './components/RefPill';
+
 export { FacetChip } from './primitives/FacetChip';
 export type { FacetChipProps } from './primitives/FacetChip';
 

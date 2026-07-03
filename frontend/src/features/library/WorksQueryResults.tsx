@@ -1,13 +1,15 @@
-import { Button, Spinner, Text } from '../../lib/design-system';
+import { Text } from '../../lib/design-system';
+import { DataView, ErrorText } from '../../lib/DataView';
+import { LoadMoreFoot } from '../../lib/LoadMoreFoot';
 import { getWorks } from '../../lib/api/client';
 import { LIBRARY, PAGE } from '../../lib/constants';
 import type { Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { usePaged } from '../../lib/usePaged';
+import { countLabel, formatCount } from '../../lib/utils';
 import { Apparatus } from './Apparatus';
 import { FacetedWorksList } from './FacetedWorksList';
 import { WorkRecord } from './WorkRecord';
-import { countLabel } from './lib';
 
 export interface WorksQueryResultsProps {
   q: string;
@@ -56,34 +58,25 @@ export function WorksQueryResults({ q, tradition = '', onOpen }: WorksQueryResul
     return { works: items, total: first.total };
   }, [q, tradition]);
 
-  if (probe.loading) return <Spinner label="Searching the works" />;
-  if (probe.error) {
-    return (
-      <Text as="p" size="sm" tone="danger">
-        Works search is unavailable: {probe.error.message}
-      </Text>
-    );
-  }
-  if (!probe.data) return null;
-
-  const { works, total } = probe.data;
-  if (total === 0) {
-    return (
-      <Text as="p" size="sm" tone="muted">
-        No works match “{q.trim()}”. Titles and authors are searched; the Content scope looks inside
-        the books.
-      </Text>
-    );
-  }
   return (
-    <div className="works">
-      <Apparatus marginalia={countLabel(total, 'work')}>Works · المصنّفات</Apparatus>
-      {works ? (
-        <FacetedWorksList works={works} total={total} defaultSort="canonical" onOpen={onOpen} />
-      ) : (
-        <RankedPages q={q.trim()} tradition={tradition} total={total} onOpen={onOpen} />
+    <DataView
+      result={probe}
+      loadingLabel="Searching the works"
+      errorText="Works search is unavailable"
+      isEmpty={(data) => data.total === 0}
+      emptyText={`No works match “${q.trim()}”. Titles and authors are searched; the Content scope looks inside the books.`}
+    >
+      {({ works, total }) => (
+        <div className="works">
+          <Apparatus marginalia={countLabel(total, 'work')}>Works · المصنّفات</Apparatus>
+          {works ? (
+            <FacetedWorksList works={works} total={total} defaultSort="canonical" onOpen={onOpen} />
+          ) : (
+            <RankedPages q={q.trim()} tradition={tradition} total={total} onOpen={onOpen} />
+          )}
+        </div>
       )}
-    </div>
+    </DataView>
   );
 }
 
@@ -106,29 +99,21 @@ function RankedPages({ q, tradition, total, onOpen }: RankedPagesProps) {
     <>
       <Text as="p" size="sm" tone="muted">
         Too many matches to facet: era and foundational filters come with a query under{' '}
-        {LIBRARY.assembleMax.toLocaleString()} matches. Showing the canonical ranking in pages.
+        {formatCount(LIBRARY.assembleMax)} matches. Showing the canonical ranking in pages.
       </Text>
-      {res.error ? (
-        <Text as="p" size="sm" tone="danger">
-          Works search is unavailable: {res.error.message}
-        </Text>
-      ) : null}
+      {res.error ? <ErrorText>Works search is unavailable: {res.error.message}</ErrorText> : null}
       <div className="wrows">
         {res.items.map((w) => (
           <WorkRecord key={w.stem} work={w} onOpen={onOpen} />
         ))}
       </div>
-      <footer className="cpane__foot">
-        <Text size="xs" tone="faint" font="mono">
-          Showing {res.items.length.toLocaleString()} of {countLabel(total, 'work')}
-        </Text>
-        {res.loading ? <Spinner label="Loading more works" /> : null}
-        {!res.loading && res.hasMore ? (
-          <Button variant="secondary" size="sm" onClick={res.more}>
-            Show more
-          </Button>
-        ) : null}
-      </footer>
+      <LoadMoreFoot
+        line={`Showing ${formatCount(res.items.length)} of ${countLabel(total, 'work')}`}
+        loading={res.loading}
+        spinnerLabel="Loading more works"
+        hasMore={res.hasMore}
+        onMore={res.more}
+      />
     </>
   );
 }

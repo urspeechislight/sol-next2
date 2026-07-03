@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
-import { Spinner, Stack, Text } from '../../lib/design-system';
+import { Spinner, Stack } from '../../lib/design-system';
+import { EmptyText, ErrorText } from '../../lib/DataView';
 import { SearchFilters } from './SearchFilters';
 import type { SearchFiltersProps } from './SearchFilters';
 import './SearchResults.css';
@@ -43,16 +44,8 @@ export function ResultsFrame({
       <SearchFilters {...filters} />
       {map}
       {loading ? <Spinner label={loadingLabel} /> : null}
-      {error ? (
-        <Text as="p" size="sm" tone="muted">
-          {error}
-        </Text>
-      ) : null}
-      {empty ? (
-        <Text as="p" size="sm" tone="muted">
-          {empty}
-        </Text>
-      ) : null}
+      {error ? <ErrorText>{error}</ErrorText> : null}
+      {empty ? <EmptyText>{empty}</EmptyText> : null}
       {children}
       {foot}
     </Stack>

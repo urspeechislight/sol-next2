@@ -1,9 +1,10 @@
-import { Spinner, Text } from '../../lib/design-system';
+import { Spinner } from '../../lib/design-system';
+import { DataView } from '../../lib/DataView';
 import type { Work } from '../../lib/types';
+import { countLabel } from '../../lib/utils';
 import { FacetedWorksList } from './FacetedWorksList';
 import { FoundationalShelf } from './FoundationalShelf';
 import { ScopeHead } from './ScopeHead';
-import { countLabel } from './lib';
 
 export interface CategoryPaneProps {
   breadcrumb: string;
@@ -32,30 +33,27 @@ export function CategoryPane({
   error,
   onOpen,
 }: CategoryPaneProps) {
-  if (loading) {
-    return (
-      <div className="library__loading">
-        <Spinner label="Loading the category" />
-      </div>
-    );
-  }
-  if (error || !works) {
-    return (
-      <Text as="p" size="sm" tone="danger">
-        Could not load works{error ? `: ${error.message}` : ''}.
-      </Text>
-    );
-  }
-
   return (
-    <section className="works cpane">
-      <ScopeHead
-        breadcrumb={breadcrumb}
-        labelAr={scopeLabelAr}
-        line={`${scopeLabel} · ${countLabel(total, 'work')}`}
-      />
-      <FoundationalShelf category={category} onOpen={onOpen} />
-      <FacetedWorksList works={works} total={total} onOpen={onOpen} />
-    </section>
+    <DataView
+      result={{ data: works, error, loading }}
+      renderLoading={() => (
+        <div className="library__loading">
+          <Spinner label="Loading the category" />
+        </div>
+      )}
+      errorText="Could not load works"
+    >
+      {(data) => (
+        <section className="works cpane">
+          <ScopeHead
+            breadcrumb={breadcrumb}
+            labelAr={scopeLabelAr}
+            line={`${scopeLabel} · ${countLabel(total, 'work')}`}
+          />
+          <FoundationalShelf category={category} onOpen={onOpen} />
+          <FacetedWorksList works={data} total={total} onOpen={onOpen} />
+        </section>
+      )}
+    </DataView>
   );
 }

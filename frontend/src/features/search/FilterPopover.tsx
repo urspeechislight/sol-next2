@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 
 import { Button, Checkbox, useDismiss } from '../../lib/design-system';
-import { countLabel } from '../library/lib';
+import { countLabel } from '../../lib/utils';
 import { groupState } from '../../lib/taxonomySelection';
 import type { FacetRollup } from './facetRollup';
 import './FilterPopover.css';

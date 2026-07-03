@@ -1,7 +1,7 @@
 import { Highlight, IndexRow, Link, NewTabLink } from '../../lib/design-system';
 import { readerHref } from '../../lib/routes';
 import type { CorpusMatch } from '../../lib/types';
-import { countLabel } from '../library/lib';
+import { countLabel } from '../../lib/utils';
 import { groupByWork, refLabel } from './passages';
 import './PassageGroups.css';
 

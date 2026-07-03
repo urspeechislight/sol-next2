@@ -1,7 +1,9 @@
 import { Heading, IndexRow, Text } from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
 import { Apparatus } from './Apparatus';
-import { countLabel, sumCount, visibleCategories } from './lib';
+import { sumCount } from '../../lib/taxonomy';
+import { countLabel } from '../../lib/utils';
+import { visibleCategories } from './lib';
 import type { TraditionLens } from './lib';
 
 export interface CorpusOverviewProps {

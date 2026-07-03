@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { PageGlow, Spinner, Text } from '../../lib/design-system';
+import { PageGlow } from '../../lib/design-system';
+import { DataView } from '../../lib/DataView';
 import { getDaily } from '../../lib/api/client';
 import { hijriToday } from '../../lib/hijri';
 import type { Daily } from '../../lib/types';
@@ -36,22 +37,22 @@ export function HomeScreen({ onOpenReader }: HomeScreenProps) {
         <Unwan />
         <Masthead today={today} />
         <ResumeStrip onOpenReader={onOpenReader} />
-        {daily.loading ? <Spinner label="Preparing today's reading" /> : null}
-        {daily.error ? (
-          <Text as="p" size="sm" tone="danger">
-            Could not load today's reading: {daily.error.message}
-          </Text>
-        ) : null}
-        {daily.data ? (
-          <>
-            <section className="home3__folio" aria-label="Today's reading">
-              <VerseOfDay verse={daily.data.verse} onOpenReader={onOpenReader} />
-              <HadithOfDay hadith={daily.data.hadith} onOpenReader={onOpenReader} />
-            </section>
-            <BookOfDay pick={daily.data.book} onOpenReader={onOpenReader} />
-            <AlmanacStrip today={today} />
-          </>
-        ) : null}
+        <DataView
+          result={daily}
+          loadingLabel="Preparing today's reading"
+          errorText="Could not load today's reading"
+        >
+          {(data) => (
+            <>
+              <section className="home3__folio" aria-label="Today's reading">
+                <VerseOfDay verse={data.verse} onOpenReader={onOpenReader} />
+                <HadithOfDay hadith={data.hadith} onOpenReader={onOpenReader} />
+              </section>
+              <BookOfDay pick={data.book} onOpenReader={onOpenReader} />
+              <AlmanacStrip today={today} />
+            </>
+          )}
+        </DataView>
         <FihristBand />
         <Colophon />
       </div>

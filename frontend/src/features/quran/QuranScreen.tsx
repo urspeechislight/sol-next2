@@ -17,7 +17,7 @@ import type { Ayah, Surah } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { useTheme } from '../../lib/useTheme';
 import { clamp, cx, toArabicDigits } from '../../lib/utils';
-import { countLabel } from '../library/lib';
+import { countLabel } from '../../lib/utils';
 import { SuraFinder } from './SuraFinder';
 import '../../components/HadithBlock.css';
 import './QuranScreen.css';

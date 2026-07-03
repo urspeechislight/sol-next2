@@ -1,4 +1,4 @@
-import { Badge, Eyebrow, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
+import { Badge, Eyebrow, RefPill, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
 import { requestShare } from '../../lib/share';
 import type { DailyHadith } from '../../lib/types';
 import { hadithBadge } from '../../lib/variants';
@@ -99,12 +99,7 @@ function SourcePill({ bookAr, n, urn, page, onOpenReader }: SourcePillProps) {
       disabled={!urn}
       title={urn ? 'Open in the reader' : 'Not yet in the corpus'}
     >
-      <span className="ref-pill">
-        <span className="ref-pill__ar" dir="rtl">
-          {bookAr}
-        </span>
-        <span className="ref-pill__pg">№ {n}</span>
-      </span>
+      <RefPill ar={bookAr} label={`№ ${n}`} />
     </UnstyledButton>
   );
 }

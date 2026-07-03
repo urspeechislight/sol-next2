@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { formatCount } from '../../utils';
 import { UnstyledButton } from './UnstyledButton';
 import './FacetChip.css';
 
@@ -35,7 +36,7 @@ export function FacetChip({
       ariaLabel={ariaLabel}
     >
       <span className="ds-fchip__label">{label}</span>
-      {count !== undefined ? <span className="ds-fchip__n">{count.toLocaleString()}</span> : null}
+      {count !== undefined ? <span className="ds-fchip__n">{formatCount(count)}</span> : null}
     </UnstyledButton>
   );
 }

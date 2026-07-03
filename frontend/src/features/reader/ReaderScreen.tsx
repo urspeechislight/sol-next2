@@ -7,6 +7,7 @@ import {
   IconButton,
   IsnadNode,
   NarratorLink,
+  RefPill,
   Segmented,
   Spinner,
   Text,
@@ -41,7 +42,7 @@ import type {
 } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { useDomains } from '../../lib/useDomains';
-import { clamp, cx, toArabicDigits } from '../../lib/utils';
+import { clamp, cx, deathLabel, joinDots, toArabicDigits } from '../../lib/utils';
 import { MatchList, TocDrawer } from './ReaderDrawers';
 import { RawPageText } from './RawPageText';
 import { ReaderToolbar } from './ReaderToolbar';
@@ -176,12 +177,7 @@ function HadithUnit({
         <div className="hadith__refs">
           <span className="hadith__refs-label">Parallels</span>
           {h.cross_refs.map((r, i) => (
-            <span key={i} className="ref-pill">
-              <span className="ref-pill__ar" dir="rtl">
-                {r.book_ar}
-              </span>
-              {r.page ? <span className="ref-pill__pg">{r.page}</span> : null}
-            </span>
+            <RefPill key={i} ar={r.book_ar} label={r.page ? String(r.page) : null} />
           ))}
         </div>
       ) : null}
@@ -261,7 +257,7 @@ function TarjamaPanel({
   error: string | null;
   onClose: () => void;
 }) {
-  const sub = [record.kunya, record.nisba].filter(Boolean).join(' · ');
+  const sub = joinDots(record.kunya, record.nisba);
   const facts: [string, string | number][] = [
     ['Tradition', record.tradition || '—'],
     ['Died', record.death_year || '—'],
@@ -422,7 +418,7 @@ export function ReaderScreen({
   const bookDomain = book ? taxonomy.domains.get(book.category) : undefined;
   const unitNoun = UNIT_NOUNS[bookDomain ?? ''] ?? UNIT_NOUN_DEFAULT;
   const volume = book?.volume ?? null;
-  const death = book?.death_year_ah ? `d. ${book.death_year_ah} AH` : null;
+  const death = deathLabel(book?.death_year_ah) || null;
   const toc = tocRes.data;
   const pageData = pageRes.data;
   const hadiths = pageData?.hadiths ?? [];

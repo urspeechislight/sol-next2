@@ -11,7 +11,7 @@ import {
 import type { IconName } from '../../lib/design-system';
 import { READER } from '../../lib/constants';
 import type { Book } from '../../lib/types';
-import { clamp } from '../../lib/utils';
+import { clamp, formatCount } from '../../lib/utils';
 
 export type ReaderTheme = 'dark' | 'classical';
 export type ReaderLang = 'en' | 'both' | 'ar';
@@ -169,9 +169,9 @@ function PagerRow({
         onClick={() => toPage(page - 1)}
       />
       <Pill surface="reader" active display className="reader-pagejump">
-        <span>{page.toLocaleString()}</span>
+        <span>{formatCount(page)}</span>
         <span className="reader-pagejump__sep">/</span>
-        <span className="reader-pagejump__total">{totalPages.toLocaleString()}</span>
+        <span className="reader-pagejump__total">{formatCount(totalPages)}</span>
       </Pill>
       <IconButton
         surface="reader"

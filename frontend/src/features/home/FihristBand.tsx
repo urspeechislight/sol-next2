@@ -1,7 +1,10 @@
-import { Eyebrow, IndexRow, Spinner, Text } from '../../lib/design-system';
+import { Eyebrow, IndexRow } from '../../lib/design-system';
+import { DataView } from '../../lib/DataView';
 import { buildHash, EMPTY_ROUTE } from '../../lib/routes';
+import { domainTotals } from '../../lib/taxonomy';
 import type { Domain } from '../../lib/types';
 import { useDomains } from '../../lib/useDomains';
+import { countLabel } from '../../lib/utils';
 import './FihristBand.css';
 
 function domainHref(id: string): string {
@@ -9,9 +12,8 @@ function domainHref(id: string): string {
 }
 
 function totalsLine(domain: Domain): string {
-  const works = domain.categories.reduce((n, c) => n + c.count, 0);
-  const volumes = domain.categories.reduce((n, c) => n + c.volume_count, 0);
-  return `${works.toLocaleString('en')} works · ${volumes.toLocaleString('en')} vols`;
+  const totals = domainTotals(domain);
+  return `${countLabel(totals.works, 'work')} · ${countLabel(totals.volumes, 'vol')}`;
 }
 
 /** The fihrist: the library's own table of contents as the landing page's
@@ -28,27 +30,27 @@ export function FihristBand() {
           Browse the library
         </h2>
       </header>
-      {domains.loading ? <Spinner label="Opening the catalogue" /> : null}
-      {domains.error ? (
-        <Text as="p" size="sm" tone="danger">
-          Could not load the catalogue: {domains.error.message}
-        </Text>
-      ) : null}
-      {domains.data ? (
-        <ol className="fihrist__list">
-          {domains.data.map((d) => (
-            <li key={d.id} className="fihrist__item">
-              <IndexRow
-                en={d.label}
-                ar={d.label_ar}
-                blurb={d.blurb}
-                meta={totalsLine(d)}
-                href={domainHref(d.id)}
-              />
-            </li>
-          ))}
-        </ol>
-      ) : null}
+      <DataView
+        result={domains}
+        loadingLabel="Opening the catalogue"
+        errorText="Could not load the catalogue"
+      >
+        {(data) => (
+          <ol className="fihrist__list">
+            {data.map((d) => (
+              <li key={d.id} className="fihrist__item">
+                <IndexRow
+                  en={d.label}
+                  ar={d.label_ar}
+                  blurb={d.blurb}
+                  meta={totalsLine(d)}
+                  href={domainHref(d.id)}
+                />
+              </li>
+            ))}
+          </ol>
+        )}
+      </DataView>
     </section>
   );
 }

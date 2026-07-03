@@ -1,7 +1,5 @@
 // utils.ts:pure helpers only. No DOM, no side effects.
 
-import { BOOK } from './constants';
-
 /** Join class names, dropping falsy values. */
 export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ');
@@ -12,11 +10,37 @@ export function joinDots(...parts: Array<string | number | null | undefined | fa
   return parts.filter(Boolean).join(' · ');
 }
 
-/** English death-year label for a meta badge, e.g. "d. 326 AH"; empty when the
-    year is missing or is the unknown-year sentinel. */
+/** THE numeric-count rendering: grouped digits in the app's English locale,
+    pinned so the same number can never format two ways in one screen. */
+export function formatCount(n: number): string {
+  return n.toLocaleString('en');
+}
+
+/** The English count noun, e.g. pluralNoun(1, 'work') = "work",
+    pluralNoun(2, 'category', 'categories') = "categories". The one place the
+    n-equals-1 rule lives, so "1 works" can't appear anywhere. */
+export function pluralNoun(n: number, singular: string, plural = `${singular}s`): string {
+  return n === 1 ? singular : plural;
+}
+
+/** The one grammar for a counted noun, e.g. "1,204 works". */
+export function countLabel(n: number, singular: string, plural?: string): string {
+  return `${formatCount(n)} ${pluralNoun(n, singular, plural)}`;
+}
+
+/** English death-year label for a meta badge, e.g. "d. 326 AH"; empty when
+    the year is unknown. The upstream 99999 sentinel never reaches the client:
+    the catalog build normalizes it to null and the served model bounds the
+    field, so null is the only absent form. */
 export function deathLabel(ah?: number | null): string {
-  if (ah == null || ah === BOOK.UNKNOWN_DEATH_YEAR) return '';
+  if (ah == null) return '';
   return `d. ${ah} AH`;
+}
+
+/** Volume-count fragment for a work's meta line: "" for a single volume
+    (stating "1 vols" would be noise), else e.g. "3 vols". */
+export function volumesLabel(volumeCount: number): string {
+  return volumeCount > 1 ? countLabel(volumeCount, 'vol') : '';
 }
 
 /** Clamp a number into [min, max]. */
