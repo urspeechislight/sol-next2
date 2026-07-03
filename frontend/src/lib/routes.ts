@@ -2,6 +2,7 @@
 // URLs. CENTRAL-006 requires frontend path literals to live here, never inline
 // in components, the client, or the vite proxy config.
 
+import { SEARCH } from './constants';
 import { fromBase64Url, toBase64Url } from './utils';
 
 export const API = {
@@ -38,10 +39,6 @@ export type NavView = (typeof NAV_VIEWS)[number];
 
 const DEFAULT_VIEW: NavView = 'home';
 const READ_SEGMENT = 'read';
-// The content scope's default match mode (SearchMode's 'exact'), kept as a
-// bare string for the same reason `scope` isn't typed SearchScope: this
-// module stays decoupled from api/client.ts, and the caller coerces.
-const DEFAULT_MODE = 'exact';
 
 export interface RouteState {
   view: NavView;
@@ -78,7 +75,7 @@ export const EMPTY_ROUTE: Omit<RouteState, 'view'> = {
   cat: '',
   dom: '',
   reading: null,
-  mode: DEFAULT_MODE,
+  mode: SEARCH.DEFAULT_MODE,
   categories: [],
   book: '',
 };
@@ -117,7 +114,7 @@ export function buildHash(state: RouteState): string {
     params.set('q', toBase64Url(q));
     if (state.scope) params.set('scope', state.scope);
     if (state.scope === 'content') {
-      if (state.mode && state.mode !== DEFAULT_MODE) params.set('mode', state.mode);
+      if (state.mode && state.mode !== SEARCH.DEFAULT_MODE) params.set('mode', state.mode);
       for (const category of state.categories) params.append('category', category);
       if (state.book) params.set('book', toBase64Url(state.book));
     }
@@ -174,7 +171,7 @@ export function parseHash(hash: string): RouteState {
     cat: resolved === 'library' ? (params.get('cat') ?? '') : '',
     dom: resolved === 'library' ? (params.get('dom') ?? '') : '',
     reading: null,
-    mode: params.get('mode') ?? DEFAULT_MODE,
+    mode: params.get('mode') ?? SEARCH.DEFAULT_MODE,
     categories: params.getAll('category'),
     book: fromBase64Url(params.get('book') ?? ''),
   };

@@ -6,7 +6,7 @@
 // POLICY_OVERRIDES here, nothing else.
 
 import type { Work } from '../../lib/types';
-import { dedupeEditions } from './lib';
+import { byDeathThenTitle, dedupeEditions } from './lib';
 
 export interface ShelfPolicy {
   /** How many works stand on the shelf after dedup. */
@@ -24,12 +24,6 @@ export function shelfPolicy(scope = ''): ShelfPolicy {
   return { ...DEFAULT_POLICY, ...POLICY_OVERRIDES[scope] };
 }
 
-function byDeath(a: Work, b: Work): number {
-  return (
-    (a.death_year_ah ?? Number.MAX_SAFE_INTEGER) - (b.death_year_ah ?? Number.MAX_SAFE_INTEGER)
-  );
-}
-
 /** Order a fetched foundational shelf per policy: pinned stems first (in pin
     order), then the rest death-year ascending, edition-deduped, capped. */
 export function shelfOrder(works: Work[], policy: ShelfPolicy): Work[] {
@@ -37,6 +31,6 @@ export function shelfOrder(works: Work[], policy: ShelfPolicy): Work[] {
   const byStem = new Map(deduped.map((w) => [w.stem, w]));
   const front = policy.pinned.map((stem) => byStem.get(stem)).filter((w): w is Work => Boolean(w));
   const pinnedSet = new Set(policy.pinned);
-  const rest = deduped.filter((w) => !pinnedSet.has(w.stem)).sort(byDeath);
+  const rest = deduped.filter((w) => !pinnedSet.has(w.stem)).sort(byDeathThenTitle);
   return [...front, ...rest].slice(0, policy.limit);
 }

@@ -1,6 +1,8 @@
 // constants.ts:non-design, non-path literals. SCREAMING_SNAKE_CASE, grouped.
 // Path / URL constants (API, ROUTES, ASSETS) live in routes.ts (CENTRAL-006).
 
+import type { SearchMode } from './types';
+
 export const PAGE = {
   defaultLimit: 24,
   // Book / narrator scopes facet (category filter) over the returned rows on the
@@ -9,10 +11,6 @@ export const PAGE = {
   facetLimit: 200,
   graphPerPage: 40,
 } as const;
-
-// Sentinel the upstream catalog uses for an unknown author death year; the
-// library treats it as "no year" rather than printing it.
-export const BOOK = { UNKNOWN_DEATH_YEAR: 99999 } as const;
 
 // The library's category browse loads the whole scope (paged fetches of
 // PAGE.facetLimit) and filters client-side; listPageSize is the load-more
@@ -73,6 +71,12 @@ export const READING = { STORAGE_KEY: 'sol-reading' } as const;
 // accounts, so continuity lives in localStorage); capped so the dropdown
 // stays a short recency list, not an unbounded log.
 export const SEARCH_HISTORY = { STORAGE_KEY: 'sol-search-history', MAX_ENTRIES: 8 } as const;
+
+// The content scope's default match mode: what an unqualified search means.
+// Typed against the served SearchMode so a backend rename fails the build
+// here instead of silently minting an unknown mode. Consumed by routes.ts
+// (hash serialization), api/client.ts (request defaults), and ContentScope.
+export const SEARCH = { DEFAULT_MODE: 'exact' } as const satisfies { DEFAULT_MODE: SearchMode };
 
 // Share card formats + platform targets (consumed by ShareSheet).
 export const SHARE_FORMATS = [

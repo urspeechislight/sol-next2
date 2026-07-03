@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Spinner, Text } from '../../lib/design-system';
-import { searchCorpus, searchFacets } from '../../lib/api/client';
-import type { SearchMode } from '../../lib/api/client';
-import { PAGE } from '../../lib/constants';
+import { Text } from '../../lib/design-system';
+import { LoadMoreFoot } from '../../lib/LoadMoreFoot';
+import { isSearchMode, searchCorpus, searchFacets } from '../../lib/api/client';
+import { PAGE, SEARCH } from '../../lib/constants';
 import { scopeTokens, toggleGroup, toggleOne, wireCategories } from '../../lib/taxonomySelection';
 import type { ScopeToken } from '../../lib/taxonomySelection';
-import type { CorpusMatch, SearchFacets as Facets } from '../../lib/types';
+import type { CorpusMatch, SearchFacets as Facets, SearchMode } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { usePaged } from '../../lib/usePaged';
 import { useCategoryLabels } from '../../lib/useCategoryLabels';
 import { useDomains } from '../../lib/useDomains';
-import { countLabel } from '../library/lib';
+import { countLabel, formatCount } from '../../lib/utils';
 import { rollupByDomain } from './facetRollup';
 import { FilterPopover } from './FilterPopover';
 import { PassageGroups } from './PassageGroups';
@@ -20,13 +20,13 @@ import { SearchMap } from './SearchMap';
 import './SearchResults.css';
 
 function coerceMode(mode: string): SearchMode {
-  return mode === 'broad' ? 'broad' : 'exact';
+  return isSearchMode(mode) ? mode : SEARCH.DEFAULT_MODE;
 }
 
 /** Content-scope filters exactly as they round-trip through the URL (routes.ts
     RouteState's mode/categories/book): mode kept as a bare string for the same
     reason routes.ts keeps `scope` a string, so the hash layer never depends on
-    api/client.ts. coerceMode above is the one place that validates it back. */
+    api/client.ts. coerceMode above validates it back via isSearchMode. */
 export interface ContentFilterRoute {
   mode: string;
   categories: string[];
@@ -64,7 +64,7 @@ export function useContentFilters(initial: ContentFilterRoute): {
   const [book, setBook] = useState(initial.book);
 
   const reset = useCallback(() => {
-    setMode('exact');
+    setMode(SEARCH.DEFAULT_MODE);
     setCategories(new Set());
     setBook('');
   }, []);
@@ -106,7 +106,12 @@ export interface ContentScopeProps {
     and the union count, and the stream is the work-grouped anthology. Above
     the facet scan cap the map and picker are absent and SAY so. The Qurʾan
     scope reuses this with the resolved verse as `q` and broad mode. */
-export function ContentScope({ q, initialMode = 'exact', onOpenReader, filters }: ContentScopeProps) {
+export function ContentScope({
+  q,
+  initialMode = SEARCH.DEFAULT_MODE,
+  onOpenReader,
+  filters,
+}: ContentScopeProps) {
   const [localMode, setLocalMode] = useState<SearchMode>(initialMode);
   const [localSelected, setLocalSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [localBook, setLocalBook] = useState('');
@@ -261,17 +266,13 @@ export function ContentScope({ q, initialMode = 'exact', onOpenReader, filters }
       }
       foot={
         corpus.items.length > 0 ? (
-          <footer className="scr__foot">
-            <Text size="xs" tone="faint" font="mono">
-              Showing {corpus.items.length.toLocaleString()} of {countLabel(total, 'passage')}
-            </Text>
-            {corpus.loading ? <Spinner label="Loading more passages" /> : null}
-            {!corpus.loading && corpus.hasMore ? (
-              <Button variant="secondary" size="sm" onClick={corpus.more}>
-                Show more
-              </Button>
-            ) : null}
-          </footer>
+          <LoadMoreFoot
+            line={`Showing ${formatCount(corpus.items.length)} of ${countLabel(total, 'passage')}`}
+            loading={corpus.loading}
+            spinnerLabel="Loading more passages"
+            hasMore={corpus.hasMore}
+            onMore={corpus.more}
+          />
         ) : null
       }
     >

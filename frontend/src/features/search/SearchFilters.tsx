@@ -2,9 +2,10 @@ import type { ReactNode } from 'react';
 
 import { Button, Chip, Menu, Segmented, Text } from '../../lib/design-system';
 import type { MenuOption } from '../../lib/design-system';
-import type { SearchMode } from '../../lib/api/client';
+import { SEARCH_MODES } from '../../lib/api/client';
 import type { ScopeToken } from '../../lib/taxonomySelection';
-import type { CategoryFacet } from '../../lib/types';
+import type { CategoryFacet, SearchMode } from '../../lib/types';
+import { formatCount, pluralNoun } from '../../lib/utils';
 import './SearchFilters.css';
 
 const ALL_CATEGORIES = '';
@@ -14,10 +15,12 @@ const ALL_BOOKS = '';
     (the popover is the full review surface past this point). */
 const TOKEN_CAP = 3;
 
-const MODES = [
-  { value: 'exact', label: 'Exact' },
-  { value: 'broad', label: 'Partial' },
-];
+/** UI label per served match mode. Record<SearchMode, ...> is exhaustive:
+    a mode added or renamed on the backend fails compilation here, so the
+    toggle can neither miss a mode nor offer a stale one. */
+const MODE_LABELS: Record<SearchMode, string> = { exact: 'Exact', broad: 'Partial' };
+
+const MODES = SEARCH_MODES.map((mode) => ({ value: mode, label: MODE_LABELS[mode] }));
 
 export interface SearchFiltersProps {
   /** Match mode is corpus-only (full-text). Omit it (with onMode) on scopes that
@@ -71,7 +74,7 @@ export function SearchFilters({
     { value: ALL_CATEGORIES, label: 'All categories' },
     ...categories.map((c) => ({
       value: c.slug,
-      label: `${labelOf(c.slug)} · ${c.count.toLocaleString()}`,
+      label: `${labelOf(c.slug)} · ${formatCount(c.count)}`,
     })),
   ];
 
@@ -103,7 +106,7 @@ export function SearchFilters({
         ))}
         {overflow > 0 ? (
           <Button variant="link" onClick={() => onShowAll?.()}>
-            +{overflow.toLocaleString()} more
+            +{formatCount(overflow)} more
           </Button>
         ) : null}
         {hasCategory ? (
@@ -126,10 +129,10 @@ export function SearchFilters({
       </div>
       <span className="search-filters__count">
         <Text as="span" size="md" font="mono" weight="semibold">
-          {total.toLocaleString()}
+          {formatCount(total)}
         </Text>
         <Text as="span" size="xs" tone="muted">
-          {total === 1 ? 'result' : 'results'}
+          {pluralNoun(total, 'result')}
         </Text>
       </span>
       {active ? (

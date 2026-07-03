@@ -1,7 +1,7 @@
 // client.ts:the only data path to the :8001 backend (proxied via vite /api).
 // Every call is a GET; failures throw ApiError (fail loud, no silent fallback)
 // so callers render an explicit error state. CENTRAL-007 confines fetch here.
-import { PAGE } from '../constants';
+import { PAGE, SEARCH } from '../constants';
 import { API } from '../routes';
 import type {
   Almanac,
@@ -17,9 +17,11 @@ import type {
   Page,
   RijalEntry,
   SearchFacets,
+  SearchMode,
   Surah,
   Toc,
   Work,
+  WorkSort,
 } from '../types';
 
 class ApiError extends Error {
@@ -67,10 +69,6 @@ export function getDomains(): Promise<Domain[]> {
 export function getBook(urn: string): Promise<Book> {
   return get<Book>(`${API.BOOKS}/${encodeURIComponent(urn)}`);
 }
-
-// The closed set of works orderings the backend honors (an unknown value 422s).
-const WORK_SORTS = ['canonical', 'death_year_ah', 'title_ar', 'volume_count'] as const;
-export type WorkSort = (typeof WORK_SORTS)[number];
 
 export interface WorkListParams {
   category?: string;
@@ -130,7 +128,17 @@ export function searchBook(
 
 export const SEARCH_SCOPES = ['content', 'works', 'narrator', 'quran'] as const;
 export type SearchScope = (typeof SEARCH_SCOPES)[number];
-export type SearchMode = 'exact' | 'broad';
+
+/** The match modes in display order. `satisfies` locks every member to the
+    served SearchMode union, so a backend rename or removal fails this line
+    on the next types:gen instead of leaving a stale mode in the UI. */
+export const SEARCH_MODES = ['exact', 'broad'] as const satisfies readonly SearchMode[];
+
+/** True when `value` is a served match mode: the one validation point for
+    mode strings arriving from outside the type system (the URL hash). */
+export function isSearchMode(value: string): value is SearchMode {
+  return (SEARCH_MODES as readonly string[]).includes(value);
+}
 
 export interface CorpusSearchParams {
   mode?: SearchMode;
@@ -148,7 +156,7 @@ export function searchCorpus(
 ): Promise<Page<CorpusMatch>> {
   const qs = query({
     q,
-    mode: params.mode ?? 'exact',
+    mode: params.mode ?? SEARCH.DEFAULT_MODE,
     category: params.categories ?? [],
     book: params.book ?? '',
     volume: params.volume ?? 0,
@@ -160,7 +168,7 @@ export function searchCorpus(
 
 export function searchFacets(
   q: string,
-  mode: SearchMode = 'exact',
+  mode: SearchMode = SEARCH.DEFAULT_MODE,
   categories: readonly string[] = [],
   book = '',
 ): Promise<SearchFacets> {

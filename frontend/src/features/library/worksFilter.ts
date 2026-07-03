@@ -2,8 +2,8 @@
 // (era / author / foundational) and sort orders. FilterBar renders these
 // controls; FacetedWorksList applies them; nothing else re-implements either.
 
-import type { CanonicalRank, Work } from '../../lib/types';
-import { centuryOf, groupByEra, matchesAuthor } from './lib';
+import type { Work } from '../../lib/types';
+import { byDeathThenTitle, centuryOf, groupByEra, matchesAuthor } from './lib';
 
 export type SortMode = 'canonical' | 'era' | 'title' | 'author' | 'volumes';
 
@@ -16,26 +16,12 @@ export interface Filters {
 
 export const DEFAULT_FILTERS: Filters = { era: null, author: '', foundational: false, sort: 'era' };
 
-const CANONICAL_TIERS: Record<CanonicalRank, number> = {
-  primary_reference: 0,
-  primary: 1,
-  secondary: 2,
-  tertiary: 3,
-};
-const UNRANKED_TIER = Object.keys(CANONICAL_TIERS).length;
-
-/** The work's editorial-rank tier, unranked works after every ranked tier;
-    mirrors the backend's ``sort=canonical`` so client-side re-ordering of an
-    assembled scope agrees with server-side paging of the same scope. */
+/** The work's editorial-rank tier as SERVED (Work.canonical_tier): the tier
+    table has one owner, the backend's Canonical vocabulary, so client-side
+    re-ordering of an assembled scope and server-side ``sort=canonical``
+    paging can no longer disagree. Unranked works sort after every tier. */
 function canonicalTier(work: Work): number {
-  return work.canonical === null ? UNRANKED_TIER : CANONICAL_TIERS[work.canonical];
-}
-
-function byDeathThenTitle(a: Work, b: Work): number {
-  return (
-    (a.death_year_ah ?? Number.MAX_SAFE_INTEGER) - (b.death_year_ah ?? Number.MAX_SAFE_INTEGER) ||
-    a.title_ar.localeCompare(b.title_ar, 'ar')
-  );
+  return work.canonical_tier ?? Number.MAX_SAFE_INTEGER;
 }
 
 /** Order a scope for one sort mode. ``era`` yields the century-section order;

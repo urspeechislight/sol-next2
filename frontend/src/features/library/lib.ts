@@ -47,6 +47,18 @@ export function centuryOf(work: Work): number {
   return century < CENTURY_LABELS.length ? century : 0;
 }
 
+/** THE death-year ordering: ascending, undated works after every dated one,
+    ties broken on the Arabic title in Arabic collation. Every surface that
+    orders works by author death (era sections, the sort modes, the
+    foundational shelf) uses this one comparator, so two works sharing a
+    death year can never order differently between surfaces. */
+export function byDeathThenTitle(a: Work, b: Work): number {
+  return (
+    (a.death_year_ah ?? Number.MAX_SAFE_INTEGER) - (b.death_year_ah ?? Number.MAX_SAFE_INTEGER) ||
+    a.title_ar.localeCompare(b.title_ar, 'ar')
+  );
+}
+
 /** Group a scope's works into Hijri-century sections, each sorted by death
     year then title, dated eras first and the undated bucket last. */
 export function groupByEra(works: Work[]): EraGroup[] {
@@ -64,12 +76,7 @@ export function groupByEra(works: Work[]): EraGroup[] {
   });
   return order.map((century) => {
     const group = buckets.get(century) ?? [];
-    group.sort(
-      (a, b) =>
-        (a.death_year_ah ?? Number.MAX_SAFE_INTEGER) -
-          (b.death_year_ah ?? Number.MAX_SAFE_INTEGER) ||
-        (a.title_en ?? a.title_ar).localeCompare(b.title_en ?? b.title_ar),
-    );
+    group.sort(byDeathThenTitle);
     const label = CENTURY_LABELS[century];
     return { century, labelEn: label.en, labelAr: label.ar, works: group };
   });
@@ -133,18 +140,6 @@ export function visibleCategories(domain: Domain, lens: TraditionLens): Category
   return domain.categories.filter((c) => inLens(c.tradition, lens));
 }
 
-/** Sum of work counts across categories. */
-export function sumCount(cats: { count: number }[]): number {
-  return cats.reduce((n, c) => n + c.count, 0);
-}
-
-/** A localized count with its correctly pluralized noun: "1 work", "18 works",
-    "1 category", "12 categories". The single grammar for every count label the
-    library prints, so "1 works" can never appear. */
-export function countLabel(n: number, singular: string, plural = `${singular}s`): string {
-  return `${n.toLocaleString()} ${n === 1 ? singular : plural}`;
-}
-
 function find(domains: Domain[], slug: string): Category | null {
   for (const d of domains) for (const c of d.categories) if (c.slug === slug) return c;
   return null;
@@ -160,23 +155,4 @@ export function labelArOf(domains: Domain[], slug: string): string {
 
 export function domainLabel(domains: Domain[], id: string): string {
   return domains.find((d) => d.id === id)?.label ?? id;
-}
-
-/** Corpus totals for the rail masthead. */
-export function corpusTotals(domains: Domain[]): {
-  works: number;
-  volumes: number;
-  categories: number;
-  domains: number;
-} {
-  let works = 0;
-  let volumes = 0;
-  let categories = 0;
-  for (const d of domains)
-    for (const c of d.categories) {
-      works += c.count;
-      volumes += c.volume_count;
-      categories += 1;
-    }
-  return { works, volumes, categories, domains: domains.length };
 }
