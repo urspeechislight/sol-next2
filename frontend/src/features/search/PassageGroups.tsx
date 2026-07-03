@@ -1,4 +1,5 @@
-import { Highlight, IndexRow, UnstyledButton } from '../../lib/design-system';
+import { Highlight, IndexRow, Link, NewTabLink } from '../../lib/design-system';
+import { readerHref } from '../../lib/routes';
 import type { CorpusMatch } from '../../lib/types';
 import { countLabel } from '../library/lib';
 import { groupByWork, refLabel } from './passages';
@@ -73,21 +74,31 @@ interface PassageRowProps {
 }
 
 /** One passage: the highlighted Arabic evidence leads at full width, the
-    volume/page reference sits in a direction-isolated mono margin, and the
-    row opens the reader at the hit page. */
+    volume/page reference sits in a direction-isolated mono margin. The row
+    is a real link to that reader position — a plain click drills in place,
+    ctrl/cmd/middle-click opens a new tab exactly like any other link — plus
+    an explicit NewTabLink for the same target, so previewing a hit never
+    means losing this results page. The href carries the search term (q) so
+    the reader highlights it even on a real navigation, not just in-place. */
 function PassageRow({ m, q, onOpen }: PassageRowProps) {
+  const href = readerHref(m.urn, m.page, q);
+  const label = `${m.title_en ?? m.title_ar} at ${refLabel(m)}`;
   return (
-    <UnstyledButton
-      className="prow"
-      onClick={() => onOpen(m.urn, m.page)}
-      ariaLabel={`Open ${m.title_en ?? m.title_ar} at ${refLabel(m)}`}
-    >
-      <span className="prow__ref" dir="ltr">
-        {refLabel(m)}
-      </span>
-      <span className="prow__snip" dir="rtl" lang="ar">
-        <Highlight text={m.snippet} query={q} />
-      </span>
-    </UnstyledButton>
+    <div className="prow">
+      <Link
+        href={href}
+        onActivate={() => onOpen(m.urn, m.page)}
+        className="prow__link"
+        ariaLabel={`Open ${label}`}
+      >
+        <span className="prow__ref" dir="ltr">
+          {refLabel(m)}
+        </span>
+        <span className="prow__snip" dir="rtl" lang="ar">
+          <Highlight text={m.snippet} query={q} />
+        </span>
+      </Link>
+      <NewTabLink href={href} label={`Open ${label} in a new tab`} className="prow__newtab" />
+    </div>
   );
 }

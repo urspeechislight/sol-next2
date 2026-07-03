@@ -69,6 +69,11 @@ export const READER = {
 // the reader turns pages, read by the landing page's resume strip).
 export const READING = { STORAGE_KEY: 'sol-reading' } as const;
 
+// Search history: the header remembers past searches the same way (no
+// accounts, so continuity lives in localStorage); capped so the dropdown
+// stays a short recency list, not an unbounded log.
+export const SEARCH_HISTORY = { STORAGE_KEY: 'sol-search-history', MAX_ENTRIES: 8 } as const;
+
 // Share card formats + platform targets (consumed by ShareSheet).
 export const SHARE_FORMATS = [
   { value: 'square', label: 'Square' },

@@ -17,6 +17,7 @@ import {
   Logo,
   Menu,
   NavArrow,
+  NewTabLink,
   Pager,
   Pill,
   Segmented,
@@ -182,6 +183,9 @@ function TypographyDemo() {
         <Link href={viewHref('design')} variant="accent">
           accent
         </Link>
+      </Spec>
+      <Spec label="NewTabLink · open-in-new-tab affordance">
+        <NewTabLink href={viewHref('design')} label="Open the styleguide in a new tab" />
       </Spec>
     </>
   );

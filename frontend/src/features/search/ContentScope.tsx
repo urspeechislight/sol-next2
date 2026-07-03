@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Spinner, Text } from '../../lib/design-system';
 import { searchCorpus, searchFacets } from '../../lib/api/client';
@@ -19,10 +19,84 @@ import { ResultsFrame } from './ResultsFrame';
 import { SearchMap } from './SearchMap';
 import './SearchResults.css';
 
+function coerceMode(mode: string): SearchMode {
+  return mode === 'broad' ? 'broad' : 'exact';
+}
+
+/** Content-scope filters exactly as they round-trip through the URL (routes.ts
+    RouteState's mode/categories/book): mode kept as a bare string for the same
+    reason routes.ts keeps `scope` a string, so the hash layer never depends on
+    api/client.ts. coerceMode above is the one place that validates it back. */
+export interface ContentFilterRoute {
+  mode: string;
+  categories: string[];
+  book: string;
+}
+
+/** The controlled-filters contract ContentScope accepts to lift its filters
+    into the URL. Passed by the top-level content search (App.tsx, via
+    useContentFilters below); omitted by embedded uses (the Qur'an
+    verse-quotations panel), which keep page-local, resettable filters. */
+export interface ContentFilters {
+  mode: SearchMode;
+  categories: ReadonlySet<string>;
+  book: string;
+  onMode: (mode: SearchMode) => void;
+  onCategories: (categories: ReadonlySet<string>) => void;
+  onBook: (book: string) => void;
+}
+
+/** Lifts the content scope's filters into App-owned state shaped for the URL:
+    one hook call replaces three parallel useState triples in App.tsx, and
+    keeps the coerce/reset/restore logic next to the ContentFilters contract
+    it produces. `reset` clears the filters (a nav change); `restore` applies
+    a parsed RouteState back (a popstate, i.e. Back/Forward). */
+export function useContentFilters(initial: ContentFilterRoute): {
+  filters: ContentFilters;
+  route: ContentFilterRoute;
+  reset: () => void;
+  restore: (next: ContentFilterRoute) => void;
+} {
+  const [mode, setMode] = useState<SearchMode>(coerceMode(initial.mode));
+  const [categories, setCategories] = useState<ReadonlySet<string>>(
+    () => new Set(initial.categories),
+  );
+  const [book, setBook] = useState(initial.book);
+
+  const reset = useCallback(() => {
+    setMode('exact');
+    setCategories(new Set());
+    setBook('');
+  }, []);
+  const restore = useCallback((next: ContentFilterRoute) => {
+    setMode(coerceMode(next.mode));
+    setCategories(new Set(next.categories));
+    setBook(next.book);
+  }, []);
+
+  return {
+    filters: {
+      mode,
+      categories,
+      book,
+      onMode: setMode,
+      onCategories: setCategories,
+      onBook: setBook,
+    },
+    route: { mode, categories: wireCategories(categories), book },
+    reset,
+    restore,
+  };
+}
+
 export interface ContentScopeProps {
   q: string;
   initialMode?: SearchMode;
   onOpenReader: (urn: string, page: number, query: string) => void;
+  /** Controlled filters for the top-level content search (bookmarkable,
+      survives the Reader round trip). Omitted for embedded uses, which fall
+      back to local, page-scoped filters instead. */
+  filters?: ContentFilters;
 }
 
 /** Full-text content search as a concordance page over ONE selection set:
@@ -32,18 +106,34 @@ export interface ContentScopeProps {
     and the union count, and the stream is the work-grouped anthology. Above
     the facet scan cap the map and picker are absent and SAY so. The Qurʾan
     scope reuses this with the resolved verse as `q` and broad mode. */
-export function ContentScope({ q, initialMode = 'exact', onOpenReader }: ContentScopeProps) {
-  const [mode, setMode] = useState<SearchMode>(initialMode);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
-  const [book, setBook] = useState('');
+export function ContentScope({ q, initialMode = 'exact', onOpenReader, filters }: ContentScopeProps) {
+  const [localMode, setLocalMode] = useState<SearchMode>(initialMode);
+  const [localSelected, setLocalSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const [localBook, setLocalBook] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  const mode = filters ? filters.mode : localMode;
+  const selected = filters ? filters.categories : localSelected;
+  const book = filters ? filters.book : localBook;
+  const setMode = filters ? filters.onMode : setLocalMode;
+  const setSelected = filters ? filters.onCategories : setLocalSelected;
+  const setBook = filters ? filters.onBook : setLocalBook;
 
   const resetFilters = useCallback(() => {
     setSelected(new Set());
     setBook('');
-  }, []);
+  }, [setSelected, setBook]);
 
-  useEffect(() => resetFilters(), [q, resetFilters]);
+  // Skip the reset on this instance's very first render: a controlled `q`
+  // can mount with filters already populated — a bookmarked search, or the
+  // URL restored by the Reader's "back to catalog" — and those must survive.
+  // Only a genuinely NEW query, i.e. q changing after mount, clears the
+  // previous query's category/book filters.
+  const mountedForQuery = useRef(false);
+  useEffect(() => {
+    if (mountedForQuery.current) resetFilters();
+    mountedForQuery.current = true;
+  }, [q, resetFilters]);
 
   const categories = useMemo(() => wireCategories(selected), [selected]);
   const corpus = usePaged<CorpusMatch>(
@@ -87,11 +177,11 @@ export function ContentScope({ q, initialMode = 'exact', onOpenReader }: Content
   );
 
   const toggleCategory = (slug: string) => {
-    setSelected((s) => toggleOne(s, slug));
+    setSelected(toggleOne(selected, slug));
     setBook('');
   };
   const toggleDomainGroup = (slugs: readonly string[]) => {
-    setSelected((s) => toggleGroup(s, slugs));
+    setSelected(toggleGroup(selected, slugs));
     setBook('');
   };
   const removeToken = (token: ScopeToken) => {

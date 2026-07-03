@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { cx } from '../../utils';
 import './Link.css';
 
@@ -13,12 +13,14 @@ const VARIANT_CLASS: Record<LinkVariant, string> = {
 export interface LinkProps {
   href: string;
   variant?: LinkVariant;
-  external?: boolean;
   ariaLabel?: string;
   ariaCurrent?: boolean;
   dir?: 'rtl' | 'ltr';
   className?: string;
-  /** Client-side intercept; real href stays for deep-linking / SSR. */
+  /** Client-side intercept for a plain, primary-button click; the real href
+      stays live underneath, so ctrl/cmd/middle-click and "open in a new tab"
+      still work exactly like a normal link instead of being swallowed by the
+      SPA navigation. */
   onActivate?: () => void;
   children: ReactNode;
 }
@@ -26,7 +28,6 @@ export interface LinkProps {
 export function Link({
   href,
   variant = 'default',
-  external = false,
   ariaLabel,
   ariaCurrent,
   dir,
@@ -35,7 +36,9 @@ export function Link({
   children,
 }: LinkProps) {
   const onClick = onActivate
-    ? (e: { preventDefault: () => void }) => {
+    ? (e: MouseEvent<HTMLAnchorElement>) => {
+        const modified = e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
+        if (e.defaultPrevented || modified) return;
         e.preventDefault();
         onActivate();
       }
@@ -46,8 +49,6 @@ export function Link({
       dir={dir}
       aria-label={ariaLabel}
       aria-current={ariaCurrent ? 'page' : undefined}
-      target={external ? '_blank' : undefined}
-      rel={external ? 'noreferrer noopener' : undefined}
       onClick={onClick}
       className={cx('ds-link', VARIANT_CLASS[variant], className)}
     >

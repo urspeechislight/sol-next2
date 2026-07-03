@@ -25,6 +25,7 @@
   flex: 1;
 }
 .app-header__search {
+  position: relative;
   width: 300px;
   max-width: 38vw;
 }

@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { SearchScope } from '../lib/api/client';
 import { SEARCH_SCOPES } from '../lib/api/client';
-import { parseHash } from '../lib/routes';
+import { EMPTY_ROUTE, parseHash } from '../lib/routes';
 import type { RouteState } from '../lib/routes';
 import { saveReading } from '../lib/reading';
+import { recordSearch } from '../lib/searchHistory';
 import { useHashRoute } from '../lib/useHashRoute';
 import { GraphScreen } from '../features/graph/GraphScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
@@ -12,6 +13,8 @@ import { LibraryScreen } from '../features/library/LibraryScreen';
 import { QuranScreen } from '../features/quran/QuranScreen';
 import { ReaderScreen } from '../features/reader/ReaderScreen';
 import { SearchResults } from '../features/search/SearchResults';
+import { useContentFilters } from '../features/search/ContentScope';
+import type { ContentFilters } from '../features/search/ContentScope';
 import { DesignSystemScreen } from '../features/design/DesignSystemScreen';
 import '../lib/design-system/tokens.css';
 import '../lib/design-system/base.css';
@@ -47,6 +50,7 @@ interface AppContentProps {
   lib: LibScope;
   runSearch: (next: string, nextScope: SearchScope) => void;
   openReader: (urn: string, page?: number, q?: string) => void;
+  contentFilters: ContentFilters;
 }
 
 /** The shell's child: the search overlay when a query is submitted, otherwise the
@@ -59,6 +63,7 @@ function AppContent({
   lib,
   runSearch,
   openReader,
+  contentFilters,
 }: AppContentProps) {
   if (searching) {
     return (
@@ -67,6 +72,7 @@ function AppContent({
         scope={scope}
         onSearch={runSearch}
         onOpenReader={openReader}
+        contentFilters={contentFilters}
       />
     );
   }
@@ -94,7 +100,11 @@ function AppContent({
     finish, not once per word. ``query`` is just the live input text; ``submitted``
     is the single source the SearchResults overlay and the URL read from. The Reader
     is a full-screen takeover bound to a book URN + page; every position it reaches
-    is persisted (reading.ts) so the landing page can offer re-entry. */
+    is persisted (reading.ts) so the landing page can offer re-entry. The content
+    scope's filters (mode/categories/book, useContentFilters) are lifted here too,
+    for the same reason: round-tripped through the URL, they survive a Reader visit
+    and back, and make the search results page itself bookmarkable at its exact
+    filtered state. */
 export function App() {
   const initial = parseHash(window.location.hash);
   const [view, setView] = useState<NavView>(initial.view);
@@ -102,8 +112,9 @@ export function App() {
   const [submitted, setSubmitted] = useState(initial.reading ? '' : initial.query);
   const [scope, setScope] = useState<SearchScope>(coerceScope(initial.scope));
   const [lib, setLib] = useState<LibScope>({ cat: initial.cat, dom: initial.dom });
+  const contentFilters = useContentFilters(initial);
   const [reading, setReading] = useState<Reading | null>(
-    initial.reading ? { ...initial.reading, query: '' } : null,
+    initial.reading ? { ...initial.reading } : null,
   );
 
   useEffect(() => {
@@ -112,22 +123,32 @@ export function App() {
 
   const route: RouteState = reading
     ? {
+        ...EMPTY_ROUTE,
         view,
-        query: '',
         scope,
-        cat: '',
-        dom: '',
-        reading: { urn: reading.urn, page: reading.page },
+        reading: { urn: reading.urn, page: reading.page, query: reading.query },
       }
-    : { view, query: submitted, scope, cat: lib.cat, dom: lib.dom, reading: null };
-  const applyRoute = useCallback((next: RouteState) => {
-    setView(next.view);
-    setScope(coerceScope(next.scope));
-    setQuery(next.reading ? '' : next.query);
-    setSubmitted(next.reading ? '' : next.query);
-    setLib({ cat: next.cat, dom: next.dom });
-    setReading(next.reading ? { ...next.reading, query: '' } : null);
-  }, []);
+    : {
+        view,
+        query: submitted,
+        scope,
+        cat: lib.cat,
+        dom: lib.dom,
+        reading: null,
+        ...contentFilters.route,
+      };
+  const applyRoute = useCallback(
+    (next: RouteState) => {
+      setView(next.view);
+      setScope(coerceScope(next.scope));
+      setQuery(next.reading ? '' : next.query);
+      setSubmitted(next.reading ? '' : next.query);
+      setLib({ cat: next.cat, dom: next.dom });
+      setReading(next.reading ? { ...next.reading } : null);
+      contentFilters.restore(next);
+    },
+    [contentFilters.restore],
+  );
   useHashRoute(route, applyRoute);
 
   if (reading) {
@@ -149,19 +170,26 @@ export function App() {
     setQuery('');
     setSubmitted('');
     setLib({ cat: '', dom: '' });
+    contentFilters.reset();
   };
   // Typing only updates the field; clearing it closes the results. Enter commits.
   const onQuery = (next: string) => {
     setQuery(next);
     if (!next.trim()) setSubmitted('');
   };
-  const onSearch = () => setSubmitted(query.trim());
+  const onSearch = () => {
+    const trimmed = query.trim();
+    setSubmitted(trimmed);
+    recordSearch(trimmed, scope);
+  };
   // A result can launch a new search (a Qurʾān verse opens its reference): set
-  // scope + query as state and let useHashRoute mirror it to the URL.
+  // scope + query as state and let useHashRoute mirror it to the URL. Also the
+  // header's recent-searches dropdown re-runs a past query+scope through this.
   const runSearch = (next: string, nextScope: SearchScope) => {
     setScope(nextScope);
     setQuery(next);
     setSubmitted(next);
+    recordSearch(next, nextScope);
   };
   // On the Qurʾān page the header search is sūra-scoped: the submitted term
   // filters the open sūra in place instead of opening the overlay, and the
@@ -179,6 +207,7 @@ export function App() {
       onSearch={onSearch}
       onScope={setScope}
       onClear={() => onQuery('')}
+      onPickHistory={runSearch}
     >
       <AppContent
         searching={searching}
@@ -188,6 +217,7 @@ export function App() {
         lib={lib}
         runSearch={runSearch}
         openReader={openReader}
+        contentFilters={contentFilters.filters}
       />
     </AppShell>
   );

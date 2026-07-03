@@ -53,6 +53,9 @@ export type { ChipProps } from './primitives/Chip';
 export { Link } from './primitives/Link';
 export type { LinkProps, LinkVariant } from './primitives/Link';
 
+export { NewTabLink } from './primitives/NewTabLink';
+export type { NewTabLinkProps } from './primitives/NewTabLink';
+
 export { Divider } from './primitives/Divider';
 export type { DividerProps } from './primitives/Divider';
 

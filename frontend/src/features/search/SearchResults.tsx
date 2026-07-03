@@ -11,6 +11,7 @@ import { useCategoryLabels } from '../../lib/useCategoryLabels';
 import { WorksQueryResults } from '../library/WorksQueryResults';
 import { NarratorCard } from '../narrators/NarratorCard';
 import { ContentScope } from './ContentScope';
+import type { ContentFilters } from './ContentScope';
 import { QuranScope } from './QuranScope';
 import { ResultsFrame } from './ResultsFrame';
 import '../screens.css';
@@ -67,13 +68,17 @@ export interface SearchResultsProps {
   /** Launch a new search from a result, e.g. a Qurʾān verse opens its reference. */
   onSearch: (q: string, scope: SearchScope) => void;
   onOpenReader: (urn: string, page: number, query: string) => void;
+  /** The top-level content search's URL-lifted filters (App.tsx, via
+      useContentFilters). Passed straight to the content scope so a search's
+      exact filters survive a bookmark, a reload, or a Reader visit and back. */
+  contentFilters: ContentFilters;
 }
 
 /** The search overlay: one query, four scopes. Works is the catalog primitive
     (volume-folded, canonical-ranked, the library's own faceted grammar);
     content / quran are the passage primitives; narrator searches the rijal
     registry. Every scope pages honestly; none caps silently. */
-export function SearchResults({ query, scope, onSearch, onOpenReader }: SearchResultsProps) {
+export function SearchResults({ query, scope, onSearch, onOpenReader, contentFilters }: SearchResultsProps) {
   const q = query.trim();
   return (
     <section>
@@ -83,7 +88,9 @@ export function SearchResults({ query, scope, onSearch, onOpenReader }: SearchRe
         </Text>
         <Heading level={1}>Results for “{q}”</Heading>
       </header>
-      {scope === 'content' ? <ContentScope q={q} onOpenReader={onOpenReader} /> : null}
+      {scope === 'content' ? (
+        <ContentScope q={q} onOpenReader={onOpenReader} filters={contentFilters} />
+      ) : null}
       {scope === 'quran' ? (
         <QuranScope q={q} onSearch={onSearch} onOpenReader={onOpenReader} />
       ) : null}

@@ -20,15 +20,13 @@
   padding-inline-start: var(--space-sm);
 }
 
+/* The row: the in-place Link (drill-in) and the NewTabLink icon sit side by
+   side so neither is nested inside the other's anchor. */
 .prow {
-  display: grid;
-  grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
   width: 100%;
-  padding: var(--space-xs) var(--space-sm);
-  text-align: right;
-  cursor: pointer;
   border-radius: var(--radius-xs);
   transition: background-color var(--duration-fast) var(--ease-out);
 }
@@ -37,6 +35,23 @@
 }
 .prow + .prow {
   border-top: 1px solid var(--color-border-hair);
+}
+
+.prow__link {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-xs) var(--space-sm);
+  text-align: right;
+  cursor: pointer;
+}
+
+.prow__newtab {
+  flex-shrink: 0;
+  margin-inline-end: var(--space-xs);
 }
 
 .prow__ref {

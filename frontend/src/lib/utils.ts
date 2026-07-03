@@ -45,3 +45,32 @@ const ARABIC_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩
 export function toArabicDigits(value: number | string): string {
   return String(value).replace(/[0-9]/g, (d) => ARABIC_DIGITS[Number(d)]);
 }
+
+/** URL-safe base64 (RFC 4648 §5) of a UTF-8 string: compacts free text bound
+    for a URL param. Plain percent-encoding roughly triples non-ASCII text —
+    every UTF-8 byte becomes 3 characters — which is punishing for Arabic,
+    where each base letter AND each combining diacritic is its own escaped
+    byte; base64 costs only ~4/3 of the raw byte count. Used by routes.ts for
+    the reader/search query and the active-book filter, the only free-text
+    URL fields. */
+export function toBase64Url(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** The inverse of toBase64Url. Never throws: a hand-edited or truncated URL
+    decodes to '' instead of crashing the router. */
+export function fromBase64Url(value: string): string {
+  if (!value) return '';
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = padded.length % 4 === 0 ? '' : '='.repeat(4 - (padded.length % 4));
+  try {
+    const binary = atob(padded + pad);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return '';
+  }
+}

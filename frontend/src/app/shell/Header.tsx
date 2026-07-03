@@ -1,8 +1,11 @@
-import { Button, Icon, Input, Link, Logo, Menu } from '../../lib/design-system';
+import { useRef, useState } from 'react';
+
+import { Button, Icon, Input, Link, Logo, Menu, useDismiss } from '../../lib/design-system';
 import type { MenuOption } from '../../lib/design-system';
 import type { SearchScope } from '../../lib/api/client';
 import { viewHref } from '../../lib/routes';
 import { useTheme } from '../../lib/useTheme';
+import { SearchHistoryMenu } from './SearchHistoryMenu';
 import { NAV, type NavView } from './nav';
 import './Header.css';
 
@@ -35,6 +38,8 @@ export interface HeaderProps {
   onSearch: () => void;
   onScope: (scope: SearchScope) => void;
   onClear: () => void;
+  /** A recent-searches row was picked: re-run that exact query+scope. */
+  onPickHistory: (query: string, scope: SearchScope) => void;
 }
 
 export function Header({
@@ -47,8 +52,17 @@ export function Header({
   onSearch,
   onScope,
   onClear,
+  onPickHistory,
 }: HeaderProps) {
   const { dark, toggle: toggleTheme } = useTheme();
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  useDismiss(searchRef, historyOpen, () => setHistoryOpen(false));
+  // The dropdown only makes sense for the global header search: while
+  // scope-locked (the Qurʾān page's in-place sūra filter) or once the field
+  // has text, it stays hidden.
+  const showHistory = historyOpen && !scopeLock && !query.trim();
+
   return (
     <header className="app-header">
       <Link
@@ -74,7 +88,7 @@ export function Header({
         ))}
       </nav>
       <div className="app-header__spacer" />
-      <div className="app-header__search">
+      <div className="app-header__search" ref={searchRef}>
         <Input
           value={query}
           type="search"
@@ -104,6 +118,15 @@ export function Header({
           onSubmit={onSearch}
           onClear={onClear}
           clearLabel="Clear search"
+          onFocus={() => setHistoryOpen(true)}
+        />
+        <SearchHistoryMenu
+          open={showHistory}
+          scopes={SCOPES}
+          onPick={(q, s) => {
+            setHistoryOpen(false);
+            onPickHistory(q, s);
+          }}
         />
       </div>
       <Button

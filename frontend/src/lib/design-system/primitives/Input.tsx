@@ -27,6 +27,9 @@ export interface InputProps {
       this. Lets a live search reset itself without leaving the field. */
   onClear?: () => void;
   clearLabel?: string;
+  /** Fires when the field gains focus, e.g. to open a caller-owned suggestions
+      dropdown anchored below it. */
+  onFocus?: () => void;
 }
 
 /** Composite field: ds-field > label + ds-input(container) > icon + leading + field.
@@ -52,6 +55,7 @@ export function Input({
   onSubmit,
   onClear,
   clearLabel = 'Clear',
+  onFocus,
 }: InputProps) {
   const glyph = icon ? <Icon name={icon} size="sm" className="ds-input__icon" /> : null;
   const body = (
@@ -83,6 +87,7 @@ export function Input({
           aria-label={ariaLabel}
           className="ds-input__field"
           onInput={(e) => onInput?.((e.target as HTMLInputElement).value)}
+          onFocus={onFocus}
         />
         {onClear && value ? (
           <button

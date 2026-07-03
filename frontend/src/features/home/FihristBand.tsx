@@ -1,11 +1,11 @@
 import { Eyebrow, IndexRow, Spinner, Text } from '../../lib/design-system';
-import { buildHash } from '../../lib/routes';
+import { buildHash, EMPTY_ROUTE } from '../../lib/routes';
 import type { Domain } from '../../lib/types';
 import { useDomains } from '../../lib/useDomains';
 import './FihristBand.css';
 
 function domainHref(id: string): string {
-  return buildHash({ view: 'library', query: '', scope: '', cat: '', dom: id, reading: null });
+  return buildHash({ ...EMPTY_ROUTE, view: 'library', dom: id });
 }
 
 function totalsLine(domain: Domain): string {
