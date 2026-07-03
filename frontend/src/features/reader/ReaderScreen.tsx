@@ -308,7 +308,7 @@ export function ReaderScreen({
               </div>
               <PageFootnotes
                 footnotes={pageData.footnotes}
-                linked={linkedMarkers}
+                linked={lang === 'en' ? NO_MARKERS : linkedMarkers}
                 lang={lang}
                 onBacklink={jumpToMarker}
               />
