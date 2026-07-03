@@ -6,8 +6,9 @@ pre-commit:
   parallel: true
   commands:
     prettier:
-      glob: '*.{json,md,yaml,yml,css,html}'
-      run: pnpm prettier --check {staged_files}
+      # Whole-repo check via the one glob owner (package.json format:base):
+      # restating the extension list here is how pre-commit and CI drift apart.
+      run: pnpm format:check
     ruff-lint:
       glob: '*.py'
       run: uv run ruff check {staged_files}
