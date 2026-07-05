@@ -9,21 +9,28 @@ Ported from sol-next's src/trackers/__init__.py.
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from backend.pipeline.models import HierarchyPath
+
+if TYPE_CHECKING:
+    from backend.pipeline.toc_alignment import TocAnchor
 
 
 @runtime_checkable
 class TrackerProtocol(Protocol):
-    """Interface for document structure trackers."""
+    """Interface for document structure trackers.
 
-    def should_advance(self, behavior: str) -> bool:
-        """Return True if this tracker should advance on the given behavior."""
+    ``anchor`` is the span's confirmed TOC anchor, or None. A TOC-driven tracker
+    keys on it; pattern-driven trackers ignore it and key on ``behavior``.
+    """
+
+    def should_advance(self, behavior: str, anchor: TocAnchor | None) -> bool:
+        """Return True if this tracker should advance on the given span."""
         ...
 
-    def advance(self, span_text: str, span_id: str) -> None:
-        """Update tracker state for a span with a matching behavior."""
+    def advance(self, span_text: str, span_id: str, anchor: TocAnchor | None) -> None:
+        """Update tracker state for a span this tracker advances on."""
         ...
 
     def current_path(self) -> HierarchyPath:
@@ -46,11 +53,13 @@ class TrackerOrchestrator:
     def __init__(self, trackers: list[TrackerProtocol]) -> None:
         self._trackers = trackers
 
-    def advance(self, behavior: str, span_text: str, span_id: str) -> None:
-        """Delegate advance to each tracker that handles this behavior."""
+    def advance(
+        self, behavior: str, span_text: str, span_id: str, anchor: TocAnchor | None
+    ) -> None:
+        """Delegate advance to each tracker that handles this span."""
         for tracker in self._trackers:
-            if tracker.should_advance(behavior):
-                tracker.advance(span_text, span_id)
+            if tracker.should_advance(behavior, anchor):
+                tracker.advance(span_text, span_id, anchor)
 
     def current_path(self) -> HierarchyPath:
         """Merge paths from all trackers into a single HierarchyPath."""

@@ -62,6 +62,7 @@ from backend.pipeline.toc_alignment import (
 from backend.pipeline.trackers import TrackerOrchestrator, TrackerProtocol
 from backend.pipeline.trackers.kitab_bab_fasl import KitabBabFaslTracker, parse_hierarchy_levels
 from backend.pipeline.trackers.sanad_matn import SanadMatnTracker
+from backend.pipeline.trackers.toc_hierarchy import TocHierarchyTracker
 from backend.pipeline.vocab import (
     HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER,
     HADITH__BEHAVIOR_GENERAL_PROSE,
@@ -150,19 +151,23 @@ def _build_segment_context(manuscript: Manuscript, config: Config) -> _SegmentCo
         heading_stop_patterns,
     ) = parse_hierarchy_levels(config.patterns)
     attribution_regex = compiled_patterns.get("ATTRIBUTION")
-    kitab_tracker: TrackerProtocol = KitabBabFaslTracker(
-        _level_names=level_names,
-        _prefix_to_level=prefix_to_level,
-        _all_prefixes=all_prefixes,
-        _top_level_prefixes=top_level_prefixes,
-        _heading_stop_patterns=heading_stop_patterns,
-        _attribution_re=attribution_regex,
+    toc = manuscript.metadata.get("toc", [])
+    hierarchy_tracker: TrackerProtocol = (
+        TocHierarchyTracker()
+        if toc
+        else KitabBabFaslTracker(
+            _level_names=level_names,
+            _prefix_to_level=prefix_to_level,
+            _all_prefixes=all_prefixes,
+            _top_level_prefixes=top_level_prefixes,
+            _heading_stop_patterns=heading_stop_patterns,
+            _attribution_re=attribution_regex,
+        )
     )
     sanad_tracker: TrackerProtocol = SanadMatnTracker(
         _hadith_behavior_id=HADITH__BEHAVIOR_TRANSMISSION
     )
-    orchestrator = TrackerOrchestrator([kitab_tracker, sanad_tracker])
-    toc = manuscript.metadata.get("toc", [])
+    orchestrator = TrackerOrchestrator([hierarchy_tracker, sanad_tracker])
     toc_pattern_ids = config.raw.get("toc_sections", {}).get("content_start_patterns", [])
     toc_patterns = [compiled_patterns[pid] for pid in toc_pattern_ids if pid in compiled_patterns]
     return _SegmentContext(
@@ -289,10 +294,10 @@ def _emit_spans(
         content_span_count += 1
         if ctx.content_start_page is not None and page_end < ctx.content_start_page:
             behavior = HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER
-        ctx.orchestrator.advance(behavior, paragraph_text, span_id)
+        anchor = layout.anchor_by_index.get(span_index)
+        ctx.orchestrator.advance(behavior, paragraph_text, span_id, anchor)
         hierarchy = ctx.orchestrator.current_path()
         footnote_entries = _collect_footnotes(layout.page_footnotes, page_start, page_end)
-        anchor = layout.anchor_by_index.get(span_index)
         metadata = _build_span_metadata(
             behavior, detected, anchor, prev_span_id, prev_hadith_span_id
         )

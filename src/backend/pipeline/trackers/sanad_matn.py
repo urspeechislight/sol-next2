@@ -24,11 +24,11 @@ class SanadMatnTracker(TrackerProtocol):
     _hadith_behavior_id: str = ""
     _hadith_counter: int = field(default=0)
 
-    def should_advance(self, behavior: str) -> bool:
-        """Return True when the behavior matches the hadith behavior id."""
+    def should_advance(self, behavior: str, anchor: object | None = None) -> bool:  # noqa: ARG002
+        """Return True when the behavior matches the hadith behavior id (anchor unused)."""
         return bool(self._hadith_behavior_id) and behavior == self._hadith_behavior_id
 
-    def advance(self, span_text: str, span_id: str) -> None:  # noqa: ARG002
+    def advance(self, span_text: str, span_id: str, anchor: object | None = None) -> None:  # noqa: ARG002
         """Increment the hadith counter."""
         self._hadith_counter += 1
 
