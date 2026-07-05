@@ -185,24 +185,81 @@ def _emit_chunk_paragraphs(
     anchor: TocAnchor | None,
     result: list[tuple[str, int, int, TocAnchor | None]],
 ) -> None:
-    """Split one Layer-A chunk at the boundary regex and append its paragraphs to result."""
+    """Split one Layer-A chunk at the boundary regex and append its paragraphs to result.
+
+    A fragment below min_span_chars is not dropped: silently discarding it loses
+    real short headings (a lone باب line is a whole page in some editions). It is
+    held and merged into the next qualifying paragraph, or, at the chunk's end,
+    appended to the previous paragraph, so every source character reaches a span.
+    """
     parts = layout.boundary_re.split(chunk)
     search_from = 0
     first_paragraph_in_chunk = True
+    pending: list[str] = []
+    pending_start: int | None = None
     for part in parts:
         if not part:
             continue
         idx = chunk.find(part, search_from)
         if idx == -1:
             idx = search_from
-        stripped = part.strip()
-        if stripped and len(stripped) >= layout.min_span_chars:
-            strip_offset = part.index(stripped[0]) if stripped else 0
-            text_start = lo + idx + strip_offset
-            text_end = text_start + len(stripped) - 1
-            pg_start = page_number_at_offset(text_start, layout.page_starts, layout.pages_list)
-            pg_end = page_number_at_offset(text_end, layout.page_starts, layout.pages_list)
-            attached = anchor if first_paragraph_in_chunk else None
-            result.append((stripped, pg_start, pg_end, attached))
-            first_paragraph_in_chunk = False
         search_from = idx + len(part)
+        stripped = part.strip()
+        if not stripped:
+            continue
+        strip_offset = part.index(stripped[0])
+        text_start = lo + idx + strip_offset
+        text_end = text_start + len(stripped) - 1
+        if len(stripped) < layout.min_span_chars:
+            if not pending:
+                pending_start = text_start
+            pending.append(stripped)
+            continue
+        if pending:
+            _logger.debug("short_fragment_merged_forward", fragments=len(pending))
+            text = "\n".join([*pending, stripped])
+            start = pending_start if pending_start is not None else text_start
+            pending = []
+            pending_start = None
+        else:
+            text = stripped
+            start = text_start
+        pg_start = page_number_at_offset(start, layout.page_starts, layout.pages_list)
+        pg_end = page_number_at_offset(text_end, layout.page_starts, layout.pages_list)
+        attached = anchor if first_paragraph_in_chunk else None
+        result.append((text, pg_start, pg_end, attached))
+        first_paragraph_in_chunk = False
+    if pending:
+        _flush_pending_fragments(
+            pending, pending_start, anchor, first_paragraph_in_chunk, layout, result
+        )
+
+
+def _flush_pending_fragments(
+    pending: list[str],
+    pending_start: int | None,
+    anchor: TocAnchor | None,
+    first_in_chunk: bool,
+    layout: SplitLayout,
+    result: list[tuple[str, int, int, TocAnchor | None]],
+) -> None:
+    """Attach leftover below-threshold fragments so their text is never lost.
+
+    They append to the previous paragraph when one exists; otherwise they stand
+    as their own span (a short heading with no neighbour is still real text).
+    """
+    text = "\n".join(pending)
+    start = pending_start if pending_start is not None else 0
+    pending_pg = page_number_at_offset(start, layout.page_starts, layout.pages_list)
+    if result:
+        _logger.debug("short_fragment_merged_back", fragments=len(pending))
+        prev_text, prev_pg_start, prev_pg_end, prev_anchor = result[-1]
+        result[-1] = (
+            f"{prev_text}\n{text}",
+            prev_pg_start,
+            max(prev_pg_end, pending_pg),
+            prev_anchor,
+        )
+        return
+    _logger.debug("short_fragment_kept_standalone", fragments=len(pending))
+    result.append((text, pending_pg, pending_pg, anchor if first_in_chunk else None))
