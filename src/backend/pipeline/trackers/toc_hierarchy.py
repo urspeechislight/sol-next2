@@ -34,11 +34,11 @@ class TocHierarchyTracker(TrackerProtocol):
     _counter: int = field(default=0)
     _state: dict[int, tuple[str, str]] = field(default_factory=dict[int, tuple[str, str]])
 
-    def should_advance(self, behavior: str, anchor: TocAnchor | None) -> bool:  # noqa: ARG002
+    def should_advance(self, _behavior: str, anchor: TocAnchor | None, /) -> bool:
         """Advance only when the span carries a TOC anchor."""
         return anchor is not None
 
-    def advance(self, span_text: str, span_id: str, anchor: TocAnchor | None) -> None:  # noqa: ARG002
+    def advance(self, _span_text: str, _span_id: str, anchor: TocAnchor | None, /) -> None:
         """Open the anchor's title at its level and clear deeper levels."""
         if anchor is None:
             return

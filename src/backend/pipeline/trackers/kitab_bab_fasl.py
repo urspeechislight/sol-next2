@@ -35,11 +35,11 @@ class KitabBabFaslTracker(TrackerProtocol):
     _heading_counter: int = field(default=0)
     _state: dict[str, tuple[str, str]] = field(default_factory=dict[str, tuple[str, str]])
 
-    def should_advance(self, behavior: str, anchor: object | None = None) -> bool:  # noqa: ARG002
+    def should_advance(self, behavior: str, _anchor: object | None, /) -> bool:
         """Return True when the behavior is a section heading (anchor unused here)."""
         return behavior == self._heading_behavior_id
 
-    def advance(self, span_text: str, span_id: str, anchor: object | None = None) -> None:  # noqa: ARG002
+    def advance(self, span_text: str, _span_id: str, _anchor: object | None, /) -> None:
         """Update hierarchy state when a SECTION_HEADING span is encountered.
 
         Determines the heading level from the text prefix, stores the heading

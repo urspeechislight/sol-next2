@@ -25,11 +25,15 @@ class TrackerProtocol(Protocol):
     keys on it; pattern-driven trackers ignore it and key on ``behavior``.
     """
 
-    def should_advance(self, behavior: str, anchor: TocAnchor | None) -> bool:
-        """Return True if this tracker should advance on the given span."""
+    def should_advance(self, behavior: str, anchor: TocAnchor | None, /) -> bool:
+        """Return True if this tracker should advance on the given span.
+
+        Params are positional-only so a tracker that ignores one can name it
+        with a leading underscore without breaking protocol conformance.
+        """
         ...
 
-    def advance(self, span_text: str, span_id: str, anchor: TocAnchor | None) -> None:
+    def advance(self, span_text: str, span_id: str, anchor: TocAnchor | None, /) -> None:
         """Update tracker state for a span this tracker advances on."""
         ...
 

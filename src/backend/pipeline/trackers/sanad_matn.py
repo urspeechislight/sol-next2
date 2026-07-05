@@ -19,9 +19,7 @@ from backend.patterns import CompiledPattern, cached_compile
 from backend.pipeline.models import HierarchyPath
 from backend.pipeline.trackers import TrackerProtocol
 
-_LEADING_ENTRY_NUMBER: CompiledPattern = cached_compile(
-    r"^\s*\*?\s*\(?([0-9٠-٩]+)(?:\s*[.\-]|\))"
-)
+_LEADING_ENTRY_NUMBER: CompiledPattern = cached_compile(r"^\s*\*?\s*\(?([0-9٠-٩]+)(?:\s*[.\-]|\))")
 _NODE_ID_FORMAT: str = "entry_{index:04d}"
 
 
@@ -50,11 +48,11 @@ class SanadMatnTracker(TrackerProtocol):
     _counter: int = field(default=0)
     _current: tuple[str, str] | None = field(default=None)
 
-    def should_advance(self, behavior: str, anchor: object | None = None) -> bool:  # noqa: ARG002
+    def should_advance(self, _behavior: str, _anchor: object | None, /) -> bool:
         """Every span is inspected; advance() decides from the text (args unused)."""
         return True
 
-    def advance(self, span_text: str, span_id: str, anchor: object | None = None) -> None:  # noqa: ARG002
+    def advance(self, span_text: str, _span_id: str, _anchor: object | None, /) -> None:
         """Open a new leaf when the span starts a printed entry; else keep the current."""
         number = _leading_entry_number(span_text)
         if number is None:
