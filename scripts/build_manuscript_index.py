@@ -51,7 +51,12 @@ def _process_book(book: Book, config: Config) -> Manuscript | None:
     if not rows:
         return None
     pages = [
-        ManuscriptPage(page_number=row.page, page_name=str(row.page), text=row.content)
+        ManuscriptPage(
+            page_number=row.page,
+            page_name=str(row.page),
+            text=row.content,
+            footnote=row.footnote,
+        )
         for row in rows
     ]
     manuscript = Manuscript(
