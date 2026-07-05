@@ -153,6 +153,36 @@ def test_should_type_bare_kinship_reference_as_relative_reference() -> None:
     assert "chain_position" in reference.metadata
 
 
+def test_should_type_standalone_first_person_abi_as_relative_reference() -> None:
+    text = "حدثنا أبي عن سعد قال كذا"
+    isnad_end = text.index("قال")
+    patterns = [
+        _pattern("ATTRIBUTION", "حدثنا", text.index("حدثنا")),
+        _pattern("ATTRIBUTION", "عن", text.index("عن سعد")),
+        _pattern("SPEECH_VERB_GENERIC", "قال", isnad_end),
+    ]
+    entities = narrator_extractor(_span(text, patterns, metadata={"isnad_end": isnad_end}), _CFG)
+    by_text = {entity.text: entity for entity in entities}
+    assert by_text["أبي"].metadata["role_in_context"] == "relative_reference"
+    assert by_text["سعد"].metadata["role_in_context"] == "narrator"
+
+
+def test_should_not_split_a_kunya_headed_by_abi() -> None:
+    text = "حدثنا محمد عن أبي عبد الله قال كذا"
+    isnad_end = text.index("قال")
+    patterns = [
+        _pattern("ATTRIBUTION", "حدثنا", text.index("حدثنا")),
+        _pattern("ATTRIBUTION", "عن", text.index("عن أبي عبد الله")),
+        _pattern("SPEECH_VERB_GENERIC", "قال", isnad_end),
+    ]
+    entities = narrator_extractor(_span(text, patterns, metadata={"isnad_end": isnad_end}), _CFG)
+    names = [entity.text for entity in entities]
+    assert "أبي عبد الله" in names
+    assert "عبد الله" not in names
+    kunya = next(entity for entity in entities if entity.text == "أبي عبد الله")
+    assert kunya.metadata["role_in_context"] == "narrator"
+
+
 def test_should_strip_kinship_prefix_from_named_narrator() -> None:
     text = "حدثنا الإمام علي بن محمد عن أبيه محمد بن علي قال كذا"
     isnad_end = text.index("قال")
