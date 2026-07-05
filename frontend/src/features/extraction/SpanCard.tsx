@@ -43,10 +43,12 @@ function anchoredText(text: string, entities: ExtractionEntity[]): ReactNode[] {
   return nodes;
 }
 
-/** One unit row: its type and behavior tags, then the Arabic text. Shared
+/** One unit row: its type and behavior tags, the citation head split off the
+    chain (when the compilation printed one), then the Arabic text. Shared
     with the inspector's orphan section, so a unit renders identically
     whether or not its span starts on the page. */
 export function UnitRow({ unit }: { unit: ExtractionUnit }) {
+  const citationHead = textField(unit.metadata, 'citation_head');
   return (
     <div className="xtr-unit">
       <Inline gap="xs" align="center">
@@ -54,6 +56,11 @@ export function UnitRow({ unit }: { unit: ExtractionUnit }) {
         <span className={`xtr-dot xtr-tone--${behaviorTone(unit.behavior)}`} />
         <span className="xtr-mono">{unit.unit_id}</span>
       </Inline>
+      {citationHead ? (
+        <p className="xtr-crumb" dir="rtl" lang="ar">
+          {citationHead}
+        </p>
+      ) : null}
       <p className="xtr-ar" dir="rtl" lang="ar">
         {unit.text_ar}
       </p>
@@ -61,12 +68,14 @@ export function UnitRow({ unit }: { unit: ExtractionUnit }) {
   );
 }
 
-/** One entity row: type, anchored text, char range, confidence, extractor. */
+/** One entity row: type, role, anchored text, char range, confidence, extractor. */
 function EntityRow({ entity }: { entity: ExtractionEntity }) {
   const extractor = textField(entity.provenance, 'extractor_id');
+  const role = textField(entity.metadata, 'role_in_context');
   return (
     <div className="xtr-entity">
       <span className="xtr-tag">{entity.entity_type}</span>
+      {role ? <span className="xtr-tag">{role}</span> : null}
       <span className="xtr-ar xtr-entity__text" dir="rtl" lang="ar">
         {entity.text_ar}
       </span>
