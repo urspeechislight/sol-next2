@@ -486,18 +486,20 @@ def route_behavior(
     Evaluates rules in priority order (highest first). A rule matches when all
     requires are present, at least one any_of is present (if non-empty), none of
     none_of are present, and genre_gate passes (if set). Returns (label,
-    routed_explicitly): routed_explicitly is True when either no patterns were
-    detected (the clean default to GENERAL_PROSE) or a configured rule matched;
-    it is False only when patterns were detected but no rule matched — the
+    routed_explicitly): routed_explicitly is True when no patterns were detected
+    (the clean default to GENERAL_PROSE), when a configured rule matched, or when
+    the only rules whose patterns matched were declined by their genre_gate —
+    that last case is a deliberate genre exclusion, so GENERAL_PROSE is the
+    intended answer, not a routing gap. routed_explicitly is False only when
+    patterns were detected and no rule's patterns matched at all — the genuine
     unrouted case the failure budget tracks.
     """
     detected_ids = _thresholded_pattern_ids(detected_patterns, start_thresholds)
     if not detected_ids:
         return HADITH__BEHAVIOR_GENERAL_PROSE, True
+    genre_excluded_match = False
     for rule in behavior_rules:
         if not rule.requires and not rule.any_of:
-            continue
-        if rule.genre_gate is not None and (book_type is None or book_type not in rule.genre_gate):
             continue
         if rule.requires and not rule.requires.issubset(detected_ids):
             continue
@@ -505,7 +507,12 @@ def route_behavior(
             continue
         if rule.none_of and rule.none_of.intersection(detected_ids):
             continue
+        if rule.genre_gate is not None and (book_type is None or book_type not in rule.genre_gate):
+            genre_excluded_match = True
+            continue
         return rule.behavior_id, True
+    if genre_excluded_match:
+        return HADITH__BEHAVIOR_GENERAL_PROSE, True
     _logger.warning(
         "no-behavior-rule-matched",
         pattern_ids=sorted(detected_ids),

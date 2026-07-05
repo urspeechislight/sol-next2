@@ -32,7 +32,7 @@ from backend.pipeline.extractors.isnad_boundary import (
     filter_false_attributions,
 )
 from backend.pipeline.models import Entity, Pattern, Span
-from backend.pipeline.name_extraction import extract_person_name
+from backend.pipeline.name_extraction import extract_person_name, has_non_name_leading_word
 from backend.pipeline.persons import (
     NARRATOR__ROLE_NARRATOR,
     NARRATOR__ROLE_RELATIVE_REF,
@@ -61,6 +61,7 @@ class NarratorSliceContext:
     name_content_boundary_regex: CompiledPattern
     relative_references: list[str]
     stopwords: frozenset[str]
+    non_name_leading: frozenset[str]
     narrator_name_max_chars: int
 
 
@@ -102,6 +103,7 @@ def _build_slice_context(span: Span, config: Config) -> NarratorSliceContext:
         name_content_boundary_regex=build_name_content_boundary_regex(boundary_parts),
         relative_references=list(narrator_cfg["relative_references"]),
         stopwords=frozenset(narrator_cfg.get("narrator_stopwords", [])),
+        non_name_leading=frozenset(narrator_cfg.get("non_name_leading_words", [])),
         narrator_name_max_chars=config.thresholds.narrator_name_max_chars,
     )
 
@@ -178,7 +180,12 @@ def _emit_one_narrator(
         return None, part_search
     name_text, part_lo, part_hi = cleaned
     part = part[part_lo:part_hi]
-    if not name_text or name_text in ctx.stopwords:
+    rejected = (
+        not name_text
+        or name_text in ctx.stopwords
+        or has_non_name_leading_word(name_text, ctx.non_name_leading)
+    )
+    if rejected:
         return None, part_search
     if len(name_text) > ctx.narrator_name_max_chars:
         _logger.debug(

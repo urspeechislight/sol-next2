@@ -95,6 +95,24 @@ def test_should_pass_genre_gate_only_when_book_type_matches() -> None:
     assert route_behavior([_pattern("SIRA")], rules, {}, book_type="fiqh")[0] == _GENERAL
 
 
+def test_should_treat_genre_excluded_content_match_as_clean_general_prose() -> None:
+    rules = parse_behavior_rules(
+        [_rule("FIQH", requires=["FIQH_RULING"], genre_gate={"fiqh"}, priority=1)]
+    )
+    behavior, routed = route_behavior([_pattern("FIQH_RULING")], rules, {}, book_type="grammar")
+    assert behavior == _GENERAL
+    assert routed is True
+
+
+def test_should_stay_unrouted_when_gate_passes_but_content_matches_no_rule() -> None:
+    rules = parse_behavior_rules(
+        [_rule("FIQH", requires=["FIQH_RULING"], genre_gate={"fiqh"}, priority=1)]
+    )
+    behavior, routed = route_behavior([_pattern("ORPHAN")], rules, {}, book_type="fiqh")
+    assert behavior == _GENERAL
+    assert routed is False
+
+
 def test_should_pick_highest_priority_when_multiple_rules_match() -> None:
     rules = parse_behavior_rules(
         [

@@ -318,9 +318,11 @@ behaviors:
       QURAN_VERSE when corpus matching detects it. MATN_BOUNDARY_HINT guard
       blocks long narrative prose that *cites* a verse from being classified
       as a verse — the hint matches "قال رسول الله / النبي" which never
-      appears in pure Quranic text.
+      appears in pure Quranic text. AUTHOR_COMMENTARY guard keeps the author's
+      exegesis (opening تفسير / بيان / أقول, which quotes قوله تعالى) as
+      AUTHOR_COMMENTARY rather than absorbing the commentary into QURAN_VERSE.
     requires: [QURAN_REF]
-    none_of: [ATTRIBUTION_STRONG, AN_CHAIN_INITIAL, BASMALA, MATN_BOUNDARY_HINT]
+    none_of: [ATTRIBUTION_STRONG, AN_CHAIN_INITIAL, BASMALA, MATN_BOUNDARY_HINT, AUTHOR_COMMENTARY]
     priority: 90
 
   - id: BIOGRAPHY
@@ -357,8 +359,16 @@ behaviors:
     priority: 85
 
   - id: FIQH_RULING
-    description: Legal ruling or juristic opinion
+    description: >
+      Legal ruling or juristic opinion. The trigger lexicon (يجب / يكره /
+      يحل / يحرم) is polysemous: in kalam يكره means "compel" and يجب means
+      "is necessary", so in theology, tafsir, and hadith volumes these words
+      fire the rule spuriously and outrank NUMBERED_ENTRY on numbered hadith.
+      The genre gate restricts the ruling behavior to fiqh books, the same way
+      BIOGRAPHY and RIJAL_ENTRY gate their context-dependent rules; in a
+      non-fiqh book a juristic-sounding entry stays a hadith or numbered entry.
     requires: [FIQH_RULING]
+    genre_gate: [fiqh-terminology, hanafi-fiqh, hanbali-fiqh, independent-fiqh, maliki-fiqh, shafii-fiqh, shia-fiqh-8th-century, shia-fiqh-fatwas, shia-fiqh-pre-8th-century, shia-fiqh-principles, shia-hadith-fiqh, sunni-fiqh-principles, sunni-hadith-fiqh, zahiri-fiqh, zaidi-fiqh]
     priority: 75
 
   - id: HISTORICAL_NARRATIVE
@@ -707,6 +717,23 @@ narrator_extraction:
     - "الحديث"
     - "فتى"
     - "يقول"
+    - "عنه"
+    - "عنها"
+    - "ابن آدم"
+
+  # First words that never head a person name: bibliographic nouns (كتاب X,
+  # خبر X, كلام له) and formulaic isnad-grade terms (في الصحيح / الموثق). A
+  # narrator or mention candidate whose first token is one of these is a
+  # citation or grading phrase that leaked past the citation-head boundary, not
+  # a name, so it is dropped. الحسن is deliberately excluded: it is also a very
+  # common given name (الحسن بن علي).
+  non_name_leading_words:
+    - "كتاب"
+    - "خبر"
+    - "كلام"
+    - "باب"
+    - "الصحيح"
+    - "الموثق"
 
   transmission_tail_verbs:
     - "يحدث"

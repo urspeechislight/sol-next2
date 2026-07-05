@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Final
 
 from backend.patterns import HONORIFIC_SIGNS, CompiledPattern, cached_compile
 from backend.pipeline.models import Entity, Span
-from backend.pipeline.name_extraction import clean_name_text
+from backend.pipeline.name_extraction import clean_name_text, has_non_name_leading_word
 from backend.pipeline.persons import (
     NARRATOR__ROLE_MENTION,
     NARRATOR__SOURCE_MATN_PATTERN,
@@ -59,6 +59,7 @@ def person_mention_extractor(span: Span, config: Config) -> list[Entity]:
     """
     narrator_cfg = config.raw["narrator_extraction"]
     stopwords = frozenset(narrator_cfg.get("narrator_stopwords", []))
+    non_name_leading = frozenset(narrator_cfg.get("non_name_leading_words", []))
     max_chars = config.thresholds.narrator_name_max_chars
     matn_start = int(span.metadata.get("isnad_end", 0))
     windows: list[tuple[int, int]] = []
@@ -69,12 +70,16 @@ def person_mention_extractor(span: Span, config: Config) -> list[Entity]:
         name = clean_name_text(span.text[start:end])
         if not name or name in stopwords or len(name) > max_chars:
             continue
+        if has_non_name_leading_word(name, non_name_leading):
+            continue
+        token_pos = span.text.find(name.partition(" ")[0], start, end)
+        name_start = token_pos if token_pos != -1 else start
         entities.append(
             emit_person_entity(
                 span=span,
                 text=name,
-                char_start=start,
-                char_end=start + len(name),
+                char_start=name_start,
+                char_end=name_start + len(name),
                 spec=PersonSpec(
                     role_in_context=NARRATOR__ROLE_MENTION,
                     source=NARRATOR__SOURCE_MATN_PATTERN,
