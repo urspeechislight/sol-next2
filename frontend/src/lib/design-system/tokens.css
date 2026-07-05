@@ -44,6 +44,8 @@
   --palette-amber-300: #d89a55;
   --palette-rose-500: #b14c72;
   --palette-teal-500: #2c8090;
+  --palette-rose-300: #d0748f;
+  --palette-teal-300: #55a3b3;
   --palette-red-500: #c0463e;
   --palette-red-300: #dd6a62;
 
@@ -139,6 +141,8 @@
   --color-matn: var(--palette-green-500);
   --color-verse: var(--palette-violet-500);
   --color-ruling: var(--palette-amber-500);
+  --color-poetry: var(--palette-rose-500);
+  --color-biography: var(--palette-teal-500);
 
   --color-danger: var(--palette-red-500);
   --color-success: var(--palette-green-500);
@@ -280,6 +284,8 @@
 
   --color-verse: var(--palette-violet-300);
   --color-ruling: var(--palette-amber-300);
+  --color-poetry: var(--palette-rose-300);
+  --color-biography: var(--palette-teal-300);
   --color-danger: var(--palette-red-300);
   --color-success: var(--palette-green-300);
   --color-warning: var(--palette-amber-300);

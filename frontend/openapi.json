@@ -73,6 +73,24 @@
         "title": "Ayah",
         "type": "object"
       },
+      "BehaviorCount": {
+        "description": "How many units of one behavior a book carries.",
+        "properties": {
+          "behavior": {
+            "description": "Behavior label.",
+            "title": "Behavior",
+            "type": "string"
+          },
+          "units": {
+            "description": "Unit count for this behavior.",
+            "title": "Units",
+            "type": "integer"
+          }
+        },
+        "required": ["behavior", "units"],
+        "title": "BehaviorCount",
+        "type": "object"
+      },
       "Book": {
         "description": "One book record (a single physical volume) exposed by the screens.",
         "properties": {
@@ -812,6 +830,388 @@
         "title": "Domain",
         "type": "object"
       },
+      "ExtractionBookSummary": {
+        "description": "Coverage summary for one book present in the manuscript artifact.",
+        "properties": {
+          "behaviors": {
+            "description": "Unit counts per behavior, largest first.",
+            "items": {
+              "$ref": "#/components/schemas/BehaviorCount"
+            },
+            "title": "Behaviors",
+            "type": "array"
+          },
+          "entities": {
+            "description": "Total entities extracted for this book.",
+            "title": "Entities",
+            "type": "integer"
+          },
+          "first_page": {
+            "description": "Lowest page on which a span starts.",
+            "title": "First Page",
+            "type": "integer"
+          },
+          "page_end": {
+            "description": "Highest page any span reaches.",
+            "title": "Page End",
+            "type": "integer"
+          },
+          "pages_with_spans": {
+            "description": "Distinct pages on which a span starts.",
+            "title": "Pages With Spans",
+            "type": "integer"
+          },
+          "spans": {
+            "description": "Total spans extracted for this book.",
+            "title": "Spans",
+            "type": "integer"
+          },
+          "title_ar": {
+            "description": "Arabic title from the catalog.",
+            "title": "Title Ar",
+            "type": "string"
+          },
+          "title_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "English title, if present.",
+            "title": "Title En"
+          },
+          "units": {
+            "description": "Total units extracted for this book.",
+            "title": "Units",
+            "type": "integer"
+          },
+          "urn": {
+            "description": "Manifestation URN.",
+            "title": "Urn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "urn",
+          "title_ar",
+          "first_page",
+          "page_end",
+          "pages_with_spans",
+          "spans",
+          "units",
+          "entities",
+          "behaviors"
+        ],
+        "title": "ExtractionBookSummary",
+        "type": "object"
+      },
+      "ExtractionEntity": {
+        "description": "One extracted entity with its anchors, provenance, and evidence.",
+        "properties": {
+          "char_end": {
+            "description": "Anchor end offset within the owning span text.",
+            "title": "Char End",
+            "type": "integer"
+          },
+          "char_start": {
+            "description": "Anchor start offset within the owning span text.",
+            "title": "Char Start",
+            "type": "integer"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Extractor confidence, when the extractor scores one.",
+            "title": "Confidence"
+          },
+          "entity_id": {
+            "description": "Stable entity id.",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "entity_type": {
+            "description": "Entity kind (PERSON, ...).",
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "evidence": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "description": "Anchor evidence: the source span and offsets the claim rests on.",
+            "title": "Evidence",
+            "type": "object"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "description": "Extractor metadata, decoded.",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "provenance": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "description": "Which extractor produced this entity, and how.",
+            "title": "Provenance",
+            "type": "object"
+          },
+          "span_id": {
+            "description": "Owning span id (back-references keep their own span).",
+            "title": "Span Id",
+            "type": "string"
+          },
+          "text_ar": {
+            "description": "Arabic entity text.",
+            "title": "Text Ar",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_id",
+          "span_id",
+          "entity_type",
+          "text_ar",
+          "char_start",
+          "char_end",
+          "metadata",
+          "provenance",
+          "evidence"
+        ],
+        "title": "ExtractionEntity",
+        "type": "object"
+      },
+      "ExtractionPage": {
+        "description": "Everything the pipeline produced for the spans starting on one page.",
+        "properties": {
+          "book_urn": {
+            "description": "Manifestation URN the page belongs to.",
+            "title": "Book Urn",
+            "type": "string"
+          },
+          "entities": {
+            "description": "Entities anchored on this page, span order then char order.",
+            "items": {
+              "$ref": "#/components/schemas/ExtractionEntity"
+            },
+            "title": "Entities",
+            "type": "array"
+          },
+          "page_number": {
+            "description": "1-based page number.",
+            "title": "Page Number",
+            "type": "integer"
+          },
+          "spans": {
+            "description": "Spans starting on this page, in order.",
+            "items": {
+              "$ref": "#/components/schemas/ExtractionSpan"
+            },
+            "title": "Spans",
+            "type": "array"
+          },
+          "units": {
+            "description": "Units starting on this page, in order.",
+            "items": {
+              "$ref": "#/components/schemas/ExtractionUnit"
+            },
+            "title": "Units",
+            "type": "array"
+          }
+        },
+        "required": ["book_urn", "page_number", "spans", "units", "entities"],
+        "title": "ExtractionPage",
+        "type": "object"
+      },
+      "ExtractionPattern": {
+        "description": "One segment-phase pattern match recorded on a span.",
+        "properties": {
+          "char_end": {
+            "description": "Match end offset within the span text.",
+            "title": "Char End",
+            "type": "integer"
+          },
+          "char_start": {
+            "description": "Match start offset within the span text.",
+            "title": "Char Start",
+            "type": "integer"
+          },
+          "matched_text": {
+            "description": "The exact text the pattern matched.",
+            "title": "Matched Text",
+            "type": "string"
+          },
+          "pattern_id": {
+            "description": "Routing-table pattern id (config/sol.yaml).",
+            "title": "Pattern Id",
+            "type": "string"
+          }
+        },
+        "required": ["pattern_id", "matched_text", "char_start", "char_end"],
+        "title": "ExtractionPattern",
+        "type": "object"
+      },
+      "ExtractionSpan": {
+        "description": "One segment-phase span as stored in the manuscript artifact.",
+        "properties": {
+          "behavior": {
+            "description": "Routed behavior label (HADITH_TRANSMISSION, ...).",
+            "title": "Behavior",
+            "type": "string"
+          },
+          "footnote_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Footnote block split off the span, when present.",
+            "title": "Footnote Text"
+          },
+          "hierarchy_depth": {
+            "description": "Depth of the span in the section hierarchy.",
+            "title": "Hierarchy Depth",
+            "type": "integer"
+          },
+          "hierarchy_path": {
+            "description": "TOC-anchored section path, root first.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Hierarchy Path",
+            "type": "array"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "description": "Segment-phase metadata, decoded.",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "page_end": {
+            "description": "Last page the span covers.",
+            "title": "Page End",
+            "type": "integer"
+          },
+          "page_start": {
+            "description": "First page the span covers.",
+            "title": "Page Start",
+            "type": "integer"
+          },
+          "patterns": {
+            "description": "Every pattern match that fed the behavior routing.",
+            "items": {
+              "$ref": "#/components/schemas/ExtractionPattern"
+            },
+            "title": "Patterns",
+            "type": "array"
+          },
+          "span_id": {
+            "description": "Stable span id (document order sorts correctly).",
+            "title": "Span Id",
+            "type": "string"
+          },
+          "span_type": {
+            "description": "Structural kind (content, heading, ...).",
+            "title": "Span Type",
+            "type": "string"
+          },
+          "text_ar": {
+            "description": "Arabic span text.",
+            "title": "Text Ar",
+            "type": "string"
+          }
+        },
+        "required": [
+          "span_id",
+          "page_start",
+          "page_end",
+          "span_type",
+          "behavior",
+          "text_ar",
+          "hierarchy_path",
+          "hierarchy_depth",
+          "patterns",
+          "metadata"
+        ],
+        "title": "ExtractionSpan",
+        "type": "object"
+      },
+      "ExtractionUnit": {
+        "description": "One extract-phase atomic unit (isnad, matn, hadith, ...).",
+        "properties": {
+          "behavior": {
+            "description": "Behavior label inherited from the owning span.",
+            "title": "Behavior",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "description": "Extract-phase metadata, decoded.",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "page_end": {
+            "description": "Last page the unit covers.",
+            "title": "Page End",
+            "type": "integer"
+          },
+          "page_start": {
+            "description": "First page the unit covers.",
+            "title": "Page Start",
+            "type": "integer"
+          },
+          "span_id": {
+            "description": "Owning span id.",
+            "title": "Span Id",
+            "type": "string"
+          },
+          "text_ar": {
+            "description": "Arabic unit text.",
+            "title": "Text Ar",
+            "type": "string"
+          },
+          "unit_id": {
+            "description": "Stable unit id (document order sorts correctly).",
+            "title": "Unit Id",
+            "type": "string"
+          },
+          "unit_type": {
+            "description": "Atomic kind (isnad, matn, hadith, ...).",
+            "title": "Unit Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "unit_id",
+          "span_id",
+          "page_start",
+          "page_end",
+          "unit_type",
+          "behavior",
+          "text_ar",
+          "metadata"
+        ],
+        "title": "ExtractionUnit",
+        "type": "object"
+      },
       "Footnote": {
         "description": "One entry in a page's footnote apparatus: the editor's notes as printed.\n\nThe apparatus is page-local, mirroring the print edition: an entry is\nserved with the page whose foot it is printed on. Roughly 1% of corpus\nmarkers reference an entry printed on the neighboring page; those entries\nstill appear on their own page, exactly as the edition prints them.",
         "properties": {
@@ -1045,6 +1445,7 @@
         "title": "HistoryEvent",
         "type": "object"
       },
+      "JsonValue": {},
       "Narrator": {
         "description": "One narrator in an isnad.",
         "properties": {
@@ -2523,6 +2924,80 @@
         },
         "summary": "Today's verse, hadith, and book pick, rotated by date.",
         "tags": ["daily"]
+      }
+    },
+    "/api/dev/extraction/books": {
+      "get": {
+        "description": "Return one coverage summary per book in the artifact, URN-ordered.\n\nTitles come from the catalog: a URN present in the artifact but absent\nfrom the catalog raises ResourceNotFoundError \u2014 a stale artifact must be\nrebuilt, not partially listed.",
+        "operationId": "extraction_summaries_api_dev_extraction_books_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExtractionBookSummary"
+                  },
+                  "title": "Response Extraction Summaries Api Dev Extraction Books Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List the books in the manuscript artifact with extraction coverage.",
+        "tags": ["extraction"]
+      }
+    },
+    "/api/dev/extraction/books/{book_urn}/pages/{page_number}": {
+      "get": {
+        "description": "Return every span, unit, and entity starting on one page, near-raw.\n\nAn empty page (no spans start there) is legitimate data and returns empty\nlists; an unknown URN raises ResourceNotFoundError instead.",
+        "operationId": "page_extraction_api_dev_extraction_books__book_urn__pages__page_number__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_urn",
+            "required": true,
+            "schema": {
+              "title": "Book Urn",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_number",
+            "required": true,
+            "schema": {
+              "title": "Page Number",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get one page's spans, units, and entities near-raw, for validation.",
+        "tags": ["extraction"]
       }
     },
     "/api/domains": {

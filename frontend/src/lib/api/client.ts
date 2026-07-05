@@ -14,6 +14,8 @@ import type {
   CorpusMatch,
   Daily,
   Domain,
+  ExtractionBookSummary,
+  ExtractionPage,
   Page,
   QuranCitation,
   RijalEntry,
@@ -183,6 +185,22 @@ export function searchFacets(
 ): Promise<SearchFacets> {
   const qs = query({ q, mode, category: categories, book });
   return get<SearchFacets>(`${API.SEARCH}${API.FACETS}${qs}`);
+}
+
+// ---- dev extraction inspection ----
+// Served only when the backend opted in with SOL_DEV_TOOLS=true; otherwise
+// these 404 and the extraction screen renders that state.
+
+/** List the books in the manuscript artifact with extraction coverage. */
+export function getExtractionBooks(): Promise<ExtractionBookSummary[]> {
+  return get<ExtractionBookSummary[]>(`${API.DEV_EXTRACTION}${API.BOOKS}`);
+}
+
+/** One page's spans, units, and entities near-raw, for validation. */
+export function getExtractionPage(urn: string, page: number): Promise<ExtractionPage> {
+  return get<ExtractionPage>(
+    `${API.DEV_EXTRACTION}${API.BOOKS}/${encodeURIComponent(urn)}${API.PAGES}/${page}`,
+  );
 }
 
 // ---- quran ----

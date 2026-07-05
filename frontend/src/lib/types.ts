@@ -78,6 +78,15 @@ export type Observance = Full<S['Observance']>;
 export type HistoryEvent = Full<S['HistoryEvent']>;
 export type Almanac = Full<S['Almanac']>;
 
+// ---- dev extraction inspection (GET /api/dev/extraction/*) ----
+export type ExtractionPattern = Full<S['ExtractionPattern']>;
+export type ExtractionSpan = Full<S['ExtractionSpan']>;
+export type ExtractionUnit = Full<S['ExtractionUnit']>;
+export type ExtractionEntity = Full<S['ExtractionEntity']>;
+export type ExtractionPage = Full<S['ExtractionPage']>;
+export type BehaviorCount = Full<S['BehaviorCount']>;
+export type ExtractionBookSummary = Full<S['ExtractionBookSummary']>;
+
 // ---- search (GET /api/search, /search/facets, /books/{urn}/search) ----
 export type BookSearchMatch = Full<S['BookSearchMatch']>;
 export type CorpusMatch = Full<S['CorpusMatch']>;

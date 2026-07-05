@@ -260,6 +260,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dev/extraction/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the books in the manuscript artifact with extraction coverage.
+         * @description Return one coverage summary per book in the artifact, URN-ordered.
+         *
+         *     Titles come from the catalog: a URN present in the artifact but absent
+         *     from the catalog raises ResourceNotFoundError — a stale artifact must be
+         *     rebuilt, not partially listed.
+         */
+        get: operations["extraction_summaries_api_dev_extraction_books_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dev/extraction/books/{book_urn}/pages/{page_number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get one page's spans, units, and entities near-raw, for validation.
+         * @description Return every span, unit, and entity starting on one page, near-raw.
+         *
+         *     An empty page (no spans start there) is legitimate data and returns empty
+         *     lists; an unknown URN raises ResourceNotFoundError instead.
+         */
+        get: operations["page_extraction_api_dev_extraction_books__book_urn__pages__page_number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/domains": {
         parameters: {
             query?: never;
@@ -559,6 +606,22 @@ export interface components {
              * @description Total ayat in the surah.
              */
             verse_count: number;
+        };
+        /**
+         * BehaviorCount
+         * @description How many units of one behavior a book carries.
+         */
+        BehaviorCount: {
+            /**
+             * Behavior
+             * @description Behavior label.
+             */
+            behavior: string;
+            /**
+             * Units
+             * @description Unit count for this behavior.
+             */
+            units: number;
         };
         /**
          * Book
@@ -1025,6 +1088,292 @@ export interface components {
             label_ar: string;
         };
         /**
+         * ExtractionBookSummary
+         * @description Coverage summary for one book present in the manuscript artifact.
+         */
+        ExtractionBookSummary: {
+            /**
+             * Behaviors
+             * @description Unit counts per behavior, largest first.
+             */
+            behaviors: components["schemas"]["BehaviorCount"][];
+            /**
+             * Entities
+             * @description Total entities extracted for this book.
+             */
+            entities: number;
+            /**
+             * First Page
+             * @description Lowest page on which a span starts.
+             */
+            first_page: number;
+            /**
+             * Page End
+             * @description Highest page any span reaches.
+             */
+            page_end: number;
+            /**
+             * Pages With Spans
+             * @description Distinct pages on which a span starts.
+             */
+            pages_with_spans: number;
+            /**
+             * Spans
+             * @description Total spans extracted for this book.
+             */
+            spans: number;
+            /**
+             * Title Ar
+             * @description Arabic title from the catalog.
+             */
+            title_ar: string;
+            /**
+             * Title En
+             * @description English title, if present.
+             */
+            title_en?: string | null;
+            /**
+             * Units
+             * @description Total units extracted for this book.
+             */
+            units: number;
+            /**
+             * Urn
+             * @description Manifestation URN.
+             */
+            urn: string;
+        };
+        /**
+         * ExtractionEntity
+         * @description One extracted entity with its anchors, provenance, and evidence.
+         */
+        ExtractionEntity: {
+            /**
+             * Char End
+             * @description Anchor end offset within the owning span text.
+             */
+            char_end: number;
+            /**
+             * Char Start
+             * @description Anchor start offset within the owning span text.
+             */
+            char_start: number;
+            /**
+             * Confidence
+             * @description Extractor confidence, when the extractor scores one.
+             */
+            confidence?: number | null;
+            /**
+             * Entity Id
+             * @description Stable entity id.
+             */
+            entity_id: string;
+            /**
+             * Entity Type
+             * @description Entity kind (PERSON, ...).
+             */
+            entity_type: string;
+            /**
+             * Evidence
+             * @description Anchor evidence: the source span and offsets the claim rests on.
+             */
+            evidence: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Metadata
+             * @description Extractor metadata, decoded.
+             */
+            metadata: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Provenance
+             * @description Which extractor produced this entity, and how.
+             */
+            provenance: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Span Id
+             * @description Owning span id (back-references keep their own span).
+             */
+            span_id: string;
+            /**
+             * Text Ar
+             * @description Arabic entity text.
+             */
+            text_ar: string;
+        };
+        /**
+         * ExtractionPage
+         * @description Everything the pipeline produced for the spans starting on one page.
+         */
+        ExtractionPage: {
+            /**
+             * Book Urn
+             * @description Manifestation URN the page belongs to.
+             */
+            book_urn: string;
+            /**
+             * Entities
+             * @description Entities anchored on this page, span order then char order.
+             */
+            entities: components["schemas"]["ExtractionEntity"][];
+            /**
+             * Page Number
+             * @description 1-based page number.
+             */
+            page_number: number;
+            /**
+             * Spans
+             * @description Spans starting on this page, in order.
+             */
+            spans: components["schemas"]["ExtractionSpan"][];
+            /**
+             * Units
+             * @description Units starting on this page, in order.
+             */
+            units: components["schemas"]["ExtractionUnit"][];
+        };
+        /**
+         * ExtractionPattern
+         * @description One segment-phase pattern match recorded on a span.
+         */
+        ExtractionPattern: {
+            /**
+             * Char End
+             * @description Match end offset within the span text.
+             */
+            char_end: number;
+            /**
+             * Char Start
+             * @description Match start offset within the span text.
+             */
+            char_start: number;
+            /**
+             * Matched Text
+             * @description The exact text the pattern matched.
+             */
+            matched_text: string;
+            /**
+             * Pattern Id
+             * @description Routing-table pattern id (config/sol.yaml).
+             */
+            pattern_id: string;
+        };
+        /**
+         * ExtractionSpan
+         * @description One segment-phase span as stored in the manuscript artifact.
+         */
+        ExtractionSpan: {
+            /**
+             * Behavior
+             * @description Routed behavior label (HADITH_TRANSMISSION, ...).
+             */
+            behavior: string;
+            /**
+             * Footnote Text
+             * @description Footnote block split off the span, when present.
+             */
+            footnote_text?: string | null;
+            /**
+             * Hierarchy Depth
+             * @description Depth of the span in the section hierarchy.
+             */
+            hierarchy_depth: number;
+            /**
+             * Hierarchy Path
+             * @description TOC-anchored section path, root first.
+             */
+            hierarchy_path: string[];
+            /**
+             * Metadata
+             * @description Segment-phase metadata, decoded.
+             */
+            metadata: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Page End
+             * @description Last page the span covers.
+             */
+            page_end: number;
+            /**
+             * Page Start
+             * @description First page the span covers.
+             */
+            page_start: number;
+            /**
+             * Patterns
+             * @description Every pattern match that fed the behavior routing.
+             */
+            patterns: components["schemas"]["ExtractionPattern"][];
+            /**
+             * Span Id
+             * @description Stable span id (document order sorts correctly).
+             */
+            span_id: string;
+            /**
+             * Span Type
+             * @description Structural kind (content, heading, ...).
+             */
+            span_type: string;
+            /**
+             * Text Ar
+             * @description Arabic span text.
+             */
+            text_ar: string;
+        };
+        /**
+         * ExtractionUnit
+         * @description One extract-phase atomic unit (isnad, matn, hadith, ...).
+         */
+        ExtractionUnit: {
+            /**
+             * Behavior
+             * @description Behavior label inherited from the owning span.
+             */
+            behavior: string;
+            /**
+             * Metadata
+             * @description Extract-phase metadata, decoded.
+             */
+            metadata: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Page End
+             * @description Last page the unit covers.
+             */
+            page_end: number;
+            /**
+             * Page Start
+             * @description First page the unit covers.
+             */
+            page_start: number;
+            /**
+             * Span Id
+             * @description Owning span id.
+             */
+            span_id: string;
+            /**
+             * Text Ar
+             * @description Arabic unit text.
+             */
+            text_ar: string;
+            /**
+             * Unit Id
+             * @description Stable unit id (document order sorts correctly).
+             */
+            unit_id: string;
+            /**
+             * Unit Type
+             * @description Atomic kind (isnad, matn, hadith, ...).
+             */
+            unit_type: string;
+        };
+        /**
          * Footnote
          * @description One entry in a page's footnote apparatus: the editor's notes as printed.
          *
@@ -1152,6 +1501,7 @@ export interface components {
              */
             year_ah: number;
         };
+        JsonValue: unknown;
         /**
          * Narrator
          * @description One narrator in an isnad.
@@ -2091,6 +2441,58 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Daily"];
+                };
+            };
+        };
+    };
+    extraction_summaries_api_dev_extraction_books_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionBookSummary"][];
+                };
+            };
+        };
+    };
+    page_extraction_api_dev_extraction_books__book_urn__pages__page_number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_urn: string;
+                page_number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

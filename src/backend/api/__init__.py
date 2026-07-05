@@ -15,6 +15,7 @@ from backend.api.canonical import router as canonical_router
 from backend.api.citations import router as citations_router
 from backend.api.daily import router as daily_router
 from backend.api.domains import router as domains_router
+from backend.api.extraction import router as extraction_router
 from backend.api.quran import router as quran_router
 from backend.api.reader import router as reader_router
 from backend.api.rijal import router as rijal_router
@@ -33,3 +34,4 @@ api_router.include_router(canonical_router)
 api_router.include_router(citations_router)
 api_router.include_router(search_router)
 api_router.include_router(quran_router)
+api_router.include_router(extraction_router)

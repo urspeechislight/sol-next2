@@ -16,6 +16,7 @@ import { SearchResults } from '../features/search/SearchResults';
 import { useContentFilters } from '../features/search/ContentScope';
 import type { ContentFilters } from '../features/search/ContentScope';
 import { DesignSystemScreen } from '../features/design/DesignSystemScreen';
+import { ExtractionScreen } from '../features/extraction/ExtractionScreen';
 import '../lib/design-system/tokens.css';
 import '../lib/design-system/base.css';
 import { AppShell } from './shell/AppShell';
@@ -92,6 +93,7 @@ function AppContent({
       {view === 'quran' ? <QuranScreen query={submitted} focus={quranFocus} /> : null}
       {view === 'graph' ? <GraphScreen /> : null}
       {view === 'design' ? <DesignSystemScreen /> : null}
+      {view === 'extraction' ? <ExtractionScreen /> : null}
     </>
   );
 }

@@ -48,6 +48,16 @@ class Settings(BaseSettings):
         default=REPO_ROOT / "config" / "sol.yaml",
         description="Path to the ported sol-next pipeline config (config/sol.yaml).",
     )
+    dev_tools: bool = Field(
+        default=False,
+        description=(
+            "Serve the /api/dev/* extraction-inspection routes. Off by default "
+            "so regular deployments never expose them; a developer or admin "
+            "opts a deployment in with SOL_DEV_TOOLS=true. The routes stay in "
+            "the OpenAPI schema either way (the generated frontend types must "
+            "not depend on the environment); when off, every request 404s."
+        ),
+    )
 
 
 @lru_cache(maxsize=1)
