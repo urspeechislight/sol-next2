@@ -201,7 +201,7 @@ patterns:
       prefixed ``(N)``. Negative lookahead ``(?!\s*[0-9٠-٩])`` blocks
       number-range shapes like ``23 - 26`` (Qurʾān verse-range refs:
       ``الأعراف: 23-26``) from being treated as list-item starts.
-    regex: "^\\s*\\(?[١٢٣٤٥٦٧٨٩٠0-9]+(?:\\s*[.\\-]|\\))(?!\\s*[١٢٣٤٥٦٧٨٩٠0-9])"
+    regex: "^\\s*\\*?\\s*\\(?[١٢٣٤٥٦٧٨٩٠0-9]+(?:\\s*[.\\-]|\\))(?!\\s*[١٢٣٤٥٦٧٨٩٠0-9])"
     is_boundary: true
 
   - id: POETRY_BLOCK
@@ -437,7 +437,15 @@ behaviors:
       SECTION_HEADING bucket. Slightly lower priority so a span that has
       BOTH a kitab/bab heading AND a subsection marker still routes via
       the higher-level structural keyword.
+
+      A subsection heading is a topic label (``* (الطينة والميثاق) *``), never a
+      numbered entry: the NUMBERED_ENTRY guard keeps a numbered hadith that
+      prints the same asterisk ornament (``* 39 - التوحيد : ابن الوليد ، عن ...``)
+      from being filed as a chapter heading, which severed its isnad from its
+      matn and hid the hadith. Without the ornament such a line already routes
+      as a hadith; the guard makes the ornamented form behave the same.
     requires: [SUBSECTION_MARKER]
+    none_of: [NUMBERED_ENTRY]
     priority: 92
 
   - id: RIJAL_ENTRY
