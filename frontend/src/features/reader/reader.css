@@ -188,23 +188,6 @@
   margin-top: var(--space-md);
 }
 
-/* Qurʾān citation link: the printed reference glyphs kept in place, marked as a
-   verse link (dotted underline in the honorific colour) that opens the Qurʾān
-   reader at that verse. */
-.reader-cite {
-  font: inherit;
-  color: var(--color-reader-honorific);
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
-}
-.reader-cite:hover {
-  color: var(--color-reader-progress);
-}
-
 /* Bilingual raw page text: English (serif) left, Arabic right, for the EN | AR
    mode. The English column carries a real translation when the corpus has one,
    or a labelled preview until then; both render through the same elements so the

@@ -1,0 +1,21 @@
+/* CiteLink: printed Quran-reference glyphs marked as a verse link. Dotted
+   underline in the honorific colour; the glyphs themselves stay untouched. */
+.ds-cite {
+  font: inherit;
+  color: var(--color-reader-honorific);
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.ds-cite:hover {
+  color: var(--color-reader-progress);
+}
+.ds-cite:focus-visible {
+  outline: var(--border-width) solid var(--color-reader-honorific);
+  outline-offset: 1px;
+  border-radius: var(--radius-xs);
+}
