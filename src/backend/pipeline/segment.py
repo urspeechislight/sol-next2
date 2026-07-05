@@ -164,9 +164,7 @@ def _build_segment_context(manuscript: Manuscript, config: Config) -> _SegmentCo
             _attribution_re=attribution_regex,
         )
     )
-    sanad_tracker: TrackerProtocol = SanadMatnTracker(
-        _hadith_behavior_id=HADITH__BEHAVIOR_TRANSMISSION
-    )
+    sanad_tracker: TrackerProtocol = SanadMatnTracker()
     orchestrator = TrackerOrchestrator([hierarchy_tracker, sanad_tracker])
     toc_pattern_ids = config.raw.get("toc_sections", {}).get("content_start_patterns", [])
     toc_patterns = [compiled_patterns[pid] for pid in toc_pattern_ids if pid in compiled_patterns]

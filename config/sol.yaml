@@ -325,6 +325,24 @@ behaviors:
     genre_block: *non_hadith_genres
     priority: 72
 
+  - id: HADITH_TRANSMISSION
+    description: >
+      Direct-report hadith — a numbered entry that reports from an authority
+      without a relayed narrator chain: a question put to an Imam, or a
+      ``source : matn`` citation. It carries a transmission verb عن / a
+      genealogy link / a prophetic-speech hint but not the full chain shape the
+      higher rules require, so without this rule it fell through to a bare
+      NUMBERED_ENTRY and lost its hadith identity (and its own leaf node). Sits
+      below the chain-based and genre-gated rules (rijal, biography, fiqh,
+      historical), so those still claim their entries in their own genres; here
+      it catches the numbered hadith that remain in hadith, tafsir, and theology
+      volumes. Genre-blocked from secular content like every hadith rule.
+    requires: [NUMBERED_ENTRY]
+    any_of: [ATTRIBUTION, GENEALOGY_CHAIN, MATN_BOUNDARY_HINT]
+    none_of: [HEADING_MARKER]
+    genre_block: *non_hadith_genres
+    priority: 69
+
   - id: QURAN_VERSE
     description: >
       Standalone Quranic text or verse reference. Does not fire when ATTRIBUTION
