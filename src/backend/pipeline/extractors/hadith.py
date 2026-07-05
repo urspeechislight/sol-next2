@@ -60,6 +60,7 @@ class NarratorSliceContext:
     speech_verbs: list[Pattern]
     name_content_boundary_regex: CompiledPattern
     relative_references: list[str]
+    first_person_references: list[str]
     stopwords: frozenset[str]
     non_name_leading: frozenset[str]
     narrator_name_max_chars: int
@@ -102,6 +103,7 @@ def _build_slice_context(span: Span, config: Config) -> NarratorSliceContext:
         speech_verbs=span.patterns_by_id(HADITH__PATTERN_SPEECH_VERB_GENERIC),
         name_content_boundary_regex=build_name_content_boundary_regex(boundary_parts),
         relative_references=list(narrator_cfg["relative_references"]),
+        first_person_references=list(narrator_cfg.get("first_person_references", [])),
         stopwords=frozenset(narrator_cfg.get("narrator_stopwords", [])),
         non_name_leading=frozenset(narrator_cfg.get("non_name_leading_words", [])),
         narrator_name_max_chars=config.thresholds.narrator_name_max_chars,
@@ -149,14 +151,24 @@ def _resolve_name_end(
     return name_end
 
 
-def _split_relative_reference(name: str, references: list[str]) -> tuple[str | None, str]:
+def _split_relative_reference(
+    name: str, references: list[str], bare_references: list[str]
+) -> tuple[str | None, str]:
     """Split a leading kinship token off a name candidate.
 
     Returns (reference, remainder): ('أبيه', 'محمد بن علي') for a prefixed
-    name, ('أبيه', '') for a bare reference, (None, name) when the candidate
-    does not open with a kinship token. Any whitespace separates the token
-    from the name, a newline included: page text keeps its line breaks.
+    third-person reference, ('أبيه', '') for a bare reference, (None, name)
+    when the candidate does not open with a kinship token. Any whitespace
+    separates the token from the name, a newline included: page text keeps its
+    line breaks.
+
+    bare_references (first-person forms such as أبي) match ONLY when they are
+    the whole candidate. They are never split off a prefix because أبي also
+    heads a kunya (أبي عبد الله), so a prefix match would tear a real name apart.
     """
+    for ref in sorted(bare_references, key=len, reverse=True):
+        if name == ref:
+            return ref, ""
     for ref in sorted(references, key=len, reverse=True):
         if name == ref:
             return ref, ""
@@ -200,7 +212,9 @@ def _emit_one_narrator(
     leading = len(part) - len(part.lstrip())
     char_start = part_pos + leading
     advance = part_pos + len(part)
-    reference, core_name = _split_relative_reference(name_text, ctx.relative_references)
+    reference, core_name = _split_relative_reference(
+        name_text, ctx.relative_references, ctx.first_person_references
+    )
     if reference is not None and not core_name:
         entity = _emit_narrator_entity(
             span, reference, char_start, ctx, role=NARRATOR__ROLE_RELATIVE_REF

@@ -660,6 +660,20 @@ narrator_extraction:
     - "ابنه"
     - "ابنته"
 
+  # First-person kinship references a compiler uses for his own teacher, e.g.
+  # al-Saduq's "أبي ، عن سعد". Unlike the third-person forms above these are
+  # matched ONLY when they stand alone as the whole name candidate, never as a
+  # prefix: "أبي عبد الله" / "ابن أبي عمير" are kunyas where أبي is part of the
+  # name, so a prefix match would wrongly split a person. Standalone bare "أبي"
+  # is "my father" and emits as a relative_reference like bare "أبيه".
+  first_person_references:
+    - "أبي"
+    - "جدي"
+    - "عمي"
+    - "أخي"
+    - "خالي"
+    - "أمي"
+
   prepositional_an_exclusions:
     - "يمين"
     - "شمال"
