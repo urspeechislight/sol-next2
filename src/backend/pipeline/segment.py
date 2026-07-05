@@ -128,6 +128,7 @@ def segment(manuscript: Manuscript, config: Config) -> Manuscript:
         return manuscript
     layout = _build_paragraphs(content_pages, ctx)
     unclassified_count, content_span_count = _emit_spans(manuscript, layout, ctx)
+    _merge_split_hadith(manuscript, ctx)
     enforce_failure_budget(
         ctx.config.raw, unclassified_count, content_span_count, manuscript.manifestation_id
     )
@@ -259,6 +260,51 @@ def _split_headings(
             min_heading_chars,
         )
     return paragraphs
+
+
+def _merge_split_hadith(manuscript: Manuscript, ctx: _SegmentContext) -> None:
+    """Fold a hadith's matn-continuation span back into its isnad span.
+
+    Segmentation splits at the print-paragraph boundary between an isnad and its
+    matn, so the isnad routes HADITH_TRANSMISSION and the matn follows as a
+    GENERAL_PROSE span under the same printed entry (it opens no new number, so
+    the position tracker keeps it on the same leaf). The matn is merged back into
+    the hadith span and the span's patterns re-detected on the joined text, so
+    extract atomizes the whole hadith into ISNAD + MATN units instead of leaving
+    the matn stranded as prose. A matn split across several paragraphs folds in
+    turn, since the growing host stays the hadith span.
+    """
+    merged: list[Span] = []
+    for span in manuscript.spans:
+        if merged and _is_matn_continuation(merged[-1], span):
+            _absorb_matn_span(merged[-1], span, ctx)
+            continue
+        merged.append(span)
+    manuscript.spans = merged
+
+
+def _is_matn_continuation(host: Span, span: Span) -> bool:
+    """True when span continues the printed entry of the preceding hadith span."""
+    if host.behavior != HADITH__BEHAVIOR_TRANSMISSION:
+        return False
+    if span.behavior != HADITH__BEHAVIOR_GENERAL_PROSE:
+        return False
+    host_leaf = host.hierarchy.path_ids[-1] if host.hierarchy and host.hierarchy.path_ids else None
+    span_leaf = span.hierarchy.path_ids[-1] if span.hierarchy and span.hierarchy.path_ids else None
+    return host_leaf is not None and host_leaf == span_leaf
+
+
+def _absorb_matn_span(host: Span, extra: Span, ctx: _SegmentContext) -> None:
+    """Append extra's text and footnote to host and re-detect host's patterns."""
+    host.text = f"{host.text}\n{extra.text}"
+    host.page_end = max(host.page_end, extra.page_end)
+    if extra.footnote_text:
+        host.footnote_text = (
+            f"{host.footnote_text}\n{extra.footnote_text}"
+            if host.footnote_text
+            else extra.footnote_text
+        )
+    host.patterns = detect_patterns(host.text, ctx.compiled_patterns)
 
 
 def _emit_spans(
