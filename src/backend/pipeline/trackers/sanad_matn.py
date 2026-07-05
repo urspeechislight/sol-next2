@@ -19,12 +19,18 @@ from backend.patterns import CompiledPattern, cached_compile
 from backend.pipeline.models import HierarchyPath
 from backend.pipeline.trackers import TrackerProtocol
 
-_LEADING_ENTRY_NUMBER: CompiledPattern = cached_compile(r"^\s*\*?\s*([0-9٠-٩]+)\s*-")
+_LEADING_ENTRY_NUMBER: CompiledPattern = cached_compile(
+    r"^\s*\*?\s*\(?([0-9٠-٩]+)(?:\s*[.\-]|\))"
+)
 _NODE_ID_FORMAT: str = "entry_{index:04d}"
 
 
 def _leading_entry_number(span_text: str) -> str | None:
-    """The printed ordinal when the span opens with a ``N -`` marker, else None."""
+    """The printed ordinal when the span opens with a numbered marker, else None.
+
+    Mirrors the NUMBERED_ENTRY pattern's accepted forms (``5 -`` / ``5.`` /
+    ``5)`` / ``(5)`` / ``* 5 -``) so a book numbered with parentheses or dots
+    advances one entry per printed number rather than sharing a node."""
     match = _LEADING_ENTRY_NUMBER.match(span_text)
     if match is None:
         return None
