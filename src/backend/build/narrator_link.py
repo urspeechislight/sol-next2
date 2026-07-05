@@ -26,6 +26,7 @@ from typing import Final
 from backend.core.constants import (
     ARTIFACT__REGISTRY_DB,
     HADITH__ENTITY_PERSON,
+    HADITH__ROLE_RELATIVE_REF,
     NARRATOR_LINK__ID_KEY,
     NARRATOR_LINK__METADATA_KEY,
     NARRATOR_LINK__ORIGIN_CANONICAL,
@@ -149,11 +150,15 @@ def annotate_manuscript(manuscript: Manuscript, linker: NarratorLinker) -> int:
     Walks every span's entities and adds ``narrator_link`` metadata
     (``{"origin": ..., "id": ...}``) where the linker resolves the name.
     Unresolved names get no key: absence means unlinked, never a guess.
+    Relative-reference chain members (عن أبيه) carry no name to match and are
+    skipped outright; linking the kinship word itself would be a wrong claim.
     """
     linked = 0
     for span in manuscript.spans:
         for entity in span.entities or []:
             if entity.entity_type != HADITH__ENTITY_PERSON:
+                continue
+            if entity.metadata.get("role_in_context") == HADITH__ROLE_RELATIVE_REF:
                 continue
             link = linker.link(entity.text)
             if link is None:

@@ -28,6 +28,8 @@ from typing import Any
 from backend.core.constants import (
     ARTIFACT__MANUSCRIPT_DB,
     HADITH__ENTITY_PERSON,
+    HADITH__ROLE_NARRATOR,
+    HADITH__ROLE_RELATIVE_REF,
     HADITH__UNIT_HADITH,
     HADITH__UNIT_ISNAD,
     HADITH__UNIT_MATN,
@@ -64,7 +66,8 @@ _UNIT_PAGE_QUERY = (
 )
 _ENTITY_PAGE_QUERY = (
     "SELECT span_id, text_ar, metadata FROM entity "
-    "WHERE manifestation_id = :urn AND page_start = :page AND entity_type = :entity_type"
+    "WHERE manifestation_id = :urn AND page_start = :page AND entity_type = :entity_type "
+    "AND json_extract(metadata, '$.role_in_context') IN (:role_narrator, :role_relative)"
 )
 
 
@@ -126,11 +129,18 @@ def _fetch_unit_rows(con: sqlite3.Connection, book_urn: str, page_number: int) -
 def _fetch_entity_rows(
     con: sqlite3.Connection, book_urn: str, page_number: int
 ) -> list[_EntityRow]:
-    """Fetch the page's PERSON entity rows projected into typed records."""
+    """Fetch the page's chain-member PERSON rows projected into typed records.
+
+    Chain members only: named narrators and kinship relative references, both
+    positioned links in the isnad. Matn ``mention`` entities are people the
+    hadith is about, not transmitters, and must not surface as narrators.
+    """
     params: dict[str, Any] = {
         "urn": book_urn,
         "page": page_number,
         "entity_type": HADITH__ENTITY_PERSON,
+        "role_narrator": HADITH__ROLE_NARRATOR,
+        "role_relative": HADITH__ROLE_RELATIVE_REF,
     }
     rows = con.execute(_ENTITY_PAGE_QUERY, params).fetchall()
     return [_entity_row(dict(row)) for row in rows]

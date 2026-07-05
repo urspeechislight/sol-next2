@@ -6,7 +6,16 @@ metadata.role_in_context, and validates role/source/location against closed
 enums so typos can't proliferate silently. Ported from sol-next's
 src/utils/persons.py with the PERSON__ constants renamed to the approved
 NARRATOR__ domain; the enums carry only the members current extractors
-produce, and each future extractor brings its members back with it.
+produce, and each future extractor brings its members back with it. The role
+strings themselves live in ``core.constants`` (the reader's narrator
+projection filters on them, and repositories never import pipeline code);
+this module re-exports them under the NARRATOR__ names the extractors use.
+
+Roles: ``narrator`` is a chain member with an actual name. A
+``relative_reference`` is a chain member referred to only by kinship, as in
+عن أبيه: a real transmission link whose identity resolution is deferred,
+never a person name. A ``mention`` is a person referred to in matn text, not
+part of the transmission chain.
 """
 
 from __future__ import annotations
@@ -14,18 +23,32 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Final
 
-from backend.core.constants import HADITH__ENTITY_PERSON
+from backend.core.constants import (
+    HADITH__ENTITY_PERSON,
+    HADITH__ROLE_MENTION,
+    HADITH__ROLE_NARRATOR,
+    HADITH__ROLE_RELATIVE_REF,
+)
 from backend.pipeline.config import Config
 from backend.pipeline.contracts import PHASE_CONTRACTS
 from backend.pipeline.models import Entity, Span, create_entity
 
-NARRATOR__ROLE_NARRATOR: Final[str] = "narrator"
-NARRATOR__ROLES_ALL: Final[frozenset[str]] = frozenset({NARRATOR__ROLE_NARRATOR})
+NARRATOR__ROLE_NARRATOR: Final[str] = HADITH__ROLE_NARRATOR
+NARRATOR__ROLE_RELATIVE_REF: Final[str] = HADITH__ROLE_RELATIVE_REF
+NARRATOR__ROLE_MENTION: Final[str] = HADITH__ROLE_MENTION
+NARRATOR__ROLES_ALL: Final[frozenset[str]] = frozenset(
+    {NARRATOR__ROLE_NARRATOR, NARRATOR__ROLE_RELATIVE_REF, NARRATOR__ROLE_MENTION}
+)
 
 NARRATOR__SOURCE_CHAIN_WALK: Final[str] = "chain_walk"
 NARRATOR__SOURCE_ISNAD_BACK_REFERENCE: Final[str] = "isnad_back_reference"
+NARRATOR__SOURCE_MATN_PATTERN: Final[str] = "matn_pattern"
 NARRATOR__SOURCES: Final[frozenset[str]] = frozenset(
-    {NARRATOR__SOURCE_CHAIN_WALK, NARRATOR__SOURCE_ISNAD_BACK_REFERENCE}
+    {
+        NARRATOR__SOURCE_CHAIN_WALK,
+        NARRATOR__SOURCE_ISNAD_BACK_REFERENCE,
+        NARRATOR__SOURCE_MATN_PATTERN,
+    }
 )
 
 NARRATOR__LOCATION_BODY: Final[str] = "body"

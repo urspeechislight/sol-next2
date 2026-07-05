@@ -14,21 +14,26 @@ module.
 
 from __future__ import annotations
 
-from backend.patterns import CompiledPattern, cached_compile
+from backend.patterns import HONORIFIC_SIGNS, CompiledPattern, cached_compile
 from backend.pipeline.text import is_footnote_marker_opening, replace_footnote_markers
 
-_NAME_TRAILING_PUNCT_REGEX: CompiledPattern = cached_compile(r"[\s،,:.]+$")
+_NAME_TRAILING_PUNCT_REGEX: CompiledPattern = cached_compile(r"[\s،,:.\-]+$")
+_NAME_HONORIFIC_TAIL_REGEX: CompiledPattern = cached_compile(r"[" + HONORIFIC_SIGNS + r"][\s\S]*$")
 
 
 def clean_name_text(name: str) -> str:
-    """Remove footnote markers (replaced with spaces) and trailing punctuation.
+    """Remove footnote markers, cut at the first honorific, strip trailing punctuation.
 
     Inline footnote references like (2) sit between name tokens; replacing them
-    with a space keeps the tokens separated, then the trailing Arabic/Latin
-    delimiters (، , : .) that are structural rather than part of the name are
-    stripped.
+    with a space keeps the tokens separated. An honorific ligature sign (﵇ ﵈ ﷺ)
+    is a salutation printed after a COMPLETE name, so the first one ends the
+    candidate: everything from the sign onward is dropped, which both removes
+    the sign itself and cuts any prose the slice ran into past it. The trailing
+    class then strips the structural delimiters (، , : . -) that are not name
+    tokens.
     """
     cleaned = replace_footnote_markers(name)
+    cleaned = _NAME_HONORIFIC_TAIL_REGEX.sub("", cleaned)
     cleaned = _NAME_TRAILING_PUNCT_REGEX.sub("", cleaned)
     return cleaned.strip()
 

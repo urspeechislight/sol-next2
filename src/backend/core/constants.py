@@ -19,6 +19,10 @@ sides. ``NARRATOR_LINK__*`` is the metadata contract between the writer
 (``build/narrator_link.py`` stamps entity metadata) and the reader
 (``repositories/manuscript.py`` resolves it back to registry ids); the key
 and origin tokens live here so a rename cannot desynchronise the two sides.
+``HADITH__ROLE_*`` is the closed ``role_in_context`` vocabulary shared the
+same way: the pipeline's person emitter validates against it and the reader's
+narrator projection filters on it, and repositories must never import
+pipeline code, so the strings live here.
 """
 
 from __future__ import annotations
@@ -39,6 +43,9 @@ HADITH__UNIT_ISNAD: Final[str] = "ISNAD_UNIT"
 HADITH__UNIT_MATN: Final[str] = "MATN_UNIT"
 HADITH__UNIT_HADITH: Final[str] = "HADITH_UNIT"
 HADITH__ENTITY_PERSON: Final[str] = "PERSON"
+HADITH__ROLE_NARRATOR: Final[str] = "narrator"
+HADITH__ROLE_RELATIVE_REF: Final[str] = "relative_reference"
+HADITH__ROLE_MENTION: Final[str] = "mention"
 SEARCH__PATTERN_CACHE_MAX: Final[int] = 512
 
 CORPUS__SNIPPET_WINDOW_CHARS: Final[int] = 48

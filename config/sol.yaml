@@ -528,6 +528,7 @@ atomicizers:
 extractors:
   HADITH_TRANSMISSION:
     - narrator_extractor
+    - person_mention_extractor
   AUTHOR_COMMENTARY: []
   QURAN_VERSE: []
   BIOGRAPHY: []
@@ -633,7 +634,9 @@ cross_page_repair:
 narrator_extraction:
   relative_references:
     - "أبيه"
+    - "أبيهما"
     - "أبوه"
+    - "أبوهما"
     - "أمه"
     - "أمها"
     - "جده"

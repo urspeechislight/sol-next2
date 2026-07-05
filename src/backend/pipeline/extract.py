@@ -28,10 +28,10 @@ from backend.pipeline.config import Config
 from backend.pipeline.contracts import PHASE_CONTRACTS, validate_manuscript_for_phase
 from backend.pipeline.errors import ExtractError
 from backend.pipeline.extractors import EXTRACTOR_REGISTRY, VALID_ENTITY_TYPES, ExtractorFn
-from backend.pipeline.extractors.hadith import (
+from backend.pipeline.extractors.isnad_boundary import (
     AttributionCues,
     build_attribution_cues,
-    find_isnad_end,
+    find_isnad_bounds,
 )
 from backend.pipeline.models import (
     DegradedMode,
@@ -116,12 +116,14 @@ def _extract_span(span: Span, run: _ExtractRun, unit_counter: int) -> int:
     config_rule = run.config.atomicizers[behavior]
     strategy = config_rule["strategy"]
     if _needs_isnad_end(strategy, span):
-        span.metadata["isnad_end"] = find_isnad_end(
+        isnad_start, isnad_end = find_isnad_bounds(
             span,
             run.config.thresholds.isnad_chain_proximity_max,
             run.config.thresholds.isnad_chain_gap_max,
             run.cues,
         )
+        span.metadata["isnad_start"] = isnad_start
+        span.metadata["isnad_end"] = isnad_end
     entities = _extract_entities(span, run.registry, behavior, run.config)
     for idx, entity in enumerate(entities):
         _validate_entity_type(entity)
@@ -316,12 +318,22 @@ def _atomicize_sanad_matn(
 ) -> list[Unit]:
     """Split the span into ISNAD + MATN units at isnad_end, else one reserve unit.
 
-    When the split produces an empty isnad or matn side, the configured reserve
-    unit type covers the whole span so the span never ends up unit-less.
+    The isnad unit's text starts at isnad_start: the citation head a compilation
+    prints before the chain (hadith ordinal + source works) is bibliography, not
+    transmission, so it stays out of the unit text and rides in the unit's
+    ``citation_head`` metadata instead. The span text itself is untouched, so
+    the reader still renders the line as printed. When the split produces an
+    empty isnad or matn side, the configured reserve unit type covers the span
+    from isnad_start so the span never ends up unit-less.
     """
     isnad_end = span.metadata["isnad_end"]
+    isnad_start = int(span.metadata.get("isnad_start", 0))
+    citation_head = span.text[:isnad_start].strip()
+    head_metadata: dict[str, Any] | None = (
+        {"citation_head": citation_head} if citation_head else None
+    )
     if isnad_end < len(span.text):
-        isnad_text = strip_footnote_markers(span.text[:isnad_end])
+        isnad_text = strip_footnote_markers(span.text[isnad_start:isnad_end])
         matn_text = strip_footnote_markers(span.text[isnad_end:])
         if isnad_text and matn_text:
             unit_types: dict[str, Any] = config_rule["unit_types"]
@@ -335,6 +347,7 @@ def _atomicize_sanad_matn(
                     unit_types["isnad"],
                     behavior,
                     hierarchy,
+                    metadata=head_metadata,
                 ),
                 _unit(
                     span,
@@ -353,7 +366,13 @@ def _atomicize_sanad_matn(
     reserve_id = HADITH__UNIT_ID_FORMAT.format(manifestation_id=manifestation_id, index=start_index)
     return [
         _unit(
-            span, reserve_id, strip_footnote_markers(span.text), reserve_type, behavior, hierarchy
+            span,
+            reserve_id,
+            strip_footnote_markers(span.text[isnad_start:]),
+            reserve_type,
+            behavior,
+            hierarchy,
+            metadata=head_metadata,
         )
     ]
 
@@ -365,6 +384,8 @@ def _unit(
     unit_type: str,
     behavior: str,
     hierarchy: HierarchyPath,
+    *,
+    metadata: dict[str, Any] | None = None,
 ) -> Unit:
     """Build one Unit anchored on the span."""
     return Unit(
@@ -376,6 +397,7 @@ def _unit(
         page_start=span.page_start,
         page_end=span.page_end,
         hierarchy=hierarchy,
+        metadata=metadata or {},
     )
 
 
