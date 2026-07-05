@@ -277,6 +277,20 @@ behaviors:
       MATN_BOUNDARY_HINT (قال رسول الله) is a matn-start marker, not a chain
       indicator — prose that mentions the Prophet fires it but has no chain.
     any_of: [ATTRIBUTION_STRONG_INITIAL, ISNAD_BACK_REF]
+    # Secular-content genres carry no isnad hadith: their numbered catalogs,
+    # transmission-verb grammar examples (أخبرنا as a conjugation), and cited
+    # book titles otherwise route to HADITH and fabricate narrators. Blocking
+    # the hadith rules there is the genre-axis complement to the per-genre gates
+    # the fiqh/rijal/biography rules already carry. Anchored for reuse below.
+    genre_block: &non_hadith_genres
+      - arabic-language-sciences
+      - medicine
+      - logic-philosophy
+      - poetry-collections
+      - other-sciences
+      - journals-miscellaneous
+      - bibliographies-indexes
+      - contemporary-islamic-issues
     priority: 80
 
   - id: HADITH_TRANSMISSION
@@ -287,6 +301,7 @@ behaviors:
       prepositional عن ("about X"). Lower priority than the primary rule.
     requires: [AN_CHAIN_INITIAL, GENEALOGY_CHAIN]
     none_of: [HEADING_MARKER]
+    genre_block: *non_hadith_genres
     priority: 78
 
   - id: HADITH_TRANSMISSION
@@ -307,6 +322,7 @@ behaviors:
       the entry-start region.
     requires: [NUMBERED_ENTRY, ATTRIBUTION, GENEALOGY_CHAIN]
     none_of: [HEADING_MARKER]
+    genre_block: *non_hadith_genres
     priority: 72
 
   - id: QURAN_VERSE

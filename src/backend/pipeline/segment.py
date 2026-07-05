@@ -450,6 +450,7 @@ class BehaviorRule:
     none_of: frozenset[str]
     priority: int
     genre_gate: frozenset[str] | None = None
+    genre_block: frozenset[str] | None = None
 
 
 def parse_behavior_rules(raw_behaviors: list[dict[str, Any]]) -> list[BehaviorRule]:
@@ -457,6 +458,7 @@ def parse_behavior_rules(raw_behaviors: list[dict[str, Any]]) -> list[BehaviorRu
     rules: list[BehaviorRule] = []
     for entry in raw_behaviors:
         gate_raw = entry.get("genre_gate")
+        block_raw = entry.get("genre_block")
         rules.append(
             BehaviorRule(
                 behavior_id=entry["id"],
@@ -465,6 +467,7 @@ def parse_behavior_rules(raw_behaviors: list[dict[str, Any]]) -> list[BehaviorRu
                 none_of=frozenset(entry.get("none_of", [])),
                 priority=entry.get("priority", 0),
                 genre_gate=frozenset(gate_raw) if gate_raw else None,
+                genre_block=frozenset(block_raw) if block_raw else None,
             )
         )
     rules.sort(key=lambda rule: rule.priority, reverse=True)
@@ -494,7 +497,13 @@ def route_behavior(
 
     Evaluates rules in priority order (highest first). A rule matches when all
     requires are present, at least one any_of is present (if non-empty), none of
-    none_of are present, and genre_gate passes (if set). Returns (label,
+    none_of are present, the book genre is not in genre_block (if set), and
+    genre_gate passes (if set). genre_block is the inverse of genre_gate: it
+    suppresses a rule in genres that structurally cannot contain its content, so
+    a numbered entry with a weak isnad signal routes as a hadith everywhere the
+    genre could hold one and stays a plain numbered entry in a grammar or
+    medicine volume, whose catalogs and verb examples must not become hadith.
+    Returns (label,
     routed_explicitly): routed_explicitly is True when no patterns were detected
     (the clean default to GENERAL_PROSE), when the detected patterns are all ones
     the routing table references nowhere (so no rule could ever match them — a
@@ -520,6 +529,9 @@ def route_behavior(
         if rule.any_of and not rule.any_of.intersection(detected_ids):
             continue
         if rule.none_of and rule.none_of.intersection(detected_ids):
+            continue
+        if rule.genre_block is not None and book_type is not None and book_type in rule.genre_block:
+            genre_excluded_match = True
             continue
         if rule.genre_gate is not None and (book_type is None or book_type not in rule.genre_gate):
             genre_excluded_match = True
