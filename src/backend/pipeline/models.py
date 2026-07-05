@@ -18,8 +18,6 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
 
-from backend.core.constants import HADITH__ENTITY_PERSON
-
 if TYPE_CHECKING:
     from backend.pipeline.config import Config
 
@@ -152,24 +150,6 @@ class Span:
             (p for p in self.patterns if p.pattern_id in target),
             key=lambda p: p.char_start,
         )
-
-    def persons_by_role(self, *roles: str) -> list[Entity]:
-        """Return PERSON entities on this span, optionally filtered by role.
-
-        With no roles, returns every PERSON entity; otherwise only those whose
-        ``role_in_context`` metadata is in ``roles``. Order is preserved.
-        """
-        if not self.entities:
-            return []
-        if not roles:
-            return [e for e in self.entities if e.entity_type == HADITH__ENTITY_PERSON]
-        target = frozenset(roles)
-        return [
-            e
-            for e in self.entities
-            if e.entity_type == HADITH__ENTITY_PERSON
-            and (e.metadata or {}).get("role_in_context") in target
-        ]
 
 
 @dataclass

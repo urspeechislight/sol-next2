@@ -150,3 +150,81 @@ def test_should_end_a_name_at_a_mid_slice_honorific() -> None:
     names = [e.text for e in span.entities or []]
     assert "علي بن محمد العسكري" in names
     assert not any("﵉" in name or "رسالته" in name for name in names)
+
+
+_BACKREF_ROOT_TEXT = (
+    "1 - التوحيد : أبي ، عن سعد بن عبد الله ، عن ابن عيسى قال : قال الصادق كذا وكذا"
+)
+_BACKREF_MID_TEXT = "2 - التوحيد : بهذا الاسناد ، عن جميل بن دراج قال : سمعت خبرا آخر عنه"
+_BACKREF_TAIL_TEXT = "3 - التوحيد : وبهذا الاسناد قال : وروي في معناه خبر ثالث"
+
+
+def _hadith_span(span_id: str, text: str, anchors: tuple[str, ...], qala: str) -> Span:
+    """One HADITH_TRANSMISSION span with attribution patterns at the anchors."""
+    patterns = [_pattern("ATTRIBUTION", "عن", text.index(anchor)) for anchor in anchors]
+    patterns.append(_pattern("SPEECH_VERB_GENERIC", "قال", text.index(qala)))
+    patterns.append(_pattern("NUMBERED_ENTRY", text[:3], 0))
+    return Span(
+        span_id=span_id,
+        text=text,
+        page_start=1,
+        page_end=1,
+        span_type="paragraph",
+        behavior=HADITH__BEHAVIOR_TRANSMISSION,
+        hierarchy=HierarchyPath(path=["باب"], path_ids=["b1"], depth=1),
+        patterns=patterns,
+    )
+
+
+def _backref_chain() -> Manuscript:
+    """Root hadith with a literal isnad, then two chained back-references."""
+    root = _hadith_span("A", _BACKREF_ROOT_TEXT, ("عن سعد", "عن ابن عيسى"), "قال :")
+    mid = _hadith_span("B", _BACKREF_MID_TEXT, ("عن جميل",), "قال :")
+    mid.metadata = {"isnad_back_ref": True, "refers_to_span_id": "A"}
+    tail = _hadith_span("C", _BACKREF_TAIL_TEXT, (), "قال :")
+    tail.metadata = {"isnad_back_ref": True, "refers_to_span_id": "B"}
+    manuscript = Manuscript(work_id="w1", manifestation_id="m1", spans=[root, mid, tail])
+    return extract(manuscript, _CFG)
+
+
+def _pointer_unit(span: Span) -> Unit:
+    """The isnad-bearing unit the back-reference pointers ride on."""
+    assert span.units
+    for unit in span.units:
+        if unit.unit_type == "ISNAD_UNIT":
+            return unit
+    return span.units[0]
+
+
+def test_should_not_copy_backref_entities_or_units() -> None:
+    """A back-reference span carries only entities anchored in its own text."""
+    result = _backref_chain()
+    _, mid, tail = result.spans
+    for span in (mid, tail):
+        assert span.units is not None
+        assert sum(1 for u in span.units if u.unit_type == "ISNAD_UNIT") <= 1
+        for entity in span.entities or []:
+            assert 0 <= entity.char_start < entity.char_end <= len(span.text)
+    mid_names = {e.text for e in mid.entities or []}
+    assert not {"سعد بن عبد الله", "أبي"} & mid_names
+    offsets = [(e.char_start, e.char_end) for e in (mid.entities or [])]
+    assert len(offsets) == len(set(offsets))
+
+
+def test_should_resolve_backref_pointers_to_the_literal_isnad() -> None:
+    """Both back-reference spans point at the root span's literal ISNAD unit."""
+    result = _backref_chain()
+    root, mid, tail = result.spans
+    root_isnad = _pointer_unit(root)
+    assert root_isnad.unit_type == "ISNAD_UNIT"
+    assert "isnad_source" not in root_isnad.metadata
+    mid_unit = _pointer_unit(mid)
+    assert mid_unit.metadata["isnad_source"] == "back_reference"
+    assert mid_unit.metadata["refers_to_span_id"] == "A"
+    assert mid_unit.metadata["resolved_span_id"] == "A"
+    assert mid_unit.metadata["resolved_unit_id"] == root_isnad.unit_id
+    tail_unit = _pointer_unit(tail)
+    assert tail_unit.metadata["isnad_source"] == "back_reference"
+    assert tail_unit.metadata["refers_to_span_id"] == "B"
+    assert tail_unit.metadata["resolved_span_id"] == "A"
+    assert tail_unit.metadata["resolved_unit_id"] == root_isnad.unit_id

@@ -41,12 +41,10 @@ NARRATOR__ROLES_ALL: Final[frozenset[str]] = frozenset(
 )
 
 NARRATOR__SOURCE_CHAIN_WALK: Final[str] = "chain_walk"
-NARRATOR__SOURCE_ISNAD_BACK_REFERENCE: Final[str] = "isnad_back_reference"
 NARRATOR__SOURCE_MATN_PATTERN: Final[str] = "matn_pattern"
 NARRATOR__SOURCES: Final[frozenset[str]] = frozenset(
     {
         NARRATOR__SOURCE_CHAIN_WALK,
-        NARRATOR__SOURCE_ISNAD_BACK_REFERENCE,
         NARRATOR__SOURCE_MATN_PATTERN,
     }
 )

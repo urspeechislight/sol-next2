@@ -86,6 +86,38 @@ def extract_person_name(
     return (cleaned, start, start + len(raw))
 
 
+def locate_clean_name(
+    text: str, region_start: int, region_end: int, clean_text: str
+) -> tuple[int, int] | None:
+    """Tightest ``[start, end)`` inside the region whose cleanup is ``clean_text``.
+
+    The stored name is the cleaned form, but its char window must still bound
+    the name's occurrence in the source so a consumer (graph node, reader
+    highlight) can anchor it: the window skips a leading particle the cleanup
+    stripped (إلى / عن) and spans an internal footnote marker the cleanup
+    removed (ربعي بن (1) عبد الله), while excluding trailing connectives and
+    punctuation. The window is found by locating the cleaned name's first and
+    last tokens in the region, then confirmed by the round-trip
+    ``clean_name_text(text[start:end]) == clean_text``; a candidate that does
+    not round-trip returns None so the caller can fail loud rather than store a
+    window that misrepresents the name.
+    """
+    if not clean_text:
+        return None
+    tokens = clean_text.split(" ")
+    first_token, last_token = tokens[0], tokens[-1]
+    start = text.find(first_token, region_start, region_end)
+    if start == -1:
+        return None
+    end = text.rfind(last_token, start, region_end)
+    if end == -1:
+        return None
+    end += len(last_token)
+    if clean_name_text(text[start:end]) != clean_text:
+        return None
+    return start, end
+
+
 def _crop_at_boundary(text: str, start: int, end: int, boundary_regex: CompiledPattern) -> int:
     """Return end cropped at the first boundary_regex hit in text[start:end].
 

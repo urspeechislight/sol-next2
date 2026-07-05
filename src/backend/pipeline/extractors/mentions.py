@@ -21,9 +21,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Final
 
+from backend.core.logging import get_logger
 from backend.patterns import HONORIFIC_SIGNS, CompiledPattern, cached_compile
 from backend.pipeline.models import Entity, Span
-from backend.pipeline.name_extraction import clean_name_text, has_non_name_leading_word
+from backend.pipeline.name_extraction import (
+    clean_name_text,
+    has_non_name_leading_word,
+    locate_clean_name,
+)
 from backend.pipeline.persons import (
     NARRATOR__ROLE_MENTION,
     NARRATOR__SOURCE_MATN_PATTERN,
@@ -33,6 +38,8 @@ from backend.pipeline.persons import (
 
 if TYPE_CHECKING:
     from backend.pipeline.config import Config
+
+_logger = get_logger("shia-library.pipeline.mentions")
 
 _ARABIC_LETTERS: Final[str] = "ء-ي"
 _NASAB_TAIL: Final[str] = rf"(?:\s+(?:بن|ابن)\s+[{_ARABIC_LETTERS}]+)"
@@ -72,14 +79,17 @@ def person_mention_extractor(span: Span, config: Config) -> list[Entity]:
             continue
         if has_non_name_leading_word(name, non_name_leading):
             continue
-        token_pos = span.text.find(name.partition(" ")[0], start, end)
-        name_start = token_pos if token_pos != -1 else start
+        located = locate_clean_name(span.text, start, end, name)
+        if located is None:
+            _logger.warning("mention_offset_unlocatable", span_id=span.span_id, name=name)
+            continue
+        name_start, name_end = located
         entities.append(
             emit_person_entity(
                 span=span,
                 text=name,
                 char_start=name_start,
-                char_end=name_start + len(name),
+                char_end=name_end,
                 spec=PersonSpec(
                     role_in_context=NARRATOR__ROLE_MENTION,
                     source=NARRATOR__SOURCE_MATN_PATTERN,

@@ -32,7 +32,11 @@ from backend.pipeline.extractors.isnad_boundary import (
     filter_false_attributions,
 )
 from backend.pipeline.models import Entity, Pattern, Span
-from backend.pipeline.name_extraction import extract_person_name, has_non_name_leading_word
+from backend.pipeline.name_extraction import (
+    extract_person_name,
+    has_non_name_leading_word,
+    locate_clean_name,
+)
 from backend.pipeline.persons import (
     NARRATOR__ROLE_NARRATOR,
     NARRATOR__ROLE_RELATIVE_REF,
@@ -209,49 +213,62 @@ def _emit_one_narrator(
     part_pos = span.text.find(part, part_search)
     if part_pos == -1:
         part_pos = part_search
-    leading = len(part) - len(part.lstrip())
-    char_start = part_pos + leading
+    region_start = part_pos + (len(part) - len(part.lstrip()))
     advance = part_pos + len(part)
     reference, core_name = _split_relative_reference(
         name_text, ctx.relative_references, ctx.first_person_references
     )
     if reference is not None and not core_name:
         entity = _emit_narrator_entity(
-            span, reference, char_start, ctx, role=NARRATOR__ROLE_RELATIVE_REF
+            span, reference, region_start, advance, ctx, role=NARRATOR__ROLE_RELATIVE_REF
         )
         return entity, advance
     if reference is not None:
-        core_start = span.text.find(core_name, char_start)
-        if core_start == -1:
-            core_start = char_start + len(reference) + 1
         entity = _emit_narrator_entity(
             span,
             core_name,
-            core_start,
+            region_start,
+            advance,
             ctx,
             role=NARRATOR__ROLE_NARRATOR,
             relative_reference=reference,
         )
         return entity, advance
-    entity = _emit_narrator_entity(span, name_text, char_start, ctx, role=NARRATOR__ROLE_NARRATOR)
+    entity = _emit_narrator_entity(
+        span, name_text, region_start, advance, ctx, role=NARRATOR__ROLE_NARRATOR
+    )
     return entity, advance
 
 
 def _emit_narrator_entity(
     span: Span,
     text: str,
-    char_start: int,
+    region_start: int,
+    region_end: int,
     ctx: NarratorSliceContext,
     *,
     role: str,
     relative_reference: str | None = None,
-) -> Entity:
-    """Emit one chain-walk PERSON entity with the given role and kinship context."""
+) -> Entity | None:
+    """Emit one chain-walk PERSON entity anchored on the name's true char window.
+
+    The window is located within ``[region_start, region_end)`` so it bounds the
+    name's occurrence in the source, skipping any leading particle the cleanup
+    stripped and spanning an internal footnote marker. When the name cannot be
+    located with a round-trip match, no entity is emitted: a window that
+    misrepresents the name is worse than an absent narrator. The miss is logged
+    so it is never silent.
+    """
+    located = locate_clean_name(span.text, region_start, region_end, text)
+    if located is None:
+        _logger.warning("narrator_offset_unlocatable", span_id=span.span_id, name=text)
+        return None
+    char_start, char_end = located
     return emit_person_entity(
         span=span,
         text=text,
         char_start=char_start,
-        char_end=char_start + len(text),
+        char_end=char_end,
         spec=PersonSpec(
             role_in_context=role,
             source=NARRATOR__SOURCE_CHAIN_WALK,
