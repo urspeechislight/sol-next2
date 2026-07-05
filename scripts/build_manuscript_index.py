@@ -90,6 +90,24 @@ def _build(args: argparse.Namespace) -> dict[str, object]:
         manuscript_build.TABLES,
         _project,
         limit=args.limit,
+        urns=args.urns,
+    )
+
+
+def _add_args(parser: argparse.ArgumentParser) -> None:
+    """Offer ``--urn`` (repeatable): build exactly those catalog entries.
+
+    The targeted-validation path — extraction over one named book, inspected
+    through the dev extraction API — instead of a positional ``--limit``
+    prefix of the whole catalog.
+    """
+    parser.add_argument(
+        "--urn",
+        action="append",
+        dest="urns",
+        default=None,
+        metavar="URN",
+        help="build only this catalog URN; repeat the flag for several books",
     )
 
 
@@ -99,6 +117,7 @@ def main() -> None:
         "Build the manuscript span/entity/unit store via segment+extract.",
         data_path(ARTIFACT__MANUSCRIPT_DB),
         _build,
+        add_args=_add_args,
     )
 
 
