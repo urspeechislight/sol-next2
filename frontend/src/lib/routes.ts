@@ -22,6 +22,7 @@ export const API = {
   FACETS: '/facets',
   QURAN: '/quran',
   DEV_EXTRACTION: '/dev/extraction',
+  ENTRY_AUDIT: '/entry-audit',
 } as const;
 
 // brand / static assets (served from /public in Vite)

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { getExtractionPage } from '../../lib/api/client';
+import { getExtractionEntryAudit, getExtractionPage } from '../../lib/api/client';
 import { DataView } from '../../lib/DataView';
 import { Button, Inline, Input, Stack, Text } from '../../lib/design-system';
 import type { ExtractionBookSummary, ExtractionPage } from '../../lib/types';
@@ -16,6 +16,7 @@ export function BookInspector({ book }: { book: ExtractionBookSummary }) {
   return (
     <Stack gap="md">
       <BookSummary book={book} />
+      <EntryAudit urn={book.urn} />
       <Pager page={page} last={book.page_end} onPage={(next) => setPage(clamp(next))} />
       <DataView
         result={result}
@@ -56,6 +57,52 @@ function BookSummary({ book }: { book: ExtractionBookSummary }) {
         ))}
       </Inline>
     </Stack>
+  );
+}
+
+/** The printed-ordinal sequence check: the edition's own numbering is ground
+    truth, so per-section gaps and duplicates measure extraction completeness
+    with no human reading. Clean sections stay summarized in the totals line;
+    only anomalous sections get a detail row. */
+function EntryAudit({ urn }: { urn: string }) {
+  const result = useAsync(() => getExtractionEntryAudit(urn), [urn]);
+  return (
+    <DataView
+      result={result}
+      loadingLabel="Auditing entry numbers"
+      errorText="Could not audit entry numbers"
+      isEmpty={(audit) => audit.numbered_units === 0}
+      emptyText="No units carry a printed entry number in this artifact."
+    >
+      {(audit) => {
+        const anomalous = audit.rows.filter((row) => row.missing.length || row.duplicates.length);
+        const broken = audit.missing_total + audit.duplicate_total > 0;
+        return (
+          <Stack gap="xs" className="xtr-audit">
+            <Text as="p" size="sm" weight="semibold">
+              Entry-number audit
+            </Text>
+            <Text as="p" size="sm" tone={broken ? 'danger' : 'muted'}>
+              {audit.numbered_units} numbered units in {audit.sections} sections ·{' '}
+              {audit.missing_total} missing · {audit.duplicate_total} duplicated ·{' '}
+              {audit.sections_with_anomalies} sections affected
+            </Text>
+            {anomalous.map((row) => (
+              <div key={row.section.join('|')} className="xtr-audit__row">
+                <p className="xtr-crumb" dir="rtl" lang="ar">
+                  {row.section.join(' ‹ ')}
+                </p>
+                <Text as="p" size="xs" tone="muted">
+                  {row.first}..{row.last} · {row.units} units
+                  {row.missing.length ? ` · missing ${row.missing.join(', ')}` : ''}
+                  {row.duplicates.length ? ` · duplicated ${row.duplicates.join(', ')}` : ''}
+                </Text>
+              </div>
+            ))}
+          </Stack>
+        );
+      }}
+    </DataView>
   );
 }
 

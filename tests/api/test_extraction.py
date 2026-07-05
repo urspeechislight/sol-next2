@@ -73,3 +73,23 @@ def test_should_return_404_when_urn_is_unknown(
     _patch_dev_tools(monkeypatch, enabled=True)
     response = client.get("/api/dev/extraction/books/not-a-real-urn/pages/1")
     assert response.status_code == 404
+
+
+def test_should_audit_entry_numbers_per_section(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The audit's totals are internally consistent with its section rows."""
+    _patch_dev_tools(monkeypatch, enabled=True)
+    book = client.get("/api/dev/extraction/books").json()[0]
+    response = client.get(f"/api/dev/extraction/books/{book['urn']}/entry-audit")
+    assert response.status_code == 200
+    audit = response.json()
+    assert audit["book_urn"] == book["urn"]
+    assert audit["sections"] == len(audit["rows"])
+    assert audit["numbered_units"] == sum(row["units"] for row in audit["rows"])
+    assert audit["missing_total"] == sum(len(row["missing"]) for row in audit["rows"])
+    assert audit["duplicate_total"] == sum(len(row["duplicates"]) for row in audit["rows"])
+    anomalous = [row for row in audit["rows"] if row["missing"] or row["duplicates"]]
+    assert audit["sections_with_anomalies"] == len(anomalous)
+    for row in audit["rows"]:
+        assert row["first"] <= row["last"]

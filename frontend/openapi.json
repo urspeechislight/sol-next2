@@ -830,6 +830,53 @@
         "title": "Domain",
         "type": "object"
       },
+      "EntrySectionAudit": {
+        "description": "Printed-ordinal sequence check for one section (b\u0101b).",
+        "properties": {
+          "duplicates": {
+            "description": "Ordinals seen more than once: split or repeated entries.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Duplicates",
+            "type": "array"
+          },
+          "first": {
+            "description": "Lowest printed ordinal seen.",
+            "title": "First",
+            "type": "integer"
+          },
+          "last": {
+            "description": "Highest printed ordinal seen.",
+            "title": "Last",
+            "type": "integer"
+          },
+          "missing": {
+            "description": "Ordinals absent between first and last: dropped or merged entries.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "section": {
+            "description": "Section hierarchy path, root first.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Section",
+            "type": "array"
+          },
+          "units": {
+            "description": "Numbered units extracted in this section.",
+            "title": "Units",
+            "type": "integer"
+          }
+        },
+        "required": ["section", "units", "first", "last", "missing", "duplicates"],
+        "title": "EntrySectionAudit",
+        "type": "object"
+      },
       "ExtractionBookSummary": {
         "description": "Coverage summary for one book present in the manuscript artifact.",
         "properties": {
@@ -990,6 +1037,60 @@
           "evidence"
         ],
         "title": "ExtractionEntity",
+        "type": "object"
+      },
+      "ExtractionEntryAudit": {
+        "description": "Book-wide audit of extracted units against the edition's printed ordinals.\n\nThe printed numbering is the edition's own ground truth: within a section\nit runs consecutively, so gaps and duplicates measure extraction\ncompleteness without a human reading the text.",
+        "properties": {
+          "book_urn": {
+            "description": "Manifestation URN audited.",
+            "title": "Book Urn",
+            "type": "string"
+          },
+          "duplicate_total": {
+            "description": "Duplicated ordinals across all sections.",
+            "title": "Duplicate Total",
+            "type": "integer"
+          },
+          "missing_total": {
+            "description": "Missing ordinals across all sections.",
+            "title": "Missing Total",
+            "type": "integer"
+          },
+          "numbered_units": {
+            "description": "Units carrying a printed ordinal.",
+            "title": "Numbered Units",
+            "type": "integer"
+          },
+          "rows": {
+            "description": "Every section, in document order.",
+            "items": {
+              "$ref": "#/components/schemas/EntrySectionAudit"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "sections": {
+            "description": "Sections containing numbered units.",
+            "title": "Sections",
+            "type": "integer"
+          },
+          "sections_with_anomalies": {
+            "description": "Sections with gaps or duplicates.",
+            "title": "Sections With Anomalies",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "book_urn",
+          "numbered_units",
+          "sections",
+          "sections_with_anomalies",
+          "missing_total",
+          "duplicate_total",
+          "rows"
+        ],
+        "title": "ExtractionEntryAudit",
         "type": "object"
       },
       "ExtractionPage": {
@@ -2947,6 +3048,47 @@
           }
         },
         "summary": "List the books in the manuscript artifact with extraction coverage.",
+        "tags": ["extraction"]
+      }
+    },
+    "/api/dev/extraction/books/{book_urn}/entry-audit": {
+      "get": {
+        "description": "Check extracted units against the edition's printed ordinals, per section.\n\nOrdinals restart per section (b\u0101b), so units group by their hierarchy path\nwith the pipeline's per-hadith counter leaf stripped. Within each section\nthe printed numbers should run consecutively from the first to the last:\na missing ordinal is evidence extraction dropped or merged that entry, a\nduplicate that it split one. Every section is returned, in document order,\nso the clean ones vouch for coverage rather than being silently omitted.",
+        "operationId": "entry_audit_api_dev_extraction_books__book_urn__entry_audit_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_urn",
+            "required": true,
+            "schema": {
+              "title": "Book Urn",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionEntryAudit"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Audit extracted units against the edition's printed entry numbers, per section.",
         "tags": ["extraction"]
       }
     },

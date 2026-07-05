@@ -18,6 +18,15 @@ function textField(obj: unknown, key: string): string {
   return '';
 }
 
+/** Read a numeric field the same defensive way; missing renders as null. */
+function numberField(obj: unknown, key: string): number | null {
+  if (obj && typeof obj === 'object') {
+    const value = (obj as Record<string, unknown>)[key];
+    if (typeof value === 'number') return value;
+  }
+  return null;
+}
+
 /** Span text with each in-range entity anchor wrapped in a <mark>. Anchors
     that overlap a previous one, or fall outside the text, are skipped here;
     they still appear in the entity list below, so nothing is hidden. */
@@ -49,10 +58,12 @@ function anchoredText(text: string, entities: ExtractionEntity[]): ReactNode[] {
     whether or not its span starts on the page. */
 export function UnitRow({ unit }: { unit: ExtractionUnit }) {
   const citationHead = textField(unit.metadata, 'citation_head');
+  const entryNumber = numberField(unit.metadata, 'entry_number');
   return (
     <div className="xtr-unit">
       <Inline gap="xs" align="center">
         <span className="xtr-tag">{unit.unit_type}</span>
+        {entryNumber !== null ? <span className="xtr-tag">#{entryNumber}</span> : null}
         <span className={`xtr-dot xtr-tone--${behaviorTone(unit.behavior)}`} />
         <span className="xtr-mono">{unit.unit_id}</span>
       </Inline>

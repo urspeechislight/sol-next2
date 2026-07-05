@@ -44,6 +44,7 @@ def _extracted() -> tuple[list[Unit], list[Entity]]:
         _pattern("ATTRIBUTION", "عن", _TEXT.index(anchor)) for anchor in _CHAIN_ATTRIBUTION_ANCHORS
     ]
     patterns.append(_pattern("SPEECH_VERB_GENERIC", "قال", _TEXT.index("قال :")))
+    patterns.append(_pattern("NUMBERED_ENTRY", "2 -", 0))
     span = Span(
         span_id="s_bihar_p6",
         text=_TEXT,
@@ -68,6 +69,12 @@ def test_should_keep_citation_head_out_of_the_isnad_unit() -> None:
     assert isnad.unit_type == "ISNAD_UNIT"
     assert isnad.text_ar.startswith("السناني")
     assert isnad.metadata["citation_head"] == _CITATION_HEAD
+
+
+def test_should_materialize_the_printed_entry_number() -> None:
+    """The edition's ordinal lands as a typed field beside the citation head."""
+    units, _ = _extracted()
+    assert units[0].metadata["entry_number"] == 2
 
 
 def test_should_extract_the_head_narrator_before_the_first_attribution() -> None:

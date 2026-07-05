@@ -24,6 +24,7 @@ from typing import Any
 
 from backend.core.constants import HADITH__UNIT_ISNAD
 from backend.core.logging import get_logger
+from backend.patterns import CompiledPattern, cached_compile
 from backend.pipeline.config import Config
 from backend.pipeline.contracts import PHASE_CONTRACTS, validate_manuscript_for_phase
 from backend.pipeline.errors import ExtractError
@@ -52,6 +53,7 @@ from backend.pipeline.text import split_footnote_entries, strip_footnote_markers
 from backend.pipeline.vocab import (
     HADITH__ENTITY_ID_FORMAT,
     HADITH__PATTERN_ATTRIBUTION,
+    HADITH__PATTERN_NUMBERED_ENTRY,
     HADITH__STRATEGY_SANAD_MATN,
     HADITH__STRATEGY_WHOLE_SPAN,
     HADITH__UNIT_FOOTNOTE,
@@ -60,6 +62,27 @@ from backend.pipeline.vocab import (
 
 _logger = get_logger("shia-library.pipeline.extract")
 _DEGRADED_SEVERITY_INFO = "info"
+_ENTRY_NUMBER_DIGITS_REGEX: CompiledPattern = cached_compile(r"[0-9٠-٩]+")
+
+
+def _leading_entry_number(span: Span) -> int | None:
+    """The printed ordinal, when the span opens with a NUMBERED_ENTRY marker.
+
+    The edition's own numbering is the citable identity of the entry and the
+    ground truth an entry-sequence audit checks extraction completeness
+    against, so it is materialized as a typed field instead of staying buried
+    in the marker text. Only a marker with nothing but whitespace before it
+    counts: a number mid-span is content. ``int`` reads Arabic-Indic digits
+    (٢) as well as Western ones.
+    """
+    for marker in span.patterns_by_id(HADITH__PATTERN_NUMBERED_ENTRY):
+        if span.text[: marker.char_start].strip():
+            continue
+        digits = _ENTRY_NUMBER_DIGITS_REGEX.search(marker.matched_text)
+        if digits is None:
+            return None
+        return int(digits.group())
+    return None
 
 
 @dataclass
@@ -287,6 +310,9 @@ def _atomicize_whole_span(
     refers_to = span.metadata.get("refers_to_span_id")
     if refers_to is not None:
         unit_metadata["refers_to_span_id"] = refers_to
+    entry_number = _leading_entry_number(span)
+    if entry_number is not None:
+        unit_metadata["entry_number"] = entry_number
     pattern_id = config_rule.get("use_pattern_text")
     if pattern_id is not None:
         text_ar = _text_from_pattern(span, pattern_id)
@@ -329,9 +355,13 @@ def _atomicize_sanad_matn(
     isnad_end = span.metadata["isnad_end"]
     isnad_start = int(span.metadata.get("isnad_start", 0))
     citation_head = span.text[:isnad_start].strip()
-    head_metadata: dict[str, Any] | None = (
-        {"citation_head": citation_head} if citation_head else None
-    )
+    entry_number = _leading_entry_number(span)
+    head_fields: dict[str, Any] = {}
+    if citation_head:
+        head_fields["citation_head"] = citation_head
+    if entry_number is not None:
+        head_fields["entry_number"] = entry_number
+    head_metadata: dict[str, Any] | None = head_fields or None
     if isnad_end < len(span.text):
         isnad_text = strip_footnote_markers(span.text[isnad_start:isnad_end])
         matn_text = strip_footnote_markers(span.text[isnad_end:])

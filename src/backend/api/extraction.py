@@ -16,8 +16,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.api._routes import get_route
 from backend.core.http import status
 from backend.core.settings import get_settings
-from backend.models.extraction import ExtractionBookSummary, ExtractionPage
-from backend.repositories import manuscript as manuscript_repo
+from backend.models.extraction import (
+    ExtractionBookSummary,
+    ExtractionEntryAudit,
+    ExtractionPage,
+)
+from backend.repositories import extraction as extraction_repo
 
 
 def _require_dev_tools() -> None:
@@ -34,14 +38,21 @@ router = APIRouter(tags=["extraction"], dependencies=[Depends(_require_dev_tools
 get_route(
     router,
     "/dev/extraction/books",
-    manuscript_repo.extraction_summaries,
+    extraction_repo.extraction_summaries,
     response_model=list[ExtractionBookSummary],
     summary="List the books in the manuscript artifact with extraction coverage.",
 )
 get_route(
     router,
     "/dev/extraction/books/{book_urn}/pages/{page_number}",
-    manuscript_repo.page_extraction,
+    extraction_repo.page_extraction,
     response_model=ExtractionPage,
     summary="Get one page's spans, units, and entities near-raw, for validation.",
+)
+get_route(
+    router,
+    "/dev/extraction/books/{book_urn}/entry-audit",
+    extraction_repo.entry_audit,
+    response_model=ExtractionEntryAudit,
+    summary="Audit extracted units against the edition's printed entry numbers, per section.",
 )

@@ -96,6 +96,38 @@ class BehaviorCount(FrozenModel):
     units: int = Field(description="Unit count for this behavior.")
 
 
+class EntrySectionAudit(FrozenModel):
+    """Printed-ordinal sequence check for one section (bāb)."""
+
+    section: list[str] = Field(description="Section hierarchy path, root first.")
+    units: int = Field(description="Numbered units extracted in this section.")
+    first: int = Field(description="Lowest printed ordinal seen.")
+    last: int = Field(description="Highest printed ordinal seen.")
+    missing: list[int] = Field(
+        description="Ordinals absent between first and last: dropped or merged entries."
+    )
+    duplicates: list[int] = Field(
+        description="Ordinals seen more than once: split or repeated entries."
+    )
+
+
+class ExtractionEntryAudit(FrozenModel):
+    """Book-wide audit of extracted units against the edition's printed ordinals.
+
+    The printed numbering is the edition's own ground truth: within a section
+    it runs consecutively, so gaps and duplicates measure extraction
+    completeness without a human reading the text.
+    """
+
+    book_urn: str = Field(description="Manifestation URN audited.")
+    numbered_units: int = Field(description="Units carrying a printed ordinal.")
+    sections: int = Field(description="Sections containing numbered units.")
+    sections_with_anomalies: int = Field(description="Sections with gaps or duplicates.")
+    missing_total: int = Field(description="Missing ordinals across all sections.")
+    duplicate_total: int = Field(description="Duplicated ordinals across all sections.")
+    rows: list[EntrySectionAudit] = Field(description="Every section, in document order.")
+
+
 class ExtractionBookSummary(FrozenModel):
     """Coverage summary for one book present in the manuscript artifact."""
 

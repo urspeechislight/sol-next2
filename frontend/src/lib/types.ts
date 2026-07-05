@@ -86,6 +86,8 @@ export type ExtractionEntity = Full<S['ExtractionEntity']>;
 export type ExtractionPage = Full<S['ExtractionPage']>;
 export type BehaviorCount = Full<S['BehaviorCount']>;
 export type ExtractionBookSummary = Full<S['ExtractionBookSummary']>;
+export type EntrySectionAudit = Full<S['EntrySectionAudit']>;
+export type ExtractionEntryAudit = Full<S['ExtractionEntryAudit']>;
 
 // ---- search (GET /api/search, /search/facets, /books/{urn}/search) ----
 export type BookSearchMatch = Full<S['BookSearchMatch']>;

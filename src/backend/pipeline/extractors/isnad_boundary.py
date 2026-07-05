@@ -29,6 +29,7 @@ from backend.pipeline.models import Pattern, Span
 from backend.pipeline.vocab import (
     HADITH__PATTERN_ATTRIBUTION,
     HADITH__PATTERN_MATN_BOUNDARY_HINT,
+    HADITH__PATTERN_NUMBERED_ENTRY,
     HADITH__PATTERN_SPEECH_VERB_GENERIC,
 )
 
@@ -151,19 +152,26 @@ def filter_false_attributions(
 
 def _find_isnad_start(span: Span, attributions: list[Pattern]) -> int:
     """Skip the citation head: the chain starts after the last colon that
-    precedes the first attribution verb.
+    precedes the first attribution verb, and never before the end of a
+    leading numbered-entry marker.
 
     Majlisi-style compilations open each hadith with an ordinal and its source
     works, closed by a colon (``2 - التوحيد ، عيون أخبار الرضا :``); the
-    narrators start after it. A chain with no colon before its first
-    attribution (the common direct opening, ``علي بن إبراهيم ، عن أبيه``)
-    starts at 0.
+    narrators start after it. A numbered hadith with no source citation
+    (al-Kafi style, ``2 - علي بن إبراهيم ، عن أبيه``) still opens with the
+    ordinal marker, so the marker's end bounds the start even without a
+    colon. A chain with neither starts at 0.
     """
     head = span.text[: attributions[0].char_start]
+    start = 0
     colon = head.rfind(":")
-    if colon == -1:
-        return 0
-    start = colon + 1
+    if colon != -1:
+        start = colon + 1
+    for marker in span.patterns_by_id(HADITH__PATTERN_NUMBERED_ENTRY):
+        opens_span = not span.text[: marker.char_start].strip()
+        if opens_span and marker.char_end > start:
+            start = marker.char_end
+            break
     while start < len(span.text) and span.text[start].isspace():
         start += 1
     return start

@@ -284,6 +284,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dev/extraction/books/{book_urn}/entry-audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Audit extracted units against the edition's printed entry numbers, per section.
+         * @description Check extracted units against the edition's printed ordinals, per section.
+         *
+         *     Ordinals restart per section (bāb), so units group by their hierarchy path
+         *     with the pipeline's per-hadith counter leaf stripped. Within each section
+         *     the printed numbers should run consecutively from the first to the last:
+         *     a missing ordinal is evidence extraction dropped or merged that entry, a
+         *     duplicate that it split one. Every section is returned, in document order,
+         *     so the clean ones vouch for coverage rather than being silently omitted.
+         */
+        get: operations["entry_audit_api_dev_extraction_books__book_urn__entry_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dev/extraction/books/{book_urn}/pages/{page_number}": {
         parameters: {
             query?: never;
@@ -1088,6 +1115,42 @@ export interface components {
             label_ar: string;
         };
         /**
+         * EntrySectionAudit
+         * @description Printed-ordinal sequence check for one section (bāb).
+         */
+        EntrySectionAudit: {
+            /**
+             * Duplicates
+             * @description Ordinals seen more than once: split or repeated entries.
+             */
+            duplicates: number[];
+            /**
+             * First
+             * @description Lowest printed ordinal seen.
+             */
+            first: number;
+            /**
+             * Last
+             * @description Highest printed ordinal seen.
+             */
+            last: number;
+            /**
+             * Missing
+             * @description Ordinals absent between first and last: dropped or merged entries.
+             */
+            missing: number[];
+            /**
+             * Section
+             * @description Section hierarchy path, root first.
+             */
+            section: string[];
+            /**
+             * Units
+             * @description Numbered units extracted in this section.
+             */
+            units: number;
+        };
+        /**
          * ExtractionBookSummary
          * @description Coverage summary for one book present in the manuscript artifact.
          */
@@ -1204,6 +1267,51 @@ export interface components {
              * @description Arabic entity text.
              */
             text_ar: string;
+        };
+        /**
+         * ExtractionEntryAudit
+         * @description Book-wide audit of extracted units against the edition's printed ordinals.
+         *
+         *     The printed numbering is the edition's own ground truth: within a section
+         *     it runs consecutively, so gaps and duplicates measure extraction
+         *     completeness without a human reading the text.
+         */
+        ExtractionEntryAudit: {
+            /**
+             * Book Urn
+             * @description Manifestation URN audited.
+             */
+            book_urn: string;
+            /**
+             * Duplicate Total
+             * @description Duplicated ordinals across all sections.
+             */
+            duplicate_total: number;
+            /**
+             * Missing Total
+             * @description Missing ordinals across all sections.
+             */
+            missing_total: number;
+            /**
+             * Numbered Units
+             * @description Units carrying a printed ordinal.
+             */
+            numbered_units: number;
+            /**
+             * Rows
+             * @description Every section, in document order.
+             */
+            rows: components["schemas"]["EntrySectionAudit"][];
+            /**
+             * Sections
+             * @description Sections containing numbered units.
+             */
+            sections: number;
+            /**
+             * Sections With Anomalies
+             * @description Sections with gaps or duplicates.
+             */
+            sections_with_anomalies: number;
         };
         /**
          * ExtractionPage
@@ -2461,6 +2569,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExtractionBookSummary"][];
+                };
+            };
+        };
+    };
+    entry_audit_api_dev_extraction_books__book_urn__entry_audit_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_urn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionEntryAudit"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

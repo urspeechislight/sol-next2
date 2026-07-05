@@ -15,6 +15,7 @@ import type {
   Daily,
   Domain,
   ExtractionBookSummary,
+  ExtractionEntryAudit,
   ExtractionPage,
   Page,
   QuranCitation,
@@ -200,6 +201,13 @@ export function getExtractionBooks(): Promise<ExtractionBookSummary[]> {
 export function getExtractionPage(urn: string, page: number): Promise<ExtractionPage> {
   return get<ExtractionPage>(
     `${API.DEV_EXTRACTION}${API.BOOKS}/${encodeURIComponent(urn)}${API.PAGES}/${page}`,
+  );
+}
+
+/** Audit extracted units against the edition's printed entry numbers. */
+export function getExtractionEntryAudit(urn: string): Promise<ExtractionEntryAudit> {
+  return get<ExtractionEntryAudit>(
+    `${API.DEV_EXTRACTION}${API.BOOKS}/${encodeURIComponent(urn)}${API.ENTRY_AUDIT}`,
   );
 }
 

@@ -89,6 +89,20 @@ def test_should_start_isnad_after_citation_head_colon() -> None:
     assert end == text.index("قال")
 
 
+def test_should_start_isnad_after_a_bare_numbered_marker() -> None:
+    """A numbered hadith with no source citation still sheds its ordinal marker."""
+    text = "2 - علي بن إبراهيم ، عن أبيه قال كذا"
+    patterns = [
+        _pattern("NUMBERED_ENTRY", "2 -", 0),
+        _pattern("ATTRIBUTION", "عن", text.index("عن")),
+        _pattern("SPEECH_VERB_GENERIC", "قال", text.index("قال")),
+    ]
+    start, _ = find_isnad_bounds(
+        _span(text, patterns), _PROXIMITY, _GAP, build_attribution_cues(_CFG)
+    )
+    assert text[start:].startswith("علي بن إبراهيم")
+
+
 def test_should_extract_head_narrator_before_first_attribution() -> None:
     text = "أمالي الصدوق : السناني ، عن الأسدي قال رسول الله كذا"
     isnad_end = text.index("قال")
