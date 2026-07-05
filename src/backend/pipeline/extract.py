@@ -302,9 +302,9 @@ def _atomicize_whole_span(
     unit_type: str = config_rule["unit_type"]
     unit_id = HADITH__UNIT_ID_FORMAT.format(manifestation_id=manifestation_id, index=start_index)
     unit_metadata: dict[str, Any] = {}
-    refers_to = span.metadata.get("refers_to_span_id")
-    if refers_to is not None:
-        unit_metadata["refers_to_span_id"] = refers_to
+    comments_on = span.metadata.get("comments_on_span_id")
+    if comments_on is not None:
+        unit_metadata["comments_on_span_id"] = comments_on
     entry_number = _leading_entry_number(span)
     if entry_number is not None:
         unit_metadata["entry_number"] = entry_number

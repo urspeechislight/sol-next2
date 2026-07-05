@@ -372,10 +372,16 @@ def _build_span_metadata(
     prev_span_id: str | None,
     prev_hadith_span_id: str | None,
 ) -> dict[str, Any]:
-    """Build the per-span metadata dict: cross-references plus TOC anchor fields."""
+    """Build the per-span metadata dict: cross-references plus TOC anchor fields.
+
+    The commentary cross-reference and the isnad back-reference use distinct keys
+    (``comments_on_span_id`` vs ``refers_to_span_id``) so the graph reads two
+    edge kinds — "this commentary discusses that span" and "this hadith transmits
+    by that hadith's chain" — instead of one overloaded pointer.
+    """
     metadata: dict[str, Any] = {}
     if behavior == "AUTHOR_COMMENTARY" and prev_span_id is not None:
-        metadata["refers_to_span_id"] = prev_span_id
+        metadata["comments_on_span_id"] = prev_span_id
     if behavior == HADITH__BEHAVIOR_TRANSMISSION:
         has_back_ref = any(pattern.pattern_id == "ISNAD_BACK_REF" for pattern in detected_patterns)
         if has_back_ref and prev_hadith_span_id is not None:
