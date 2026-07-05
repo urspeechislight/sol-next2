@@ -69,10 +69,20 @@ def test_should_route_to_matching_behavior_when_required_pattern_present() -> No
 
 
 def test_should_skip_rule_when_required_pattern_absent() -> None:
-    rules = parse_behavior_rules([_rule("HADITH", requires=["ATTRIBUTION"], priority=1)])
-    behavior, routed = route_behavior([_pattern("OTHER")], rules, {})
+    rules = parse_behavior_rules(
+        [_rule("HADITH", requires=["ATTRIBUTION", "GENEALOGY_CHAIN"], priority=1)]
+    )
+    behavior, routed = route_behavior([_pattern("ATTRIBUTION")], rules, {})
     assert behavior == _GENERAL
     assert routed is False
+
+
+def test_should_route_inert_pattern_to_clean_prose() -> None:
+    """A pattern no rule references cannot route, so its span is prose, not a gap."""
+    rules = parse_behavior_rules([_rule("HADITH", requires=["ATTRIBUTION"], priority=1)])
+    behavior, routed = route_behavior([_pattern("SPEECH_VERB_GENERIC")], rules, {})
+    assert behavior == _GENERAL
+    assert routed is True
 
 
 def test_should_require_any_of_pattern_when_rule_has_any_of() -> None:
@@ -106,9 +116,9 @@ def test_should_treat_genre_excluded_content_match_as_clean_general_prose() -> N
 
 def test_should_stay_unrouted_when_gate_passes_but_content_matches_no_rule() -> None:
     rules = parse_behavior_rules(
-        [_rule("FIQH", requires=["FIQH_RULING"], genre_gate={"fiqh"}, priority=1)]
+        [_rule("FIQH", requires=["FIQH_RULING", "RULING_VERB"], genre_gate={"fiqh"}, priority=1)]
     )
-    behavior, routed = route_behavior([_pattern("ORPHAN")], rules, {}, book_type="fiqh")
+    behavior, routed = route_behavior([_pattern("FIQH_RULING")], rules, {}, book_type="fiqh")
     assert behavior == _GENERAL
     assert routed is False
 
@@ -134,8 +144,10 @@ def test_should_not_shadow_specific_rule_with_empty_requires_and_any_of() -> Non
 
 
 def test_should_return_unrouted_when_patterns_match_no_rule() -> None:
-    rules = parse_behavior_rules([_rule("HADITH", requires=["ATTRIBUTION"], priority=1)])
-    behavior, routed = route_behavior([_pattern("ORPHAN")], rules, {})
+    rules = parse_behavior_rules(
+        [_rule("HADITH", requires=["ATTRIBUTION", "GENEALOGY_CHAIN"], priority=1)]
+    )
+    behavior, routed = route_behavior([_pattern("GENEALOGY_CHAIN")], rules, {})
     assert behavior == _GENERAL
     assert routed is False
 

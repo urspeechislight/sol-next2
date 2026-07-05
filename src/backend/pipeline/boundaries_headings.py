@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from backend.patterns import CompiledPattern, cached_compile
+from backend.pipeline.toc_alignment import AnchoredParagraph, TocAnchor
 
 _SENTENCE_END_CHARS: Final[frozenset[str]] = frozenset('.؟؛!»"]})')
 
@@ -50,30 +51,33 @@ class HeadingCues:
 
 
 def split_at_inline_headings(
-    paragraphs: list[tuple[str, int, int]],
+    paragraphs: list[AnchoredParagraph],
     cues: HeadingCues,
-) -> list[tuple[str, int, int]]:
+) -> list[AnchoredParagraph]:
     """Split paragraphs containing inline heading markers followed by attribution.
 
     Finds heading keywords mid-paragraph, verifies ATTRIBUTION_STRONG follows (so
     the heading precedes real hadith content, not prose), and splits at the
-    heading position.
+    heading position. The TOC anchor rides with the first resulting part, which
+    keeps the paragraph's opening text the anchor was placed on.
     """
-    result: list[tuple[str, int, int]] = []
-    for text, pg_start, pg_end in paragraphs:
+    result: list[AnchoredParagraph] = []
+    for text, pg_start, pg_end, anchor in paragraphs:
         positions = _find_inline_heading_positions(text, cues)
         if not positions:
-            result.append((text, pg_start, pg_end))
+            result.append((text, pg_start, pg_end, anchor))
             continue
         prev = 0
+        head_anchor: TocAnchor | None = anchor
         for split_pos in positions:
             before = text[prev:split_pos].strip()
             if before:
-                result.append((before, pg_start, pg_end))
+                result.append((before, pg_start, pg_end, head_anchor))
+                head_anchor = None
             prev = split_pos
         remaining = text[prev:].strip()
         if remaining:
-            result.append((remaining, pg_start, pg_end))
+            result.append((remaining, pg_start, pg_end, head_anchor))
     return result
 
 

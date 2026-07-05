@@ -13,11 +13,13 @@ split positions. Ported from sol-next's src/utils/toc_alignment.py.
 
 from __future__ import annotations
 
+import re
+from bisect import bisect_left
 from dataclasses import dataclass
 from typing import Any, Final
 
 from backend.core.logging import get_logger
-from backend.patterns import CompiledPattern, cached_compile, escape_pattern, strip_tashkeel
+from backend.patterns import CompiledPattern, cached_compile, escape_pattern, fold_search
 from backend.pipeline.models import ManuscriptPage
 
 _logger = get_logger("shia-library.toc-alignment")
@@ -27,6 +29,8 @@ TOC__HONORIFIC_RE: Final[CompiledPattern] = cached_compile(r"[﵀-﵏ﷺﷻ]")
 TOC__WHITESPACE_RE: Final[CompiledPattern] = cached_compile(r"\s+")
 TOC__MIN_TITLE_WORDS: Final[int] = 1
 TOC__MIN_TITLE_CHARS: Final[int] = 3
+TOC__MIN_PREFIX_WORDS: Final[int] = 3
+TOC__MIN_PREFIX_CHARS: Final[int] = 10
 TOC__MAX_PAGE_DRIFT: Final[int] = 2
 TOC__LEAF_LEVEL: Final[int] = 3
 
@@ -46,29 +50,121 @@ class TocAnchor:
     level: int
 
 
+AnchoredParagraph = tuple[str, int, int, "TocAnchor | None"]
+"""A segment paragraph carrying its TOC anchor (or None) through the split/merge
+transforms, so the anchor rides with the heading text instead of being looked up
+by a paragraph tuple those transforms rewrite."""
+
+
 def normalize_for_match(text: str) -> str:
-    """Strip decorations, honorifics, and diacritics, then collapse whitespace."""
+    """Strip decorations, honorifics, and diacritics, fold letter variants, collapse whitespace.
+
+    Folding the alef/ya/taa letter variants (via the corpus search fold) is what
+    lets a TOC title spelled نفي match a printed heading spelled نفى, and وإبطال
+    match وابطال. Without it, hamza-seat and alef-maqsura spelling differences
+    between the editorial TOC and the typeset body silently defeat every anchor
+    in books that spell them differently (the whole reason Bihar anchored 0/20).
+    """
     text = TOC__DECORATION_RE.sub(" ", text)
     text = TOC__HONORIFIC_RE.sub(" ", text)
-    text = strip_tashkeel(text)
+    text = fold_search(text)
     return TOC__WHITESPACE_RE.sub(" ", text).strip()
 
 
-def title_to_search_regex(title: str) -> CompiledPattern | None:
-    """Compile a flexible-whitespace regex from a normalized TOC title.
+def _fold_combined_text(combined_text: str) -> tuple[str, list[int]]:
+    """Fold combined_text for anchor search, returning the fold and its index map.
 
-    Words are separated by ``\\s+`` so OCR/typesetting whitespace does not break
-    the match. Returns None when the title is too short to be a reliable anchor;
-    that None is an explicit "not anchorable" signal, not a silent gap.
+    The fold matches :func:`normalize_for_match` per character (decorations and
+    honorifics become spaces, diacritics drop, letter variants fold) so a title
+    regex built from a normalized title can be searched directly against it.
+    ``index_map[i]`` is the position in the original text of folded char ``i``,
+    so a match offset in the fold converts back to the raw combined-text offset
+    the anchor boundary needs. Diacritics are dropped rather than spaced so a
+    vowel mark printed inside a word does not break the word for matching.
     """
-    normalized = normalize_for_match(title)
-    words = [w for w in normalized.split(" ") if w]
-    if len(words) < TOC__MIN_TITLE_WORDS:
+    folded_chars: list[str] = []
+    index_map: list[int] = []
+    for i, ch in enumerate(combined_text):
+        if TOC__DECORATION_RE.match(ch) or TOC__HONORIFIC_RE.match(ch):
+            folded_chars.append(" ")
+            index_map.append(i)
+            continue
+        folded = fold_search(ch)
+        if not folded:
+            continue
+        folded_chars.append(folded)
+        index_map.append(i)
+    return "".join(folded_chars), index_map
+
+
+def _title_words(title: str) -> list[str] | None:
+    """Normalized title words, or None when the title is too short to anchor.
+
+    That None is an explicit "not anchorable" signal, not a silent gap.
+    """
+    words = [w for w in normalize_for_match(title).split(" ") if w]
+    if len(words) < TOC__MIN_TITLE_WORDS or len("".join(words)) < TOC__MIN_TITLE_CHARS:
         return None
-    if len("".join(words)) < TOC__MIN_TITLE_CHARS:
-        return None
-    pattern = r"\s+".join(escape_pattern(w) for w in words)
-    return cached_compile(pattern)
+    return words
+
+
+def _title_prefixes(words: list[str]) -> list[list[str]]:
+    """Word-prefixes of a title to try, longest first, down to the distinctness floor.
+
+    A TOC title routinely appends a descriptive tail the printed heading omits
+    (باب ٣ القضاء والقدر ... وفيه ٧٩ حديثا — "containing 79 hadiths"), so the full
+    title fails while its distinctive head matches. Trying longest-first keeps
+    the match as specific as the text supports; the floor (min prefix words and
+    chars) stops a short head like باب ٣ from matching a spurious earlier
+    mention. A title already below the floor is returned whole, since it is as
+    specific as it gets.
+    """
+    prefixes: list[list[str]] = []
+    for end in range(len(words), TOC__MIN_PREFIX_WORDS - 1, -1):
+        prefix = words[:end]
+        if len("".join(prefix)) < TOC__MIN_PREFIX_CHARS:
+            break
+        prefixes.append(prefix)
+    if not prefixes:
+        prefixes.append(words)
+    return prefixes
+
+
+def _match_title_prefix(
+    folded_text: str, words: list[str], folded_lo: int, folded_hi: int
+) -> re.Match[str] | None:
+    """Longest word-prefix of the title that matches within the folded window.
+
+    Words join with ``\\s+`` so typesetting whitespace does not defeat the match.
+    """
+    for prefix in _title_prefixes(words):
+        pattern = r"\s+".join(escape_pattern(w) for w in prefix)
+        match = cached_compile(pattern).search(folded_text, pos=folded_lo, endpos=folded_hi)
+        if match is not None:
+            return match
+    return None
+
+
+def _expand_entries(toc_entries: list[dict[str, Any]]) -> list[tuple[int, str]]:
+    """Flatten TOC entries into (page_number, title) pairs, one per printed line.
+
+    A single TOC entry sometimes carries two merged headings separated by a
+    newline (``* أبواب العدل *\\nباب 1 نفي الظلم``): the source folded a section
+    label and its first chapter into one row. Each line is a distinct heading in
+    the body, so each becomes its own anchor candidate at the entry's page. An
+    entry with a blank title or no page is dropped here.
+    """
+    pairs: list[tuple[int, str]] = []
+    for entry in toc_entries:
+        page_number = entry.get("page_number")
+        title = (entry.get("title") or "").strip()
+        if not title or page_number is None:
+            continue
+        for raw_line in title.split("\n"):
+            line = raw_line.strip()
+            if line:
+                pairs.append((page_number, line))
+    return pairs
 
 
 def find_toc_anchors(
@@ -89,17 +185,13 @@ def find_toc_anchors(
     if not toc_entries or not page_starts:
         return []
 
+    folded_text, index_map = _fold_combined_text(combined_text)
     page_num_to_idx = {p.page_number: i for i, p in enumerate(pages_list)}
     anchors: list[TocAnchor] = []
     skipped_count = 0
-    for entry in toc_entries:
-        title = (entry.get("title") or "").strip()
-        page_number = entry.get("page_number")
-        if not title or page_number is None:
-            skipped_count += 1
-            continue
-        regex = title_to_search_regex(title)
-        if regex is None:
+    for page_number, title in _expand_entries(toc_entries):
+        words = _title_words(title)
+        if words is None:
             skipped_count += 1
             continue
         center_idx = page_num_to_idx.get(page_number)
@@ -108,15 +200,17 @@ def find_toc_anchors(
             continue
         lo_idx = max(0, center_idx - TOC__MAX_PAGE_DRIFT)
         hi_idx = min(len(pages_list) - 1, center_idx + TOC__MAX_PAGE_DRIFT)
-        lo_offset = page_starts[lo_idx]
-        hi_offset = page_starts[hi_idx + 1] if hi_idx + 1 < len(page_starts) else len(combined_text)
-        match = regex.search(combined_text, pos=lo_offset, endpos=hi_offset)
+        raw_lo = page_starts[lo_idx]
+        raw_hi = page_starts[hi_idx + 1] if hi_idx + 1 < len(page_starts) else len(combined_text)
+        folded_lo = bisect_left(index_map, raw_lo)
+        folded_hi = bisect_left(index_map, raw_hi)
+        match = _match_title_prefix(folded_text, words, folded_lo, folded_hi)
         if match is None:
             skipped_count += 1
             continue
         anchors.append(
             TocAnchor(
-                char_offset=match.start(),
+                char_offset=index_map[match.start()],
                 page_number=page_number,
                 title=title,
                 level=infer_toc_level(title),
