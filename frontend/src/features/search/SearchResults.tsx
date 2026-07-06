@@ -65,8 +65,9 @@ function NarratorScope({ q }: { q: string }) {
 export interface SearchResultsProps {
   query: string;
   scope: SearchScope;
-  /** Launch a new search from a result, e.g. a Qurʾān verse opens its reference. */
-  onSearch: (q: string, scope: SearchScope) => void;
+  /** Drill a Qurʾān verse hit into the reader at that exact āya (App.tsx's
+      openVerse) — the same navigation a citation link in the reader uses. */
+  onOpenVerse: (surah: number, ayah: number) => void;
   onOpenReader: (urn: string, page: number, query: string) => void;
   /** The top-level content search's URL-lifted filters (App.tsx, via
       useContentFilters). Passed straight to the content scope so a search's
@@ -78,7 +79,13 @@ export interface SearchResultsProps {
     (volume-folded, canonical-ranked, the library's own faceted grammar);
     content / quran are the passage primitives; narrator searches the rijal
     registry. Every scope pages honestly; none caps silently. */
-export function SearchResults({ query, scope, onSearch, onOpenReader, contentFilters }: SearchResultsProps) {
+export function SearchResults({
+  query,
+  scope,
+  onOpenVerse,
+  onOpenReader,
+  contentFilters,
+}: SearchResultsProps) {
   const q = query.trim();
   return (
     <section>
@@ -92,7 +99,7 @@ export function SearchResults({ query, scope, onSearch, onOpenReader, contentFil
         <ContentScope q={q} onOpenReader={onOpenReader} filters={contentFilters} />
       ) : null}
       {scope === 'quran' ? (
-        <QuranScope q={q} onSearch={onSearch} onOpenReader={onOpenReader} />
+        <QuranScope q={q} onOpenVerse={onOpenVerse} onOpenReader={onOpenReader} />
       ) : null}
       {scope === 'works' ? (
         <WorksQueryResults q={q} onOpen={(urn, page) => onOpenReader(urn, page ?? 1, '')} />

@@ -37,15 +37,3 @@
   margin: var(--space-xs) var(--space-xs) var(--space-xs) 0;
   background: var(--color-border);
 }
-
-/* Contextual scope lock (e.g. "this sūra" on the Qurʾān page): the scope
-   menu's slot, read-only. */
-.app-header__scope-lock {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2xs);
-  padding: 0 var(--space-xs);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}

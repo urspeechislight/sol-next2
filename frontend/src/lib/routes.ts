@@ -148,6 +148,13 @@ export function viewHref(view: NavView): string {
   return buildHash({ view, ...EMPTY_ROUTE });
 }
 
+/** The canonical href for a Qurʾān verse: a search result row's "open in a new
+    tab" and its in-place click both resolve through this, so either one lands
+    in the reader on that exact āya, with the rest of its sūra around it. */
+export function quranVerseHref(surah: number, aya: number): string {
+  return buildHash({ view: 'quran', ...EMPTY_ROUTE, focus: { surah, aya } });
+}
+
 /** The canonical href for a reader position, e.g. a search result row: the
     optional `query` is the term to highlight/search for once the reader
     opens, so a new tab or a bookmark lands exactly where an in-place click

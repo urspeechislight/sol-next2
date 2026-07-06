@@ -57,3 +57,29 @@ def test_should_reject_an_unknown_canonical_rank_with_422(client: TestClient) ->
     """An unknown ?canonical= is a client error like the other closed sets."""
     response = client.get("/api/works", params={"canonical": "not-a-rank"})
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+def test_should_resolve_to_the_one_work_containing_a_given_urn(client: TestClient) -> None:
+    """?urn=<volume urn> narrows to exactly the work that volume folds into."""
+    payload = client.get("/api/works", params={"urn": "sY-50TSO"}).json()
+    assert payload["total"] == 1
+    assert "sY-50TSO" in payload["items"][0]["volumes"]
+
+
+def test_should_union_repeated_urn_params_across_different_works(client: TestClient) -> None:
+    """Two volumes from different works both come back; repeated ?urn= values OR
+    together exactly like the corpus search's repeated ?category=."""
+    other = next(
+        w["first_urn"]
+        for w in client.get("/api/works", params={"limit": 5}).json()["items"]
+        if w["stem"] != "sY-50TSO"
+    )
+    payload = client.get("/api/works", params={"urn": ["sY-50TSO", other]}).json()
+    assert payload["total"] == 2
+
+
+def test_should_return_empty_when_urn_matches_no_work(client: TestClient) -> None:
+    """An unrecognized urn is not user-typed taxonomy input: it resolves to zero
+    matches rather than a 422, since a content-search hit's urn is always real."""
+    payload = client.get("/api/works", params={"urn": "definitely-not-a-real-urn"}).json()
+    assert payload["total"] == 0

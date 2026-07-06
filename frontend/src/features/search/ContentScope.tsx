@@ -2,16 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Text } from '../../lib/design-system';
 import { LoadMoreFoot } from '../../lib/LoadMoreFoot';
-import { isSearchMode, searchCorpus, searchFacets } from '../../lib/api/client';
+import { getWorks, isSearchMode, searchCorpus, searchFacets } from '../../lib/api/client';
 import { PAGE, SEARCH } from '../../lib/constants';
 import { scopeTokens, toggleGroup, toggleOne, wireCategories } from '../../lib/taxonomySelection';
 import type { ScopeToken } from '../../lib/taxonomySelection';
-import type { CorpusMatch, SearchFacets as Facets, SearchMode } from '../../lib/types';
+import type { CorpusMatch, SearchFacets as Facets, SearchMode, Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { usePaged } from '../../lib/usePaged';
 import { useCategoryLabels } from '../../lib/useCategoryLabels';
 import { useDomains } from '../../lib/useDomains';
 import { countLabel, formatCount } from '../../lib/utils';
+import { FilterBar } from '../library/FilterBar';
+import { DEFAULT_FILTERS, applyFilters } from '../library/worksFilter';
+import type { Filters } from '../library/worksFilter';
 import { rollupByDomain } from './facetRollup';
 import { FilterPopover } from './FilterPopover';
 import { PassageGroups } from './PassageGroups';
@@ -156,6 +159,23 @@ export function ContentScope({
   const domains = useDomains();
   const labelOf = useCategoryLabels();
 
+  // The hit window's distinct books, resolved to their real Work records so
+  // the library's own era/author/"largest first" filter (worksFilter.ts)
+  // applies here too instead of a second, content-scope-only reimplementation.
+  const hitUrns = useMemo(() => Array.from(new Set(corpus.items.map((m) => m.urn))), [corpus.items]);
+  const worksRes = useAsync<Work[]>(
+    () =>
+      hitUrns.length
+        ? getWorks({ urns: hitUrns, limit: hitUrns.length }).then((p) => p.items)
+        : Promise.resolve([]),
+    [hitUrns],
+  );
+  const [workFilters, setWorkFilters] = useState<Filters>({ ...DEFAULT_FILTERS, sort: 'canonical' });
+  const filteredWorks = useMemo(
+    () => (worksRes.data ? applyFilters(worksRes.data, workFilters) : null),
+    [worksRes.data, workFilters],
+  );
+
   const pickMode = (next: SearchMode) => {
     setMode(next);
     resetFilters();
@@ -234,6 +254,11 @@ export function ContentScope({
         onBook: setBook,
         onClear: resetFilters,
       }}
+      worksFilter={
+        worksRes.data && worksRes.data.length > 0 ? (
+          <FilterBar works={worksRes.data} filters={workFilters} onChange={setWorkFilters} />
+        ) : null
+      }
       map={
         <>
           {facets ? (
@@ -282,6 +307,7 @@ export function ContentScope({
           q={q}
           activeBook={book}
           bookCounts={bookCounts}
+          filteredWorks={filteredWorks}
           onPickBook={setBook}
           onOpen={(urn, page) => onOpenReader(urn, page, q)}
         />

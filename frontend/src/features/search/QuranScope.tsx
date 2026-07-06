@@ -1,7 +1,7 @@
 import { Badge, SourceRecord, Spinner, Stack, Text } from '../../lib/design-system';
 import { getVerse, searchQuran } from '../../lib/api/client';
-import type { SearchScope } from '../../lib/api/client';
 import { PAGE } from '../../lib/constants';
+import { quranVerseHref } from '../../lib/routes';
 import { parseVerseRef } from '../../lib/surahs';
 import type { Ayah, Page } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
@@ -11,8 +11,8 @@ import './SearchResults.css';
 
 /** A Qurʾān verse as the shared two-zone SourceRecord, identical in shape to a
     content or book hit: the reference + translation on the English spine, the
-    pointed verse with its bare (matched) form on the Arabic body. Selecting it
-    searches that verse's reference to surface the passages that quote it. */
+    pointed verse with its bare (matched) form on the Arabic body. Opening it
+    drills into the Qurʾān reader at that exact āya, the sūra around it intact. */
 function VerseRecord({
   verse,
   query,
@@ -31,6 +31,7 @@ function VerseRecord({
       badges={<Badge>{`ayah ${verse.ayah} / ${verse.verse_count}`}</Badge>}
       snippet={verse.text_plain}
       query={query}
+      href={quranVerseHref(verse.surah, verse.ayah)}
       onOpen={onOpen}
     />
   );
@@ -39,11 +40,11 @@ function VerseRecord({
 interface VersePanelProps {
   surah: number;
   ayah: number;
-  onSearch: (q: string, scope: SearchScope) => void;
+  onOpenVerse: (surah: number, ayah: number) => void;
   onOpenReader: (urn: string, page: number, query: string) => void;
 }
 
-function VersePanel({ surah, ayah, onSearch, onOpenReader }: VersePanelProps) {
+function VersePanel({ surah, ayah, onOpenVerse, onOpenReader }: VersePanelProps) {
   const res = useAsync<Ayah>(() => getVerse(surah, ayah), [surah, ayah]);
   return (
     <Stack gap="md">
@@ -56,7 +57,7 @@ function VersePanel({ surah, ayah, onSearch, onOpenReader }: VersePanelProps) {
       {res.data ? (
         <>
           <div className="ds-records">
-            <VerseRecord verse={res.data} onOpen={() => onSearch(`${surah}:${ayah}`, 'quran')} />
+            <VerseRecord verse={res.data} onOpen={() => onOpenVerse(surah, ayah)} />
           </div>
           <ContentScope q={res.data.text_ar} initialMode="broad" onOpenReader={onOpenReader} />
         </>
@@ -67,10 +68,10 @@ function VersePanel({ surah, ayah, onSearch, onOpenReader }: VersePanelProps) {
 
 function QuranTermResults({
   q,
-  onSearch,
+  onOpenVerse,
 }: {
   q: string;
-  onSearch: (q: string, scope: SearchScope) => void;
+  onOpenVerse: (surah: number, ayah: number) => void;
 }) {
   const res = useAsync<Page<Ayah>>(() => searchQuran(q, { limit: PAGE.defaultLimit }), [q]);
   return (
@@ -88,7 +89,7 @@ function QuranTermResults({
               key={`${verse.surah}:${verse.ayah}`}
               verse={verse}
               query={q}
-              onOpen={() => onSearch(`${verse.surah}:${verse.ayah}`, 'quran')}
+              onOpen={() => onOpenVerse(verse.surah, verse.ayah)}
             />
           ))}
         </div>
@@ -99,7 +100,9 @@ function QuranTermResults({
 
 export interface QuranScopeProps {
   q: string;
-  onSearch: (q: string, scope: SearchScope) => void;
+  /** Drill into the Qurʾān reader at this exact āya (App.tsx's openVerse),
+      the same navigation a citation link in the reader itself uses. */
+  onOpenVerse: (surah: number, ayah: number) => void;
   onOpenReader: (urn: string, page: number, query: string) => void;
 }
 
@@ -107,20 +110,20 @@ export interface QuranScopeProps {
     the results match every other scope. A ``surah:ayah`` reference like `68:4`
     loads the verse and the passages that quote it; any other query is an Arabic
     term, matched against every verse to list the ayat that contain it. */
-export function QuranScope({ q, onSearch, onOpenReader }: QuranScopeProps) {
+export function QuranScope({ q, onOpenVerse, onOpenReader }: QuranScopeProps) {
   const ref = parseVerseRef(q);
   if (ref) {
     return (
       <VersePanel
         surah={ref.surah}
         ayah={ref.ayah}
-        onSearch={onSearch}
+        onOpenVerse={onOpenVerse}
         onOpenReader={onOpenReader}
       />
     );
   }
   if (q.trim()) {
-    return <QuranTermResults q={q.trim()} onSearch={onSearch} />;
+    return <QuranTermResults q={q.trim()} onOpenVerse={onOpenVerse} />;
   }
   return (
     <Text as="p" size="sm" tone="muted">

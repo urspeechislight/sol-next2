@@ -81,13 +81,17 @@ export interface WorkListParams {
   canonical?: CanonicalRank;
   q?: string;
   sort?: WorkSort;
+  /** Resolve to the exact works containing these volume URNs, e.g. the
+      distinct books behind a content-search hit window. */
+  urns?: readonly string[];
   limit?: number;
   offset?: number;
 }
 
 /** Volume-folded works for the Library: one entry per work, scoped by
     category, domain, and/or tradition, optionally narrowed to one canonical
-    rank (the landmark rotations ask for primary_reference). */
+    rank (the landmark rotations ask for primary_reference), or resolved to
+    an exact set of volume URNs (a content-search hit window's book set). */
 export function getWorks(params: WorkListParams = {}): Promise<Page<Work>> {
   const qs = query({
     category: params.category ?? '',
@@ -96,6 +100,7 @@ export function getWorks(params: WorkListParams = {}): Promise<Page<Work>> {
     canonical: params.canonical ?? '',
     q: params.q ?? '',
     sort: params.sort ?? '',
+    urn: params.urns ?? [],
     limit: params.limit ?? PAGE.defaultLimit,
     offset: params.offset ?? 0,
   });
@@ -136,9 +141,10 @@ export function searchBook(
   return get<Page<BookSearchMatch>>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.SEARCH}${qs}`);
 }
 
-// ---- search (one query, four scopes: works / content / narrator / quran) ----
+// ---- search (one query, four global scopes plus the Qurʾān reader's own
+// in-place "this sūra" filter over the currently open sūra) ----
 
-export const SEARCH_SCOPES = ['content', 'works', 'narrator', 'quran'] as const;
+export const SEARCH_SCOPES = ['content', 'works', 'narrator', 'quran', 'sura'] as const;
 export type SearchScope = (typeof SEARCH_SCOPES)[number];
 
 /** The match modes in display order. `satisfies` locks every member to the
