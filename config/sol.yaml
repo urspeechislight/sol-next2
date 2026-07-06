@@ -583,21 +583,32 @@ extractors:
     - person_mention_extractor
   AUTHOR_COMMENTARY:
     - grammar_term_extractor
+    - date_expression_extractor
   QURAN_VERSE:
     - quran_entity_extractor
-  BIOGRAPHY: []
+  BIOGRAPHY:
+    - date_expression_extractor
+    - event_extractor
   RIJAL_ENTRY:
     - narrator_extractor
+    - date_expression_extractor
+    - event_extractor
   FIQH_RULING: []
   SECTION_HEADING:
     - grammar_term_extractor
   BASMALA: []
   NUMBERED_ENTRY:
     - grammar_term_extractor
+    - date_expression_extractor
+    - event_extractor
   POETRY: []
   GENERAL_PROSE:
     - grammar_term_extractor
-  HISTORICAL_NARRATIVE: []
+    - date_expression_extractor
+    - event_extractor
+  HISTORICAL_NARRATIVE:
+    - date_expression_extractor
+    - event_extractor
   EDITORIAL_FRONTMATTER: []
 
 thresholds:
@@ -1148,3 +1159,145 @@ quran_extraction:
     - name: يعوق
     - name: نسر
     - name: بعل
+
+# ---------------------------------------------------------------------------
+# EVENT EXTRACTION
+# Historical-event genre gate, participation markers, and named-event
+# gazetteer (by type) for pipeline/extractors/events.py. An event name that
+# also reads as a common word carries a preceding-word rule (entity_prev).
+# ---------------------------------------------------------------------------
+event_extraction:
+  genres:
+  - history-geography
+  - prophet-imams-biography
+  - genealogy-biography
+  - shia-hadith-general
+  - sunni-hadith-general
+  - shia-hadith-narrators
+  - sunni-hadith-narrators
+  - sunni-hadith-fiqh
+  - shia-hadith-fiqh
+  - shia-tafsir
+  - sunni-tafsir
+  - sects-schools
+  participation:
+    shahid:
+    - شهد
+    - شهدت
+    - حضر
+    - حضرت
+    qutila:
+    - قتل
+    - استشهد
+    - قُتل
+    participant:
+    - شارك
+    - قاتل
+  gazetteer:
+    BATTLE:
+    - name: بدر
+      event_id: badr
+      entity_prev:
+      - يوم
+      - غزوة
+      - وقعة
+      - معركة
+      - أصحاب
+      - أهل
+      - شهد
+    - name: أحد
+      event_id: uhud
+      entity_prev:
+      - يوم
+      - غزوة
+      - وقعة
+      - معركة
+      - أصحاب
+    - name: حنين
+      event_id: hunayn
+      entity_prev:
+      - يوم
+      - غزوة
+      - وقعة
+      - معركة
+    - name: الخندق
+      event_id: khandaq
+      entity_prev:
+      - يوم
+      - غزوة
+      - وقعة
+      - معركة
+    - name: الأحزاب
+      event_id: ahzab
+      entity_prev:
+      - يوم
+      - غزوة
+      - وقعة
+      - معركة
+    - name: خيبر
+      event_id: khaybar
+    - name: مؤتة
+      event_id: mutah
+    - name: تبوك
+      event_id: tabuk
+    - name: بني قريظة
+      event_id: qurayza
+    - name: بني النضير
+      event_id: nadir
+    - name: بني المصطلق
+      event_id: mustaliq
+    - name: ذات الرقاع
+      event_id: dhat_al_riqa
+    - name: الجمل
+      event_id: jamal
+      entity_prev:
+      - يوم
+      - وقعة
+      - معركة
+      - حرب
+    - name: صفين
+      event_id: siffin
+    - name: النهروان
+      event_id: nahrawan
+    - name: الحرة
+      event_id: harra
+      entity_prev:
+      - يوم
+      - وقعة
+      - معركة
+    - name: القادسية
+      event_id: qadisiyya
+    - name: اليرموك
+      event_id: yarmuk
+    - name: نهاوند
+      event_id: nahawand
+    - name: الطف
+      event_id: taff
+      entity_prev:
+      - يوم
+      - وقعة
+      - معركة
+    CONQUEST:
+    - name: فتح مكة
+      event_id: fath_makka
+    TREATY:
+    - name: الحديبية
+      event_id: hudaybiyya
+      entity_prev:
+      - صلح
+      - يوم
+      - عام
+      - غزوة
+      - وقعة
+    MARTYRDOM:
+    - name: كربلاء
+      event_id: karbala
+    ASSEMBLY:
+    - name: السقيفة
+      event_id: saqifa
+    - name: الغدير
+      event_id: ghadir
+      entity_prev:
+      - يوم
+      - غدير
+      - خم
