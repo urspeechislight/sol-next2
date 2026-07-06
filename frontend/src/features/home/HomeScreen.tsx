@@ -5,7 +5,7 @@ import { getDaily } from '../../lib/api/client';
 import { hijriToday } from '../../lib/hijri';
 import type { Daily } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
-import { AlmanacStrip } from './AlmanacStrip';
+import { Almanac } from './Almanac';
 import { BookOfDay } from './BookOfDay';
 import { FihristBand } from './FihristBand';
 import { HadithOfDay } from './HadithOfDay';
@@ -22,10 +22,10 @@ export interface HomeScreenProps {
 /** The landing page as a manuscript folio. An illuminated ʿunwān and masthead
     open the page; a conditional resume strip re-enters the last book; the
     daily spread sets verse and hadith as equal columns either side of a
-    center rule, with the book of the day as its own band beneath; one almanac
-    line closes the day's material; the fihrist of domains turns the corpus's
-    scale into navigation; a colophon closes the folio the way a manuscript
-    ends. */
+    center rule, with the book of the day as its own band beneath; the almanac
+    sets today's chronicle beside the month's calendar; the fihrist of domains
+    turns the corpus's scale into navigation; a colophon closes the folio the
+    way a manuscript ends. */
 export function HomeScreen({ onOpenReader }: HomeScreenProps) {
   const daily = useAsync<Daily>(() => getDaily(), []);
   const today = useMemo(() => hijriToday(), []);
@@ -49,7 +49,7 @@ export function HomeScreen({ onOpenReader }: HomeScreenProps) {
                 <HadithOfDay hadith={data.hadith} onOpenReader={onOpenReader} />
               </section>
               <BookOfDay pick={data.book} onOpenReader={onOpenReader} />
-              <AlmanacStrip today={today} />
+              <Almanac today={today} />
             </>
           )}
         </DataView>
