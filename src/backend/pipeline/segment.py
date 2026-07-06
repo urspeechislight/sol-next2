@@ -336,7 +336,9 @@ def _emit_spans(
         if not routed_explicitly:
             unclassified_count += 1
         content_span_count += 1
-        if ctx.content_start_page is not None and page_end < ctx.content_start_page:
+        content_start = ctx.content_start_page
+        before_content_start = content_start is not None and page_end < content_start
+        if before_content_start and not routed_explicitly:
             behavior = HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER
         anchor = layout.anchor_by_index.get(span_index)
         ctx.orchestrator.advance(behavior, paragraph_text, span_id, anchor)
