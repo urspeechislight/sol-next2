@@ -581,6 +581,8 @@ extractors:
   HADITH_TRANSMISSION:
     - narrator_extractor
     - person_mention_extractor
+    - date_expression_extractor
+    - event_extractor
   AUTHOR_COMMENTARY:
     - grammar_term_extractor
     - date_expression_extractor
