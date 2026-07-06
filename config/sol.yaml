@@ -636,6 +636,13 @@ thresholds:
   evidence_context_chars: 50
   narrator_disqualifier_lookahead_chars: 20
   narrator_narrative_lookahead_chars: 15
+  # The first basmala marks the work's opening (pages before it are the editor's
+  # front-matter) only when at most this many hadith transmissions precede it.
+  # More means the basmala opens an internal section of an already-started
+  # collection, not the work. Kept small so a genuine internal basmala (dozens
+  # of preceding hadith) is never mistaken for the work opener and its content
+  # buried; the tolerance covers the few isnads an editor quotes in the intro.
+  content_basmala_max_preceding_hadith: 3
 
 
 # ─────────────────────────────────────────────────────────────────────────────
