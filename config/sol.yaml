@@ -791,6 +791,13 @@ narrator_extraction:
     - "الصحيح"
     - "الموثق"
 
+  # Collective co-narrator phrases: "and others / more than one", closing a list
+  # of named narrators (صباح ، وهشام وحفص وغير واحد). They are not persons, and
+  # the internal waw of واحد would mis-split, so they are removed as a whole unit
+  # before the conjunction split runs.
+  co_narrator_collectives:
+    - "غير واحد"
+
   transmission_tail_verbs:
     - "يحدث"
     - "يروي"
