@@ -136,9 +136,10 @@ export function searchBook(
   return get<Page<BookSearchMatch>>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.SEARCH}${qs}`);
 }
 
-// ---- search (one query, four scopes: works / content / narrator / quran) ----
+// ---- search (one query, four global scopes plus the Qurʾān reader's own
+// in-place "this sūra" filter over the currently open sūra) ----
 
-export const SEARCH_SCOPES = ['content', 'works', 'narrator', 'quran'] as const;
+export const SEARCH_SCOPES = ['content', 'works', 'narrator', 'quran', 'sura'] as const;
 export type SearchScope = (typeof SEARCH_SCOPES)[number];
 
 /** The match modes in display order. `satisfies` locks every member to the

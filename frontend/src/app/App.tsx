@@ -38,9 +38,16 @@ interface LibScope {
     scope lands on its one successor instead of silently becoming content. */
 const LEGACY_WORKS_SCOPES = ['title', 'author', 'book'] as const;
 
-const coerceScope = (scope: string): SearchScope => {
+/** 'sura' (the Qurʾān reader's in-place sūra filter) only means anything
+    alongside a loaded sūra: outside the Qurʾān view it falls back to the app
+    default, and a bare '/quran' hash with no explicit scope defaults TO it
+    (the reader's default pick), matching the reader's own default. */
+const coerceScope = (scope: string, view: NavView): SearchScope => {
   if ((LEGACY_WORKS_SCOPES as readonly string[]).includes(scope)) return 'works';
-  return (SEARCH_SCOPES as readonly string[]).includes(scope) ? (scope as SearchScope) : 'content';
+  if ((SEARCH_SCOPES as readonly string[]).includes(scope)) {
+    return scope === 'sura' && view !== 'quran' ? 'content' : (scope as SearchScope);
+  }
+  return view === 'quran' ? 'sura' : 'content';
 };
 
 interface AppContentProps {
@@ -114,7 +121,7 @@ export function App() {
   const [view, setView] = useState<NavView>(initial.view);
   const [query, setQuery] = useState(initial.reading ? '' : initial.query);
   const [submitted, setSubmitted] = useState(initial.reading ? '' : initial.query);
-  const [scope, setScope] = useState<SearchScope>(coerceScope(initial.scope));
+  const [scope, setScope] = useState<SearchScope>(coerceScope(initial.scope, initial.view));
   const [lib, setLib] = useState<LibScope>({ cat: initial.cat, dom: initial.dom });
   const contentFilters = useContentFilters(initial);
   const [reading, setReading] = useState<Reading | null>(
@@ -146,7 +153,7 @@ export function App() {
   const applyRoute = useCallback(
     (next: RouteState) => {
       setView(next.view);
-      setScope(coerceScope(next.scope));
+      setScope(coerceScope(next.scope, next.view));
       setQuery(next.reading ? '' : next.query);
       setSubmitted(next.reading ? '' : next.query);
       setLib({ cat: next.cat, dom: next.dom });
@@ -165,6 +172,7 @@ export function App() {
     setView('quran');
     setQuery('');
     setSubmitted('');
+    setScope('sura');
     setQuranFocus({ surah, aya });
   };
 
@@ -190,6 +198,10 @@ export function App() {
     setLib({ cat: '', dom: '' });
     setQuranFocus(null);
     contentFilters.reset();
+    // The Qurʾān reader's sūra filter is the default pick on landing there;
+    // leaving it behind a scope with no meaning outside the reader.
+    if (v === 'quran') setScope('sura');
+    else if (scope === 'sura') setScope('content');
   };
   // Typing only updates the field; clearing it closes the results. Enter commits.
   const onQuery = (next: string) => {
@@ -199,7 +211,10 @@ export function App() {
   const onSearch = () => {
     const trimmed = query.trim();
     setSubmitted(trimmed);
-    recordSearch(trimmed, scope);
+    // The sūra filter is a transient in-page state, never a resumable global
+    // search: recording it would offer "recent searches" with no scope to
+    // pick back up outside the sūra that was open at the time.
+    if (scope !== 'sura') recordSearch(trimmed, scope);
   };
   // A result can launch a new search (a Qurʾān verse opens its reference): set
   // scope + query as state and let useHashRoute mirror it to the URL. Also the
@@ -210,17 +225,16 @@ export function App() {
     setSubmitted(next);
     recordSearch(next, nextScope);
   };
-  // On the Qurʾān page the header search is sūra-scoped: the submitted term
-  // filters the open sūra in place instead of opening the overlay, and the
-  // field's clear button restores the unfiltered page.
-  const searching = submitted.trim().length > 0 && view !== 'quran';
+  // The sūra scope filters the open sūra in place instead of opening the
+  // overlay, and the field's clear button restores the unfiltered page; every
+  // other scope opens the overlay same as any other view.
+  const searching = submitted.trim().length > 0 && scope !== 'sura';
 
   return (
     <AppShell
       active={view}
       query={query}
       scope={scope}
-      scopeLock={view === 'quran' ? 'this sūra' : undefined}
       onNav={onNav}
       onQuery={onQuery}
       onSearch={onSearch}
