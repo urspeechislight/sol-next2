@@ -41,6 +41,10 @@ src/frontend/uploads/**
 # scripts/ingest_books.py. Not hand-edited; formatting is irrelevant.
 data/books_index.json
 
+# Per-verse CAMeL morphology feeding the Qurʾān extraction — captured from the
+# morphology service, not hand-edited. Formatting is irrelevant.
+data/quran_morphology.json
+
 # Qurʾān verse text, vendored verbatim from the upstream sol-next pipeline
 # (data/quran/quran_clearquran.json). Not hand-edited; formatting is irrelevant.
 data/quran.json

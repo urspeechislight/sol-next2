@@ -13,19 +13,23 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from backend.core.constants import GRAMMAR__ENTITY_TERM, HADITH__ENTITY_PERSON
+from backend.core.constants import GRAMMAR__ENTITY_TERM, HADITH__ENTITY_PERSON, QURAN__ENTITY_NAMED
 from backend.pipeline.config import Config
 from backend.pipeline.extractors.grammar import grammar_term_extractor
 from backend.pipeline.extractors.hadith import narrator_extractor
 from backend.pipeline.extractors.mentions import person_mention_extractor
+from backend.pipeline.extractors.quran_entities import quran_entity_extractor
 from backend.pipeline.models import Entity, Span
 
 type ExtractorFn = Callable[[Span, Config], list[Entity]]
 
-VALID_ENTITY_TYPES: frozenset[str] = frozenset({HADITH__ENTITY_PERSON, GRAMMAR__ENTITY_TERM})
+VALID_ENTITY_TYPES: frozenset[str] = frozenset(
+    {HADITH__ENTITY_PERSON, GRAMMAR__ENTITY_TERM, QURAN__ENTITY_NAMED}
+)
 
 EXTRACTOR_REGISTRY: dict[str, ExtractorFn] = {
     "narrator_extractor": narrator_extractor,
     "person_mention_extractor": person_mention_extractor,
     "grammar_term_extractor": grammar_term_extractor,
+    "quran_entity_extractor": quran_entity_extractor,
 }

@@ -17,7 +17,12 @@ import json
 import sqlite3
 from typing import Any
 
-from backend.core.constants import ARTIFACT__MANUSCRIPT_DB
+from backend.core.constants import (
+    ARTIFACT__MANUSCRIPT_DB,
+    QURAN__MANIFESTATION_ID,
+    QURAN__TITLE_AR,
+    QURAN__TITLE_EN,
+)
 from backend.core.errors import ResourceNotFoundError
 from backend.core.paths import data_path
 from backend.models.extraction import (
@@ -75,6 +80,20 @@ _NUMBERED_UNITS_QUERY = (
 _HADITH_LEAF_REGEX: CompiledPattern = cached_compile(r"^hadith_\d+$")
 
 
+def _manifestation_title(urn: str) -> tuple[str, str | None]:
+    """The (Arabic, English) title for a manifestation present in the artifact.
+
+    A catalog book carries its title in the catalog. The Qurʾān is a manifestation
+    that is not a catalog book, so its canonical title is used instead. Any other
+    URN absent from the catalog still raises ResourceNotFoundError — a stale
+    artifact must be rebuilt, not partially listed.
+    """
+    if urn == QURAN__MANIFESTATION_ID:
+        return QURAN__TITLE_AR, QURAN__TITLE_EN
+    book = books_repo.get_book(urn)
+    return book.title_ar, book.title_en
+
+
 def extraction_summaries() -> list[ExtractionBookSummary]:
     """Return one coverage summary per book in the artifact, URN-ordered.
 
@@ -94,12 +113,12 @@ def extraction_summaries() -> list[ExtractionBookSummary]:
     summaries: list[ExtractionBookSummary] = []
     for row in con.execute(_SPAN_SUMMARY_QUERY):
         urn = str(row["manifestation_id"])
-        book = books_repo.get_book(urn)
+        title_ar, title_en = _manifestation_title(urn)
         summaries.append(
             ExtractionBookSummary(
                 urn=urn,
-                title_ar=book.title_ar,
-                title_en=book.title_en,
+                title_ar=title_ar,
+                title_en=title_en,
                 first_page=int(row["first_page"]),
                 page_end=int(row["page_end"]),
                 pages_with_spans=int(row["pages_with_spans"]),

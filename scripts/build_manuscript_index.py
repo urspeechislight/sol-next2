@@ -4,16 +4,20 @@
 Segments then extracts every catalog book (Phase 1 page rows -> segment ->
 extract) and writes one row per span, entity, and unit into the read-only
 manuscript store. The book's TOC anchors the hierarchy split; the book's
-category feeds segment's genre gating. Thin driver: row projections and SQL
-live in ``backend.build.manuscript``; the build loop and CLI shell live in
-``backend.build.runner``. Pilot a subset with ``--limit N``::
+category feeds segment's genre gating. The Qurʾān is appended as one more
+manifestation after the catalog loop (its structure is given, so it skips
+segment); ``--quran`` builds it alone for targeted validation. Thin driver: row
+projections and SQL live in ``backend.build.manuscript``; the build loop and CLI
+shell live in ``backend.build.runner``. Pilot a subset with ``--limit N``::
 
     uv run python scripts/build_manuscript_index.py --limit 5
+    uv run python scripts/build_manuscript_index.py --quran
 """
 
 from __future__ import annotations
 
 import argparse
+import sqlite3
 from typing import Any
 
 from backend.build import manuscript as manuscript_build
@@ -25,8 +29,12 @@ from backend.models.book import Book
 from backend.pipeline.config import Config, load_config
 from backend.pipeline.extract import extract
 from backend.pipeline.models import Manuscript, ManuscriptPage
+from backend.pipeline.quran_source import build_quran_manuscript
 from backend.pipeline.segment import segment
 from backend.repositories import reader as reader_repo
+
+_QURAN_SOURCE_FILE = "quran.json"
+_QURAN_MORPHOLOGY_FILE = "quran_morphology.json"
 
 
 def _toc_entries(book_urn: str) -> list[dict[str, Any]]:
@@ -68,15 +76,33 @@ def _process_book(book: Book, config: Config) -> Manuscript | None:
     return extract(segment(manuscript, config), config)
 
 
+def _quran_rows(con: sqlite3.Connection, config: Config) -> dict[str, int]:
+    """Extract the Qurʾān manifestation and append its rows to the open artifact."""
+    manuscript = build_quran_manuscript(
+        data_path(_QURAN_SOURCE_FILE), data_path(_QURAN_MORPHOLOGY_FILE), config
+    )
+    con.executemany(manuscript_build.TABLES["span"], manuscript_build.span_rows(manuscript))
+    con.executemany(manuscript_build.TABLES["entity"], manuscript_build.entity_rows(manuscript))
+    con.executemany(manuscript_build.TABLES["unit"], manuscript_build.unit_rows(manuscript))
+    return {
+        "quran_spans": len(manuscript.spans),
+        "quran_entities": len(manuscript.entities),
+        "quran_units": len(manuscript.units),
+    }
+
+
 def _build(args: argparse.Namespace) -> dict[str, object]:
-    """Run segment+extract over the catalog and materialize the span store.
+    """Run segment+extract over the catalog, then append the Qurʾān manifestation.
 
     Narrator entities are linked to the registry at build time (the join the
     reader used to approximate in the browser against a 600-row sample); the
-    link rides in entity metadata, so the artifact schema is unchanged.
+    link rides in entity metadata, so the artifact schema is unchanged. The
+    Qurʾān rides in the ``finish`` epilogue, built unless a specific book URN
+    was requested.
     """
     config = load_config()
     linker = NarratorLinker.from_registry()
+    urns = [] if args.quran else args.urns
 
     def _project(book: Book) -> dict[str, list[dict[str, Any]]] | None:
         manuscript = _process_book(book, config)
@@ -89,22 +115,26 @@ def _build(args: argparse.Namespace) -> dict[str, object]:
             "unit": manuscript_build.unit_rows(manuscript),
         }
 
+    def _finish(con: sqlite3.Connection, _books: list[Book]) -> dict[str, int]:
+        return _quran_rows(con, config) if not urns else {}
+
     return runner.build_catalog_artifact(
         args.out,
         manuscript_build.MANUSCRIPT_SCHEMA,
         manuscript_build.TABLES,
         _project,
         limit=args.limit,
-        urns=args.urns,
+        urns=urns,
+        finish=_finish,
     )
 
 
 def _add_args(parser: argparse.ArgumentParser) -> None:
-    """Offer ``--urn`` (repeatable): build exactly those catalog entries.
+    """Offer ``--urn`` (repeatable) and ``--quran``.
 
-    The targeted-validation path — extraction over one named book, inspected
-    through the dev extraction API — instead of a positional ``--limit``
-    prefix of the whole catalog.
+    ``--urn`` builds exactly those catalog entries — the targeted-validation
+    path over one named book, inspected through the dev extraction API.
+    ``--quran`` builds the Qurʾān manifestation alone, skipping the catalog.
     """
     parser.add_argument(
         "--urn",
@@ -113,6 +143,11 @@ def _add_args(parser: argparse.ArgumentParser) -> None:
         default=None,
         metavar="URN",
         help="build only this catalog URN; repeat the flag for several books",
+    )
+    parser.add_argument(
+        "--quran",
+        action="store_true",
+        help="build only the Qurʾān manifestation (skip the book catalog)",
     )
 
 
