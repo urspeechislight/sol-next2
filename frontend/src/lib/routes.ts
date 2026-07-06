@@ -35,11 +35,11 @@ export const ASSETS = {
 // so the hash never reaches the server and needs no SPA-fallback config. This is
 // the SSOT for the URL <-> app-location map — the view names, the reader path,
 // and the parse/serialize pair. Nothing else reads or formats the hash.
-// 'design' is the living styleguide and 'extraction' the dev extraction
-// inspector: valid routes (#/design, #/extraction) but intentionally not in
-// the nav bar (NAV in app/shell/nav.ts is the visible subset). The extraction
-// view also needs the backend's SOL_DEV_TOOLS opt-in; without it the /api/dev
-// routes 404 and the screen shows that state.
+// 'design' is the living styleguide: a valid route (#/design) intentionally
+// kept out of the nav bar (NAV in app/shell/nav.ts is the visible subset).
+// 'extraction' is the extraction inspector and IS a visible nav item; it needs
+// the backend's SOL_DEV_TOOLS opt-in, and without it the /api/dev routes 404
+// and the screen shows that state.
 const NAV_VIEWS = ['home', 'library', 'quran', 'graph', 'design', 'extraction'] as const;
 export type NavView = (typeof NAV_VIEWS)[number];
 
