@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Final
 
-from backend.core.constants import GRAMMAR__ENTITY_TERM
+from backend.core.constants import ENTITY__CATEGORY_KEY, GRAMMAR__ENTITY_TERM
 from backend.patterns import CompiledPattern, cached_compile
 from backend.pipeline.contracts import PHASE_CONTRACTS
 from backend.pipeline.models import Entity, Span, create_entity
@@ -35,7 +35,6 @@ from backend.pipeline.models import Entity, Span, create_entity
 if TYPE_CHECKING:
     from backend.pipeline.config import Config
 
-GRAMMAR__CATEGORY_KEY: Final[str] = "category"
 GRAMMAR__LEMMA_KEY: Final[str] = "lemma"
 
 _CLITIC: Final[str] = r"(?<![ء-ي])[وفبكل]?"
@@ -121,7 +120,7 @@ def grammar_term_extractor(span: Span, config: Config) -> list[Entity]:
                 extractor_id="grammar_term_extractor",
                 config=config,
                 phase=phase,
-                metadata={GRAMMAR__CATEGORY_KEY: category, GRAMMAR__LEMMA_KEY: _lemma(surface)},
+                metadata={ENTITY__CATEGORY_KEY: category, GRAMMAR__LEMMA_KEY: _lemma(surface)},
             )
         )
     return entities

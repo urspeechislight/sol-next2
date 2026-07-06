@@ -583,7 +583,8 @@ extractors:
     - person_mention_extractor
   AUTHOR_COMMENTARY:
     - grammar_term_extractor
-  QURAN_VERSE: []
+  QURAN_VERSE:
+    - quran_entity_extractor
   BIOGRAPHY: []
   RIJAL_ENTRY:
     - narrator_extractor
@@ -1013,3 +1014,130 @@ narrator_extraction:
     - "وقال"
     - "قال"
     - "من"
+
+# ---------------------------------------------------------------------------
+# QURAN EXTRACTION
+# The Quran manifestation genre label and named-entity gazetteer. The extractor
+# (pipeline/extractors/quran_entities.py) runs only on spans whose book_type is
+# in genres, and matches each verse against gazetteer names. A name that also
+# reads as a common word carries a preceding-word rule validated against every
+# Quranic occurrence: entity_prev keeps it only after a listed word, common_prev
+# drops it after a listed word.
+# ---------------------------------------------------------------------------
+quran_extraction:
+  genres:
+  - quran
+  gazetteer:
+    prophet:
+    - name: آدم
+    - name: إدريس
+    - name: نوح
+    - name: هود
+      entity_prev:
+      - أخاهم
+      - أخوهم
+      - يا
+      - قوم
+      - نجينا
+    - name: صالح
+      entity_prev:
+      - أخاهم
+      - أخوهم
+      - يا
+      - قوم
+      - نجينا
+      - أن
+    - name: إبراهيم
+    - name: لوط
+    - name: إسماعيل
+    - name: إسحاق
+    - name: يعقوب
+    - name: يوسف
+    - name: أيوب
+    - name: شعيب
+    - name: موسى
+    - name: هارون
+    - name: ذو الكفل
+    - name: داود
+    - name: سليمان
+    - name: إلياس
+    - name: اليسع
+    - name: يونس
+    - name: زكريا
+    - name: يحيى
+    - name: عيسى
+    - name: محمد
+    - name: أحمد
+    person:
+    - name: فرعون
+    - name: هامان
+    - name: قارون
+    - name: جالوت
+    - name: طالوت
+    - name: آزر
+    - name: مريم
+    - name: لقمان
+    - name: ذو القرنين
+    - name: عزير
+    - name: العزيز
+      entity_prev:
+      - امرأت
+      - أيها
+    - name: أبي لهب
+    angel:
+    - name: جبريل
+    - name: ميكال
+    - name: هاروت
+    - name: ماروت
+    - name: مالك
+      entity_prev:
+      - يا
+    people:
+    - name: عاد
+      common_prev:
+      - لا
+      - من
+      - حتى
+    - name: ثمود
+    - name: مدين
+    - name: بني إسرائيل
+    - name: قريش
+    - name: الروم
+    - name: يأجوج
+    - name: مأجوج
+    - name: أصحاب الكهف
+    - name: سبأ
+    - name: تبع
+      entity_prev:
+      - قوم
+    place:
+    - name: مكة
+    - name: بكة
+    - name: مصر
+    - name: الطور
+    - name: سينين
+    - name: سيناء
+    - name: بابل
+    - name: الأحقاف
+    - name: إرم
+    - name: بدر
+    - name: حنين
+    - name: المسجد الحرام
+    - name: المسجد الأقصى
+    scripture:
+    - name: القرآن
+    - name: التوراة
+    - name: الإنجيل
+    - name: الزبور
+    idol:
+    - name: اللات
+    - name: العزى
+    - name: مناة
+    - name: ود
+      entity_prev:
+      - تذرنّ
+    - name: سواع
+    - name: يغوث
+    - name: يعوق
+    - name: نسر
+    - name: بعل
