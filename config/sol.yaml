@@ -581,17 +581,21 @@ extractors:
   HADITH_TRANSMISSION:
     - narrator_extractor
     - person_mention_extractor
-  AUTHOR_COMMENTARY: []
+  AUTHOR_COMMENTARY:
+    - grammar_term_extractor
   QURAN_VERSE: []
   BIOGRAPHY: []
   RIJAL_ENTRY:
     - narrator_extractor
   FIQH_RULING: []
-  SECTION_HEADING: []
+  SECTION_HEADING:
+    - grammar_term_extractor
   BASMALA: []
-  NUMBERED_ENTRY: []
+  NUMBERED_ENTRY:
+    - grammar_term_extractor
   POETRY: []
-  GENERAL_PROSE: []
+  GENERAL_PROSE:
+    - grammar_term_extractor
   HISTORICAL_NARRATIVE: []
   EDITORIAL_FRONTMATTER: []
 
@@ -659,6 +663,14 @@ narrative_genres:
     - prophet-imams-biography
     - genealogy-biography
     - history-geography
+
+
+grammar_extraction:
+  # Book categories whose spans the grammar_term_extractor scans for iʿrāb /
+  # naḥw / ṣarf markers. Scoped so the term regexes (نصب, جر, حذف...) read as
+  # their grammatical senses, which only holds in a grammar/language work.
+  genres:
+    - arabic-language-sciences
 
 
 cross_page_repair:

@@ -83,10 +83,12 @@ export function UnitRow({ unit }: { unit: ExtractionUnit }) {
 function EntityRow({ entity }: { entity: ExtractionEntity }) {
   const extractor = textField(entity.provenance, 'extractor_id');
   const role = textField(entity.metadata, 'role_in_context');
+  const category = textField(entity.metadata, 'category');
   return (
     <div className="xtr-entity">
       <span className="xtr-tag">{entity.entity_type}</span>
       {role ? <span className="xtr-tag">{role}</span> : null}
+      {category ? <span className="xtr-tag">{category}</span> : null}
       <span className="xtr-ar xtr-entity__text" dir="rtl" lang="ar">
         {entity.text_ar}
       </span>

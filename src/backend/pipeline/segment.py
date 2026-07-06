@@ -345,6 +345,8 @@ def _emit_spans(
         metadata = _build_span_metadata(
             behavior, detected, anchor, prev_span_id, prev_hadith_span_id
         )
+        if book_type is not None:
+            metadata["book_type"] = book_type
         manuscript.spans.append(
             Span(
                 span_id=span_id,
