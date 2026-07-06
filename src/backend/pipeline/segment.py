@@ -30,8 +30,11 @@ from backend.core.logging import get_logger
 from backend.patterns import CompiledPattern, cached_compile
 from backend.pipeline.boundaries import build_merge_cues, merge_isnad_continuations
 from backend.pipeline.boundaries_headings import (
+    EntryCues,
     HeadingCues,
+    build_inline_entry_re,
     build_inline_heading_re,
+    split_at_inline_entries,
     split_at_inline_headings,
 )
 from backend.pipeline.config import Config
@@ -95,6 +98,7 @@ class _SegmentContext:
     attribution_regex: CompiledPattern | None
     attribution_strong_regex: CompiledPattern | None
     inline_heading_regex: CompiledPattern | None
+    inline_entry_regex: CompiledPattern | None
     heading_marker_regex: CompiledPattern | None
     toc: list[dict[str, Any]]
     content_start_page: int | None
@@ -182,6 +186,7 @@ def _build_segment_context(manuscript: Manuscript, config: Config) -> _SegmentCo
         attribution_regex=attribution_regex,
         attribution_strong_regex=compiled_patterns.get("ATTRIBUTION_STRONG"),
         inline_heading_regex=build_inline_heading_re(config.patterns),
+        inline_entry_regex=build_inline_entry_re(config.patterns),
         heading_marker_regex=compiled_patterns.get(HADITH__PATTERN_HEADING_MARKER),
         toc=toc,
         content_start_page=find_content_start_page(toc, toc_patterns),
@@ -251,6 +256,10 @@ def _split_headings(
                 ctx.name_prefix_tokens,
                 max_heading_chars,
             ),
+        )
+    if ctx.inline_entry_regex is not None and ctx.attribution_strong_regex is not None:
+        paragraphs = split_at_inline_entries(
+            paragraphs, EntryCues(ctx.inline_entry_regex, ctx.attribution_strong_regex)
         )
     if ctx.heading_marker_regex is not None and ctx.attribution_strong_regex is not None:
         paragraphs = split_heading_from_content(
@@ -336,7 +345,9 @@ def _emit_spans(
         if not routed_explicitly:
             unclassified_count += 1
         content_span_count += 1
-        if ctx.content_start_page is not None and page_end < ctx.content_start_page:
+        content_start = ctx.content_start_page
+        before_content_start = content_start is not None and page_end < content_start
+        if before_content_start and not routed_explicitly:
             behavior = HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER
         anchor = layout.anchor_by_index.get(span_index)
         ctx.orchestrator.advance(behavior, paragraph_text, span_id, anchor)

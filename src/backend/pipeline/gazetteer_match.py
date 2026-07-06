@@ -1,0 +1,141 @@
+"""Shared Arabic gazetteer-matching for Phase 3 extractors.
+
+The Qurʾān named-entity extractor and the historical-event extractor both match
+a curated, categorised gazetteer against fully-pointed Arabic verse/prose. The
+shape is identical: fold away diacritics and letter variants, tolerate an
+attached conjunction/preposition clitic and a trailing accusative alif, anchor
+each hit to the exact window of the name in the original text, claim ranges so a
+shorter name never fires inside a longer one, and drop the common-word reading
+of an ambiguous name by a preceding-word rule. Only the payload differs — a
+category for the Qurʾān, an event type and id for events — so ``compile_matchers``
+and ``scan_gazetteer`` are generic over it and the two extractors share one
+implementation.
+"""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Callable
+from typing import Any, Final
+
+from backend.core.constants import ENTITY__NAME_KEY
+from backend.patterns import CompiledPattern, cached_compile, fold_search
+from backend.pipeline.errors import ExtractError
+
+ENTITY_PREV_KEY: Final[str] = "entity_prev"
+COMMON_PREV_KEY: Final[str] = "common_prev"
+
+_CONJUNCTION_CLITICS: Final[tuple[str, ...]] = ("و", "ف")
+
+type Matcher[T] = tuple[str, CompiledPattern, frozenset[str], frozenset[str], T]
+type ScanHit[T] = tuple[int, int, int, T]
+
+
+def _name_regex(folded_name: str) -> CompiledPattern:
+    """Match a folded name with an optional clitic prefix and accusative alif.
+
+    Group 1 captures the name itself (plus a trailing accusative alif), so a hit
+    anchors to the name and excludes any leading conjunction/preposition clitic
+    (و ف ب ك ل). Boundaries forbid mid-word hits.
+    """
+    return cached_compile(rf"(?<![ء-ي])[وفبكل]?({re.escape(folded_name)}ا?)(?![ء-ي])")
+
+
+def _fold_with_offsets(text: str) -> tuple[str, list[int]]:
+    """Fold ``text`` for search while recording each folded char's source index.
+
+    ``fold_search`` folds character by character (drops marks, folds letter
+    variants), so folding one char at a time reproduces it exactly and yields a
+    folded→original index map. The returned list has one entry per folded char
+    plus a trailing sentinel of ``len(text)``, so a folded span ``[fs, fe)`` maps
+    to the original window ``[offsets[fs], offsets[fe])`` including any trailing
+    diacritics on the last matched letter. Raises if the per-char fold and the
+    bulk fold disagree, rather than emit a misaligned offset.
+    """
+    parts: list[str] = []
+    offsets: list[int] = []
+    for index, char in enumerate(text):
+        for piece in fold_search(char):
+            parts.append(piece)
+            offsets.append(index)
+    folded = "".join(parts)
+    if folded != fold_search(text):
+        raise ExtractError("fold_search is not character-local; offset map cannot be trusted")
+    offsets.append(len(text))
+    return folded, offsets
+
+
+def preceding_word(folded: str, match_start: int) -> str:
+    """The folded word immediately before ``match_start`` (empty at text start)."""
+    before = folded[:match_start].split()
+    return before[-1] if before else ""
+
+
+def _rule_keeps(entity_prev: frozenset[str], common_prev: frozenset[str], prev: str) -> bool:
+    """Apply a name's preceding-word rule: whitelist keeps, blacklist drops, else keep.
+
+    The preceding word is tested with and without a leading و/ف clitic, so a rule
+    token like ``وقعة`` (whose و is a root letter) matches ``وقعة`` while a genuine
+    conjunction ``وبدر`` still matches the base word ``بدر``.
+    """
+    prev_stripped = prev[1:] if prev[:1] in _CONJUNCTION_CLITICS else prev
+    forms = {prev, prev_stripped}
+    if entity_prev:
+        return bool(forms & entity_prev)
+    if common_prev:
+        return not (forms & common_prev)
+    return True
+
+
+def compile_matchers[T](
+    gazetteer: dict[str, list[dict[str, Any]]], payload: Callable[[str, dict[str, Any]], T]
+) -> list[Matcher[T]]:
+    """Compile a categorised gazetteer into matchers, longest name first.
+
+    ``payload(category, entry)`` produces whatever the extractor stamps on its
+    entity. Each entry supplies a ``name`` and optional ``entity_prev`` /
+    ``common_prev`` preceding-word rules.
+    """
+    built: list[Matcher[T]] = []
+    for category, entries in gazetteer.items():
+        for entry in entries:
+            name = entry[ENTITY__NAME_KEY]
+            entity_prev = frozenset(fold_search(token) for token in entry.get(ENTITY_PREV_KEY, []))
+            common_prev = frozenset(fold_search(token) for token in entry.get(COMMON_PREV_KEY, []))
+            built.append(
+                (
+                    name,
+                    _name_regex(fold_search(name)),
+                    entity_prev,
+                    common_prev,
+                    payload(category, entry),
+                )
+            )
+    built.sort(key=lambda matcher: -len(matcher[0]))
+    return built
+
+
+def scan_gazetteer[T](text: str, matchers: list[Matcher[T]]) -> tuple[str, list[ScanHit[T]]]:
+    """Scan ``text`` for every matcher, claiming ranges and applying the rules.
+
+    Returns the folded text and, for each kept match, ``(start, end, match_start,
+    payload)`` — the entity window in the original text, the folded index of the
+    full match (for a caller that reads more preceding context, e.g.
+    participation), and the payload — sorted by position.
+    """
+    folded, offsets = _fold_with_offsets(text)
+    claimed: list[tuple[int, int]] = []
+    hits: list[ScanHit[T]] = []
+    for _name, regex, entity_prev, common_prev, payload in matchers:
+        for match in regex.finditer(folded):
+            start, end = offsets[match.start(1)], offsets[match.end(1)]
+            if any(
+                start < claimed_end and claimed_start < end
+                for claimed_start, claimed_end in claimed
+            ):
+                continue
+            if not _rule_keeps(entity_prev, common_prev, preceding_word(folded, match.start())):
+                continue
+            claimed.append((start, end))
+            hits.append((start, end, match.start(), payload))
+    return folded, sorted(hits, key=lambda hit: (hit[0], hit[1]))
