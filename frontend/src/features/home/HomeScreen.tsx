@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { PageGlow } from '../../lib/design-system';
 import { DataView } from '../../lib/DataView';
-import { getDaily } from '../../lib/api/client';
+import { getAlmanac, getDaily } from '../../lib/api/client';
 import { hijriToday } from '../../lib/hijri';
-import type { Daily } from '../../lib/types';
+import type { Almanac, Daily } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
-import { Almanac } from './Almanac';
 import { BookOfDay } from './BookOfDay';
+import { CalendarCard } from './CalendarCard';
+import { ChroniclesBand } from './ChroniclesBand';
 import { FihristBand } from './FihristBand';
 import { HadithOfDay } from './HadithOfDay';
 import { Masthead } from './Masthead';
@@ -22,12 +23,13 @@ export interface HomeScreenProps {
 /** The landing page as a manuscript folio. An illuminated ʿunwān and masthead
     open the page; a conditional resume strip re-enters the last book; the
     daily spread sets the verse of the day down the full left leaf, with the
-    hadith and the almanac splitting the right leaf into two even halves; the
-    book of the day follows as its own band beneath; the fihrist of domains
-    turns the corpus's scale into navigation; a colophon closes the folio the
-    way a manuscript ends. */
+    hadith above the Hijri calendar on the right leaf; the chronicles band and
+    the book of the day then follow as their own full-width bands; the fihrist
+    of domains turns the corpus's scale into navigation; a colophon closes the
+    folio the way a manuscript ends. */
 export function HomeScreen({ onOpenReader }: HomeScreenProps) {
   const daily = useAsync<Daily>(() => getDaily(), []);
+  const almanac = useAsync<Almanac>(() => getAlmanac(), []);
   const today = useMemo(() => hijriToday(), []);
 
   return (
@@ -47,8 +49,21 @@ export function HomeScreen({ onOpenReader }: HomeScreenProps) {
               <section className="home3__folio" aria-label="Today's reading">
                 <VerseOfDay verse={data.verse} onOpenReader={onOpenReader} />
                 <HadithOfDay hadith={data.hadith} onOpenReader={onOpenReader} />
-                <Almanac today={today} />
+                <DataView
+                  result={almanac}
+                  renderLoading={() => null}
+                  errorText="Could not load the almanac"
+                >
+                  {(alm) => <CalendarCard almanac={alm} today={today} />}
+                </DataView>
               </section>
+              <DataView
+                result={almanac}
+                renderLoading={() => null}
+                errorText="Could not load the almanac"
+              >
+                {(alm) => <ChroniclesBand almanac={alm} today={today} />}
+              </DataView>
               <BookOfDay pick={data.book} onOpenReader={onOpenReader} />
             </>
           )}

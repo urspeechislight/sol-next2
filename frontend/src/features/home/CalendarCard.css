@@ -1,105 +1,93 @@
-/* Almanac — the day's band: today's chronicle beside the Hijri calendar, where
-   the month's observances list under today's date. Today is marked
+/* CalendarCard — the folio's bottom-right card, filling the leaf's lower half:
+   today's Hijri date over the month's observances. Today is marked
    typographically (accent numeral + tag), never with a highlight bubble.
    Tokens only. */
 
-.almanac {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-lg);
-  align-items: start;
-}
-@media (max-width: 920px) {
-  .almanac {
-    grid-template-columns: 1fr;
-  }
-}
-
-.almanac__card {
+.calcard {
   background: color-mix(in srgb, var(--color-surface) 72%, transparent);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
   box-shadow: var(--shadow-sm);
 }
-.almanac__eyebrow {
+.calcard__eyebrow {
   display: flex;
   margin-bottom: var(--space-sm);
 }
 
 /* ---- today's date --------------------------------------------------------- */
-.almanac__today {
+.calcard__today {
   display: flex;
   align-items: baseline;
   gap: var(--space-sm);
   margin: 0;
 }
-.almanac__today-day {
+.calcard__today-day {
   font-family: var(--font-serif);
   font-size: var(--text-display);
   line-height: 1;
   color: var(--color-accent-deep);
 }
-.almanac__today-month {
+.calcard__today-month {
   font-family: var(--font-ar-display);
   font-size: var(--text-xl);
   color: var(--color-text);
 }
-.almanac__today-year {
+.calcard__today-year {
   margin-left: auto;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   letter-spacing: 0.08em;
   color: var(--color-text-faint);
 }
-.almanac__gregorian {
+.calcard__gregorian {
   margin: var(--space-2xs) 0 var(--space-md);
 }
 
 /* ---- month observances ----------------------------------------------------- */
-.almanac__month {
+.calcard__month {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.almanac__row {
+.calcard__row {
   display: flex;
   align-items: baseline;
   gap: var(--space-sm);
   padding: var(--space-xs) 0;
   border-top: 1px solid var(--color-border-hair);
 }
-.almanac__row--past {
+.calcard__row--past {
   opacity: 0.55;
 }
-.almanac__row--today .almanac__row-day,
-.almanac__row--today .almanac__row-en {
+.calcard__row--today .calcard__row-day,
+.calcard__row--today .calcard__row-en {
   color: var(--color-accent-deep);
   font-weight: var(--weight-semibold);
 }
-.almanac__dot {
+.calcard__dot {
   width: 7px;
   height: 7px;
   border-radius: var(--radius-pill);
   flex: none;
   align-self: center;
 }
-.almanac__dot--eid {
+.calcard__dot--eid {
   background: var(--color-accent-strong);
 }
-.almanac__dot--birth {
+.calcard__dot--birth {
   background: var(--color-success);
 }
-.almanac__dot--mourning {
+.calcard__dot--mourning {
   background: var(--color-danger);
 }
-.almanac__dot--night {
+.calcard__dot--night {
   background: var(--color-verse);
 }
-.almanac__dot--observance {
+.calcard__dot--observance {
   background: var(--color-text-ghost);
 }
-.almanac__row-day {
+.calcard__row-day {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--color-text-faint);
@@ -107,7 +95,7 @@
   text-align: right;
   flex: none;
 }
-.almanac__row-body {
+.calcard__row-body {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -115,17 +103,17 @@
   justify-content: space-between;
   gap: var(--space-sm);
 }
-.almanac__row-en {
+.calcard__row-en {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
-.almanac__row-ar {
+.calcard__row-ar {
   font-family: var(--font-ar);
   font-size: var(--text-sm);
   color: var(--color-text-faint);
   flex: none;
 }
-.almanac__row-tag {
+.calcard__row-tag {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   letter-spacing: 0.08em;
@@ -133,25 +121,4 @@
   color: var(--color-accent-deep);
   flex: none;
   align-self: center;
-}
-
-/* ---- chronicles ------------------------------------------------------------ */
-.almanac__event-when {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-text-faint);
-  margin: 0 0 var(--space-xs);
-}
-.almanac__event-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-tight);
-  color: var(--color-text);
-  margin: 0 0 var(--space-xs);
-}
-.almanac__event-detail {
-  margin: 0;
 }

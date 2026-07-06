@@ -16,8 +16,8 @@
 }
 
 /* The daily spread: the verse of the day runs down the full left leaf, while
-   the hadith and the almanac split the right leaf into two even halves, either
-   side of a center rule, like the two pages of an opened codex. */
+   the hadith sits above the Hijri calendar on the right leaf, either side of a
+   center rule, like the two pages of an opened codex. */
 .home3__folio {
   position: relative;
   display: grid;
@@ -35,7 +35,7 @@
   grid-column: 2;
   grid-row: 1;
 }
-.home3__folio > .almanac {
+.home3__folio > .calcard {
   grid-column: 2;
   grid-row: 2;
 }
@@ -64,7 +64,7 @@
   }
   .home3__folio > .vhero,
   .home3__folio > .hday,
-  .home3__folio > .almanac {
+  .home3__folio > .calcard {
     grid-column: 1;
     grid-row: auto;
   }
