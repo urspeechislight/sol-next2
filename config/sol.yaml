@@ -593,31 +593,46 @@ extractors:
     - date_expression_extractor
     - event_extractor
   AUTHOR_COMMENTARY:
+    - person_mention_extractor
     - grammar_term_extractor
     - date_expression_extractor
+    - event_extractor
   QURAN_VERSE:
     - quran_entity_extractor
+    - date_expression_extractor
+    - event_extractor
   BIOGRAPHY:
+    - person_mention_extractor
     - date_expression_extractor
     - event_extractor
   RIJAL_ENTRY:
     - narrator_extractor
+    - person_mention_extractor
     - date_expression_extractor
     - event_extractor
-  FIQH_RULING: []
+  FIQH_RULING:
+    - person_mention_extractor
+    - date_expression_extractor
+    - event_extractor
   SECTION_HEADING:
     - grammar_term_extractor
+    - date_expression_extractor
+    - event_extractor
   BASMALA: []
   NUMBERED_ENTRY:
+    - person_mention_extractor
     - grammar_term_extractor
     - date_expression_extractor
     - event_extractor
-  POETRY: []
+  POETRY:
+    - person_mention_extractor
   GENERAL_PROSE:
+    - person_mention_extractor
     - grammar_term_extractor
     - date_expression_extractor
     - event_extractor
   HISTORICAL_NARRATIVE:
+    - person_mention_extractor
     - date_expression_extractor
     - event_extractor
   EDITORIAL_FRONTMATTER: []
@@ -830,8 +845,101 @@ narrator_extraction:
     - "خبر"
     - "كلام"
     - "باب"
+    - "حديث"
     - "الصحيح"
     - "الموثق"
+
+  # Whole-word non-names: a candidate that reduces to one of these (or whose
+  # every token is one of these plus a genealogy/kinship link) is a divine name,
+  # a messenger/prophet title, or a group epithet, never a person's name. It is
+  # rejected outright. The titled-word-before-honorific mention shape otherwise
+  # captures الله from "رسول الله ﵌" and المؤمنين from "أمير المؤمنين ﵇" on
+  # nearly every hadith.
+  person_reject_words:
+    - "الله"
+    - "اللهم"
+    - "الرحمن"
+    - "الرحمان"
+    - "الرحيم"
+    - "الرب"
+    - "رب"
+    - "ربه"
+    - "ربها"
+    - "ربي"
+    - "تعالى"
+    - "سبحانه"
+    - "الرسول"
+    - "رسول"
+    - "النبي"
+    - "نبي"
+    - "المؤمنين"
+    - "المؤمنون"
+    - "المسلمين"
+    - "المسلمون"
+    - "العالمين"
+    - "الناس"
+    - "الصحابة"
+    - "القوم"
+    - "أمير"
+
+  # Kinship terms carry no proper-name value on their own: a candidate whose
+  # only tokens are genealogy links (بن/ابن) plus these is a relational
+  # reference (ابن أخي = a nephew, عمه = his uncle, أم المؤمنين), not a name.
+  kinship_words:
+    - "عم"
+    - "أخ"
+    - "أخي"
+    - "أخت"
+    - "عمي"
+    - "عمه"
+    - "عمك"
+    - "عمته"
+    - "عمة"
+    - "أخيه"
+    - "أخيك"
+    - "أخته"
+    - "أخوه"
+    - "ابنه"
+    - "ابنته"
+    - "بنته"
+    - "أمه"
+    - "أمها"
+    - "أم"
+    - "زوجته"
+    - "زوجها"
+    - "جده"
+    - "جدي"
+    - "خال"
+    - "خاله"
+    - "خالي"
+    - "خالته"
+
+  # Leading tokens stripped from the front of a name candidate: a speech verb
+  # that ran into the name (قال ابن شهاب -> ابن شهاب), the vocative يا
+  # (يا ابن أخي), or a stray conjunction. No person name opens with these.
+  leading_strip_words:
+    - "يا"
+    - "قال"
+    - "قالت"
+    - "قالوا"
+    - "فقال"
+    - "وقال"
+    - "يقول"
+    - "قلت"
+    - "كان"
+    - "كانت"
+    - "وكان"
+    - "فكان"
+    - "سمع"
+    - "سمعت"
+    - "رأى"
+    - "رأيت"
+    - "يعني"
+    - "سألت"
+    - "سئل"
+    - "ذكر"
+    - "أخبر"
+    - "ثم"
 
   # Collective co-narrator phrases: "and others / more than one", closing a list
   # of named narrators (صباح ، وهشام وحفص وغير واحد). They are not persons, and

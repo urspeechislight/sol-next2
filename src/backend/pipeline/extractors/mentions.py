@@ -28,6 +28,7 @@ from backend.pipeline.name_extraction import (
     clean_name_text,
     has_non_name_leading_word,
     locate_clean_name,
+    refine_person_name,
 )
 from backend.pipeline.persons import (
     NARRATOR__ROLE_MENTION,
@@ -42,10 +43,13 @@ if TYPE_CHECKING:
 _logger = get_logger("shia-library.pipeline.mentions")
 
 _ARABIC_LETTERS: Final[str] = "ء-ي"
-_NASAB_TAIL: Final[str] = rf"(?:\s+(?:بن|ابن)\s+[{_ARABIC_LETTERS}]+)"
-_NASAB_MENTION_REGEX: CompiledPattern = cached_compile(rf"[{_ARABIC_LETTERS}]+{_NASAB_TAIL}+")
+_THEOPHORIC_PREFIX: Final[str] = r"(?:(?:عبد|عبيد|أمة|عائذ|هبة|تيم)\s+)?"
+_NASAB_TAIL: Final[str] = rf"(?:\s+(?:بن|ابن)\s+{_THEOPHORIC_PREFIX}[{_ARABIC_LETTERS}]+)"
+_NASAB_MENTION_REGEX: CompiledPattern = cached_compile(
+    rf"{_THEOPHORIC_PREFIX}[{_ARABIC_LETTERS}]+{_NASAB_TAIL}+"
+)
 _KUNYA_MENTION_REGEX: CompiledPattern = cached_compile(
-    rf"(?:أبو|أبي|أبا)\s+[{_ARABIC_LETTERS}]+(?:\s+الله)?{_NASAB_TAIL}*"
+    rf"(?:أبو|أبي|أبا)\s+{_THEOPHORIC_PREFIX}[{_ARABIC_LETTERS}]+{_NASAB_TAIL}*"
 )
 _TITLED_HONORIFIC_REGEX: CompiledPattern = cached_compile(
     rf"\bال[{_ARABIC_LETTERS}]+(?=\s*[{HONORIFIC_SIGNS}])"
@@ -67,6 +71,9 @@ def person_mention_extractor(span: Span, config: Config) -> list[Entity]:
     narrator_cfg = config.raw["narrator_extraction"]
     stopwords = frozenset(narrator_cfg.get("narrator_stopwords", []))
     non_name_leading = frozenset(narrator_cfg.get("non_name_leading_words", []))
+    reject_words = frozenset(narrator_cfg.get("person_reject_words", []))
+    leading_strip = frozenset(narrator_cfg.get("leading_strip_words", []))
+    kinship_words = frozenset(narrator_cfg.get("kinship_words", []))
     max_chars = config.thresholds.narrator_name_max_chars
     matn_start = int(span.metadata.get("isnad_end", 0))
     windows: list[tuple[int, int]] = []
@@ -74,10 +81,13 @@ def person_mention_extractor(span: Span, config: Config) -> list[Entity]:
         windows.extend(match.span() for match in regex.finditer(span.text, matn_start))
     entities: list[Entity] = []
     for start, end in _coalesce(windows):
-        name = clean_name_text(span.text[start:end])
-        if not name or name in stopwords or len(name) > max_chars:
+        cleaned = clean_name_text(span.text[start:end])
+        if not cleaned or cleaned in stopwords or len(cleaned) > max_chars:
             continue
-        if has_non_name_leading_word(name, non_name_leading):
+        if has_non_name_leading_word(cleaned, non_name_leading):
+            continue
+        name = refine_person_name(cleaned, reject_words, leading_strip, kinship_words)
+        if name is None:
             continue
         located = locate_clean_name(span.text, start, end, name)
         if located is None:

@@ -36,6 +36,7 @@ from backend.pipeline.name_extraction import (
     extract_person_name,
     has_non_name_leading_word,
     locate_clean_name,
+    refine_person_name,
 )
 from backend.pipeline.persons import (
     NARRATOR__ROLE_NARRATOR,
@@ -67,6 +68,9 @@ class NarratorSliceContext:
     first_person_references: list[str]
     stopwords: frozenset[str]
     non_name_leading: frozenset[str]
+    reject_words: frozenset[str]
+    leading_strip: frozenset[str]
+    kinship_words: frozenset[str]
     collectives: list[str]
     narrator_name_max_chars: int
 
@@ -111,6 +115,9 @@ def _build_slice_context(span: Span, config: Config) -> NarratorSliceContext:
         first_person_references=list(narrator_cfg.get("first_person_references", [])),
         stopwords=frozenset(narrator_cfg.get("narrator_stopwords", [])),
         non_name_leading=frozenset(narrator_cfg.get("non_name_leading_words", [])),
+        reject_words=frozenset(narrator_cfg.get("person_reject_words", [])),
+        leading_strip=frozenset(narrator_cfg.get("leading_strip_words", [])),
+        kinship_words=frozenset(narrator_cfg.get("kinship_words", [])),
         collectives=list(narrator_cfg.get("co_narrator_collectives", [])),
         narrator_name_max_chars=config.thresholds.narrator_name_max_chars,
     )
@@ -236,8 +243,13 @@ def _emit_one_narrator(
             relative_reference=reference,
         )
         return entity, advance
-    entity = _emit_narrator_entity(
-        span, name_text, region_start, advance, ctx, role=NARRATOR__ROLE_NARRATOR
+    refined = refine_person_name(name_text, ctx.reject_words, ctx.leading_strip, ctx.kinship_words)
+    entity = (
+        None
+        if refined is None
+        else _emit_narrator_entity(
+            span, refined, region_start, advance, ctx, role=NARRATOR__ROLE_NARRATOR
+        )
     )
     return entity, advance
 

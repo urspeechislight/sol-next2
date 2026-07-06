@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from backend.core.logging import get_logger
-from backend.patterns import CompiledPattern, cached_compile
+from backend.patterns import TASHKEEL_MARKS, CompiledPattern, cached_compile
 from backend.pipeline.boundaries import build_merge_cues, merge_isnad_continuations
 from backend.pipeline.boundaries_headings import (
     EntryCues,
@@ -488,21 +488,46 @@ _SUBSECTION_HEADING_LINE_REGEX: CompiledPattern = cached_compile(
 )
 
 
-def detect_patterns(text: str, compiled_patterns: dict[str, CompiledPattern]) -> list[Pattern]:
-    """Run all compiled pattern detectors against a span's text.
+def _detection_view(text: str) -> tuple[str, list[int]]:
+    """Return ``text`` with tashkeel removed plus an index map back to the original.
 
-    Every regex match produces a Pattern object carrying its matched slice and
-    character offsets, so later phases can build evidence anchors from it.
+    ``index_map[i]`` is the original char index of the i-th surviving char, with a
+    trailing entry mapping the stripped length to ``len(text)`` so a match end maps
+    back cleanly. A fully vowelled manuscript (``حَدَّثَنَا … عَنْ``) otherwise never
+    matches the unvowelled transmission patterns, so its whole isnad collapses into
+    one narrator; detecting on the stripped view fixes that while the offsets still
+    anchor the original text.
     """
+    view_chars: list[str] = []
+    index_map: list[int] = []
+    for original_index, char in enumerate(text):
+        if TASHKEEL_MARKS.match(char) is None:
+            view_chars.append(char)
+            index_map.append(original_index)
+    index_map.append(len(text))
+    return "".join(view_chars), index_map
+
+
+def detect_patterns(text: str, compiled_patterns: dict[str, CompiledPattern]) -> list[Pattern]:
+    """Run all compiled pattern detectors against a span's text, tashkeel-insensitively.
+
+    Detection runs on the tashkeel-stripped view so vowelled and unvowelled
+    manuscripts match the same patterns; each match's offsets are mapped back to the
+    original text, and ``matched_text`` is the original (possibly vowelled) slice so
+    evidence anchors stay faithful to the source.
+    """
+    view, index_map = _detection_view(text)
     detected: list[Pattern] = []
     for pattern_id, compiled_regex in compiled_patterns.items():
-        for match in compiled_regex.finditer(text):
+        for match in compiled_regex.finditer(view):
+            char_start = index_map[match.start()]
+            char_end = index_map[match.end()]
             detected.append(
                 Pattern(
                     pattern_id=pattern_id,
-                    matched_text=match.group(),
-                    char_start=match.start(),
-                    char_end=match.end(),
+                    matched_text=text[char_start:char_end],
+                    char_start=char_start,
+                    char_end=char_end,
                 )
             )
     return detected
