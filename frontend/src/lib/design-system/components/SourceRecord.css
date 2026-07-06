@@ -6,21 +6,33 @@
   border-top: 1px solid var(--color-border);
 }
 
+/* The row pairs the record link with its NewTabLink; the border that used to
+   sit on the record itself moves here so the two stay visually one line. */
+.ds-record-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .ds-record {
   display: grid;
   grid-template-columns: minmax(150px, 0.4fr) minmax(0, 1fr);
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   text-align: left;
   background: transparent;
   color: inherit;
-  border: 0;
-  border-bottom: 1px solid var(--color-border);
   cursor: pointer;
   font: inherit;
   transition: background var(--duration-base) var(--ease-out);
 }
 .ds-record:hover {
   background: var(--color-surface-sunken);
+}
+.ds-record__newtab {
+  flex-shrink: 0;
+  align-self: center;
+  margin-inline-end: var(--space-sm);
 }
 
 /* left: English reference spine */

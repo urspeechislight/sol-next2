@@ -57,7 +57,7 @@ interface AppContentProps {
   view: NavView;
   lib: LibScope;
   quranFocus: { surah: number; aya: number } | null;
-  runSearch: (next: string, nextScope: SearchScope) => void;
+  openVerse: (surah: number, aya: number) => void;
   openReader: (urn: string, page?: number, q?: string) => void;
   contentFilters: ContentFilters;
 }
@@ -71,7 +71,7 @@ function AppContent({
   view,
   lib,
   quranFocus,
-  runSearch,
+  openVerse,
   openReader,
   contentFilters,
 }: AppContentProps) {
@@ -80,7 +80,7 @@ function AppContent({
       <SearchResults
         query={submitted}
         scope={scope}
-        onSearch={runSearch}
+        onOpenVerse={openVerse}
         onOpenReader={openReader}
         contentFilters={contentFilters}
       />
@@ -249,7 +249,7 @@ export function App() {
         view={view}
         lib={lib}
         quranFocus={quranFocus}
-        runSearch={runSearch}
+        openVerse={openVerse}
         openReader={openReader}
         contentFilters={contentFilters.filters}
       />
