@@ -189,7 +189,16 @@ patterns:
       Chain-initial عن — isnad begins with عن rather than an explicit
       transmission verb. Requires span-start anchoring via start_threshold
       to avoid matching the common prepositional عن ("about") mid-span.
-    regex: "^\\s*و?عن\\s+"
+
+      A narrator-chain عن is always followed by a name (عن مالك, عن أبي هريرة,
+      عن ابن عباس, عن الأعمش). The negative lookahead excludes the closed
+      grammatical classes that follow prepositional عن but are never narrator
+      names: demonstratives (عن هذا الأخير = "from this latter one"), relative
+      pronouns (عن الذي), and place adverbs (عن هنا). This is what keeps an
+      editor's introductory prose — which discusses transmission using عن هذا /
+      عن ذلك and cites narrator names elsewhere in the sentence — from being
+      classified as a hadith chain and chain-walked into non-name fragments.
+    regex: "^\\s*و?عن\\s+(?!(?:هذا|هذه|هذان|هذين|هاتان|هاتين|هؤلاء|ذلك|ذلكم|تلك|أولئك|هنا|هناك|الذي|التي|الذين|اللذين|اللاتي|اللواتي)(?![؀-ۿ]))"
     start_threshold: 5
 
   - id: NUMBERED_ENTRY
