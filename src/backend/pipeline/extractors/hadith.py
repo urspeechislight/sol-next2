@@ -67,6 +67,7 @@ class NarratorSliceContext:
     first_person_references: list[str]
     stopwords: frozenset[str]
     non_name_leading: frozenset[str]
+    collectives: list[str]
     narrator_name_max_chars: int
 
 
@@ -110,6 +111,7 @@ def _build_slice_context(span: Span, config: Config) -> NarratorSliceContext:
         first_person_references=list(narrator_cfg.get("first_person_references", [])),
         stopwords=frozenset(narrator_cfg.get("narrator_stopwords", [])),
         non_name_leading=frozenset(narrator_cfg.get("non_name_leading_words", [])),
+        collectives=list(narrator_cfg.get("co_narrator_collectives", [])),
         narrator_name_max_chars=config.thresholds.narrator_name_max_chars,
     )
 
@@ -133,7 +135,7 @@ def _narrators_in_slice(
         name_slice = name_slice[: content_match.start()]
     entities: list[Entity] = []
     part_search = name_start
-    for part in split_co_narrators(name_slice, ctx.relative_references):
+    for part in split_co_narrators(name_slice, ctx.relative_references, ctx.collectives):
         entity, part_search = _emit_one_narrator(span, part, part_search, ctx)
         if entity is not None:
             entities.append(entity)
@@ -283,9 +285,18 @@ def _emit_narrator_entity(
 
 
 def _annotate_chain_positions(entities: list[Entity]) -> None:
-    """Stamp each chain member's position, in extraction (document) order."""
+    """Stamp each chain member's position, in extraction (document) order.
+
+    A bare kinship reference (role relative_reference: أبي, أبيه) also records
+    refers_to_chain_position = position - 1, the person it is the relative of.
+    Position -1 is the compiler above the extracted chain: for the first-person
+    أبي that heads أمالي الصدوق that is al-Saduq, so أبي resolves to al-Saduq's
+    father. For a mid-chain أبيه it is the preceding narrator.
+    """
     for position, entity in enumerate(entities):
         entity.metadata["chain_position"] = position
+        if entity.metadata.get("is_relative_reference"):
+            entity.metadata["refers_to_chain_position"] = position - 1
 
 
 def build_name_content_boundary_regex(boundary_patterns: tuple[str, ...]) -> CompiledPattern:
@@ -298,18 +309,36 @@ _BARE_WAW_REGEX: CompiledPattern = cached_compile(r"\s+و")
 _IBN_BEFORE_WAW_REGEX: CompiledPattern = cached_compile(r"(?:بن|ابن)\s*$")
 
 
-def split_co_narrators(name_slice: str, relative_references: list[str]) -> list[str]:
+def split_co_narrators(
+    name_slice: str, relative_references: list[str], collectives: list[str]
+) -> list[str]:
     """Split a name slice containing co-narrators joined by conjunction.
 
-    Comma-waw (، و) always splits — unambiguous Arabic co-narrator syntax. Bare
-    waw (و) splits with guards: not when preceded by بن/ابن (بن وهب is a name),
-    not when followed by a relative reference (وأبيه) or an identity
-    clarification (هو/هي). Returns [name_slice] when no split applies.
+    Collective phrases (غير واحد = "and others") are removed first: they are not
+    names, and their internal waw (واحد) would mis-split. Comma-waw (، و) always
+    splits — unambiguous Arabic co-narrator syntax — and every resulting part is
+    then split on bare waw so "هشام وحفص" yields two narrators, not one. Bare waw
+    splits with guards: not after بن/ابن (بن وهب is a name), not before a relative
+    reference (وأبيه) or an identity clarification (هو/هي). Returns [name_slice]
+    when no split applies.
     """
-    parts = _COMMA_WAW_SPLIT_REGEX.split(name_slice)
-    if len(parts) > 1:
-        return [part.strip() for part in parts if part.strip()]
+    name_slice = _strip_collectives(name_slice, collectives)
+    result: list[str] = []
+    for part in _COMMA_WAW_SPLIT_REGEX.split(name_slice):
+        result.extend(_split_bare_waw(part, relative_references))
+    return [part.strip() for part in result if part.strip()] or [name_slice]
 
+
+def _strip_collectives(name_slice: str, collectives: list[str]) -> str:
+    """Remove collective co-narrator phrases and any leading conjunction/comma."""
+    for collective in collectives:
+        pattern = r"(?:،\s*)?\s*و?\s*" + r"\s+".join(collective.split())
+        name_slice = cached_compile(pattern).sub(" ", name_slice)
+    return name_slice
+
+
+def _split_bare_waw(name_slice: str, relative_references: list[str]) -> list[str]:
+    """Split one part on guarded bare-waw conjunctions, in order."""
     result: list[str] = []
     remaining = name_slice
     while remaining:
@@ -325,7 +354,7 @@ def split_co_narrators(name_slice: str, relative_references: list[str]) -> list[
         if before.strip():
             result.append(before)
         remaining = after
-    return [part.strip() for part in result if part.strip()] or [name_slice]
+    return result
 
 
 def _bare_waw_splits(before: str, after: str, relative_references: list[str]) -> bool:

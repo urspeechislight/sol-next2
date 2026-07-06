@@ -13,30 +13,48 @@ from backend.pipeline.extractors.hadith import (
 )
 
 _RELATIVE_REFS = ["أبيه", "أبوه", "أمه"]
+_COLLECTIVES = ["غير واحد"]
 
 
 def test_should_split_on_comma_waw_unconditionally() -> None:
-    assert split_co_narrators("زيد ، وعمر", _RELATIVE_REFS) == ["زيد", "عمر"]
+    assert split_co_narrators("زيد ، وعمر", _RELATIVE_REFS, _COLLECTIVES) == ["زيد", "عمر"]
 
 
 def test_should_split_on_bare_waw() -> None:
-    assert split_co_narrators("زيد وعمر", _RELATIVE_REFS) == ["زيد", "عمر"]
+    assert split_co_narrators("زيد وعمر", _RELATIVE_REFS, _COLLECTIVES) == ["زيد", "عمر"]
 
 
 def test_should_not_split_waw_after_ibn() -> None:
-    assert split_co_narrators("بن وهب", _RELATIVE_REFS) == ["بن وهب"]
+    assert split_co_narrators("بن وهب", _RELATIVE_REFS, _COLLECTIVES) == ["بن وهب"]
 
 
 def test_should_not_split_waw_before_relative_reference() -> None:
-    assert split_co_narrators("زيد وأبيه", _RELATIVE_REFS) == ["زيد وأبيه"]
+    assert split_co_narrators("زيد وأبيه", _RELATIVE_REFS, _COLLECTIVES) == ["زيد وأبيه"]
 
 
 def test_should_not_split_waw_before_identity_clarification() -> None:
-    assert split_co_narrators("زيد وهو", _RELATIVE_REFS) == ["زيد وهو"]
+    assert split_co_narrators("زيد وهو", _RELATIVE_REFS, _COLLECTIVES) == ["زيد وهو"]
 
 
 def test_should_return_single_part_when_no_conjunction() -> None:
-    assert split_co_narrators("زيد", _RELATIVE_REFS) == ["زيد"]
+    assert split_co_narrators("زيد", _RELATIVE_REFS, _COLLECTIVES) == ["زيد"]
+
+
+def test_should_bare_waw_split_the_parts_of_a_comma_waw_split() -> None:
+    result = split_co_narrators("صباح ، وهشام وحفص", _RELATIVE_REFS, _COLLECTIVES)
+    assert result == ["صباح", "هشام", "حفص"]
+
+
+def test_should_drop_a_collective_and_split_the_named_narrators() -> None:
+    result = split_co_narrators("هشام وحفص وغير واحد", _RELATIVE_REFS, _COLLECTIVES)
+    assert result == ["هشام", "حفص"]
+
+
+def test_should_drop_a_collective_closing_a_comma_waw_list() -> None:
+    result = split_co_narrators(
+        "صباح بن عبد الحميد ، وهشام وحفص وغير واحد", _RELATIVE_REFS, _COLLECTIVES
+    )
+    assert result == ["صباح بن عبد الحميد", "هشام", "حفص"]
 
 
 def test_should_extend_to_word_boundary_when_landed_mid_word() -> None:
