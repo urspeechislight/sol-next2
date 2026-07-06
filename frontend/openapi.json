@@ -3818,6 +3818,27 @@
             }
           },
           {
+            "description": "Resolve to the exact works containing these volume URNs (repeatable), e.g. a content-search hit window's book set.",
+            "in": "query",
+            "name": "urn",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Resolve to the exact works containing these volume URNs (repeatable), e.g. a content-search hit window's book set.",
+              "title": "Urn"
+            }
+          },
+          {
             "description": "Records per page.",
             "in": "query",
             "name": "limit",
@@ -3867,7 +3888,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "List volume-folded works, optionally filtered by category, domain, or tradition.",
+        "summary": "List volume-folded works, optionally filtered by category, domain, tradition, or resolved to the exact works containing a given set of volume URNs.",
         "tags": ["works"]
       }
     },

@@ -12,6 +12,12 @@ export interface ResultsFrameProps {
       facets). Every search scope renders through this frame, so the bar, the
       promoted count, and the result rows read identically across scopes. */
   filters: SearchFiltersProps;
+  /** A second, work-level filter bar (era / author / "largest first") for
+      scopes whose hits resolve to real Work records — the content scope's
+      matched books, once joined. Reuses the library's own FilterBar +
+      worksFilter engine verbatim; no scope re-implements era/author/volume
+      filtering on its own. */
+  worksFilter?: ReactNode;
   /** The scope's orientation layer between the bar and the rows, e.g. the
       content scope's distribution map (or its honest cap notice). */
   map?: ReactNode;
@@ -31,6 +37,7 @@ export interface ResultsFrameProps {
     the framing lives here. */
 export function ResultsFrame({
   filters,
+  worksFilter,
   map,
   loading,
   loadingLabel,
@@ -42,6 +49,7 @@ export function ResultsFrame({
   return (
     <Stack gap="md">
       <SearchFilters {...filters} />
+      {worksFilter}
       {map}
       {loading ? <Spinner label={loadingLabel} /> : null}
       {error ? <ErrorText>{error}</ErrorText> : null}

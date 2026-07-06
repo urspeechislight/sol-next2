@@ -16,12 +16,20 @@ export interface PassageGroup {
   hits: CorpusMatch[];
 }
 
+/** The work identity a hit or a resolved Work record shares: the stored
+    Arabic title + author (volume URNs differ per volume, so the URN cannot
+    be the key). The one place this pairing is built, so a PassageGroup and
+    the Work record its filter bar resolves it to can never drift apart. */
+export function workKey(w: { title_ar: string; author: string | null }): string {
+  return `${w.title_ar}|${w.author ?? ''}`;
+}
+
 /** Group adjacent hits belonging to one work (same stored Arabic title +
     author; volume URNs differ per volume, so the URN cannot be the key). */
 export function groupByWork(items: readonly CorpusMatch[]): PassageGroup[] {
   const groups: PassageGroup[] = [];
   for (const m of items) {
-    const key = `${m.title_ar}|${m.author ?? ''}`;
+    const key = workKey(m);
     const last = groups[groups.length - 1];
     if (last && last.key === key) {
       last.hits.push(m);
