@@ -71,6 +71,7 @@ from backend.pipeline.vocab import (
     HADITH__BEHAVIOR_GENERAL_PROSE,
     HADITH__BEHAVIOR_SECTION_HEADING,
     HADITH__BEHAVIOR_TRANSMISSION,
+    HADITH__PATTERN_BASMALA,
     HADITH__PATTERN_HEADING_MARKER,
     HADITH__SPAN_TYPE_PARAGRAPH,
     HADITH__SUBSECTION_HEADING_MAX_CHARS,
@@ -316,39 +317,104 @@ def _absorb_matn_span(host: Span, extra: Span, ctx: _SegmentContext) -> None:
     host.patterns = detect_patterns(host.text, ctx.compiled_patterns)
 
 
+def _route_paragraph(
+    text: str, ctx: _SegmentContext, book_type: str | None
+) -> tuple[list[Pattern], str, bool]:
+    """Detect patterns in one paragraph and route it to a behavior.
+
+    Shared by the front-matter pre-scan and the emit loop so the
+    detect -> heading-filter -> route pipeline has exactly one definition.
+    """
+    detected = detect_patterns(text, ctx.compiled_patterns)
+    detected = filter_heading_disqualifiers(text, detected, ctx.heading_disqualifiers)
+    detected = filter_heading_shape(text, detected, ctx.heading_qualifiers)
+    detected = drop_heading_for_narrative(
+        text,
+        detected,
+        ctx.config.thresholds.narrative_heading_max_chars,
+        ctx.narrative_genres,
+        book_type,
+    )
+    behavior, routed_explicitly = route_behavior(
+        detected, ctx.behavior_rules, ctx.start_thresholds, book_type
+    )
+    return detected, behavior, routed_explicitly
+
+
+def _basmala_boundary(
+    routed: list[tuple[list[Pattern], str, bool]],
+    layout: _ParagraphLayout,
+    max_preceding_hadith: int,
+) -> int | None:
+    """Page where the work's opening basmala begins, or None.
+
+    The basmala (بسم الله الرحمن الرحيم) opens the classical text; a modern
+    editor's introduction precedes it. The FIRST basmala marks that boundary
+    only when at most ``max_preceding_hadith`` hadith transmissions precede it:
+    more means the basmala opens an internal section of an already-started
+    collection (a new kitab), not the work, and must not be treated as a
+    front-matter boundary. The small tolerance absorbs the isnads an editor
+    quotes while discussing the book in the introduction.
+    """
+    preceding_hadith = 0
+    for (detected, behavior, _), (_, page_start, _, _) in zip(
+        routed, layout.paragraphs, strict=True
+    ):
+        if any(pattern.pattern_id == HADITH__PATTERN_BASMALA for pattern in detected):
+            return page_start if preceding_hadith <= max_preceding_hadith else None
+        if behavior == HADITH__BEHAVIOR_TRANSMISSION:
+            preceding_hadith += 1
+    return None
+
+
+def _frontmatter_override(
+    behavior: str,
+    page_end: int,
+    routed_explicitly: bool,
+    basmala_boundary: int | None,
+    content_start_page: int | None,
+) -> str:
+    """Force a pre-content paragraph to EDITORIAL_FRONTMATTER, or keep its behavior.
+
+    Two boundaries, in precedence order. The basmala boundary is AUTHORITATIVE:
+    everything before the work's opening basmala is front-matter whatever its
+    patterns matched, because an editor's introduction discusses transmission
+    (روى، عن هذا) and would otherwise be chain-walked into non-name fragments.
+    The TOC-heading boundary is ADVISORY: it can land pages too late (a
+    biographical work whose entries read ``ذكر فلان`` has its first ``كتاب``
+    heading deep in the book), so a paragraph the router classified explicitly
+    is trusted over it and only unrouted paragraphs before it become
+    front-matter.
+    """
+    if basmala_boundary is not None and page_end < basmala_boundary:
+        return HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER
+    before_content_start = content_start_page is not None and page_end < content_start_page
+    if before_content_start and not routed_explicitly:
+        return HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER
+    return behavior
+
+
 def _emit_spans(
     manuscript: Manuscript, layout: _ParagraphLayout, ctx: _SegmentContext
 ) -> tuple[int, int]:
     """Append one Span per paragraph; return (unclassified_count, content_span_count)."""
-    unclassified_count = 0
-    content_span_count = 0
     prev_span_id: str | None = None
     prev_hadith_span_id: str | None = None
     book_type = manuscript.metadata.get("book_type")
+    routed = [_route_paragraph(text, ctx, book_type) for text, _, _, _ in layout.paragraphs]
+    unclassified_count = sum(1 for _, _, routed_explicitly in routed if not routed_explicitly)
+    content_span_count = len(routed)
+    basmala_boundary = _basmala_boundary(
+        routed, layout, ctx.config.thresholds.content_basmala_max_preceding_hadith
+    )
     for span_index, (paragraph_text, page_start, page_end, _) in enumerate(layout.paragraphs):
         span_id = HADITH__SPAN_ID_FORMAT.format(
             manifestation_id=manuscript.manifestation_id, index=span_index
         )
-        detected = detect_patterns(paragraph_text, ctx.compiled_patterns)
-        detected = filter_heading_disqualifiers(paragraph_text, detected, ctx.heading_disqualifiers)
-        detected = filter_heading_shape(paragraph_text, detected, ctx.heading_qualifiers)
-        detected = drop_heading_for_narrative(
-            paragraph_text,
-            detected,
-            ctx.config.thresholds.narrative_heading_max_chars,
-            ctx.narrative_genres,
-            book_type,
+        detected, routed_behavior, routed_explicitly = routed[span_index]
+        behavior = _frontmatter_override(
+            routed_behavior, page_end, routed_explicitly, basmala_boundary, ctx.content_start_page
         )
-        behavior, routed_explicitly = route_behavior(
-            detected, ctx.behavior_rules, ctx.start_thresholds, book_type
-        )
-        if not routed_explicitly:
-            unclassified_count += 1
-        content_span_count += 1
-        content_start = ctx.content_start_page
-        before_content_start = content_start is not None and page_end < content_start
-        if before_content_start and not routed_explicitly:
-            behavior = HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER
         anchor = layout.anchor_by_index.get(span_index)
         ctx.orchestrator.advance(behavior, paragraph_text, span_id, anchor)
         hierarchy = ctx.orchestrator.current_path()

@@ -53,6 +53,7 @@ class Thresholds:
     narrator_name_max_chars: int
     isnad_chain_proximity_max: int
     isnad_chain_gap_max: int
+    content_basmala_max_preceding_hadith: int
 
 
 def _build_thresholds(raw_thresholds: dict[str, Any], path: Path) -> Thresholds:
