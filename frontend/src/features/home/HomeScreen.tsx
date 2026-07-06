@@ -21,9 +21,9 @@ export interface HomeScreenProps {
 
 /** The landing page as a manuscript folio. An illuminated ʿunwān and masthead
     open the page; a conditional resume strip re-enters the last book; the
-    daily spread sets verse and hadith as equal columns either side of a
-    center rule, with the book of the day as its own band beneath; the almanac
-    sets today's chronicle beside the month's calendar; the fihrist of domains
+    daily spread sets the verse of the day down the full left leaf, with the
+    hadith and the almanac splitting the right leaf into two even halves; the
+    book of the day follows as its own band beneath; the fihrist of domains
     turns the corpus's scale into navigation; a colophon closes the folio the
     way a manuscript ends. */
 export function HomeScreen({ onOpenReader }: HomeScreenProps) {
@@ -47,9 +47,9 @@ export function HomeScreen({ onOpenReader }: HomeScreenProps) {
               <section className="home3__folio" aria-label="Today's reading">
                 <VerseOfDay verse={data.verse} onOpenReader={onOpenReader} />
                 <HadithOfDay hadith={data.hadith} onOpenReader={onOpenReader} />
+                <Almanac today={today} />
               </section>
               <BookOfDay pick={data.book} onOpenReader={onOpenReader} />
-              <Almanac today={today} />
             </>
           )}
         </DataView>

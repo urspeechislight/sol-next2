@@ -15,14 +15,29 @@
   padding: var(--space-lg) 0 var(--space-2xl);
 }
 
-/* The daily spread: verse and hadith as equal columns either side of a
-   center rule, like the two pages of an opened codex. */
+/* The daily spread: the verse of the day runs down the full left leaf, while
+   the hadith and the almanac split the right leaf into two even halves, either
+   side of a center rule, like the two pages of an opened codex. */
 .home3__folio {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: 1fr 1fr;
   column-gap: calc(2 * var(--space-2xl));
+  row-gap: var(--space-2xl);
   align-items: start;
+}
+.home3__folio > .vhero {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+.home3__folio > .hday {
+  grid-column: 2;
+  grid-row: 1;
+}
+.home3__folio > .almanac {
+  grid-column: 2;
+  grid-row: 2;
 }
 .home3__folio::before {
   content: '';
@@ -44,7 +59,14 @@
 @media (max-width: 920px) {
   .home3__folio {
     grid-template-columns: 1fr;
+    grid-template-rows: none;
     row-gap: var(--space-2xl);
+  }
+  .home3__folio > .vhero,
+  .home3__folio > .hday,
+  .home3__folio > .almanac {
+    grid-column: 1;
+    grid-row: auto;
   }
   .home3__folio::before {
     display: none;
