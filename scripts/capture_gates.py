@@ -35,10 +35,12 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from backend.core.constants import ARTIFACT__MANUSCRIPT_DB
+from backend.core.paths import data_path
 from backend.main import app
 
 GATES_DIR = Path.home() / "sol-next2-rebuild-gates"
-MANUSCRIPT_DB = Path(__file__).resolve().parent.parent / "data" / "manuscript.db"
+MANUSCRIPT_DB = data_path(ARTIFACT__MANUSCRIPT_DB)
 QUERY = "الحمد"
 GOLD_HADITH_URN = "mEbWpeQ5_02"
 GOLD_HADITH_PAGE = 433

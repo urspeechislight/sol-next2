@@ -10,7 +10,7 @@
 // Page<T> stays hand-written because the schema can only express the
 // monomorphized Page_Book_/Page_Ayah_/... forms of the one generic envelope.
 
-import type { components } from './api/schema';
+import type { components, operations } from './api/schema';
 
 type S = components['schemas'];
 
@@ -40,6 +40,19 @@ export type Tradition = Category['tradition'];
 
 // ---- works (GET /api/works): the volume-folded Library listing ----
 export type Work = Full<S['Work']>;
+/** The closed works-ordering set, straight from the served ?sort= contract
+    (an unknown value 422s server-side), so a new backend ordering appears
+    here on the next types:gen instead of drifting in a hand copy. */
+export type WorkSort = NonNullable<
+  NonNullable<operations['_list_works_api_works_get']['parameters']['query']>['sort']
+>;
+
+// ---- content search (GET /api/search) ----
+/** The closed match-mode set from the served ?mode= contract (backend
+    models/search.py owns the vocabulary). */
+export type SearchMode = NonNullable<
+  NonNullable<operations['_search_api_search_get']['parameters']['query']>['mode']
+>;
 
 // ---- reader (GET /api/books/{urn}/toc, /pages/{n}) ----
 export type TocEntry = Full<S['TocEntry']>;
@@ -47,11 +60,11 @@ export type Toc = Full<S['Toc']>;
 export type Narrator = Full<S['Narrator']>;
 export type CrossRef = Full<S['CrossRef']>;
 export type Hadith = Full<S['Hadith']>;
+export type Footnote = Full<S['Footnote']>;
 export type BookPage = Full<S['BookPage']>;
 export type HadithGrade = NonNullable<Hadith['grade']>;
 
 // ---- daily editorial (GET /api/daily) ----
-export type DailyDate = Full<S['DailyDate']>;
 export type Tafsir = Full<S['Tafsir']>;
 export type Verse = Full<S['Verse']>;
 export type HadithSource = Full<S['HadithSource']>;
@@ -59,6 +72,22 @@ export type DailyHadith = Full<S['DailyHadith']>;
 export type OpenTo = Full<S['OpenTo']>;
 export type DailyBookPick = Full<S['DailyBookPick']>;
 export type Daily = Full<S['Daily']>;
+
+// ---- almanac (GET /api/almanac) ----
+export type Observance = Full<S['Observance']>;
+export type HistoryEvent = Full<S['HistoryEvent']>;
+export type Almanac = Full<S['Almanac']>;
+
+// ---- dev extraction inspection (GET /api/dev/extraction/*) ----
+export type ExtractionPattern = Full<S['ExtractionPattern']>;
+export type ExtractionSpan = Full<S['ExtractionSpan']>;
+export type ExtractionUnit = Full<S['ExtractionUnit']>;
+export type ExtractionEntity = Full<S['ExtractionEntity']>;
+export type ExtractionPage = Full<S['ExtractionPage']>;
+export type BehaviorCount = Full<S['BehaviorCount']>;
+export type ExtractionBookSummary = Full<S['ExtractionBookSummary']>;
+export type EntrySectionAudit = Full<S['EntrySectionAudit']>;
+export type ExtractionEntryAudit = Full<S['ExtractionEntryAudit']>;
 
 // ---- search (GET /api/search, /search/facets, /books/{urn}/search) ----
 export type BookSearchMatch = Full<S['BookSearchMatch']>;
@@ -68,8 +97,10 @@ export type BookFacet = Full<S['BookFacet']>;
 export type VolumeFacet = Full<S['VolumeFacet']>;
 export type SearchFacets = Full<S['SearchFacets']>;
 
-// ---- quran (GET /api/quran/{surah}/{ayah}, /quran/search) ----
+// ---- quran (GET /api/quran/{surah}, /quran/{surah}/{ayah}, /quran/search) ----
 export type Ayah = Full<S['Ayah']>;
+export type Surah = Full<S['Surah']>;
+export type QuranCitation = Full<S['Citation']>;
 
 // ---- narrator tarjama (DERIVED view-type) ----
 // Reading text carries no narrator IDs, so narrators are joined to the rijāl /

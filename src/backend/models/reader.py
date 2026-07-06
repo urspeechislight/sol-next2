@@ -26,6 +26,28 @@ class Toc(FrozenModel):
     entries: list[TocEntry] = Field(description="Ordered TOC rows.")
 
 
+class Footnote(FrozenModel):
+    """One entry in a page's footnote apparatus: the editor's notes as printed.
+
+    The apparatus is page-local, mirroring the print edition: an entry is
+    served with the page whose foot it is printed on. Roughly 1% of corpus
+    markers reference an entry printed on the neighboring page; those entries
+    still appear on their own page, exactly as the edition prints them.
+    """
+
+    marker: str | None = Field(
+        default=None,
+        description=(
+            "Entry number as printed in the edition ('1', '2', ...). None for "
+            "unnumbered note text: a free-form editorial block, or the "
+            "continuation of the previous page's entry in continuously "
+            "numbered editions. The block split is lossless, so None never "
+            "means a parse failure."
+        ),
+    )
+    text: str = Field(description="Arabic note text as printed.")
+
+
 class Narrator(FrozenModel):
     """One narrator in an isnad."""
 
@@ -105,6 +127,15 @@ class BookPage(FrozenModel):
             "English translation of the raw page text, paired with text_ar. None "
             "until the pipeline emits a translation for the page; the reader shows a "
             "labelled preview in that case and this real text the moment it arrives."
+        ),
+    )
+    footnotes: list[Footnote] = Field(
+        default_factory=list[Footnote],
+        description=(
+            "The page's footnote apparatus in printed order; empty when the "
+            "source row carries no footnote block. Served for raw and "
+            "hadith-parsed pages alike: the notes annotate the printed page, "
+            "not the extraction."
         ),
     )
 

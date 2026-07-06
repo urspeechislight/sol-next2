@@ -2,6 +2,7 @@ import {
   Icon,
   IconButton,
   Input,
+  Menu,
   NavArrow,
   Pill,
   Segmented,
@@ -9,7 +10,8 @@ import {
 } from '../../lib/design-system';
 import type { IconName } from '../../lib/design-system';
 import { READER } from '../../lib/constants';
-import { clamp } from '../../lib/utils';
+import type { Book } from '../../lib/types';
+import { clamp, formatCount } from '../../lib/utils';
 
 export type ReaderTheme = 'dark' | 'classical';
 export type ReaderLang = 'en' | 'both' | 'ar';
@@ -28,11 +30,21 @@ const LANGS: [ReaderLang, string][] = [
   ['ar', 'AR'],
 ];
 
+/** Option label for one sibling volume. Every multi-volume work in the corpus
+    numbers its volumes; if one ever arrives unnumbered, its URN is shown so
+    the row stays true and unique rather than claiming a made-up number. */
+function volumeOptionLabel(book: Book): string {
+  return book.volume === null ? book.urn : `Volume ${book.volume}`;
+}
+
 function ReaderMeta({
   categoryLabel,
   volume,
   death,
-}: Pick<ReaderToolbarProps, 'categoryLabel' | 'volume' | 'death'>) {
+  urn,
+  volumes,
+  onVolume,
+}: Pick<ReaderToolbarProps, 'categoryLabel' | 'volume' | 'death' | 'urn' | 'volumes' | 'onVolume'>) {
   if (!categoryLabel && !volume && !death) return null;
   return (
     <div className="reader-meta">
@@ -43,7 +55,16 @@ function ReaderMeta({
         </span>
       ) : null}
       {death ? <span className="reader-badge">{death}</span> : null}
-      {volume ? (
+      {volumes !== null && volumes.length > 1 ? (
+        <Menu
+          surface="reader"
+          className="reader-badge-menu"
+          ariaLabel="Switch volume"
+          value={urn}
+          options={volumes.map((b) => ({ value: b.urn, label: volumeOptionLabel(b), icon: 'book' as const }))}
+          onChange={onVolume}
+        />
+      ) : volume ? (
         <span className="reader-badge reader-badge--vol">
           <Icon name="book" size="sm" />
           Volume {volume}
@@ -62,6 +83,9 @@ function ContextRow({
   categoryLabel,
   volume,
   death,
+  urn,
+  volumes,
+  onVolume,
   onBack,
   onSearchQuery,
   onClearSearch,
@@ -75,6 +99,9 @@ function ContextRow({
   | 'categoryLabel'
   | 'volume'
   | 'death'
+  | 'urn'
+  | 'volumes'
+  | 'onVolume'
   | 'onBack'
   | 'onSearchQuery'
   | 'onClearSearch'
@@ -94,7 +121,14 @@ function ContextRow({
             author={author}
             mode={lang}
           />
-          <ReaderMeta categoryLabel={categoryLabel} volume={volume} death={death} />
+          <ReaderMeta
+            categoryLabel={categoryLabel}
+            volume={volume}
+            death={death}
+            urn={urn}
+            volumes={volumes}
+            onVolume={onVolume}
+          />
         </div>
       </div>
       <Input
@@ -135,9 +169,9 @@ function PagerRow({
         onClick={() => toPage(page - 1)}
       />
       <Pill surface="reader" active display className="reader-pagejump">
-        <span>{page.toLocaleString()}</span>
+        <span>{formatCount(page)}</span>
         <span className="reader-pagejump__sep">/</span>
-        <span className="reader-pagejump__total">{totalPages.toLocaleString()}</span>
+        <span className="reader-pagejump__total">{formatCount(totalPages)}</span>
       </Pill>
       <IconButton
         surface="reader"
@@ -208,6 +242,9 @@ function DrawerGroup(p: ReaderToolbarProps) {
       >
         Contents
       </Pill>
+      <Pill surface="reader" active={p.cards} icon="grid" onClick={p.onCards}>
+        Cards
+      </Pill>
       <Pill
         surface="reader"
         active={p.rightDrawer === 'isnad'}
@@ -230,6 +267,12 @@ export interface ReaderToolbarProps {
   volume?: number | null;
   /** Pre-formatted death label, e.g. "d. 732 AH". */
   death?: string | null;
+  /** URN of the open book: the volume menu's current value. */
+  urn: string;
+  /** Every volume of the open work, ascending (null while loading). The
+      volume badge becomes a switcher menu when there is more than one. */
+  volumes: Book[] | null;
+  onVolume: (urn: string) => void;
   page: number;
   totalPages: number;
   readerTheme: ReaderTheme;
@@ -237,6 +280,9 @@ export interface ReaderToolbarProps {
   size: number;
   leftDrawer: LeftDrawer;
   rightDrawer: RightDrawer;
+  /** Card view: framed reading units when on, continuous text when off. */
+  cards: boolean;
+  onCards: () => void;
   searchQuery: string;
   onBack: () => void;
   onPage: (p: number) => void;
@@ -259,6 +305,9 @@ export function ReaderToolbar(p: ReaderToolbarProps) {
         categoryLabel={p.categoryLabel}
         volume={p.volume}
         death={p.death}
+        urn={p.urn}
+        volumes={p.volumes}
+        onVolume={p.onVolume}
         lang={p.lang}
         searchQuery={p.searchQuery}
         onBack={p.onBack}

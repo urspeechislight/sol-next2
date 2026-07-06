@@ -1,0 +1,187 @@
+/* VerseOfDay — the folio's matn. Open composition on the page ground: no card
+   box; the ayah at hero scale is the picture. Tokens only. */
+
+.vhero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.vhero__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.vhero__cartouche {
+  display: block;
+  width: 100%;
+  position: relative;
+  text-align: center;
+  padding: var(--space-lg) var(--space-md) var(--space-md);
+  cursor: pointer;
+}
+
+.vhero__words {
+  display: block;
+  font-family: var(--font-ar-display);
+  font-size: var(--text-hero-ar);
+  line-height: var(--leading-arabic);
+  color: var(--color-text);
+}
+.vhero__word {
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+.vhero__word--in {
+  opacity: 1;
+}
+.vhero__word--cursor {
+  color: var(--color-accent-deep);
+}
+
+.vhero__progress {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  translate: -50% 0;
+  width: min(46%, 300px);
+  height: 2px;
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.vhero__progress::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform-origin: right center;
+  transform: scaleX(var(--vday-progress, 0));
+  background: var(--color-accent);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.vhero__surah {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-ar-display);
+  font-size: var(--text-xl);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-md);
+}
+.vhero__surah-en {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-md);
+  color: var(--color-text-faint);
+}
+
+.vhero__en {
+  margin: 0 auto;
+  max-width: 62ch;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+/* footnote apparatus */
+.vhero__tafsir {
+  margin-top: var(--space-md);
+}
+.vhero__tafsir-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+.vhero__tafsir-rule::before,
+.vhero__tafsir-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-accent) 30%,
+    var(--color-accent) 70%,
+    transparent
+  );
+  opacity: 0.45;
+}
+.vhero__tafsir-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+  white-space: nowrap;
+}
+
+.vhero__tafsir-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.vhero__excerpt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    translate var(--duration-base) var(--ease-out);
+}
+.vhero__excerpt:not(:disabled):hover {
+  background: var(--color-accent-wash);
+  translate: 0 -2px;
+  cursor: pointer;
+}
+.vhero__excerpt:disabled {
+  cursor: default;
+}
+
+.vhero__excerpt-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+.vhero__excerpt-book {
+  font-family: var(--font-ar);
+  font-size: var(--text-md);
+  color: var(--color-text);
+}
+.vhero__excerpt-author {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+}
+.vhero__excerpt-text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-muted);
+}
+.vhero__excerpt-go {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+}
+
+.vhero__foot {
+  display: flex;
+  justify-content: flex-end;
+}

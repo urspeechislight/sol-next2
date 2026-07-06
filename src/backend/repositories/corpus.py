@@ -8,7 +8,10 @@ original text for display. The query is folded the same way, so a search is
 insensitive to diacritics AND letter-variant spelling; snippets are then built
 from the original ``content`` (fold-aware), so results keep true manuscript
 orthography. A small ``book(urn, category, title, volume)`` table (joined by URN)
-backs the category -> book -> volume filters. Two match modes: ``exact`` (the
+backs the category-set -> book -> volume filters: the repeated ``category``
+params arrive as a set (a UI domain pick is already expanded to its categories
+by the client's taxonomy) and bind as one JSON array ``:cats`` through
+``json_each``, so the SQL stays constant. Two match modes: ``exact`` (the
 whole phrase) and ``broad`` (OR of the query's overlapping fixed-width word
 windows — finds sub-phrases). Opened read-only + immutable at serve; the DDL +
 INSERT helpers that build it live in ``backend.build.corpus``.
@@ -21,12 +24,14 @@ on them is a false positive and is suppressed inline.
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Final
 
 from backend.core.constants import (
+    ARTIFACT__CORPUS_DB,
     CORPUS__SNIPPET_HEAD_CHARS,
     CORPUS__SNIPPET_WINDOW_CHARS,
     HTTP__DEFAULT_PAGE_SIZE,
@@ -34,7 +39,14 @@ from backend.core.constants import (
 from backend.core.logging import get_logger
 from backend.models.book import Book
 from backend.models.reader import BookSearchMatch
-from backend.models.search import BookFacet, CategoryFacet, CorpusMatch, SearchFacets, VolumeFacet
+from backend.models.search import (
+    BookFacet,
+    CategoryFacet,
+    CorpusMatch,
+    SearchFacets,
+    SearchMode,
+    VolumeFacet,
+)
 from backend.patterns import fold_search
 from backend.repositories import books as books_repo
 from backend.repositories import reader as reader_repo
@@ -42,14 +54,12 @@ from backend.repositories._data_loader import open_ro_db, slice_page
 
 _logger = get_logger("shia-library.corpus")
 
-_DB_FILE = "corpus.db"
-_BROAD = "broad"
 _BROAD_WINDOW: Final[int] = 4
 
 _FILTER = (
     "FROM pages JOIN book ON book.urn = pages.urn "
     "WHERE pages MATCH :q "
-    "  AND (:category = '' OR book.category = :category) "
+    "  AND (:cats = '' OR book.category IN (SELECT value FROM json_each(:cats))) "
     "  AND (:book = '' OR book.title = :book) "
     "  AND (:volume = 0 OR book.volume = :volume)"
 )
@@ -69,13 +79,15 @@ _FACET_CATEGORIES = (
 _FACET_BOOKS = (
     "SELECT book.title AS title, count(*) AS n "
     "FROM pages JOIN book ON book.urn = pages.urn "
-    "WHERE pages MATCH :q AND (:category = '' OR book.category = :category) "
+    "WHERE pages MATCH :q "
+    "  AND (:cats = '' OR book.category IN (SELECT value FROM json_each(:cats))) "
     "GROUP BY book.title ORDER BY n DESC"
 )
 _FACET_VOLUMES = (
     "SELECT book.volume AS volume, count(*) AS n "
     "FROM pages JOIN book ON book.urn = pages.urn "
-    "WHERE pages MATCH :q AND (:category = '' OR book.category = :category) "
+    "WHERE pages MATCH :q "
+    "  AND (:cats = '' OR book.category IN (SELECT value FROM json_each(:cats))) "
     "  AND (:book = '' OR book.title = :book) AND book.volume IS NOT NULL "
     "GROUP BY book.volume ORDER BY book.volume"
 )
@@ -84,7 +96,8 @@ _FACET_VOLUMES = (
 def _connect() -> sqlite3.Connection:
     """Open the corpus index read-only via the shared artifact opener."""
     return open_ro_db(
-        _DB_FILE, "Corpus index not built; run scripts/build_corpus_index.py to materialize it"
+        ARTIFACT__CORPUS_DB,
+        "Corpus index not built; run scripts/build_corpus_index.py to materialize it",
     )
 
 
@@ -103,7 +116,7 @@ def _title_en_by_ar() -> dict[str, str | None]:
     return {b.title_ar: b.title_en for b in _meta().values()}
 
 
-def search_windows(q: str, mode: str) -> list[str]:
+def search_windows(q: str, mode: SearchMode) -> list[str]:
     """Fold the query and return the phrase windows to match + locate. ``exact``
     -> one window (the whole phrase). ``broad`` -> overlapping ``_BROAD_WINDOW``
     word windows when the query is longer than one window, else the whole
@@ -117,7 +130,7 @@ def search_windows(q: str, mode: str) -> list[str]:
     words = [w for w in fold_search(q).replace('"', " ").split() if w]
     if not words:
         return []
-    if mode == _BROAD and len(words) > _BROAD_WINDOW:
+    if mode == "broad" and len(words) > _BROAD_WINDOW:
         return [
             " ".join(words[i : i + _BROAD_WINDOW]) for i in range(len(words) - _BROAD_WINDOW + 1)
         ]
@@ -172,10 +185,19 @@ class SearchQuery:
     """The query text + scope filters for a cross-corpus content search."""
 
     q: str = ""
-    mode: str = "exact"
-    category: str = ""
+    mode: SearchMode = "exact"
+    categories: tuple[str, ...] = ()
     book: str = ""
     volume: int = 0
+
+
+def _category_set(categories: tuple[str, ...]) -> str:
+    """The bound ``:cats`` value: the selected category slugs as a sorted,
+    deduplicated JSON array, or ``''`` for no category constraint. The API
+    layer rejects unknown slugs before this runs."""
+    if not categories:
+        return ""
+    return json.dumps(sorted(set(categories)))
 
 
 def search(
@@ -201,14 +223,14 @@ def search(
     con = _connect()
     params: dict[str, Any] = {
         "q": _match_expr(windows),
-        "category": query.category,
+        "cats": _category_set(query.categories),
         "book": query.book,
         "volume": query.volume,
         "limit": limit,
         "offset": offset,
         "cap": _SCAN_CAP,
     }
-    if query.category or query.book or query.volume:
+    if params["cats"] or query.book or query.volume:
         total = int(con.execute(_COUNT_FILTERED, params).fetchone()[0])
     else:
         count_params: dict[str, Any] = {"q": params["q"], "cap": _SCAN_CAP}
@@ -244,10 +266,16 @@ def search(
     return matches, total
 
 
-def facets(q: str = "", mode: str = "exact", category: str = "", book: str = "") -> SearchFacets:
-    """Drill-down facets for the active match mode: categories (over q), books
-    (within category), volumes (within the chosen book). Each level is computed
-    only when its parent filter is set, so the menus stay scoped and small.
+def facets(
+    q: str = "",
+    mode: SearchMode = "exact",
+    categories: tuple[str, ...] = (),
+    book: str = "",
+) -> SearchFacets:
+    """Drill-down facets for the active match mode: categories (over q, always
+    the query-global distribution), books (within the selected category set),
+    volumes (within the chosen book). Each scoped level is computed only when
+    its parent filter is set, so the menus stay scoped and small.
 
     When the category scan fills ``_SCAN_CAP`` the match-set exceeds the cap, so
     the partial split is biased toward the first books scanned; the facets are
@@ -258,15 +286,14 @@ def facets(q: str = "", mode: str = "exact", category: str = "", book: str = "")
     if not windows:
         return SearchFacets(categories=[], books=[], volumes=[])
     expr = _match_expr(windows)
+    cats = _category_set(categories)
     con = _connect()
     cat_rows = con.execute(_FACET_CATEGORIES, {"q": expr, "cap": _SCAN_CAP}).fetchall()
     if sum(int(r["n"]) for r in cat_rows) >= _SCAN_CAP:
         return SearchFacets(categories=[], books=[], volumes=[])
-    book_rows = (
-        con.execute(_FACET_BOOKS, {"q": expr, "category": category}).fetchall() if category else []
-    )
+    book_rows = con.execute(_FACET_BOOKS, {"q": expr, "cats": cats}).fetchall() if cats else []
     vol_rows = (
-        con.execute(_FACET_VOLUMES, {"q": expr, "category": category, "book": book}).fetchall()
+        con.execute(_FACET_VOLUMES, {"q": expr, "cats": cats, "book": book}).fetchall()
         if book
         else []
     )

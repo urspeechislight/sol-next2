@@ -1,6 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignore": [".github/**"],
   "ignoreBinaries": ["uv"],
   "rules": {
     "types": "off",
@@ -9,7 +8,6 @@
   },
   "workspaces": {
     "frontend": {
-      "entry": ["src/main.tsx", "vite.config.ts"],
       "project": ["src/**/*.{ts,tsx}"]
     }
   }

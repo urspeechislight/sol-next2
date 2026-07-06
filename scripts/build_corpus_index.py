@@ -17,6 +17,7 @@ from typing import Any
 
 from backend.build import corpus as corpus_build
 from backend.build import runner
+from backend.core.constants import ARTIFACT__CORPUS_DB
 from backend.core.paths import data_path
 from backend.models.book import Book
 
@@ -61,7 +62,7 @@ def main() -> None:
     """Run the corpus index build CLI."""
     runner.run_build_cli(
         "Build the corpus FTS index + book filter table.",
-        data_path("corpus.db"),
+        data_path(ARTIFACT__CORPUS_DB),
         _build,
         add_args=_add_args,
     )

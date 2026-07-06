@@ -31,6 +31,7 @@ from backend.patterns import (
     cached_compile_alternation,
     escape_pattern,
 )
+from backend.pipeline.toc_alignment import AnchoredParagraph
 
 if TYPE_CHECKING:
     from backend.pipeline.config import Thresholds
@@ -124,26 +125,27 @@ def build_merge_cues(
 
 
 def merge_isnad_continuations(
-    paragraphs: list[tuple[str, int, int]],
+    paragraphs: list[AnchoredParagraph],
     cues: MergeCues | None,
-) -> list[tuple[str, int, int]]:
+) -> list[AnchoredParagraph]:
     """Merge consecutive paragraphs where an attribution verb continues an isnad chain.
 
     ``cues`` is None when merging cannot apply (see ``build_merge_cues``);
-    the paragraphs pass through untouched.
+    the paragraphs pass through untouched. A merged paragraph keeps the head
+    paragraph's TOC anchor: the continuation appended to it opens no section.
     """
     if cues is None:
         return paragraphs
-    merged: list[tuple[str, int, int]] = []
+    merged: list[AnchoredParagraph] = []
     i = 0
     while i < len(paragraphs):
-        text, pg_start, pg_end = paragraphs[i]
+        text, pg_start, pg_end, anchor = paragraphs[i]
         while i + 1 < len(paragraphs) and _should_merge_next(text, paragraphs[i + 1][0], cues):
-            next_text, _, next_pg_end = paragraphs[i + 1]
+            next_text, _, next_pg_end, _ = paragraphs[i + 1]
             text = text + "\n" + next_text
             pg_end = next_pg_end
             i += 1
-        merged.append((text, pg_start, pg_end))
+        merged.append((text, pg_start, pg_end, anchor))
         i += 1
     return merged
 

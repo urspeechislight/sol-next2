@@ -1,0 +1,71 @@
+/* PassageGroups: the hit stream as an anthology. One IndexRow contents head
+   per work (drill-in toggle), Arabic-led passage rows with a
+   direction-isolated mono reference margin. Tokens only. */
+
+.pg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.pg__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.pg__rows {
+  display: flex;
+  flex-direction: column;
+  padding-inline-start: var(--space-sm);
+}
+
+/* The row: the in-place Link (drill-in) and the NewTabLink icon sit side by
+   side so neither is nested inside the other's anchor. */
+.prow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  width: 100%;
+  border-radius: var(--radius-xs);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+.prow:hover {
+  background: var(--color-accent-wash);
+}
+.prow + .prow {
+  border-top: 1px solid var(--color-border-hair);
+}
+
+.prow__link {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-xs) var(--space-sm);
+  text-align: right;
+  cursor: pointer;
+}
+
+.prow__newtab {
+  flex-shrink: 0;
+  margin-inline-end: var(--space-xs);
+}
+
+.prow__ref {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  text-align: left;
+}
+
+.prow__snip {
+  font-family: var(--font-ar);
+  font-size: var(--text-base);
+  line-height: var(--leading-arabic);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}

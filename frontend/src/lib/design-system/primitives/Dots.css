@@ -1,0 +1,21 @@
+/* Dots — rotation-position indicator. The single definition of the dot. */
+
+.ds-dots {
+  display: inline-flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ds-dots__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+.ds-dots__dot--active {
+  background: var(--color-accent);
+  transform: scale(1.3);
+}

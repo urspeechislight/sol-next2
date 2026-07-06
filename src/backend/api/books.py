@@ -1,9 +1,9 @@
-"""HTTP routes for books: paginated list + detail.
+"""HTTP routes for books: paginated list, detail, and sibling volumes.
 
-Both routes register via ``add_api_route``. The list handler transforms the
+All routes register via ``add_api_route``. The list handler transforms the
 repo's ``(slice, total)`` tuple into a ``Page[Book]`` envelope and takes the
-shared ``PageParams``; the detail route binds ``books_repo.get_book`` directly,
-with 404s from the global handler.
+shared ``PageParams``; the detail and volumes routes bind their repo functions
+directly, with 404s from the global handler.
 """
 
 from __future__ import annotations
@@ -44,4 +44,11 @@ get_route(
     books_repo.get_book,
     response_model=Book,
     summary="Get a single book by URN.",
+)
+get_route(
+    router,
+    "/books/{urn}/volumes",
+    books_repo.list_volumes,
+    response_model=list[Book],
+    summary="List every volume of the work containing this book, ascending.",
 )

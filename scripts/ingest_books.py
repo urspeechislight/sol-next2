@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 
 from backend.build import catalog, runner
+from backend.core.constants import ARTIFACT__BOOKS_INDEX
 from backend.core.paths import data_path
 
 
@@ -25,7 +26,7 @@ def main() -> None:
     """Run the catalog ingest CLI."""
     runner.run_build_cli(
         "Build the book catalog index from corpus frontmatter.",
-        data_path("books_index.json"),
+        data_path(ARTIFACT__BOOKS_INDEX),
         _build,
         supports_limit=False,
     )

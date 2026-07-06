@@ -2,24 +2,12 @@ import { Badge, SourceRecord, Spinner, Stack, Text } from '../../lib/design-syst
 import { getVerse, searchQuran } from '../../lib/api/client';
 import type { SearchScope } from '../../lib/api/client';
 import { PAGE } from '../../lib/constants';
+import { parseVerseRef } from '../../lib/surahs';
 import type { Ayah, Page } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { ContentScope } from './ContentScope';
 import { ResultsFrame } from './ResultsFrame';
 import './SearchResults.css';
-
-const VERSE_REF = /^\s*(\d{1,3})\s*:\s*(\d{1,3})\s*$/;
-
-interface VerseRef {
-  surah: number;
-  ayah: number;
-}
-
-function parseRef(q: string): VerseRef | null {
-  const m = VERSE_REF.exec(q);
-  if (!m) return null;
-  return { surah: Number(m[1]), ayah: Number(m[2]) };
-}
 
 /** A Qurʾān verse as the shared two-zone SourceRecord, identical in shape to a
     content or book hit: the reference + translation on the English spine, the
@@ -93,16 +81,18 @@ function QuranTermResults({
       error={res.error ? `Qurʾān search is unavailable: ${res.error.message}` : null}
       empty={res.data && res.data.items.length === 0 ? `No Qurʾān verses contain “${q}”` : null}
     >
-      {res.data
-        ? res.data.items.map((verse) => (
+      {res.data ? (
+        <div className="ds-records">
+          {res.data.items.map((verse) => (
             <VerseRecord
               key={`${verse.surah}:${verse.ayah}`}
               verse={verse}
               query={q}
               onOpen={() => onSearch(`${verse.surah}:${verse.ayah}`, 'quran')}
             />
-          ))
-        : null}
+          ))}
+        </div>
+      ) : null}
     </ResultsFrame>
   );
 }
@@ -118,7 +108,7 @@ export interface QuranScopeProps {
     loads the verse and the passages that quote it; any other query is an Arabic
     term, matched against every verse to list the ayat that contain it. */
 export function QuranScope({ q, onSearch, onOpenReader }: QuranScopeProps) {
-  const ref = parseRef(q);
+  const ref = parseVerseRef(q);
   if (ref) {
     return (
       <VersePanel

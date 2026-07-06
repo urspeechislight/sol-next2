@@ -1,0 +1,33 @@
+/* FootnoteRef: in-text footnote reference + apparatus backlink number.
+   Wraps the printed marker characters and styles them in the honorific gold;
+   the characters themselves are never rewritten. The marker variant rides
+   raised and small beside the reading size; the entry variant leads an
+   apparatus row at the row's own size. */
+.ds-fnref {
+  appearance: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0 2px;
+  font-family: inherit;
+  font-size: calc(var(--reader-size) * 0.7);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  vertical-align: super;
+  color: var(--color-reader-honorific);
+  cursor: pointer;
+}
+.ds-fnref:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ds-fnref:focus-visible {
+  outline: var(--border-width) solid var(--color-reader-honorific);
+  outline-offset: 1px;
+  border-radius: var(--radius-xs);
+}
+.ds-fnref--entry {
+  font: inherit;
+  vertical-align: baseline;
+  font-weight: var(--weight-semibold);
+}

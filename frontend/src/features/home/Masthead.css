@@ -1,0 +1,60 @@
+/* Masthead — the folio's opening statement, centered under the ʿunwān. */
+
+.masthead {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: calc(-1 * var(--space-md));
+  /* extra air between the opening statement and the day's reading: the
+     folio below starts after the page's largest single separation */
+  margin-bottom: var(--space-xl);
+}
+
+.masthead__basmala {
+  margin: 0;
+  font-family: var(--font-ar-display);
+  font-size: var(--text-unwan-ar);
+  line-height: var(--leading-arabic);
+  color: var(--color-accent-deep);
+}
+
+.masthead__title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.masthead__scale {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.masthead__date {
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+.masthead__date-ar {
+  font-family: var(--font-ar);
+  font-size: var(--text-md);
+  letter-spacing: 0;
+  color: var(--color-accent-deep);
+}
+.masthead__date-sep {
+  color: var(--color-accent);
+}

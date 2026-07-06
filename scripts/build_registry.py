@@ -24,6 +24,7 @@ from typing import Final
 
 from backend.build import rijal as rijal_build
 from backend.build import runner
+from backend.core.constants import ARTIFACT__REGISTRY_DB
 from backend.core.paths import data_path
 
 _SOLNEXT_RIJAL: Final[Path] = Path.home() / "code" / "sol-next" / "data" / "rijal"
@@ -61,7 +62,7 @@ def main() -> None:
     """Run the registry build CLI."""
     runner.run_build_cli(
         "Build the narrator registry SQLite artifact.",
-        data_path("registry.db"),
+        data_path(ARTIFACT__REGISTRY_DB),
         _build,
         supports_limit=False,
         add_args=_add_args,

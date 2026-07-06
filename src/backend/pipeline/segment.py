@@ -54,10 +54,15 @@ from backend.pipeline.splitting import (
 )
 from backend.pipeline.text import attach_footnote_text, split_footnote_entries_to_dict
 from backend.pipeline.toc import find_content_start_page
-from backend.pipeline.toc_alignment import TocAnchor, find_toc_anchors
+from backend.pipeline.toc_alignment import (
+    AnchoredParagraph,
+    TocAnchor,
+    find_toc_anchors,
+)
 from backend.pipeline.trackers import TrackerOrchestrator, TrackerProtocol
 from backend.pipeline.trackers.kitab_bab_fasl import KitabBabFaslTracker, parse_hierarchy_levels
 from backend.pipeline.trackers.sanad_matn import SanadMatnTracker
+from backend.pipeline.trackers.toc_hierarchy import TocHierarchyTracker
 from backend.pipeline.vocab import (
     HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER,
     HADITH__BEHAVIOR_GENERAL_PROSE,
@@ -100,8 +105,8 @@ class _SegmentContext:
 class _ParagraphLayout:
     """The split, merged, heading-split paragraphs segment emits spans from."""
 
-    paragraphs: list[tuple[str, int, int]]
-    anchor_by_key: dict[tuple[str, int, int], TocAnchor]
+    paragraphs: list[AnchoredParagraph]
+    anchor_by_index: dict[int, TocAnchor]
     page_footnotes: dict[int, dict[str, str]]
 
 
@@ -123,6 +128,7 @@ def segment(manuscript: Manuscript, config: Config) -> Manuscript:
         return manuscript
     layout = _build_paragraphs(content_pages, ctx)
     unclassified_count, content_span_count = _emit_spans(manuscript, layout, ctx)
+    _merge_split_hadith(manuscript, ctx)
     enforce_failure_budget(
         ctx.config.raw, unclassified_count, content_span_count, manuscript.manifestation_id
     )
@@ -146,19 +152,21 @@ def _build_segment_context(manuscript: Manuscript, config: Config) -> _SegmentCo
         heading_stop_patterns,
     ) = parse_hierarchy_levels(config.patterns)
     attribution_regex = compiled_patterns.get("ATTRIBUTION")
-    kitab_tracker: TrackerProtocol = KitabBabFaslTracker(
-        _level_names=level_names,
-        _prefix_to_level=prefix_to_level,
-        _all_prefixes=all_prefixes,
-        _top_level_prefixes=top_level_prefixes,
-        _heading_stop_patterns=heading_stop_patterns,
-        _attribution_re=attribution_regex,
-    )
-    sanad_tracker: TrackerProtocol = SanadMatnTracker(
-        _hadith_behavior_id=HADITH__BEHAVIOR_TRANSMISSION
-    )
-    orchestrator = TrackerOrchestrator([kitab_tracker, sanad_tracker])
     toc = manuscript.metadata.get("toc", [])
+    hierarchy_tracker: TrackerProtocol = (
+        TocHierarchyTracker()
+        if toc
+        else KitabBabFaslTracker(
+            _level_names=level_names,
+            _prefix_to_level=prefix_to_level,
+            _all_prefixes=all_prefixes,
+            _top_level_prefixes=top_level_prefixes,
+            _heading_stop_patterns=heading_stop_patterns,
+            _attribution_re=attribution_regex,
+        )
+    )
+    sanad_tracker: TrackerProtocol = SanadMatnTracker()
+    orchestrator = TrackerOrchestrator([hierarchy_tracker, sanad_tracker])
     toc_pattern_ids = config.raw.get("toc_sections", {}).get("content_start_patterns", [])
     toc_patterns = [compiled_patterns[pid] for pid in toc_pattern_ids if pid in compiled_patterns]
     return _SegmentContext(
@@ -205,20 +213,17 @@ def _build_paragraphs(
             toc_anchors,
         ),
     )
-    paragraphs = [(text, pg_start, pg_end) for text, pg_start, pg_end, _ in paragraphs_with_anchors]
-    anchor_by_key = {
-        (text, pg_start, pg_end): anchor
-        for text, pg_start, pg_end, anchor in paragraphs_with_anchors
-        if anchor is not None
-    }
-    paragraphs = _merge_isnad_splits(paragraphs, ctx)
+    paragraphs = _merge_isnad_splits(paragraphs_with_anchors, ctx)
     paragraphs = _split_headings(paragraphs, ctx)
-    return _ParagraphLayout(paragraphs, anchor_by_key, page_footnotes)
+    anchor_by_index = {
+        index: anchor for index, (_, _, _, anchor) in enumerate(paragraphs) if anchor is not None
+    }
+    return _ParagraphLayout(paragraphs, anchor_by_index, page_footnotes)
 
 
 def _merge_isnad_splits(
-    paragraphs: list[tuple[str, int, int]], ctx: _SegmentContext
-) -> list[tuple[str, int, int]]:
+    paragraphs: list[AnchoredParagraph], ctx: _SegmentContext
+) -> list[AnchoredParagraph]:
     """Rejoin paragraphs where an attribution verb continues an isnad chain."""
     cues = build_merge_cues(
         ctx.config.raw,
@@ -231,8 +236,8 @@ def _merge_isnad_splits(
 
 
 def _split_headings(
-    paragraphs: list[tuple[str, int, int]], ctx: _SegmentContext
-) -> list[tuple[str, int, int]]:
+    paragraphs: list[AnchoredParagraph], ctx: _SegmentContext
+) -> list[AnchoredParagraph]:
     """Split heading markers and inline headings from their following content."""
     min_heading_chars = ctx.config.thresholds.heading_split_min_heading_chars
     if ctx.inline_heading_regex is not None and ctx.attribution_strong_regex is not None:
@@ -257,6 +262,51 @@ def _split_headings(
     return paragraphs
 
 
+def _merge_split_hadith(manuscript: Manuscript, ctx: _SegmentContext) -> None:
+    """Fold a hadith's matn-continuation span back into its isnad span.
+
+    Segmentation splits at the print-paragraph boundary between an isnad and its
+    matn, so the isnad routes HADITH_TRANSMISSION and the matn follows as a
+    GENERAL_PROSE span under the same printed entry (it opens no new number, so
+    the position tracker keeps it on the same leaf). The matn is merged back into
+    the hadith span and the span's patterns re-detected on the joined text, so
+    extract atomizes the whole hadith into ISNAD + MATN units instead of leaving
+    the matn stranded as prose. A matn split across several paragraphs folds in
+    turn, since the growing host stays the hadith span.
+    """
+    merged: list[Span] = []
+    for span in manuscript.spans:
+        if merged and _is_matn_continuation(merged[-1], span):
+            _absorb_matn_span(merged[-1], span, ctx)
+            continue
+        merged.append(span)
+    manuscript.spans = merged
+
+
+def _is_matn_continuation(host: Span, span: Span) -> bool:
+    """True when span continues the printed entry of the preceding hadith span."""
+    if host.behavior != HADITH__BEHAVIOR_TRANSMISSION:
+        return False
+    if span.behavior != HADITH__BEHAVIOR_GENERAL_PROSE:
+        return False
+    host_leaf = host.hierarchy.path_ids[-1] if host.hierarchy and host.hierarchy.path_ids else None
+    span_leaf = span.hierarchy.path_ids[-1] if span.hierarchy and span.hierarchy.path_ids else None
+    return host_leaf is not None and host_leaf == span_leaf
+
+
+def _absorb_matn_span(host: Span, extra: Span, ctx: _SegmentContext) -> None:
+    """Append extra's text and footnote to host and re-detect host's patterns."""
+    host.text = f"{host.text}\n{extra.text}"
+    host.page_end = max(host.page_end, extra.page_end)
+    if extra.footnote_text:
+        host.footnote_text = (
+            f"{host.footnote_text}\n{extra.footnote_text}"
+            if host.footnote_text
+            else extra.footnote_text
+        )
+    host.patterns = detect_patterns(host.text, ctx.compiled_patterns)
+
+
 def _emit_spans(
     manuscript: Manuscript, layout: _ParagraphLayout, ctx: _SegmentContext
 ) -> tuple[int, int]:
@@ -266,7 +316,7 @@ def _emit_spans(
     prev_span_id: str | None = None
     prev_hadith_span_id: str | None = None
     book_type = manuscript.metadata.get("book_type")
-    for span_index, (paragraph_text, page_start, page_end) in enumerate(layout.paragraphs):
+    for span_index, (paragraph_text, page_start, page_end, _) in enumerate(layout.paragraphs):
         span_id = HADITH__SPAN_ID_FORMAT.format(
             manifestation_id=manuscript.manifestation_id, index=span_index
         )
@@ -288,10 +338,10 @@ def _emit_spans(
         content_span_count += 1
         if ctx.content_start_page is not None and page_end < ctx.content_start_page:
             behavior = HADITH__BEHAVIOR_EDITORIAL_FRONTMATTER
-        ctx.orchestrator.advance(behavior, paragraph_text, span_id)
+        anchor = layout.anchor_by_index.get(span_index)
+        ctx.orchestrator.advance(behavior, paragraph_text, span_id, anchor)
         hierarchy = ctx.orchestrator.current_path()
         footnote_entries = _collect_footnotes(layout.page_footnotes, page_start, page_end)
-        anchor = layout.anchor_by_key.get((paragraph_text, page_start, page_end))
         metadata = _build_span_metadata(
             behavior, detected, anchor, prev_span_id, prev_hadith_span_id
         )
@@ -322,10 +372,16 @@ def _build_span_metadata(
     prev_span_id: str | None,
     prev_hadith_span_id: str | None,
 ) -> dict[str, Any]:
-    """Build the per-span metadata dict: cross-references plus TOC anchor fields."""
+    """Build the per-span metadata dict: cross-references plus TOC anchor fields.
+
+    The commentary cross-reference and the isnad back-reference use distinct keys
+    (``comments_on_span_id`` vs ``refers_to_span_id``) so the graph reads two
+    edge kinds — "this commentary discusses that span" and "this hadith transmits
+    by that hadith's chain" — instead of one overloaded pointer.
+    """
     metadata: dict[str, Any] = {}
     if behavior == "AUTHOR_COMMENTARY" and prev_span_id is not None:
-        metadata["refers_to_span_id"] = prev_span_id
+        metadata["comments_on_span_id"] = prev_span_id
     if behavior == HADITH__BEHAVIOR_TRANSMISSION:
         has_back_ref = any(pattern.pattern_id == "ISNAD_BACK_REF" for pattern in detected_patterns)
         if has_back_ref and prev_hadith_span_id is not None:
@@ -374,11 +430,11 @@ def detect_patterns(text: str, compiled_patterns: dict[str, CompiledPattern]) ->
 
 
 def split_heading_from_content(
-    paragraphs: list[tuple[str, int, int]],
+    paragraphs: list[AnchoredParagraph],
     heading_regex: CompiledPattern,
     attribution_strong_regex: CompiledPattern,
     min_heading_chars: int,
-) -> list[tuple[str, int, int]]:
+) -> list[AnchoredParagraph]:
     """Split paragraphs where a heading marker precedes attribution content.
 
     Two modes: a classical heading keyword (باب/كتاب/فصل) sharing a line with
@@ -386,37 +442,40 @@ def split_heading_from_content(
     when the heading portion is at least min_heading_chars long; and a modern
     asterisk subsection (``* X :``) on its own line followed by narrative
     content — splits at the first newline so the content gets its own behavior.
+    The TOC anchor rides with the heading part, which is the paragraph opening
+    it was placed on; the split-off content gets no anchor.
     """
-    result: list[tuple[str, int, int]] = []
-    for text, page_start, page_end in paragraphs:
-        subsection = _split_subsection(text, page_start, page_end)
+    result: list[AnchoredParagraph] = []
+    for text, page_start, page_end, anchor in paragraphs:
+        subsection = _split_subsection(text, page_start, page_end, anchor)
         if subsection is not None:
             result.extend(subsection)
             continue
         heading_match = heading_regex.match(text)
         if heading_match is None:
-            result.append((text, page_start, page_end))
+            result.append((text, page_start, page_end, anchor))
             continue
         attr_match = attribution_strong_regex.search(text, pos=heading_match.end())
         if attr_match is None:
-            result.append((text, page_start, page_end))
+            result.append((text, page_start, page_end, anchor))
             continue
         heading_text = text[: attr_match.start()].rstrip()
         if len(heading_text) < min_heading_chars:
-            result.append((text, page_start, page_end))
+            result.append((text, page_start, page_end, anchor))
             continue
-        result.append((heading_text, page_start, page_end))
-        result.append((text[attr_match.start() :], page_start, page_end))
+        result.append((heading_text, page_start, page_end, anchor))
+        result.append((text[attr_match.start() :], page_start, page_end, None))
     return result
 
 
 def _split_subsection(
-    text: str, page_start: int, page_end: int
-) -> list[tuple[str, int, int]] | None:
+    text: str, page_start: int, page_end: int, anchor: TocAnchor | None
+) -> list[AnchoredParagraph] | None:
     """Split a ``* heading :`` subsection line from its following content.
 
     Returns the [heading, content] pair when the text opens with an asterisk
-    subsection heading that has non-empty content after it; None otherwise.
+    subsection heading that has non-empty content after it; None otherwise. The
+    anchor rides with the heading; the content gets none.
     """
     sub_match = _SUBSECTION_HEADING_LINE_REGEX.match(text)
     if sub_match is None:
@@ -426,8 +485,8 @@ def _split_subsection(
     if not stripped_content:
         return None
     return [
-        (heading_text, page_start, page_end),
-        (stripped_content, page_start, page_end),
+        (heading_text, page_start, page_end, anchor),
+        (stripped_content, page_start, page_end, None),
     ]
 
 
@@ -441,6 +500,7 @@ class BehaviorRule:
     none_of: frozenset[str]
     priority: int
     genre_gate: frozenset[str] | None = None
+    genre_block: frozenset[str] | None = None
 
 
 def parse_behavior_rules(raw_behaviors: list[dict[str, Any]]) -> list[BehaviorRule]:
@@ -448,6 +508,7 @@ def parse_behavior_rules(raw_behaviors: list[dict[str, Any]]) -> list[BehaviorRu
     rules: list[BehaviorRule] = []
     for entry in raw_behaviors:
         gate_raw = entry.get("genre_gate")
+        block_raw = entry.get("genre_block")
         rules.append(
             BehaviorRule(
                 behavior_id=entry["id"],
@@ -456,6 +517,7 @@ def parse_behavior_rules(raw_behaviors: list[dict[str, Any]]) -> list[BehaviorRu
                 none_of=frozenset(entry.get("none_of", [])),
                 priority=entry.get("priority", 0),
                 genre_gate=frozenset(gate_raw) if gate_raw else None,
+                genre_block=frozenset(block_raw) if block_raw else None,
             )
         )
     rules.sort(key=lambda rule: rule.priority, reverse=True)
@@ -485,19 +547,32 @@ def route_behavior(
 
     Evaluates rules in priority order (highest first). A rule matches when all
     requires are present, at least one any_of is present (if non-empty), none of
-    none_of are present, and genre_gate passes (if set). Returns (label,
-    routed_explicitly): routed_explicitly is True when either no patterns were
-    detected (the clean default to GENERAL_PROSE) or a configured rule matched;
-    it is False only when patterns were detected but no rule matched — the
-    unrouted case the failure budget tracks.
+    none_of are present, the book genre is not in genre_block (if set), and
+    genre_gate passes (if set). genre_block is the inverse of genre_gate: it
+    suppresses a rule in genres that structurally cannot contain its content, so
+    a numbered entry with a weak isnad signal routes as a hadith everywhere the
+    genre could hold one and stays a plain numbered entry in a grammar or
+    medicine volume, whose catalogs and verb examples must not become hadith.
+    Returns (label,
+    routed_explicitly): routed_explicitly is True when no patterns were detected
+    (the clean default to GENERAL_PROSE), when the detected patterns are all ones
+    the routing table references nowhere (so no rule could ever match them — a
+    lone generic speech verb قال is prose, not a gap), when a configured rule
+    matched, or when the only rules whose patterns matched were declined by their
+    genre_gate — that last case is a deliberate genre exclusion, so GENERAL_PROSE
+    is the intended answer, not a routing gap. routed_explicitly is False only
+    when a rule-referenced pattern was detected and no rule matched — the genuine
+    unrouted case the failure budget tracks, which the referenced-pattern test
+    keeps genre-invariant so prose-dense books do not exhaust the budget.
     """
     detected_ids = _thresholded_pattern_ids(detected_patterns, start_thresholds)
     if not detected_ids:
         return HADITH__BEHAVIOR_GENERAL_PROSE, True
+    if detected_ids.isdisjoint(_routing_referenced_patterns(behavior_rules)):
+        return HADITH__BEHAVIOR_GENERAL_PROSE, True
+    genre_excluded_match = False
     for rule in behavior_rules:
         if not rule.requires and not rule.any_of:
-            continue
-        if rule.genre_gate is not None and (book_type is None or book_type not in rule.genre_gate):
             continue
         if rule.requires and not rule.requires.issubset(detected_ids):
             continue
@@ -505,13 +580,40 @@ def route_behavior(
             continue
         if rule.none_of and rule.none_of.intersection(detected_ids):
             continue
+        if rule.genre_block is not None and book_type is not None and book_type in rule.genre_block:
+            genre_excluded_match = True
+            continue
+        if rule.genre_gate is not None and (book_type is None or book_type not in rule.genre_gate):
+            genre_excluded_match = True
+            continue
         return rule.behavior_id, True
+    if genre_excluded_match:
+        return HADITH__BEHAVIOR_GENERAL_PROSE, True
     _logger.warning(
         "no-behavior-rule-matched",
         pattern_ids=sorted(detected_ids),
         behavior=HADITH__BEHAVIOR_GENERAL_PROSE,
     )
     return HADITH__BEHAVIOR_GENERAL_PROSE, False
+
+
+def _routing_referenced_patterns(behavior_rules: list[BehaviorRule]) -> frozenset[str]:
+    """Every pattern id the routing table references, in requires, any_of, or none_of.
+
+    A pattern the table names nowhere cannot make any rule match or fail to
+    match, so a span carrying only such patterns routes to GENERAL_PROSE as the
+    intended answer, not an unrouted gap. Deriving this set from the rules keeps
+    it correct as the table changes and keeps the failure budget genre-invariant:
+    a generic speech verb (قال) or a rijal-grading term detected in grammar or
+    history prose is not a routing signal, so prose density does not exhaust the
+    budget the way a hadith book's unrouted isnad combinations legitimately do.
+    """
+    referenced: set[str] = set()
+    for rule in behavior_rules:
+        referenced |= rule.requires
+        referenced |= rule.any_of
+        referenced |= rule.none_of
+    return frozenset(referenced)
 
 
 def _thresholded_pattern_ids(

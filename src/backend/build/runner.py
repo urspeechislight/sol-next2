@@ -22,7 +22,7 @@ from __future__ import annotations
 import argparse
 import sqlite3
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +67,7 @@ def build_catalog_artifact(
     project: ProjectFn,
     *,
     limit: int | None = None,
+    urns: Sequence[str] | None = None,
     optimize: bool = False,
     finish: FinishFn | None = None,
 ) -> dict[str, object]:
@@ -80,9 +81,20 @@ def build_catalog_artifact(
     still-open connection for epilogue tables built from the whole catalog.
     A corrupt source raises out of ``project`` and aborts the build loudly;
     a partially written artifact must never pass for a complete one.
+
+    ``urns`` restricts the build to exactly those catalog entries (the
+    targeted-validation path); a requested URN missing from the catalog
+    raises rather than silently building a smaller artifact. ``limit``
+    slices whichever list ``urns`` produced.
     """
     con = create_artifact(out, schema)
     books, _ = books_repo.list_books()
+    if urns is not None:
+        wanted = set(urns)
+        books = [book for book in books if book.urn in wanted]
+        missing = wanted - {book.urn for book in books}
+        if missing:
+            raise ValueError(f"URNs not in the catalog: {sorted(missing)}")
     if limit is not None:
         books = books[:limit]
     counts: dict[str, int] = dict.fromkeys(tables, 0)

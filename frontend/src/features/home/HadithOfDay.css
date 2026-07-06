@@ -1,0 +1,105 @@
+/* HadithOfDay — the verse's peer on the folio spread: same open composition,
+   same centered axis, the matn at display scale. Tokens only. */
+
+.hday {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.hday__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.hday__isnad {
+  margin: var(--space-lg) 0 0;
+  text-align: center;
+  font-family: var(--font-ar);
+  font-size: var(--text-md);
+  line-height: var(--leading-arabic);
+  color: var(--color-text-faint);
+}
+
+.hday__matn {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-ar-display);
+  font-size: var(--text-3xl);
+  line-height: var(--leading-arabic);
+  color: var(--color-text);
+  text-wrap: pretty;
+}
+
+.hday__en {
+  margin: 0 auto;
+  max-width: 48ch;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+.hday__note {
+  margin: 0 auto;
+  max-width: 52ch;
+  text-align: center;
+}
+
+.hday__refs {
+  margin-top: var(--space-md);
+}
+.hday__refs-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+.hday__refs-rule::before,
+.hday__refs-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-accent) 30%,
+    var(--color-accent) 70%,
+    transparent
+  );
+  opacity: 0.45;
+}
+.hday__refs-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+  white-space: nowrap;
+}
+
+.hday__pills {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+.hday__pill {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.hday__pill:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.hday__pill:disabled {
+  opacity: 0.6;
+}
+
+.hday__foot {
+  display: flex;
+  justify-content: flex-end;
+}

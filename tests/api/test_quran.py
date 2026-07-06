@@ -15,6 +15,20 @@ def test_should_resolve_verse_when_reference_valid(client: TestClient) -> None:
     assert payload["text_plain"] == "وإنك لعلى خلق عظيم"  # bare form, letters intact
 
 
+def test_should_resolve_full_surah_in_order(client: TestClient) -> None:
+    """A surah returns every numbered ayah in recitation order."""
+    payload = client.get("/api/quran/1").json()
+    assert payload["surah"] == 1
+    assert payload["verse_count"] == 7
+    assert [v["ayah"] for v in payload["verses"]] == list(range(1, 8))
+    assert all(v["text_ar"] for v in payload["verses"])
+
+
+def test_should_reject_full_surah_when_out_of_range(client: TestClient) -> None:
+    """A surah beyond 114 is not found rather than an empty run."""
+    assert client.get("/api/quran/200").status_code == 404
+
+
 def test_should_strip_marks_keeping_letters_when_plain_form(client: TestClient) -> None:
     """text_plain drops vowel marks but preserves hamza/alef letters."""
     payload = client.get("/api/quran/2/255").json()

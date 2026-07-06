@@ -1,0 +1,59 @@
+/* Checkbox: the one multi-select row. A quiet full-width pressable with a
+   small bordered box, gold check (dash when mixed), label, and an optional
+   mono count in the margin. Tokens only. */
+
+.ds-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-2xs) var(--space-sm);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+.ds-checkbox:hover {
+  background: var(--color-accent-wash);
+}
+
+.ds-checkbox__box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--color-accent-deep);
+  background: var(--color-surface-raised);
+}
+.ds-checkbox--on .ds-checkbox__box,
+.ds-checkbox--mixed .ds-checkbox__box {
+  border-color: var(--color-accent);
+  background: var(--color-accent-tint);
+}
+.ds-checkbox__dash {
+  width: 8px;
+  border-top: 2px solid var(--color-accent-deep);
+}
+
+.ds-checkbox__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-checkbox__n {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+}

@@ -12,7 +12,10 @@ import { API } from './src/lib/routes';
 // (DNS-rebinding protection), which 403'd http://titan:8765 from the laptop.
 // 'titan' is the one documented hostname entry point; IP hosts
 // (10.0.12.10, 127.0.0.1) pass the check by default, so they are not listed.
-const API_TARGET = 'http://localhost:8001';
+// SOL_API_TARGET points a secondary dev instance (a session worktree running
+// its own uvicorn on a free port) at its own backend; unset, the proxy goes
+// to the canonical :8001.
+const API_TARGET = process.env.SOL_API_TARGET ?? 'http://localhost:8001';
 
 export default defineConfig({
   plugins: [react()],

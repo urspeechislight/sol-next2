@@ -11,6 +11,12 @@
       rel="stylesheet"
     />
     <title>SOL · sol-next2</title>
+    <script>
+      /* Pre-paint theme: applied before the bundle loads so a dark visitor
+         never flashes light. Mirrors THEME.* in src/lib/constants.ts. */
+      if (localStorage.getItem('sol-theme') === 'dark')
+        document.documentElement.setAttribute('data-theme', 'dark');
+    </script>
   </head>
   <body>
     <div id="root"></div>

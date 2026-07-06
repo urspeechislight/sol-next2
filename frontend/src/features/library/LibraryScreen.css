@@ -1,8 +1,15 @@
-/* The Library: Fihrist catalogue rail. Two columns on warm paper: a sticky
-   domain->category rail and an in-place results pane, split by one hairline.
-   All colour / type / spacing comes from tokens.css. */
+/* The Library: Fihrist catalogue rail. Two columns on warm paper over the
+   page-wide glow: a sticky domain->category rail and an in-place results
+   pane, split by one hairline. All colour / type / spacing comes from
+   tokens.css. */
 
+.library {
+  position: relative;
+  isolation: isolate;
+}
 .library__grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(252px, 312px) minmax(0, 1fr);
   gap: var(--space-xl);
@@ -20,12 +27,12 @@
 /* ---- rail ---- */
 .fih-rail {
   position: sticky;
-  top: var(--space-md);
+  top: calc(var(--header-height) + var(--space-md));
   align-self: start;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  max-height: calc(100vh - var(--space-xl));
+  max-height: calc(100vh - var(--header-height) - var(--space-xl));
   overflow-y: auto;
   padding-inline-end: var(--space-md);
   border-inline-end: 1px solid var(--color-border);
@@ -93,17 +100,29 @@
   flex-direction: column;
   gap: var(--space-2xs);
 }
+
+/* The group head is two controls with one consequence each: the name link
+   selects the domain, the chevron button folds the category list. */
 .fih-dom__hd {
+  display: flex;
+  align-items: center;
+}
+.fih-dom__sel {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--space-xs);
   padding: var(--space-xs) var(--space-sm);
   color: var(--color-text);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: background var(--duration-base) var(--ease-out);
 }
-.fih-dom__hd:hover {
+.fih-dom__sel:hover {
   background: var(--color-surface-sunken);
 }
-.fih-dom__hd .ds-icon {
+.fih-dom__sel > .ds-icon {
   color: var(--color-accent);
 }
 .fih-dom__en {
@@ -127,10 +146,22 @@
 }
 .fih-dom__chev {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs);
   color: var(--color-text-ghost);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background var(--duration-base) var(--ease-out);
+}
+.fih-dom__chev:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+}
+.fih-dom__chev .ds-icon {
   transition: transform var(--duration-base) var(--ease-out);
 }
-.fih-dom__hd--open .fih-dom__chev {
+.fih-dom__hd--open .fih-dom__chev .ds-icon {
   transform: rotate(90deg);
 }
 .fih-dom__cats {
@@ -210,39 +241,22 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
-.overview__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
-  gap: var(--space-md);
+
+/* ---- domain pane: shelf + schools spread, never the rail's index again ---- */
+.dpane__head {
+  margin-bottom: var(--space-lg);
 }
-.dom-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2xs);
-  text-decoration: none;
-}
-.dom-card:hover {
-  transform: translateY(-2px);
-}
-.dom-card__glyph {
+.dpane__glyph {
   display: inline-flex;
-  margin-bottom: var(--space-xs);
+  margin: var(--space-sm) 0 var(--space-xs);
   color: var(--color-accent);
 }
-.dom-card__ar {
-  font-family: var(--font-ar-display);
-  font-size: var(--text-xl);
-  color: var(--color-text);
+.dpane__blurb {
+  max-width: 40rem;
+  margin-top: var(--space-sm);
 }
-.dom-card__en {
-  font-family: var(--font-serif);
-  font-size: var(--text-base);
-  color: var(--color-text-muted);
-}
-.dom-card__n {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
+.cpane__truncated {
+  margin-top: var(--space-md);
 }
 
 /* ---- responsive: stack the rail above the pane ---- */
@@ -260,4 +274,34 @@
     border-bottom: 1px solid var(--color-border);
     padding-bottom: var(--space-md);
   }
+}
+
+/* contents rows (corpus overview) */
+.overview__contents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+.overview__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.overview__row + .overview__row {
+  border-top: 1px solid var(--color-border-hair);
+}
+
+/* the category room's honest list */
+.cpane__eras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+.cpane__era {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }

@@ -1,7 +1,5 @@
 // utils.ts:pure helpers only. No DOM, no side effects.
 
-import { BOOK } from './constants';
-
 /** Join class names, dropping falsy values. */
 export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ');
@@ -12,11 +10,37 @@ export function joinDots(...parts: Array<string | number | null | undefined | fa
   return parts.filter(Boolean).join(' · ');
 }
 
-/** English death-year label for a meta badge, e.g. "d. 326 AH"; empty when the
-    year is missing or is the unknown-year sentinel. */
+/** THE numeric-count rendering: grouped digits in the app's English locale,
+    pinned so the same number can never format two ways in one screen. */
+export function formatCount(n: number): string {
+  return n.toLocaleString('en');
+}
+
+/** The English count noun, e.g. pluralNoun(1, 'work') = "work",
+    pluralNoun(2, 'category', 'categories') = "categories". The one place the
+    n-equals-1 rule lives, so "1 works" can't appear anywhere. */
+export function pluralNoun(n: number, singular: string, plural = `${singular}s`): string {
+  return n === 1 ? singular : plural;
+}
+
+/** The one grammar for a counted noun, e.g. "1,204 works". */
+export function countLabel(n: number, singular: string, plural?: string): string {
+  return `${formatCount(n)} ${pluralNoun(n, singular, plural)}`;
+}
+
+/** English death-year label for a meta badge, e.g. "d. 326 AH"; empty when
+    the year is unknown. The upstream 99999 sentinel never reaches the client:
+    the catalog build normalizes it to null and the served model bounds the
+    field, so null is the only absent form. */
 export function deathLabel(ah?: number | null): string {
-  if (ah == null || ah === BOOK.UNKNOWN_DEATH_YEAR) return '';
+  if (ah == null) return '';
   return `d. ${ah} AH`;
+}
+
+/** Volume-count fragment for a work's meta line: "" for a single volume
+    (stating "1 vols" would be noise), else e.g. "3 vols". */
+export function volumesLabel(volumeCount: number): string {
+  return volumeCount > 1 ? countLabel(volumeCount, 'vol') : '';
 }
 
 /** Clamp a number into [min, max]. */
@@ -44,4 +68,33 @@ export function pageWindow(current: number, total: number, size: number): number
 const ARABIC_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 export function toArabicDigits(value: number | string): string {
   return String(value).replace(/[0-9]/g, (d) => ARABIC_DIGITS[Number(d)]);
+}
+
+/** URL-safe base64 (RFC 4648 §5) of a UTF-8 string: compacts free text bound
+    for a URL param. Plain percent-encoding roughly triples non-ASCII text —
+    every UTF-8 byte becomes 3 characters — which is punishing for Arabic,
+    where each base letter AND each combining diacritic is its own escaped
+    byte; base64 costs only ~4/3 of the raw byte count. Used by routes.ts for
+    the reader/search query and the active-book filter, the only free-text
+    URL fields. */
+export function toBase64Url(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** The inverse of toBase64Url. Never throws: a hand-edited or truncated URL
+    decodes to '' instead of crashing the router. */
+export function fromBase64Url(value: string): string {
+  if (!value) return '';
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = padded.length % 4 === 0 ? '' : '='.repeat(4 - (padded.length % 4));
+  try {
+    const binary = atob(padded + pad);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return '';
+  }
 }

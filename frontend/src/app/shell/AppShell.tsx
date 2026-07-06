@@ -1,41 +1,18 @@
 import type { ReactNode } from 'react';
-import type { SearchScope } from '../../lib/api/client';
 import { Header } from './Header';
-import type { NavView } from './nav';
+import type { HeaderProps } from './Header';
 import './AppShell.css';
 
-export interface AppShellProps {
-  active: NavView;
-  query: string;
-  scope: SearchScope;
-  onNav: (view: NavView) => void;
-  onQuery: (q: string) => void;
-  onSearch: () => void;
-  onScope: (scope: SearchScope) => void;
+/** The shell is the header plus a content slot: its props ARE the header's
+    (single definition in Header.tsx) with children added. */
+export interface AppShellProps extends HeaderProps {
   children: ReactNode;
 }
 
-export function AppShell({
-  active,
-  query,
-  scope,
-  onNav,
-  onQuery,
-  onSearch,
-  onScope,
-  children,
-}: AppShellProps) {
+export function AppShell({ children, ...header }: AppShellProps) {
   return (
     <div className="app-shell">
-      <Header
-        active={active}
-        query={query}
-        scope={scope}
-        onNav={onNav}
-        onQuery={onQuery}
-        onSearch={onSearch}
-        onScope={onScope}
-      />
+      <Header {...header} />
       <main className="app-main view">{children}</main>
     </div>
   );

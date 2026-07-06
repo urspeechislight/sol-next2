@@ -1,0 +1,45 @@
+/* FilterPopover: the funnel button's anchored panel: the whole matching
+   taxonomy as domain groups of Checkbox rows with true counts. Anchored,
+   dismissible, scrollable; never a modal. Tokens only. */
+
+.fpop {
+  position: relative;
+  display: inline-flex;
+}
+
+.fpop__panel {
+  position: absolute;
+  top: calc(100% + var(--space-2xs));
+  left: 0;
+  z-index: var(--z-sticky);
+  min-width: 340px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--space-xs);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.fpop__group + .fpop__group {
+  margin-top: var(--space-2xs);
+  border-top: 1px solid var(--color-border-hair);
+  padding-top: var(--space-2xs);
+}
+
+.fpop__domain {
+  font-weight: var(--weight-semibold);
+}
+
+.fpop__cats {
+  padding-inline-start: var(--space-lg);
+}
+
+.fpop__foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-2xs) var(--space-sm) 0;
+  border-top: 1px solid var(--color-border-hair);
+  margin-top: var(--space-2xs);
+}

@@ -2,15 +2,19 @@
 
 get_page combines SOL source (raw text, chapter title) with manuscript.hadiths_
 for_page (structured hadiths). These pin the mutual-exclusivity contract: when
-hadiths are present text_ar is None; otherwise the raw text is served.
+hadiths are present text_ar is None; otherwise the raw text is served. The
+page's footnote apparatus rides on both shapes: the notes annotate the printed
+page, not the extraction.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from backend.models.reader import Hadith
+from backend.models.reader import Footnote, Hadith
 from backend.repositories.reader import PageRow, get_page
+
+_FOOTNOTE_BLOCK = "تتمة من الصفحة السابقة\n(1) الحاشية الأولى"
 
 
 def _fake_page_rows(_urn: str) -> list[PageRow]:
@@ -18,18 +22,29 @@ def _fake_page_rows(_urn: str) -> list[PageRow]:
     return [PageRow(page=1, content="النص الخام")]
 
 
+def _fake_page_rows_with_footnote(_urn: str) -> list[PageRow]:
+    """A raw page row carrying a footnote block with preamble + numbered entry."""
+    return [PageRow(page=1, content="النص الخام «1»", footnote=_FOOTNOTE_BLOCK)]
+
+
 def _fake_chapter_title(*_args: object, **_kwargs: object) -> str:
     """An empty chapter title so get_page needs no real TOC source."""
     return ""
 
 
-def _patch_page(monkeypatch: pytest.MonkeyPatch, *, hadiths: list[Hadith]) -> None:
+def _patch_page(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    hadiths: list[Hadith],
+    with_footnote: bool = False,
+) -> None:
     """Stub page_rows + _chapter_title_at + hadiths_for_page for get_page."""
 
     def fake_hadiths(_urn: str, _page: int) -> list[Hadith]:
         return hadiths
 
-    monkeypatch.setattr("backend.repositories.reader.page_rows", _fake_page_rows)
+    rows_fn = _fake_page_rows_with_footnote if with_footnote else _fake_page_rows
+    monkeypatch.setattr("backend.repositories.reader.page_rows", rows_fn)
     monkeypatch.setattr("backend.repositories.reader._chapter_title_at", _fake_chapter_title)
     monkeypatch.setattr("backend.repositories.manuscript.hadiths_for_page", fake_hadiths)
 
@@ -55,3 +70,38 @@ def test_should_serve_raw_text_when_page_has_no_hadiths(
 
     assert page.hadiths == []
     assert page.text_ar == "النص الخام"
+
+
+def test_should_serve_empty_apparatus_when_page_has_no_footnote_block(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_page(monkeypatch, hadiths=[])
+
+    page = get_page("urn:test", 1)
+
+    assert page.footnotes == []
+
+
+def test_should_split_footnote_block_into_served_apparatus(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_page(monkeypatch, hadiths=[], with_footnote=True)
+
+    page = get_page("urn:test", 1)
+
+    assert page.footnotes == [
+        Footnote(marker=None, text="تتمة من الصفحة السابقة"),
+        Footnote(marker="1", text="الحاشية الأولى"),
+    ]
+
+
+def test_should_serve_apparatus_alongside_hadiths(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hadith = Hadith(n=1, isnad_ar="الإسناد", matn_ar="المتن", narrators=[])
+    _patch_page(monkeypatch, hadiths=[hadith], with_footnote=True)
+
+    page = get_page("urn:test", 1)
+
+    assert page.text_ar is None
+    assert [f.marker for f in page.footnotes] == [None, "1"]

@@ -45,8 +45,8 @@ export function GraphScreen() {
         <Heading level={1}>Transmission registry</Heading>
         <Text as="p" size="md" tone="muted" className="scr__lede">
           {result.data ? `${result.data.total.toLocaleString()} ` : ''}
-          reliability-graded narrators and merged canonical identities, drawn from the rijāl corpus. Use the
-          header search to find a specific narrator or passage.
+          reliability-graded narrators and merged canonical identities, drawn from the rijāl corpus.
+          Use the header search to find a specific narrator or passage.
         </Text>
       </header>
 

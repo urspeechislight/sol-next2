@@ -1,0 +1,43 @@
+/* FacetChip: the one toggleable facet token (label + optional mono count).
+   The visual formerly private to the library FilterBar's era chips; now the
+   shared grammar for every count-bearing filter. Tokens only. */
+
+.ds-fchip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+.ds-fchip:hover {
+  background: var(--color-accent-wash);
+}
+.ds-fchip--on {
+  background: var(--color-accent-tint);
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+.ds-fchip--part {
+  background: var(--color-accent-wash);
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+.ds-fchip--part .ds-fchip__n {
+  color: var(--color-accent-deep);
+}
+
+.ds-fchip__n {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+}
+.ds-fchip--on .ds-fchip__n {
+  color: var(--color-accent-deep);
+}

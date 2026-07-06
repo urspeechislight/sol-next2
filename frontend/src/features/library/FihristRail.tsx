@@ -1,7 +1,18 @@
-import { Divider, Heading, Icon, Input, Link, Segmented, Text } from '../../lib/design-system';
+import {
+  Divider,
+  Heading,
+  Icon,
+  Input,
+  Link,
+  Segmented,
+  Text,
+  UnstyledButton,
+} from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
 import { viewHref } from '../../lib/routes';
-import { corpusTotals, domainIcon, sumCount, visibleCategories } from './lib';
+import { corpusTotals, sumCount } from '../../lib/taxonomy';
+import { formatCount } from '../../lib/utils';
+import { domainIcon, visibleCategories } from './lib';
 import type { TraditionLens } from './lib';
 
 const TRADITIONS = [
@@ -25,14 +36,14 @@ function CategoryRow({ slug, label, labelAr, count, active, onPick }: CategoryRo
       href={viewHref('library')}
       className={active ? 'fih-cat fih-cat--on' : 'fih-cat'}
       ariaCurrent={active}
-      ariaLabel={`${label}, ${count.toLocaleString()} works`}
+      ariaLabel={`${label}, ${formatCount(count)} works`}
       onActivate={() => onPick(slug)}
     >
       <span className="fih-cat__en">{label}</span>
       <span className="fih-cat__ar" dir="rtl">
         {labelAr}
       </span>
-      <span className="fih-cat__n">{count.toLocaleString()}</span>
+      <span className="fih-cat__n">{formatCount(count)}</span>
     </Link>
   );
 }
@@ -43,11 +54,24 @@ interface DomainGroupProps {
   open: boolean;
   active: boolean;
   activeCat: string;
+  onSelect: (id: string) => void;
   onToggle: (id: string) => void;
   onPick: (slug: string) => void;
 }
 
-function DomainGroup({ domain, lens, open, active, activeCat, onToggle, onPick }: DomainGroupProps) {
+/** One rail group with one consequence per control: the domain's name row
+    selects it (the pane opens its room), the chevron alone folds the
+    category list open or closed. */
+function DomainGroup({
+  domain,
+  lens,
+  open,
+  active,
+  activeCat,
+  onSelect,
+  onToggle,
+  onPick,
+}: DomainGroupProps) {
   const cats = visibleCategories(domain, lens);
   if (cats.length === 0) return null;
   const count = sumCount(cats);
@@ -55,22 +79,30 @@ function DomainGroup({ domain, lens, open, active, activeCat, onToggle, onPick }
     'fih-dom__hd' + (open ? ' fih-dom__hd--open' : '') + (active ? ' fih-dom__hd--active' : '');
   return (
     <div className="fih-dom">
-      <Link
-        href={viewHref('library')}
-        className={cls}
-        ariaLabel={`${domain.label}, ${count.toLocaleString()} works`}
-        onActivate={() => onToggle(domain.id)}
-      >
-        <Icon name={domainIcon(domain.id)} size="sm" />
-        <span className="fih-dom__en">{domain.label}</span>
-        <span className="fih-dom__ar" dir="rtl">
-          {domain.label_ar}
-        </span>
-        <span className="fih-dom__n">{count.toLocaleString()}</span>
-        <span className="fih-dom__chev">
+      <div className={cls}>
+        <Link
+          href={viewHref('library')}
+          className="fih-dom__sel"
+          ariaCurrent={active}
+          ariaLabel={`${domain.label}, ${formatCount(count)} works`}
+          onActivate={() => onSelect(domain.id)}
+        >
+          <Icon name={domainIcon(domain.id)} size="sm" />
+          <span className="fih-dom__en">{domain.label}</span>
+          <span className="fih-dom__ar" dir="rtl">
+            {domain.label_ar}
+          </span>
+          <span className="fih-dom__n">{formatCount(count)}</span>
+        </Link>
+        <UnstyledButton
+          className="fih-dom__chev"
+          onClick={() => onToggle(domain.id)}
+          ariaPressed={open}
+          ariaLabel={`${open ? 'Collapse' : 'Expand'} ${domain.label} categories`}
+        >
           <Icon name="chevron-right" size="sm" />
-        </span>
-      </Link>
+        </UnstyledButton>
+      </div>
       {open ? (
         <div className="fih-dom__cats">
           {cats.map((c) => (
@@ -100,6 +132,7 @@ export interface FihristRailProps {
   scoped: boolean;
   onLens: (lens: TraditionLens) => void;
   onFilter: (filter: string) => void;
+  onSelectDomain: (id: string) => void;
   onToggleDomain: (id: string) => void;
   onPickCategory: (slug: string) => void;
   onReset: () => void;
@@ -118,6 +151,7 @@ export function FihristRail({
   scoped,
   onLens,
   onFilter,
+  onSelectDomain,
   onToggleDomain,
   onPickCategory,
   onReset,
@@ -133,7 +167,7 @@ export function FihristRail({
           The Library · الفِهرِست
         </Text>
         <Text as="p" size="xs" tone="faint" font="mono" className="fih-mast__stat">
-          {t.works.toLocaleString()} works · {t.volumes.toLocaleString()} volumes · {t.domains}{' '}
+          {formatCount(t.works)} works · {formatCount(t.volumes)} volumes · {t.domains}{' '}
           domains · {t.categories} categories
         </Text>
       </header>
@@ -161,7 +195,7 @@ export function FihristRail({
         onActivate={onReset}
       >
         <span>All works</span>
-        <span className="fih-all__n">{t.works.toLocaleString()}</span>
+        <span className="fih-all__n">{formatCount(t.works)}</span>
       </Link>
       <nav className="fih-doms" aria-label="Domains">
         {domains.map((d) => (
@@ -172,6 +206,7 @@ export function FihristRail({
             open={openDomains.has(d.id)}
             active={d.id === activeDomain}
             activeCat={activeCat}
+            onSelect={onSelectDomain}
             onToggle={onToggleDomain}
             onPick={onPickCategory}
           />

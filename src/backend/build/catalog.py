@@ -15,9 +15,12 @@ category dirs) into the catalog index the backend serves:
 This is read-only mirroring of pre-pipeline metadata: title, author, page
 count, sect are already structured in the source frontmatter. Isnad,
 narrators, translations, and cross-refs arrive through the SQLite artifact
-contract (``docs/adr/0001-storage-contract.md``), never here. The CLI shell
-lives in ``backend.build.runner``; the numeric pattern compiles through
-``backend.patterns.cached_compile`` (CENTRAL-002).
+contract (``docs/adr/0001-storage-contract.md``), never here. Volumes named
+by ``config/catalog_exclusions.json`` are dropped on every build, so a
+rebuild can never resurrect editorially removed entries whose source files
+still exist upstream. The CLI shell lives in ``backend.build.runner``; the
+numeric pattern compiles through ``backend.patterns.cached_compile``
+(CENTRAL-002).
 """
 
 from __future__ import annotations
@@ -25,22 +28,20 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, get_args
 
 from backend.core.constants import BOOK__DEATH_YEAR_AH_MAX
 from backend.core.logging import get_logger
+from backend.core.paths import config_path
 from backend.core.settings import get_settings
 from backend.models.book import Book, Canonical
 from backend.patterns import cached_compile
 
 _logger = get_logger("shia-library.build")
 
-_CANONICAL_MAP: dict[str, Canonical] = {
-    "primary_reference": "primary_reference",
-    "primary": "primary",
-    "secondary": "secondary",
-    "tertiary": "tertiary",
-}
+_EXCLUSIONS_FILE = "catalog_exclusions.json"
+
+_CANONICAL_MAP: dict[str, Canonical] = {rank: rank for rank in get_args(Canonical)}
 _SECT_MAP: dict[str, str] = {
     "sunni": "Sunni",
     "shia": "Imami",
@@ -201,6 +202,28 @@ def _ingest_one(path: Path, category: str) -> tuple[Book | None, str | None]:
     return book, None
 
 
+def _load_excluded_urns() -> frozenset[str]:
+    """URNs the catalog must never serve, from ``config/catalog_exclusions.json``.
+
+    The manifest names volumes editorially removed from the served corpus
+    (currently the Persian-equivalent purge of 2026-06-28) whose source
+    files still exist upstream, so every rebuild must re-apply the removal.
+    A missing or malformed manifest aborts the build: building without it
+    would silently re-serve everything it names.
+    """
+    path = config_path(_EXCLUSIONS_FILE)
+    if not path.exists():
+        raise SystemExit(f"exclusions manifest missing: {path}")
+    with path.open("r", encoding="utf-8") as fh:
+        doc: Any = json.load(fh)
+    if not isinstance(doc, dict) or not isinstance(cast("dict[str, Any]", doc).get("urns"), list):
+        raise SystemExit(f"exclusions manifest malformed, want {{'urns': [...]}}: {path}")
+    urns_raw = cast("list[Any]", cast("dict[str, Any]", doc)["urns"])
+    if not all(isinstance(u, str) and u for u in urns_raw):
+        raise SystemExit(f"exclusions manifest contains non-string urns: {path}")
+    return frozenset(cast("list[str]", urns_raw))
+
+
 def _walk(books_dir: Path) -> list[tuple[Path, str]]:
     """Return (file_path, category_slug) for every .json under category dirs."""
     out: list[tuple[Path, str]] = []
@@ -218,7 +241,8 @@ def build(out: Path) -> dict[str, object]:
     if not books_dir.exists():
         raise SystemExit(f"books dir missing: {books_dir}")
 
-    _logger.info("scan-start", path=str(books_dir))
+    excluded = _load_excluded_urns()
+    _logger.info("scan-start", path=str(books_dir), excluded_urns=len(excluded))
     work = _walk(books_dir)
     _logger.info("scan-done", files=len(work))
 
@@ -233,6 +257,10 @@ def build(out: Path) -> dict[str, object]:
             _logger.warning("build-book-skipped", path=str(file_path), reason=err)
             continue
         if book is None:
+            continue
+        if book.urn in excluded:
+            skipped["excluded"] = skipped.get("excluded", 0) + 1
+            _logger.info("build-book-excluded", urn=book.urn)
             continue
         if book.urn in seen_urns:
             skipped["duplicate_urn"] = skipped.get("duplicate_urn", 0) + 1

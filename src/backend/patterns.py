@@ -33,6 +33,21 @@ silently reordered by bidi rendering, which corrupts the ranges.
 ``FOOTNOTE_MARKER`` is the one definition of the inline ``(N)`` footnote
 reference shape; the pipeline's splitter, stripper, and tail regexes all
 derive from it.
+
+``HONORIFIC_SIGNS`` is the one definition of the Arabic honorific ligature
+characters: the Quranic honorifics block (U+FD40..FD4F, the ﵇/﵈/﵉ salutations
+printed after the Imams' names) and the ligature block carrying ﷺ and ﷿
+(U+FDF0..FDFD). Codepoint-built for the same bidi reason as the mark classes.
+Consumed by the pipeline's name cleaner (a trailing honorific is not part of
+a narrator's name) and by the matn mention extractor (an honorific after a
+titled word is a strong person signal).
+
+``NAME_LEADING_PARTICLE`` is the one definition of the connective/preposition
+particles (عن في من إلى على له به) that can prefix a name slice when a chain
+connector or matn phrase is captured with the name; none of them begins an
+Arabic personal name, so the name cleaner strips a run of them from the front.
+على is written with alef maqsura (ى), so it matches only the preposition and
+never the given name علي (ي).
 """
 
 from __future__ import annotations
@@ -74,6 +89,12 @@ ARABIC_ALEF_MAQSURA: Final[re.Pattern[str]] = re.compile("ى")
 ARABIC_TAA_MARBUTA: Final[re.Pattern[str]] = re.compile("ة")
 WHITESPACE: Final[re.Pattern[str]] = re.compile(r"\s+")
 FOOTNOTE_MARKER: Final[str] = r"\((\d+)\)"
+_HONORIFIC_CPS: Final[tuple[int, ...]] = (
+    *range(0xFD40, 0xFD50),
+    *range(0xFDF0, 0xFDFE),
+)
+HONORIFIC_SIGNS: Final[str] = "".join(chr(c) for c in _HONORIFIC_CPS)
+NAME_LEADING_PARTICLE: Final[re.Pattern[str]] = re.compile(r"^(?:(?:عن|في|من|إلى|على|له|به)\s+)+")
 
 
 def _fold_letters(text: str) -> str:

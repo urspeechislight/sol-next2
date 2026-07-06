@@ -16,12 +16,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
-from backend.core.constants import HTTP__DEFAULT_PAGE_SIZE
+from backend.core.constants import ARTIFACT__BOOKS_INDEX
 from backend.core.errors import ResourceNotFoundError
 from backend.core.settings import get_settings
-from backend.models.book import Book
+from backend.models.book import CANONICAL_TIERS, Book, Canonical
 from backend.models.work import Work
 from backend.patterns import normalize_arabic
 from backend.repositories import _taxonomy
@@ -36,16 +36,16 @@ def _index() -> tuple[tuple[Book, ...], dict[str, str]]:
     shape would otherwise serve an empty catalogue as a success. Fail loud
     instead so a corrupt index is fixed, not silently served.
     """
-    raw = load_json("books_index.json")
+    raw = load_json(ARTIFACT__BOOKS_INDEX)
     if not isinstance(raw, dict):
-        raise DataLoadError("books_index.json is not a JSON object")
+        raise DataLoadError(f"{ARTIFACT__BOOKS_INDEX} is not a JSON object")
     raw_dict = cast(dict[str, Any], raw)
     books_raw = raw_dict.get("books")
     sources_raw = raw_dict.get("sources")
     if not isinstance(books_raw, list):
-        raise DataLoadError("books_index.json is missing a 'books' list")
+        raise DataLoadError(f"{ARTIFACT__BOOKS_INDEX} is missing a 'books' list")
     if not isinstance(sources_raw, dict):
-        raise DataLoadError("books_index.json is missing a 'sources' map")
+        raise DataLoadError(f"{ARTIFACT__BOOKS_INDEX} is missing a 'sources' map")
     books = tuple(Book.model_validate(entry) for entry in cast(list[Any], books_raw))
     return books, dict(cast(dict[str, str], sources_raw))
 
@@ -134,14 +134,72 @@ def _scope_slugs(
     return slugs
 
 
+WorkSort = Literal["canonical", "death_year_ah", "title_ar", "volume_count"]
+
+_UNRANKED_TIER = len(CANONICAL_TIERS)
+
+
+def _canonical_tier(work: Work) -> int:
+    """The work's served editorial-rank tier, with unranked works after every
+    ranked tier so the sort key is total."""
+    return _UNRANKED_TIER if work.canonical_tier is None else work.canonical_tier
+
+
 @dataclass(frozen=True, slots=True)
 class WorksQuery:
-    """Scope + text filters for a volume-folded works listing."""
+    """Scope + text filters + ordering for a volume-folded works listing.
+
+    ``sort`` draws from the closed ``WorkSort`` set; it is a Literal so the
+    API layer rejects an unknown ``?sort=`` with a 422 instead of silently
+    serving storage order.
+    """
 
     category: str | None = None
     domain: str | None = None
     tradition: str | None = None
+    canonical: Canonical | None = None
     q: str = ""
+    sort: WorkSort | None = None
+
+
+def _order_works(works: list[Work], sort: WorkSort | None) -> list[Work]:
+    """Deterministic ordering for a browse dimension; storage order when None.
+
+    ``canonical`` leads with the most authoritative editorial tier, ordering
+    within each tier by death year ascending (undated last) then title, so a
+    small slice reads as "the works that anchor this scope". ``death_year_ah``
+    sorts the dated works ascending with the undated block last (35% of the
+    corpus is undated; it is a first-class shelf, not an interleaved gap).
+    ``title_ar`` collates on the diacritic-folded Arabic title.
+    ``volume_count`` sorts deepest works first, pages as tiebreak.
+    """
+    if sort is None:
+        return works
+    if sort == "canonical":
+        return sorted(
+            works,
+            key=lambda w: (
+                _canonical_tier(w),
+                w.death_year_ah is None,
+                w.death_year_ah or 0,
+                normalize_arabic(w.title_ar),
+            ),
+        )
+    if sort == "death_year_ah":
+        return sorted(
+            works,
+            key=lambda w: (
+                w.death_year_ah is None,
+                w.death_year_ah or 0,
+                normalize_arabic(w.title_ar),
+            ),
+        )
+    if sort == "title_ar":
+        return sorted(works, key=lambda w: normalize_arabic(w.title_ar))
+    return sorted(
+        works,
+        key=lambda w: (-w.volume_count, -(w.page_count or 0), normalize_arabic(w.title_ar)),
+    )
 
 
 def list_works(
@@ -150,10 +208,14 @@ def list_works(
     offset: int = 0,
 ) -> tuple[list[Work], int]:
     """Return ``(slice, total)`` of volume-folded works, scoped by category,
-    domain, and/or tradition, and optionally text-matched on ``q`` (title or
-    author, diacritic-insensitive for Arabic and lower-cased for Latin)."""
+    domain, and/or tradition, optionally narrowed to one canonical rank (the
+    Library's landmark rotations ask for ``primary_reference``), and optionally
+    text-matched on ``q`` (title or author, diacritic-insensitive for Arabic
+    and lower-cased for Latin)."""
     scope = _scope_slugs(query.category, query.domain, query.tradition)
     works = list(_works()) if scope is None else [w for w in _works() if w.category in scope]
+    if query.canonical is not None:
+        works = [w for w in works if w.canonical == query.canonical]
     needle = query.q.strip()
     if needle:
         fold = normalize_arabic(needle)
@@ -161,7 +223,7 @@ def list_works(
         works = [
             w for w in works if _hit((w.title_ar, w.title_en, w.author, w.author_ar), fold, low)
         ]
-    return slice_page(works, limit, offset)
+    return slice_page(_order_works(works, query.sort), limit, offset)
 
 
 @lru_cache(maxsize=1)
@@ -173,15 +235,6 @@ def category_stats() -> dict[str, tuple[int, int]]:
         works_n, vols_n = stats.get(work.category, (0, 0))
         stats[work.category] = (works_n + 1, vols_n + work.volume_count)
     return stats
-
-
-def _field_values(book: Book, field: str) -> tuple[str | None, ...]:
-    """The book strings a given search field looks at."""
-    if field == "title":
-        return (book.title_ar, book.title_en)
-    if field == "author":
-        return (book.author_ar, book.author)
-    return (book.title_ar, book.title_en, book.author_ar, book.author)
 
 
 def _hit(values: tuple[str | None, ...], fold: str, low: str) -> bool:
@@ -196,22 +249,6 @@ def _hit(values: tuple[str | None, ...], fold: str, low: str) -> bool:
     return False
 
 
-def search_books(
-    q: str, field: str = "any", limit: int = HTTP__DEFAULT_PAGE_SIZE, offset: int = 0
-) -> tuple[list[Book], int]:
-    """Return ``(slice, total)`` of books whose ``field`` (title / author / any)
-    matches ``q``, matched diacritic-insensitively for Arabic and lower-cased
-    for Latin."""
-    needle = q.strip()
-    if not needle:
-        return [], 0
-    fold = normalize_arabic(needle)
-    low = needle.lower()
-    books, _ = _index()
-    matched = [b for b in books if _hit(_field_values(b, field), fold, low)]
-    return slice_page(matched, limit, offset)
-
-
 def get_book(urn: str) -> Book:
     """Return the book with the given URN, or raise ResourceNotFoundError."""
     books, _ = _index()
@@ -219,6 +256,22 @@ def get_book(urn: str) -> Book:
         if book.urn == urn:
             return book
     raise ResourceNotFoundError(kind="book", identifier=urn)
+
+
+def list_volumes(urn: str) -> list[Book]:
+    """Return every volume of the work containing ``urn``, ascending by volume
+    number: the reader's volume switcher. A single-volume work returns just
+    that book. The membership comes from the same fold :func:`list_works`
+    serves, so the two views can never disagree; a fold entry missing from the
+    index would be an invariant breach and raises KeyError loudly."""
+    book = get_book(urn)
+    stem = _stem(book.urn)
+    work = next((w for w in _works() if w.stem == stem), None)
+    if work is None:
+        raise ResourceNotFoundError(kind="work", identifier=stem)
+    books, _ = _index()
+    by_urn = {b.urn: b for b in books}
+    return [by_urn[member] for member in work.volumes]
 
 
 def source_path(urn: str) -> Path | None:

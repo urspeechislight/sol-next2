@@ -10,6 +10,11 @@ Narrators carry their registry link (rijal_id / canonical_id) resolved at
 build time; the reader fetches the linked biography from /api/rijal or
 /api/canonical on demand. Romanized name and grade still await registry
 romanization — name carries the Arabic form and grade is blank.
+
+The dev extraction-inspection surface (``/api/dev``) reads the same artifact
+through ``repositories.extraction``: the near-raw projection a developer
+validates the pipeline with, which unlike this path fails loudly when the
+artifact is absent.
 """
 
 from __future__ import annotations
@@ -20,16 +25,23 @@ from dataclasses import dataclass
 from typing import Any
 
 from backend.core.constants import (
+    ARTIFACT__MANUSCRIPT_DB,
     HADITH__ENTITY_PERSON,
+    HADITH__ROLE_NARRATOR,
+    HADITH__ROLE_RELATIVE_REF,
     HADITH__UNIT_HADITH,
     HADITH__UNIT_ISNAD,
     HADITH__UNIT_MATN,
+    NARRATOR_LINK__ID_KEY,
+    NARRATOR_LINK__METADATA_KEY,
+    NARRATOR_LINK__ORIGIN_CANONICAL,
+    NARRATOR_LINK__ORIGIN_KEY,
+    NARRATOR_LINK__ORIGIN_RIJAL,
 )
 from backend.core.paths import data_path
 from backend.models.reader import Hadith, Narrator
 from backend.repositories._data_loader import open_ro_db
 
-_DB_FILE = "manuscript.db"
 _MISSING_HINT = (
     "Manuscript index not built; run scripts/build_manuscript_index.py to materialize it"
 )
@@ -42,7 +54,8 @@ _UNIT_PAGE_QUERY = (
 )
 _ENTITY_PAGE_QUERY = (
     "SELECT span_id, text_ar, metadata FROM entity "
-    "WHERE manifestation_id = :urn AND page_start = :page AND entity_type = :entity_type"
+    "WHERE manifestation_id = :urn AND page_start = :page AND entity_type = :entity_type "
+    "AND json_extract(metadata, '$.role_in_context') IN (:role_narrator, :role_relative)"
 )
 
 
@@ -84,9 +97,9 @@ def hadiths_for_page(book_urn: str, page_number: int) -> list[Hadith]:
     Returns [] when the manuscript index has not been built yet (so the reader
     serves raw page text) or when the page has no isnad/matn spans.
     """
-    if not data_path(_DB_FILE).exists():
+    if not data_path(ARTIFACT__MANUSCRIPT_DB).exists():
         return []
-    con = open_ro_db(_DB_FILE, _MISSING_HINT)
+    con = open_ro_db(ARTIFACT__MANUSCRIPT_DB, _MISSING_HINT)
     unit_rows = _fetch_unit_rows(con, book_urn, page_number)
     if not unit_rows:
         return []
@@ -104,11 +117,18 @@ def _fetch_unit_rows(con: sqlite3.Connection, book_urn: str, page_number: int) -
 def _fetch_entity_rows(
     con: sqlite3.Connection, book_urn: str, page_number: int
 ) -> list[_EntityRow]:
-    """Fetch the page's PERSON entity rows projected into typed records."""
+    """Fetch the page's chain-member PERSON rows projected into typed records.
+
+    Chain members only: named narrators and kinship relative references, both
+    positioned links in the isnad. Matn ``mention`` entities are people the
+    hadith is about, not transmitters, and must not surface as narrators.
+    """
     params: dict[str, Any] = {
         "urn": book_urn,
         "page": page_number,
         "entity_type": HADITH__ENTITY_PERSON,
+        "role_narrator": HADITH__ROLE_NARRATOR,
+        "role_relative": HADITH__ROLE_RELATIVE_REF,
     }
     rows = con.execute(_ENTITY_PAGE_QUERY, params).fetchall()
     return [_entity_row(dict(row)) for row in rows]
@@ -125,18 +145,23 @@ def _unit_row(d: dict[str, Any]) -> _UnitRow:
 
 
 def _entity_row(d: dict[str, Any]) -> _EntityRow:
-    """Build a _EntityRow from a fetched dict, decoding the metadata JSON."""
+    """Build a _EntityRow from a fetched dict, decoding the metadata JSON.
+
+    The ``narrator_link`` shape is the write/read contract with
+    ``build/narrator_link.py``; both sides consume the ``NARRATOR_LINK__*``
+    constants so the key and origin tokens cannot drift apart.
+    """
     metadata: dict[str, Any] = json.loads(d["metadata"])
-    link: dict[str, Any] = metadata.get("narrator_link") or {}
-    origin = str(link.get("origin", ""))
-    link_id = int(link["id"]) if "id" in link else None
+    link: dict[str, Any] = metadata.get(NARRATOR_LINK__METADATA_KEY) or {}
+    origin = str(link.get(NARRATOR_LINK__ORIGIN_KEY, ""))
+    link_id = int(link[NARRATOR_LINK__ID_KEY]) if NARRATOR_LINK__ID_KEY in link else None
     return _EntityRow(
         span_id=str(d["span_id"]),
         text_ar=str(d["text_ar"]),
         role_in_context=str(metadata.get("role_in_context", "")),
         chain_position=int(metadata.get("chain_position", _DEFAULT_CHAIN_POSITION)),
-        rijal_id=link_id if origin == "rijal" else None,
-        canonical_id=link_id if origin == "canonical" else None,
+        rijal_id=link_id if origin == NARRATOR_LINK__ORIGIN_RIJAL else None,
+        canonical_id=link_id if origin == NARRATOR_LINK__ORIGIN_CANONICAL else None,
     )
 
 

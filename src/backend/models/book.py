@@ -13,18 +13,28 @@ so the shared shape never drifts between the two.
      and uses ``primary_reference`` for canonical status. The schema is
      permissive on those fields so both shapes round-trip without lossy
      coercion.
+
+``Canonical`` is the editorial-rank vocabulary, and its declaration order IS
+the tier order, most authoritative first: ``CANONICAL_TIERS``, the catalog
+ingest map, and the served ``Work.canonical_tier`` all derive from it via
+``get_args``, so adding or reordering a rank here is the single edit that
+moves every consumer.
 """
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Final, Literal, get_args
 
 from pydantic import Field
 
 from backend.core.constants import BOOK__DEATH_YEAR_AH_MAX
 from backend.models._base import FrozenModel
 
-Canonical = Literal["primary", "primary_reference", "secondary", "tertiary"]
+Canonical = Literal["primary_reference", "primary", "secondary", "tertiary"]
+
+CANONICAL_TIERS: Final[dict[Canonical, int]] = {
+    rank: tier for tier, rank in enumerate(get_args(Canonical))
+}
 
 
 class BibRecord(FrozenModel):

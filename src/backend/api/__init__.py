@@ -9,10 +9,13 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from backend.api.almanac import router as almanac_router
 from backend.api.books import router as books_router
 from backend.api.canonical import router as canonical_router
+from backend.api.citations import router as citations_router
 from backend.api.daily import router as daily_router
 from backend.api.domains import router as domains_router
+from backend.api.extraction import router as extraction_router
 from backend.api.quran import router as quran_router
 from backend.api.reader import router as reader_router
 from backend.api.rijal import router as rijal_router
@@ -25,7 +28,10 @@ api_router.include_router(books_router)
 api_router.include_router(works_router)
 api_router.include_router(reader_router)
 api_router.include_router(daily_router)
+api_router.include_router(almanac_router)
 api_router.include_router(rijal_router)
 api_router.include_router(canonical_router)
+api_router.include_router(citations_router)
 api_router.include_router(search_router)
 api_router.include_router(quran_router)
+api_router.include_router(extraction_router)

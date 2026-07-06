@@ -1,0 +1,181 @@
+// surahs.ts — the canonical 114 surah names plus the shared Qurʾān-query
+// helpers (verse-reference parsing, fold-insensitive verse matching). Static
+// reference data (like the Hijri month names): the corpus artifact carries
+// verse text only, so the reader's navigation names live here. Every surface
+// that accepts a Qurʾān query (the search overlay's Qurʾān scope, the Qurʾān
+// page's rail finder, the within-sūra filter) parses and matches through
+// these, never a local copy.
+
+import { foldSearch, normalizeName } from './arabic';
+import type { Ayah } from './types';
+
+export interface SurahName {
+  n: number;
+  ar: string;
+  en: string;
+}
+
+export const SURAHS: readonly SurahName[] = [
+  { n: 1, ar: 'الفاتحة', en: 'al-Fātiḥa' },
+  { n: 2, ar: 'البقرة', en: 'al-Baqara' },
+  { n: 3, ar: 'آل عمران', en: 'Āl ʿImrān' },
+  { n: 4, ar: 'النساء', en: 'al-Nisāʾ' },
+  { n: 5, ar: 'المائدة', en: 'al-Māʾida' },
+  { n: 6, ar: 'الأنعام', en: 'al-Anʿām' },
+  { n: 7, ar: 'الأعراف', en: 'al-Aʿrāf' },
+  { n: 8, ar: 'الأنفال', en: 'al-Anfāl' },
+  { n: 9, ar: 'التوبة', en: 'al-Tawba' },
+  { n: 10, ar: 'يونس', en: 'Yūnus' },
+  { n: 11, ar: 'هود', en: 'Hūd' },
+  { n: 12, ar: 'يوسف', en: 'Yūsuf' },
+  { n: 13, ar: 'الرعد', en: 'al-Raʿd' },
+  { n: 14, ar: 'إبراهيم', en: 'Ibrāhīm' },
+  { n: 15, ar: 'الحجر', en: 'al-Ḥijr' },
+  { n: 16, ar: 'النحل', en: 'al-Naḥl' },
+  { n: 17, ar: 'الإسراء', en: 'al-Isrāʾ' },
+  { n: 18, ar: 'الكهف', en: 'al-Kahf' },
+  { n: 19, ar: 'مريم', en: 'Maryam' },
+  { n: 20, ar: 'طه', en: 'Ṭā Hā' },
+  { n: 21, ar: 'الأنبياء', en: 'al-Anbiyāʾ' },
+  { n: 22, ar: 'الحج', en: 'al-Ḥajj' },
+  { n: 23, ar: 'المؤمنون', en: 'al-Muʾminūn' },
+  { n: 24, ar: 'النور', en: 'al-Nūr' },
+  { n: 25, ar: 'الفرقان', en: 'al-Furqān' },
+  { n: 26, ar: 'الشعراء', en: 'al-Shuʿarāʾ' },
+  { n: 27, ar: 'النمل', en: 'al-Naml' },
+  { n: 28, ar: 'القصص', en: 'al-Qaṣaṣ' },
+  { n: 29, ar: 'العنكبوت', en: 'al-ʿAnkabūt' },
+  { n: 30, ar: 'الروم', en: 'al-Rūm' },
+  { n: 31, ar: 'لقمان', en: 'Luqmān' },
+  { n: 32, ar: 'السجدة', en: 'al-Sajda' },
+  { n: 33, ar: 'الأحزاب', en: 'al-Aḥzāb' },
+  { n: 34, ar: 'سبأ', en: 'Sabaʾ' },
+  { n: 35, ar: 'فاطر', en: 'Fāṭir' },
+  { n: 36, ar: 'يس', en: 'Yā Sīn' },
+  { n: 37, ar: 'الصافات', en: 'al-Ṣāffāt' },
+  { n: 38, ar: 'ص', en: 'Ṣād' },
+  { n: 39, ar: 'الزمر', en: 'al-Zumar' },
+  { n: 40, ar: 'غافر', en: 'Ghāfir' },
+  { n: 41, ar: 'فصلت', en: 'Fuṣṣilat' },
+  { n: 42, ar: 'الشورى', en: 'al-Shūrā' },
+  { n: 43, ar: 'الزخرف', en: 'al-Zukhruf' },
+  { n: 44, ar: 'الدخان', en: 'al-Dukhān' },
+  { n: 45, ar: 'الجاثية', en: 'al-Jāthiya' },
+  { n: 46, ar: 'الأحقاف', en: 'al-Aḥqāf' },
+  { n: 47, ar: 'محمد', en: 'Muḥammad' },
+  { n: 48, ar: 'الفتح', en: 'al-Fatḥ' },
+  { n: 49, ar: 'الحجرات', en: 'al-Ḥujurāt' },
+  { n: 50, ar: 'ق', en: 'Qāf' },
+  { n: 51, ar: 'الذاريات', en: 'al-Dhāriyāt' },
+  { n: 52, ar: 'الطور', en: 'al-Ṭūr' },
+  { n: 53, ar: 'النجم', en: 'al-Najm' },
+  { n: 54, ar: 'القمر', en: 'al-Qamar' },
+  { n: 55, ar: 'الرحمن', en: 'al-Raḥmān' },
+  { n: 56, ar: 'الواقعة', en: 'al-Wāqiʿa' },
+  { n: 57, ar: 'الحديد', en: 'al-Ḥadīd' },
+  { n: 58, ar: 'المجادلة', en: 'al-Mujādila' },
+  { n: 59, ar: 'الحشر', en: 'al-Ḥashr' },
+  { n: 60, ar: 'الممتحنة', en: 'al-Mumtaḥana' },
+  { n: 61, ar: 'الصف', en: 'al-Ṣaff' },
+  { n: 62, ar: 'الجمعة', en: 'al-Jumuʿa' },
+  { n: 63, ar: 'المنافقون', en: 'al-Munāfiqūn' },
+  { n: 64, ar: 'التغابن', en: 'al-Taghābun' },
+  { n: 65, ar: 'الطلاق', en: 'al-Ṭalāq' },
+  { n: 66, ar: 'التحريم', en: 'al-Taḥrīm' },
+  { n: 67, ar: 'الملك', en: 'al-Mulk' },
+  { n: 68, ar: 'القلم', en: 'al-Qalam' },
+  { n: 69, ar: 'الحاقة', en: 'al-Ḥāqqa' },
+  { n: 70, ar: 'المعارج', en: 'al-Maʿārij' },
+  { n: 71, ar: 'نوح', en: 'Nūḥ' },
+  { n: 72, ar: 'الجن', en: 'al-Jinn' },
+  { n: 73, ar: 'المزمل', en: 'al-Muzzammil' },
+  { n: 74, ar: 'المدثر', en: 'al-Muddaththir' },
+  { n: 75, ar: 'القيامة', en: 'al-Qiyāma' },
+  { n: 76, ar: 'الإنسان', en: 'al-Insān' },
+  { n: 77, ar: 'المرسلات', en: 'al-Mursalāt' },
+  { n: 78, ar: 'النبأ', en: 'al-Nabaʾ' },
+  { n: 79, ar: 'النازعات', en: 'al-Nāziʿāt' },
+  { n: 80, ar: 'عبس', en: 'ʿAbasa' },
+  { n: 81, ar: 'التكوير', en: 'al-Takwīr' },
+  { n: 82, ar: 'الانفطار', en: 'al-Infiṭār' },
+  { n: 83, ar: 'المطففين', en: 'al-Muṭaffifīn' },
+  { n: 84, ar: 'الانشقاق', en: 'al-Inshiqāq' },
+  { n: 85, ar: 'البروج', en: 'al-Burūj' },
+  { n: 86, ar: 'الطارق', en: 'al-Ṭāriq' },
+  { n: 87, ar: 'الأعلى', en: 'al-Aʿlā' },
+  { n: 88, ar: 'الغاشية', en: 'al-Ghāshiya' },
+  { n: 89, ar: 'الفجر', en: 'al-Fajr' },
+  { n: 90, ar: 'البلد', en: 'al-Balad' },
+  { n: 91, ar: 'الشمس', en: 'al-Shams' },
+  { n: 92, ar: 'الليل', en: 'al-Layl' },
+  { n: 93, ar: 'الضحى', en: 'al-Ḍuḥā' },
+  { n: 94, ar: 'الشرح', en: 'al-Sharḥ' },
+  { n: 95, ar: 'التين', en: 'al-Tīn' },
+  { n: 96, ar: 'العلق', en: 'al-ʿAlaq' },
+  { n: 97, ar: 'القدر', en: 'al-Qadr' },
+  { n: 98, ar: 'البينة', en: 'al-Bayyina' },
+  { n: 99, ar: 'الزلزلة', en: 'al-Zalzala' },
+  { n: 100, ar: 'العاديات', en: 'al-ʿĀdiyāt' },
+  { n: 101, ar: 'القارعة', en: 'al-Qāriʿa' },
+  { n: 102, ar: 'التكاثر', en: 'al-Takāthur' },
+  { n: 103, ar: 'العصر', en: 'al-ʿAṣr' },
+  { n: 104, ar: 'الهمزة', en: 'al-Humaza' },
+  { n: 105, ar: 'الفيل', en: 'al-Fīl' },
+  { n: 106, ar: 'قريش', en: 'Quraysh' },
+  { n: 107, ar: 'الماعون', en: 'al-Māʿūn' },
+  { n: 108, ar: 'الكوثر', en: 'al-Kawthar' },
+  { n: 109, ar: 'الكافرون', en: 'al-Kāfirūn' },
+  { n: 110, ar: 'النصر', en: 'al-Naṣr' },
+  { n: 111, ar: 'المسد', en: 'al-Masad' },
+  { n: 112, ar: 'الإخلاص', en: 'al-Ikhlāṣ' },
+  { n: 113, ar: 'الفلق', en: 'al-Falaq' },
+  { n: 114, ar: 'الناس', en: 'al-Nās' },
+] as const;
+
+/** Name lookup by surah number; unknown numbers fail loud. */
+export function surahName(n: number): SurahName {
+  const entry = SURAHS[n - 1];
+  if (!entry || entry.n !== n) throw new Error(`Unknown surah number: ${n}`);
+  return entry;
+}
+
+export interface VerseRef {
+  surah: number;
+  ayah: number;
+}
+
+const VERSE_REF = /^\s*(\d{1,3})\s*:\s*(\d{1,3})\s*$/;
+
+/** Parse a ``surah:ayah`` reference like ``55:5``; null when the query is
+    anything else. The one reference grammar every Qurʾān query field shares. */
+export function parseVerseRef(q: string): VerseRef | null {
+  const m = VERSE_REF.exec(q);
+  if (!m) return null;
+  return { surah: Number(m[1]), ayah: Number(m[2]) };
+}
+
+/** Surah names matching ``q``: by number, by English name (case-insensitive),
+    or by Arabic name (mark/variant-insensitive via the shared name fold). */
+export function matchSurahs(q: string): readonly SurahName[] {
+  const needle = q.trim();
+  if (!needle) return SURAHS;
+  const lower = needle.toLowerCase();
+  const folded = normalizeName(needle);
+  return SURAHS.filter(
+    (s) =>
+      s.en.toLowerCase().includes(lower) ||
+      normalizeName(s.ar).includes(folded) ||
+      String(s.n) === needle,
+  );
+}
+
+/** True when a verse contains ``q``: Arabic diacritic/variant-insensitively
+    (the same SEARCH fold the corpus index uses), or in its English rendering
+    case-insensitively. */
+export function verseMatches(v: Ayah, q: string): boolean {
+  const needle = q.trim();
+  if (!needle) return true;
+  const folded = foldSearch(needle);
+  if (folded && foldSearch(v.text_ar).includes(folded)) return true;
+  return Boolean(v.text_en && v.text_en.toLowerCase().includes(needle.toLowerCase()));
+}

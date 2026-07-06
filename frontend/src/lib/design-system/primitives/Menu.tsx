@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cx } from '../../utils';
 import { Icon } from './Icon';
+import { useDismiss } from './useDismiss';
 import type { IconName } from '../internal/icons';
 import type { Surface } from '../surfaces';
 import './Menu.css';
@@ -27,7 +28,9 @@ export interface MenuProps {
 /** Styled dropdown menu — the design-system replacement for a native <select>, so
     the popover renders in the product's own type/colour/radius rather than OS
     chrome. Trigger button + popover listbox with optional row icons and a check on
-    the selected row. Closes on Escape, outside click, or selection. */
+    the selected row. Closes on Escape, outside click, or selection. When a caller
+    caps the list height (a long listbox that scrolls internally), opening centres
+    the selected row inside the list; a list that fits untouched is never scrolled. */
 export function Menu({
   value,
   options,
@@ -40,22 +43,17 @@ export function Menu({
 }: MenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLUListElement>(null);
   const current = options.find((o) => o.value === value);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(root, open, close);
 
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (root.current && !root.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
-    };
+    const el = list.current;
+    if (!el || el.scrollHeight <= el.clientHeight) return;
+    const on = el.querySelector<HTMLElement>('.ds-menu__option--on');
+    if (on) el.scrollTop = on.offsetTop - (el.clientHeight - on.offsetHeight) / 2;
   }, [open]);
 
   return (
@@ -74,7 +72,7 @@ export function Menu({
         <Icon name="chevron-down" size="sm" className="ds-menu__caret" />
       </button>
       {open ? (
-        <ul className="ds-menu__list" role="listbox" aria-label={ariaLabel}>
+        <ul ref={list} className="ds-menu__list" role="listbox" aria-label={ariaLabel}>
           {options.map((o) => (
             <li key={o.value}>
               <button

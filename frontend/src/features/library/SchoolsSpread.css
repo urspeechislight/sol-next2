@@ -1,0 +1,37 @@
+/* SchoolsSpread: the domain's categories as walkable shelf sections, not a
+   second index. An apparatus rule per school, its leading works as catalog
+   rows, and a quiet mono step into the full category. Tokens only. */
+
+.spread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  margin-top: var(--space-xl);
+}
+
+.spread__school {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.spread__rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.spread__all {
+  align-self: flex-end;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--duration-base) var(--ease-out);
+}
+.spread__all:hover {
+  background: var(--color-accent-wash);
+}

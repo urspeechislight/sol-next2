@@ -23,12 +23,20 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Final
 
-from backend.core.constants import HADITH__ENTITY_PERSON
+from backend.core.constants import (
+    ARTIFACT__REGISTRY_DB,
+    HADITH__ENTITY_PERSON,
+    HADITH__ROLE_RELATIVE_REF,
+    NARRATOR_LINK__ID_KEY,
+    NARRATOR_LINK__METADATA_KEY,
+    NARRATOR_LINK__ORIGIN_CANONICAL,
+    NARRATOR_LINK__ORIGIN_KEY,
+    NARRATOR_LINK__ORIGIN_RIJAL,
+)
 from backend.patterns import normalize_arabic
 from backend.pipeline.models import Manuscript
 from backend.repositories._data_loader import open_ro_db
 
-_REGISTRY_DB: Final[str] = "registry.db"
 _MISSING_HINT: Final[str] = (
     "Narrator registry not built; run scripts/build_registry.py before linking"
 )
@@ -39,9 +47,6 @@ _MIN_NAME_TOKENS: Final[int] = 2
 CONNECTIVE_TOKENS: Final[frozenset[str]] = frozenset(
     {"بن", "ابن", "بنت", "عن", "ابي", "ابو", "ال", "عبد", "حدثنا", "اخبرنا"}
 )
-
-ORIGIN_RIJAL: Final[str] = "rijal"
-ORIGIN_CANONICAL: Final[str] = "canonical"
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,11 +78,11 @@ class NarratorLinker:
         Canonical entries index first and rijal entries overwrite them per
         normalized full name, mirroring the frontend merge where rijal wins.
         """
-        con = open_ro_db(_REGISTRY_DB, _MISSING_HINT)
+        con = open_ro_db(ARTIFACT__REGISTRY_DB, _MISSING_HINT)
         pairs: list[tuple[str, str, int]] = []
         for query, origin in (
-            (_CANONICAL_NAMES_QUERY, ORIGIN_CANONICAL),
-            (_RIJAL_NAMES_QUERY, ORIGIN_RIJAL),
+            (_CANONICAL_NAMES_QUERY, NARRATOR_LINK__ORIGIN_CANONICAL),
+            (_RIJAL_NAMES_QUERY, NARRATOR_LINK__ORIGIN_RIJAL),
         ):
             pairs.extend((origin, str(row[1]), int(row[0])) for row in con.execute(query))
         return cls.from_names(pairs)
@@ -145,15 +150,22 @@ def annotate_manuscript(manuscript: Manuscript, linker: NarratorLinker) -> int:
     Walks every span's entities and adds ``narrator_link`` metadata
     (``{"origin": ..., "id": ...}``) where the linker resolves the name.
     Unresolved names get no key: absence means unlinked, never a guess.
+    Relative-reference chain members (عن أبيه) carry no name to match and are
+    skipped outright; linking the kinship word itself would be a wrong claim.
     """
     linked = 0
     for span in manuscript.spans:
         for entity in span.entities or []:
             if entity.entity_type != HADITH__ENTITY_PERSON:
                 continue
+            if entity.metadata.get("role_in_context") == HADITH__ROLE_RELATIVE_REF:
+                continue
             link = linker.link(entity.text)
             if link is None:
                 continue
-            entity.metadata["narrator_link"] = {"origin": link.origin, "id": link.registry_id}
+            entity.metadata[NARRATOR_LINK__METADATA_KEY] = {
+                NARRATOR_LINK__ORIGIN_KEY: link.origin,
+                NARRATOR_LINK__ID_KEY: link.registry_id,
+            }
             linked += 1
     return linked

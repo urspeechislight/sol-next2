@@ -201,7 +201,7 @@ patterns:
       prefixed ``(N)``. Negative lookahead ``(?!\s*[0-9٠-٩])`` blocks
       number-range shapes like ``23 - 26`` (Qurʾān verse-range refs:
       ``الأعراف: 23-26``) from being treated as list-item starts.
-    regex: "^\\s*\\(?[١٢٣٤٥٦٧٨٩٠0-9]+(?:\\s*[.\\-]|\\))(?!\\s*[١٢٣٤٥٦٧٨٩٠0-9])"
+    regex: "^\\s*\\*?\\s*\\(?[١٢٣٤٥٦٧٨٩٠0-9]+(?:\\s*[.\\-]|\\))(?!\\s*[١٢٣٤٥٦٧٨٩٠0-9])"
     is_boundary: true
 
   - id: POETRY_BLOCK
@@ -277,6 +277,20 @@ behaviors:
       MATN_BOUNDARY_HINT (قال رسول الله) is a matn-start marker, not a chain
       indicator — prose that mentions the Prophet fires it but has no chain.
     any_of: [ATTRIBUTION_STRONG_INITIAL, ISNAD_BACK_REF]
+    # Secular-content genres carry no isnad hadith: their numbered catalogs,
+    # transmission-verb grammar examples (أخبرنا as a conjugation), and cited
+    # book titles otherwise route to HADITH and fabricate narrators. Blocking
+    # the hadith rules there is the genre-axis complement to the per-genre gates
+    # the fiqh/rijal/biography rules already carry. Anchored for reuse below.
+    genre_block: &non_hadith_genres
+      - arabic-language-sciences
+      - medicine
+      - logic-philosophy
+      - poetry-collections
+      - other-sciences
+      - journals-miscellaneous
+      - bibliographies-indexes
+      - contemporary-islamic-issues
     priority: 80
 
   - id: HADITH_TRANSMISSION
@@ -287,6 +301,7 @@ behaviors:
       prepositional عن ("about X"). Lower priority than the primary rule.
     requires: [AN_CHAIN_INITIAL, GENEALOGY_CHAIN]
     none_of: [HEADING_MARKER]
+    genre_block: *non_hadith_genres
     priority: 78
 
   - id: HADITH_TRANSMISSION
@@ -307,7 +322,26 @@ behaviors:
       the entry-start region.
     requires: [NUMBERED_ENTRY, ATTRIBUTION, GENEALOGY_CHAIN]
     none_of: [HEADING_MARKER]
+    genre_block: *non_hadith_genres
     priority: 72
+
+  - id: HADITH_TRANSMISSION
+    description: >
+      Direct-report hadith — a numbered entry that reports from an authority
+      without a relayed narrator chain: a question put to an Imam, or a
+      ``source : matn`` citation. It carries a transmission verb عن / a
+      genealogy link / a prophetic-speech hint but not the full chain shape the
+      higher rules require, so without this rule it fell through to a bare
+      NUMBERED_ENTRY and lost its hadith identity (and its own leaf node). Sits
+      below the chain-based and genre-gated rules (rijal, biography, fiqh,
+      historical), so those still claim their entries in their own genres; here
+      it catches the numbered hadith that remain in hadith, tafsir, and theology
+      volumes. Genre-blocked from secular content like every hadith rule.
+    requires: [NUMBERED_ENTRY]
+    any_of: [ATTRIBUTION, GENEALOGY_CHAIN, MATN_BOUNDARY_HINT]
+    none_of: [HEADING_MARKER]
+    genre_block: *non_hadith_genres
+    priority: 69
 
   - id: QURAN_VERSE
     description: >
@@ -318,9 +352,11 @@ behaviors:
       QURAN_VERSE when corpus matching detects it. MATN_BOUNDARY_HINT guard
       blocks long narrative prose that *cites* a verse from being classified
       as a verse — the hint matches "قال رسول الله / النبي" which never
-      appears in pure Quranic text.
+      appears in pure Quranic text. AUTHOR_COMMENTARY guard keeps the author's
+      exegesis (opening تفسير / بيان / أقول, which quotes قوله تعالى) as
+      AUTHOR_COMMENTARY rather than absorbing the commentary into QURAN_VERSE.
     requires: [QURAN_REF]
-    none_of: [ATTRIBUTION_STRONG, AN_CHAIN_INITIAL, BASMALA, MATN_BOUNDARY_HINT]
+    none_of: [ATTRIBUTION_STRONG, AN_CHAIN_INITIAL, BASMALA, MATN_BOUNDARY_HINT, AUTHOR_COMMENTARY]
     priority: 90
 
   - id: BIOGRAPHY
@@ -357,8 +393,16 @@ behaviors:
     priority: 85
 
   - id: FIQH_RULING
-    description: Legal ruling or juristic opinion
+    description: >
+      Legal ruling or juristic opinion. The trigger lexicon (يجب / يكره /
+      يحل / يحرم) is polysemous: in kalam يكره means "compel" and يجب means
+      "is necessary", so in theology, tafsir, and hadith volumes these words
+      fire the rule spuriously and outrank NUMBERED_ENTRY on numbered hadith.
+      The genre gate restricts the ruling behavior to fiqh books, the same way
+      BIOGRAPHY and RIJAL_ENTRY gate their context-dependent rules; in a
+      non-fiqh book a juristic-sounding entry stays a hadith or numbered entry.
     requires: [FIQH_RULING]
+    genre_gate: [fiqh-terminology, hanafi-fiqh, hanbali-fiqh, independent-fiqh, maliki-fiqh, shafii-fiqh, shia-fiqh-8th-century, shia-fiqh-fatwas, shia-fiqh-pre-8th-century, shia-fiqh-principles, shia-hadith-fiqh, sunni-fiqh-principles, sunni-hadith-fiqh, zahiri-fiqh, zaidi-fiqh]
     priority: 75
 
   - id: HISTORICAL_NARRATIVE
@@ -393,7 +437,15 @@ behaviors:
       SECTION_HEADING bucket. Slightly lower priority so a span that has
       BOTH a kitab/bab heading AND a subsection marker still routes via
       the higher-level structural keyword.
+
+      A subsection heading is a topic label (``* (الطينة والميثاق) *``), never a
+      numbered entry: the NUMBERED_ENTRY guard keeps a numbered hadith that
+      prints the same asterisk ornament (``* 39 - التوحيد : ابن الوليد ، عن ...``)
+      from being filed as a chapter heading, which severed its isnad from its
+      matn and hid the hadith. Without the ornament such a line already routes
+      as a hadith; the guard makes the ornamented form behave the same.
     requires: [SUBSECTION_MARKER]
+    none_of: [NUMBERED_ENTRY]
     priority: 92
 
   - id: RIJAL_ENTRY
@@ -528,6 +580,7 @@ atomicizers:
 extractors:
   HADITH_TRANSMISSION:
     - narrator_extractor
+    - person_mention_extractor
   AUTHOR_COMMENTARY: []
   QURAN_VERSE: []
   BIOGRAPHY: []
@@ -633,7 +686,9 @@ cross_page_repair:
 narrator_extraction:
   relative_references:
     - "أبيه"
+    - "أبيهما"
     - "أبوه"
+    - "أبوهما"
     - "أمه"
     - "أمها"
     - "جده"
@@ -646,6 +701,20 @@ narrator_extraction:
     - "خالته"
     - "ابنه"
     - "ابنته"
+
+  # First-person kinship references a compiler uses for his own teacher, e.g.
+  # al-Saduq's "أبي ، عن سعد". Unlike the third-person forms above these are
+  # matched ONLY when they stand alone as the whole name candidate, never as a
+  # prefix: "أبي عبد الله" / "ابن أبي عمير" are kunyas where أبي is part of the
+  # name, so a prefix match would wrongly split a person. Standalone bare "أبي"
+  # is "my father" and emits as a relative_reference like bare "أبيه".
+  first_person_references:
+    - "أبي"
+    - "جدي"
+    - "عمي"
+    - "أخي"
+    - "خالي"
+    - "أمي"
 
   prepositional_an_exclusions:
     - "يمين"
@@ -704,6 +773,23 @@ narrator_extraction:
     - "الحديث"
     - "فتى"
     - "يقول"
+    - "عنه"
+    - "عنها"
+    - "ابن آدم"
+
+  # First words that never head a person name: bibliographic nouns (كتاب X,
+  # خبر X, كلام له) and formulaic isnad-grade terms (في الصحيح / الموثق). A
+  # narrator or mention candidate whose first token is one of these is a
+  # citation or grading phrase that leaked past the citation-head boundary, not
+  # a name, so it is dropped. الحسن is deliberately excluded: it is also a very
+  # common given name (الحسن بن علي).
+  non_name_leading_words:
+    - "كتاب"
+    - "خبر"
+    - "كلام"
+    - "باب"
+    - "الصحيح"
+    - "الموثق"
 
   transmission_tail_verbs:
     - "يحدث"

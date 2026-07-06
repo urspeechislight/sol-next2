@@ -1,0 +1,26 @@
+/* SearchMap: the query's distribution in the fihrist hierarchy under an
+   apparatus rule: one wrapped line of domain FacetChips, and the chosen
+   domain's categories as a visibly subordinate inset line. The chip visual
+   is the design-system FacetChip. Tokens only. */
+
+.smap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.smap__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.smap__sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-inline-start: var(--space-xl);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+}

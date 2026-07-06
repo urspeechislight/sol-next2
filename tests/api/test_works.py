@@ -42,3 +42,18 @@ def test_should_accept_a_known_domain_when_filtering(client: TestClient) -> None
     known = _taxonomy.DOMAINS[0].id
     response = client.get("/api/works", params={"domain": known})
     assert response.status_code == status.HTTP_200_OK
+
+
+def test_should_filter_to_landmark_works_when_canonical_given(client: TestClient) -> None:
+    """?canonical=primary_reference returns only that rank; the shelf never mixes."""
+    payload = client.get(
+        "/api/works", params={"canonical": "primary_reference", "limit": 50}
+    ).json()
+    assert payload["total"] > 0
+    assert all(w["canonical"] == "primary_reference" for w in payload["items"])
+
+
+def test_should_reject_an_unknown_canonical_rank_with_422(client: TestClient) -> None:
+    """An unknown ?canonical= is a client error like the other closed sets."""
+    response = client.get("/api/works", params={"canonical": "not-a-rank"})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT

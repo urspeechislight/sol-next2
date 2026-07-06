@@ -1,10 +1,19 @@
-"""Pydantic DTOs for cross-corpus full-text search hits + drill-down facets."""
+"""Pydantic DTOs for cross-corpus full-text search hits + drill-down facets.
+
+``SearchMode`` is the closed match-mode vocabulary. It lives here, with the
+search DTOs, so the API layer (which validates ``?mode=``) and the corpus
+repository (which turns a mode into match windows) consume one definition.
+"""
 
 from __future__ import annotations
+
+from typing import Literal
 
 from pydantic import Field
 
 from backend.models._base import FrozenModel
+
+SearchMode = Literal["exact", "broad"]
 
 
 class CorpusMatch(FrozenModel):

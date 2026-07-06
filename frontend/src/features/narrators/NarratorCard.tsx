@@ -37,7 +37,9 @@ function RijalMeta({ entry }: { entry: RijalEntry }) {
 function CanonicalMeta({ entry }: { entry: CanonicalEntry }) {
   return (
     <Inline gap="xs" align="center">
-      <Badge variant={confidenceBadge(entry.merge_confidence)}>{confidenceLabel(entry.merge_confidence)}</Badge>
+      <Badge variant={confidenceBadge(entry.merge_confidence)}>
+        {confidenceLabel(entry.merge_confidence)}
+      </Badge>
       <Text size="xs" tone="faint" font="mono">
         {entry.entry_count} entries · {entry.source_count} sources · {entry.teacher_count} teachers
       </Text>

@@ -1,0 +1,18 @@
+.ds-newtab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-xs);
+  height: var(--control-height-xs);
+  border-radius: var(--radius-control);
+  color: var(--color-text-faint);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+.ds-newtab:hover,
+.ds-newtab:focus-visible {
+  color: var(--color-text);
+  background: var(--color-surface-sunken);
+}

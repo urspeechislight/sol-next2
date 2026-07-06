@@ -1,0 +1,60 @@
+/* PageGlow — the one page-wide illumination layer. Full-bleed behind the
+   screen's content; semantic tokens only. */
+
+.ds-pageglow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.ds-pageglow__halo {
+  position: absolute;
+  border-radius: var(--radius-pill);
+  filter: blur(60px);
+}
+.ds-pageglow__halo--n {
+  top: -20vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90vw;
+  height: 70vh;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-accent) 20%, transparent) 0%,
+    color-mix(in srgb, var(--color-accent) 7%, transparent) 40%,
+    transparent 70%
+  );
+}
+.ds-pageglow__halo--s {
+  bottom: -25vh;
+  right: -15vw;
+  width: 60vw;
+  height: 60vh;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-accent-strong) 14%, transparent) 0%,
+    color-mix(in srgb, var(--color-accent-strong) 5%, transparent) 40%,
+    transparent 70%
+  );
+}
+.ds-pageglow__rosette {
+  position: absolute;
+  top: 4vh;
+  right: -8vw;
+  width: min(520px, 50vw);
+  aspect-ratio: 1;
+  opacity: 0.3;
+}
+
+/* Night reading dims the illumination: the halo softens and the rosette
+   recedes to a trace, so the decoration never competes with text at night. */
+[data-theme='dark'] .ds-pageglow__halo {
+  opacity: 0.55;
+}
+[data-theme='dark'] .ds-pageglow__rosette {
+  opacity: 0.1;
+}

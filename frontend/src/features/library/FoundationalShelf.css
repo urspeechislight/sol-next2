@@ -1,0 +1,101 @@
+/* FoundationalShelf: the hand-turned spotlight, one primary reference at a
+   time standing on the gold shelf line, in the folio's open grammar. Each
+   turn slides the next lockup in; no card box, no invented cover. Tokens
+   only. */
+
+.shelf {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.shelf__stage {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+  padding-bottom: var(--space-md);
+  animation: shelf-slide var(--duration-slow) var(--ease-out);
+}
+
+.shelf__work {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  align-items: center;
+  width: 100%;
+  min-height: 132px;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    translate var(--duration-base) var(--ease-out);
+}
+.shelf__work:hover {
+  background: var(--color-accent-wash);
+  translate: 0 -2px;
+}
+
+.shelf__ar {
+  font-family: var(--font-ar-display);
+  font-size: var(--text-3xl);
+  line-height: var(--leading-snug);
+  color: var(--color-text);
+}
+.shelf__work:hover .shelf__ar {
+  color: var(--color-accent-deep);
+}
+.shelf__en {
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  color: var(--color-text-muted);
+}
+.shelf__author {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+}
+.shelf__meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-ghost);
+}
+.shelf__go {
+  margin-top: var(--space-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+.shelf__work:hover .shelf__go,
+.shelf__work:focus-visible .shelf__go {
+  opacity: 1;
+}
+
+.shelf__foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+}
+
+@keyframes shelf-slide {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf__stage {
+    animation: none;
+  }
+}

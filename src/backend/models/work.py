@@ -9,9 +9,9 @@ rows folded into one entry: the shared bibliographic fields come from
 
 from __future__ import annotations
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
-from backend.models.book import BibRecord
+from backend.models.book import CANONICAL_TIERS, BibRecord
 
 
 class Work(BibRecord):
@@ -22,3 +22,15 @@ class Work(BibRecord):
     volume_count: int = Field(ge=1, description="Number of volumes folded into this work.")
     volumes: list[str] = Field(description="Member volume URNs, ordered by volume number.")
     first_urn: str = Field(description="URN of the first volume; opening the work opens this.")
+
+    @computed_field(
+        description=(
+            "Editorial-rank tier derived from `canonical`, 0 = most authoritative; "
+            "null when unranked. Served so client-side ordering and server-side "
+            "`sort=canonical` paging share one tier table instead of each owning a copy."
+        )
+    )
+    @property
+    def canonical_tier(self) -> int | None:
+        """The work's tier in ``CANONICAL_TIERS``, or None when unranked."""
+        return None if self.canonical is None else CANONICAL_TIERS[self.canonical]

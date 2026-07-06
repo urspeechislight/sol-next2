@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/almanac": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Hijri almanac: observances and chronicle events.
+         * @description Return the full almanac; the client selects for its own "today".
+         */
+        get: operations["get_almanac_api_almanac_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/books": {
         parameters: {
             query?: never;
@@ -42,7 +62,9 @@ export interface paths {
          *     carries the raw page text honestly — for prose pages, or before the index is
          *     built. ``text_en`` is the single wiring point for an English rendering: the
          *     corpus has no English column yet, so it stays ``None`` and the reader shows a
-         *     labelled preview; set it here the moment translations land.
+         *     labelled preview; set it here the moment translations land. ``footnotes``
+         *     carries the page's printed apparatus on both shapes: the notes annotate the
+         *     printed page, not the extraction.
          */
         get: operations["get_page_api_books__book_urn__pages__page_number__get"];
         put?: never;
@@ -114,6 +136,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/books/{urn}/pages/{page}/citations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Auto-linkable Qur'an citations located in a page's text.
+         * @description Verse-verified Qur'an citations on one page, ordered by position.
+         */
+        get: operations["_page_citations_api_books__urn__pages__page__citations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/books/{urn}/volumes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List every volume of the work containing this book, ascending.
+         * @description Return every volume of the work containing ``urn``, ascending by volume
+         *     number: the reader's volume switcher. A single-volume work returns just
+         *     that book. The membership comes from the same fold :func:`list_works`
+         *     serves, so the two views can never disagree; a fold entry missing from the
+         *     index would be an invariant breach and raises KeyError loudly.
+         */
+        get: operations["list_volumes_api_books__urn__volumes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/canonical": {
         parameters: {
             query?: never;
@@ -154,6 +220,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/citations/{surah}/{aya}/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count of distinct books citing a given surah:aya (reverse concordance).
+         * @description Reverse concordance: how many distinct books cite ``surah:aya``.
+         */
+        get: operations["_books_citing_api_citations__surah___aya__books_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/daily": {
         parameters: {
             query?: never;
@@ -162,10 +248,84 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Today's verse, hadith, and book pick.
-         * @description Return today's curated Daily payload.
+         * Today's verse, hadith, and book pick, rotated by date.
+         * @description Return the Daily selection for the current UTC date.
          */
         get: operations["get_today_api_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dev/extraction/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the books in the manuscript artifact with extraction coverage.
+         * @description Return one coverage summary per book in the artifact, URN-ordered.
+         *
+         *     Titles come from the catalog: a URN present in the artifact but absent
+         *     from the catalog raises ResourceNotFoundError — a stale artifact must be
+         *     rebuilt, not partially listed.
+         */
+        get: operations["extraction_summaries_api_dev_extraction_books_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dev/extraction/books/{book_urn}/entry-audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Audit extracted units against the edition's printed entry numbers, per section.
+         * @description Check extracted units against the edition's printed ordinals, per section.
+         *
+         *     Ordinals restart per section (bāb), so units group by their hierarchy path
+         *     with the pipeline's per-hadith counter leaf stripped. Within each section
+         *     the printed numbers should run consecutively from the first to the last:
+         *     a missing ordinal is evidence extraction dropped or merged that entry, a
+         *     duplicate that it split one. Every section is returned, in document order,
+         *     so the clean ones vouch for coverage rather than being silently omitted.
+         */
+        get: operations["entry_audit_api_dev_extraction_books__book_urn__entry_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dev/extraction/books/{book_urn}/pages/{page_number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get one page's spans, units, and entities near-raw, for validation.
+         * @description Return every span, unit, and entity starting on one page, near-raw.
+         *
+         *     An empty page (no spans start there) is legitimate data and returns empty
+         *     lists; an unknown URN raises ResourceNotFoundError instead.
+         */
+        get: operations["page_extraction_api_dev_extraction_books__book_urn__pages__page_number__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -207,6 +367,29 @@ export interface paths {
          * @description Wrap the repo's ``(slice, total)`` of matching ayat into a Page[Ayah].
          */
         get: operations["_search_verses_api_quran_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quran/{surah}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve a full surah to its numbered ayat, in order.
+         * @description Resolve a surah number to its full run of numbered ayat, in order.
+         *
+         *     The prefatory basmala (key ``0``) is skipped, matching the search index:
+         *     it is not a numbered ayah.
+         */
+        get: operations["get_surah_api_quran__surah__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -287,26 +470,6 @@ export interface paths {
          * @description Wrap the repo's (slice, total) into a Page[CorpusMatch] envelope.
          */
         get: operations["_search_api_search_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/search/books": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Search book metadata by title / author (diacritic-insensitive).
-         * @description Wrap the repo's (slice, total) into a Page[Book] envelope.
-         */
-        get: operations["_search_books_api_search_books_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -420,6 +583,16 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * Almanac
+         * @description The served almanac: every observance + every chronicle entry.
+         */
+        Almanac: {
+            /** Events */
+            events: components["schemas"]["HistoryEvent"][];
+            /** Observances */
+            observances: components["schemas"]["Observance"][];
+        };
+        /**
          * Ayah
          * @description One Qurʾān verse, resolved from a surah:ayah reference.
          *
@@ -462,6 +635,22 @@ export interface components {
             verse_count: number;
         };
         /**
+         * BehaviorCount
+         * @description How many units of one behavior a book carries.
+         */
+        BehaviorCount: {
+            /**
+             * Behavior
+             * @description Behavior label.
+             */
+            behavior: string;
+            /**
+             * Units
+             * @description Unit count for this behavior.
+             */
+            units: number;
+        };
+        /**
          * Book
          * @description One book record (a single physical volume) exposed by the screens.
          */
@@ -485,7 +674,7 @@ export interface components {
              * Canonical
              * @description Editorial rank, or None.
              */
-            canonical?: ("primary" | "primary_reference" | "secondary" | "tertiary") | null;
+            canonical?: ("primary_reference" | "primary" | "secondary" | "tertiary") | null;
             /**
              * Category
              * @description Category slug (matches Domain.categories[].slug).
@@ -573,6 +762,11 @@ export interface components {
             chapter_title: string;
             /** Chapter Title En */
             chapter_title_en?: string | null;
+            /**
+             * Footnotes
+             * @description The page's footnote apparatus in printed order; empty when the source row carries no footnote block. Served for raw and hadith-parsed pages alike: the notes annotate the printed page, not the extraction.
+             */
+            footnotes?: components["schemas"]["Footnote"][];
             /** Hadiths */
             hadiths: components["schemas"]["Hadith"][];
             /** Page Number */
@@ -642,7 +836,7 @@ export interface components {
             full_name: string;
             /**
              * Kunya
-             * @description Teknonym, if recorded.
+             * @description Teknonym (Abu/Umm ...), if recorded.
              * @default
              */
             kunya: string;
@@ -653,7 +847,7 @@ export interface components {
             merge_confidence?: number | null;
             /**
              * Nisba
-             * @description Attributive name, if recorded.
+             * @description Attributive name (tribe/place), if recorded.
              * @default
              */
             nisba: string;
@@ -736,6 +930,43 @@ export interface components {
             slug: string;
         };
         /**
+         * Citation
+         * @description One verse-verified Qur'an citation located in a page's Arabic text.
+         */
+        Citation: {
+            /**
+             * Aya End
+             * @description Last aya (equals aya_start for a single verse).
+             */
+            aya_end: number;
+            /**
+             * Aya Start
+             * @description First aya of the reference.
+             */
+            aya_start: number;
+            /**
+             * Length
+             * @description Character length of the citation marker.
+             */
+            length: number;
+            /**
+             * Offset
+             * @description Character offset of the marker in the page text.
+             */
+            offset: number;
+            /**
+             * Surah
+             * @description Resolved surah number.
+             */
+            surah: number;
+            /**
+             * Verse Match
+             * @description How the quoted text was confirmed against the cited verse.
+             * @enum {string}
+             */
+            verse_match: "exact" | "short" | "neighbor";
+        };
+        /**
          * CorpusMatch
          * @description One full-text hit: the book it occurs in, the page, and an excerpt.
          */
@@ -810,14 +1041,11 @@ export interface components {
         };
         /**
          * Daily
-         * @description Top-level Daily payload.
+         * @description Top-level Daily payload: today's selection from each pool.
          */
         Daily: {
             book: components["schemas"]["DailyBookPick"];
-            date: components["schemas"]["DailyDate"];
             hadith: components["schemas"]["DailyHadith"];
-            /** Rotation */
-            rotation: string[];
             verse: components["schemas"]["Verse"];
         };
         /**
@@ -830,18 +1058,6 @@ export interface components {
             rationale: string;
             /** Urn */
             urn: string;
-        };
-        /**
-         * DailyDate
-         * @description Date display values for the editorial header.
-         */
-        DailyDate: {
-            /** Gregorian */
-            gregorian: string;
-            /** Hijri */
-            hijri: string;
-            /** Hijri Short */
-            hijri_short: string;
         };
         /**
          * DailyHadith
@@ -897,6 +1113,394 @@ export interface components {
              * @description Arabic label.
              */
             label_ar: string;
+        };
+        /**
+         * EntrySectionAudit
+         * @description Printed-ordinal sequence check for one section (bāb).
+         */
+        EntrySectionAudit: {
+            /**
+             * Duplicates
+             * @description Ordinals seen more than once: split or repeated entries.
+             */
+            duplicates: number[];
+            /**
+             * First
+             * @description Lowest printed ordinal seen.
+             */
+            first: number;
+            /**
+             * Last
+             * @description Highest printed ordinal seen.
+             */
+            last: number;
+            /**
+             * Missing
+             * @description Ordinals absent between first and last: dropped or merged entries.
+             */
+            missing: number[];
+            /**
+             * Section
+             * @description Section hierarchy path, root first.
+             */
+            section: string[];
+            /**
+             * Units
+             * @description Numbered units extracted in this section.
+             */
+            units: number;
+        };
+        /**
+         * ExtractionBookSummary
+         * @description Coverage summary for one book present in the manuscript artifact.
+         */
+        ExtractionBookSummary: {
+            /**
+             * Behaviors
+             * @description Unit counts per behavior, largest first.
+             */
+            behaviors: components["schemas"]["BehaviorCount"][];
+            /**
+             * Entities
+             * @description Total entities extracted for this book.
+             */
+            entities: number;
+            /**
+             * First Page
+             * @description Lowest page on which a span starts.
+             */
+            first_page: number;
+            /**
+             * Page End
+             * @description Highest page any span reaches.
+             */
+            page_end: number;
+            /**
+             * Pages With Spans
+             * @description Distinct pages on which a span starts.
+             */
+            pages_with_spans: number;
+            /**
+             * Spans
+             * @description Total spans extracted for this book.
+             */
+            spans: number;
+            /**
+             * Title Ar
+             * @description Arabic title from the catalog.
+             */
+            title_ar: string;
+            /**
+             * Title En
+             * @description English title, if present.
+             */
+            title_en?: string | null;
+            /**
+             * Units
+             * @description Total units extracted for this book.
+             */
+            units: number;
+            /**
+             * Urn
+             * @description Manifestation URN.
+             */
+            urn: string;
+        };
+        /**
+         * ExtractionEntity
+         * @description One extracted entity with its anchors, provenance, and evidence.
+         */
+        ExtractionEntity: {
+            /**
+             * Char End
+             * @description Anchor end offset within the owning span text.
+             */
+            char_end: number;
+            /**
+             * Char Start
+             * @description Anchor start offset within the owning span text.
+             */
+            char_start: number;
+            /**
+             * Confidence
+             * @description Extractor confidence, when the extractor scores one.
+             */
+            confidence?: number | null;
+            /**
+             * Entity Id
+             * @description Stable entity id.
+             */
+            entity_id: string;
+            /**
+             * Entity Type
+             * @description Entity kind (PERSON, ...).
+             */
+            entity_type: string;
+            /**
+             * Evidence
+             * @description Anchor evidence: the source span and offsets the claim rests on.
+             */
+            evidence: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Metadata
+             * @description Extractor metadata, decoded.
+             */
+            metadata: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Provenance
+             * @description Which extractor produced this entity, and how.
+             */
+            provenance: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Span Id
+             * @description Owning span id (back-references keep their own span).
+             */
+            span_id: string;
+            /**
+             * Text Ar
+             * @description Arabic entity text.
+             */
+            text_ar: string;
+        };
+        /**
+         * ExtractionEntryAudit
+         * @description Book-wide audit of extracted units against the edition's printed ordinals.
+         *
+         *     The printed numbering is the edition's own ground truth: within a section
+         *     it runs consecutively, so gaps and duplicates measure extraction
+         *     completeness without a human reading the text.
+         */
+        ExtractionEntryAudit: {
+            /**
+             * Book Urn
+             * @description Manifestation URN audited.
+             */
+            book_urn: string;
+            /**
+             * Duplicate Total
+             * @description Duplicated ordinals across all sections.
+             */
+            duplicate_total: number;
+            /**
+             * Missing Total
+             * @description Missing ordinals across all sections.
+             */
+            missing_total: number;
+            /**
+             * Numbered Units
+             * @description Units carrying a printed ordinal.
+             */
+            numbered_units: number;
+            /**
+             * Rows
+             * @description Every section, in document order.
+             */
+            rows: components["schemas"]["EntrySectionAudit"][];
+            /**
+             * Sections
+             * @description Sections containing numbered units.
+             */
+            sections: number;
+            /**
+             * Sections With Anomalies
+             * @description Sections with gaps or duplicates.
+             */
+            sections_with_anomalies: number;
+        };
+        /**
+         * ExtractionPage
+         * @description Everything the pipeline produced for the spans starting on one page.
+         */
+        ExtractionPage: {
+            /**
+             * Book Urn
+             * @description Manifestation URN the page belongs to.
+             */
+            book_urn: string;
+            /**
+             * Entities
+             * @description Entities anchored on this page, span order then char order.
+             */
+            entities: components["schemas"]["ExtractionEntity"][];
+            /**
+             * Page Number
+             * @description 1-based page number.
+             */
+            page_number: number;
+            /**
+             * Spans
+             * @description Spans starting on this page, in order.
+             */
+            spans: components["schemas"]["ExtractionSpan"][];
+            /**
+             * Units
+             * @description Units starting on this page, in order.
+             */
+            units: components["schemas"]["ExtractionUnit"][];
+        };
+        /**
+         * ExtractionPattern
+         * @description One segment-phase pattern match recorded on a span.
+         */
+        ExtractionPattern: {
+            /**
+             * Char End
+             * @description Match end offset within the span text.
+             */
+            char_end: number;
+            /**
+             * Char Start
+             * @description Match start offset within the span text.
+             */
+            char_start: number;
+            /**
+             * Matched Text
+             * @description The exact text the pattern matched.
+             */
+            matched_text: string;
+            /**
+             * Pattern Id
+             * @description Routing-table pattern id (config/sol.yaml).
+             */
+            pattern_id: string;
+        };
+        /**
+         * ExtractionSpan
+         * @description One segment-phase span as stored in the manuscript artifact.
+         */
+        ExtractionSpan: {
+            /**
+             * Behavior
+             * @description Routed behavior label (HADITH_TRANSMISSION, ...).
+             */
+            behavior: string;
+            /**
+             * Footnote Text
+             * @description Footnote block split off the span, when present.
+             */
+            footnote_text?: string | null;
+            /**
+             * Hierarchy Depth
+             * @description Depth of the span in the section hierarchy.
+             */
+            hierarchy_depth: number;
+            /**
+             * Hierarchy Path
+             * @description TOC-anchored section path, root first.
+             */
+            hierarchy_path: string[];
+            /**
+             * Metadata
+             * @description Segment-phase metadata, decoded.
+             */
+            metadata: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Page End
+             * @description Last page the span covers.
+             */
+            page_end: number;
+            /**
+             * Page Start
+             * @description First page the span covers.
+             */
+            page_start: number;
+            /**
+             * Patterns
+             * @description Every pattern match that fed the behavior routing.
+             */
+            patterns: components["schemas"]["ExtractionPattern"][];
+            /**
+             * Span Id
+             * @description Stable span id (document order sorts correctly).
+             */
+            span_id: string;
+            /**
+             * Span Type
+             * @description Structural kind (content, heading, ...).
+             */
+            span_type: string;
+            /**
+             * Text Ar
+             * @description Arabic span text.
+             */
+            text_ar: string;
+        };
+        /**
+         * ExtractionUnit
+         * @description One extract-phase atomic unit (isnad, matn, hadith, ...).
+         */
+        ExtractionUnit: {
+            /**
+             * Behavior
+             * @description Behavior label inherited from the owning span.
+             */
+            behavior: string;
+            /**
+             * Metadata
+             * @description Extract-phase metadata, decoded.
+             */
+            metadata: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Page End
+             * @description Last page the unit covers.
+             */
+            page_end: number;
+            /**
+             * Page Start
+             * @description First page the unit covers.
+             */
+            page_start: number;
+            /**
+             * Span Id
+             * @description Owning span id.
+             */
+            span_id: string;
+            /**
+             * Text Ar
+             * @description Arabic unit text.
+             */
+            text_ar: string;
+            /**
+             * Unit Id
+             * @description Stable unit id (document order sorts correctly).
+             */
+            unit_id: string;
+            /**
+             * Unit Type
+             * @description Atomic kind (isnad, matn, hadith, ...).
+             */
+            unit_type: string;
+        };
+        /**
+         * Footnote
+         * @description One entry in a page's footnote apparatus: the editor's notes as printed.
+         *
+         *     The apparatus is page-local, mirroring the print edition: an entry is
+         *     served with the page whose foot it is printed on. Roughly 1% of corpus
+         *     markers reference an entry printed on the neighboring page; those entries
+         *     still appear on their own page, exactly as the edition prints them.
+         */
+        Footnote: {
+            /**
+             * Marker
+             * @description Entry number as printed in the edition ('1', '2', ...). None for unnumbered note text: a free-form editorial block, or the continuation of the previous page's entry in continuously numbered editions. The block split is lossless, so None never means a parse failure.
+             */
+            marker?: string | null;
+            /**
+             * Text
+             * @description Arabic note text as printed.
+             */
+            text: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -958,6 +1562,8 @@ export interface components {
              * @description Report number within the source (often non-integer like '1/34/h.1').
              */
             n: string;
+            /** Page */
+            page?: number | null;
             /** Sect */
             sect: string;
             /** Urn */
@@ -977,11 +1583,33 @@ export interface components {
              * @description Report number within the source (often non-integer like '1/34/h.1').
              */
             n: string;
+            /** Page */
+            page?: number | null;
             /** Sect */
             sect: string;
             /** Urn */
             urn?: string | null;
         };
+        /**
+         * HistoryEvent
+         * @description One chronicle entry keyed to a Hijri month + day.
+         */
+        HistoryEvent: {
+            /** Day */
+            day: number;
+            /** Detail */
+            detail: string;
+            /** En */
+            en: string;
+            /** Month */
+            month: number;
+            /**
+             * Year Ah
+             * @description 0 marks an event before the hijra.
+             */
+            year_ah: number;
+        };
+        JsonValue: unknown;
         /**
          * Narrator
          * @description One narrator in an isnad.
@@ -1022,6 +1650,25 @@ export interface components {
              * @description Role / position in the chain (companion, transmitter, ...).
              */
             role: string;
+        };
+        /**
+         * Observance
+         * @description One recurring date in the Hijri year.
+         */
+        Observance: {
+            /** Ar */
+            ar: string;
+            /** Day */
+            day: number;
+            /** En */
+            en: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "eid" | "mourning" | "birth" | "night" | "observance";
+            /** Month */
+            month: number;
         };
         /**
          * OpenTo
@@ -1309,6 +1956,31 @@ export interface components {
             volumes: components["schemas"]["VolumeFacet"][];
         };
         /**
+         * Surah
+         * @description One full surah: its numbered ayat in recitation order.
+         *
+         *     The dedicated Qurʾān reader consumes whole surahs; the longest (al-Baqara,
+         *     286 ayat) is small enough that the full run ships in one response rather
+         *     than a paged envelope.
+         */
+        Surah: {
+            /**
+             * Surah
+             * @description Surah number.
+             */
+            surah: number;
+            /**
+             * Verse Count
+             * @description Total ayat in the surah.
+             */
+            verse_count: number;
+            /**
+             * Verses
+             * @description The surah's numbered ayat, in order.
+             */
+            verses: components["schemas"]["Ayah"][];
+        };
+        /**
          * Tafsir
          * @description One tafsir excerpt attached to the verse of the day.
          */
@@ -1323,8 +1995,10 @@ export interface components {
             excerpt_ar: string;
             /** Excerpt En */
             excerpt_en: string;
+            /** Page */
+            page?: number | null;
             /** Urn */
-            urn: string;
+            urn?: string | null;
         };
         /**
          * Toc
@@ -1384,19 +2058,15 @@ export interface components {
         };
         /**
          * Verse
-         * @description Verse of the day with one or more tafsir excerpts.
+         * @description Verse of the day as served: the pool curation plus the canonical text.
          */
         Verse: {
             /** Ayah Ar */
             ayah_ar: string;
             /** Ayah En */
-            ayah_en: string;
+            ayah_en?: string | null;
             /** Ayah N */
             ayah_n: number;
-            /** Surah */
-            surah: string;
-            /** Surah Ar */
-            surah_ar: string;
             /** Surah N */
             surah_n: number;
             /** Tafsirs */
@@ -1438,7 +2108,12 @@ export interface components {
              * Canonical
              * @description Editorial rank, or None.
              */
-            canonical?: ("primary" | "primary_reference" | "secondary" | "tertiary") | null;
+            canonical?: ("primary_reference" | "primary" | "secondary" | "tertiary") | null;
+            /**
+             * Canonical Tier
+             * @description Editorial-rank tier derived from `canonical`, 0 = most authoritative; null when unranked. Served so client-side ordering and server-side `sort=canonical` paging share one tier table instead of each owning a copy.
+             */
+            readonly canonical_tier: number | null;
             /**
              * Category
              * @description Category slug (matches Domain.categories[].slug).
@@ -1504,6 +2179,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_almanac_api_almanac_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Almanac"];
+                };
+            };
+        };
+    };
     _list_books_api_books_get: {
         parameters: {
             query?: {
@@ -1672,6 +2367,69 @@ export interface operations {
             };
         };
     };
+    _page_citations_api_books__urn__pages__page__citations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                urn: string;
+                page: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Citation"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_volumes_api_books__urn__volumes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                urn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Book"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     _list_canonical_api_canonical_get: {
         parameters: {
             query?: {
@@ -1741,6 +2499,40 @@ export interface operations {
             };
         };
     };
+    _books_citing_api_citations__surah___aya__books_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                surah: number;
+                aya: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_today_api_daily_get: {
         parameters: {
             query?: never;
@@ -1757,6 +2549,89 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Daily"];
+                };
+            };
+        };
+    };
+    extraction_summaries_api_dev_extraction_books_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionBookSummary"][];
+                };
+            };
+        };
+    };
+    entry_audit_api_dev_extraction_books__book_urn__entry_audit_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_urn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionEntryAudit"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    page_extraction_api_dev_extraction_books__book_urn__pages__page_number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_urn: string;
+                page_number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1804,6 +2679,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_Ayah_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_surah_api_quran__surah__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                surah: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Surah"];
                 };
             };
             /** @description Validation Error */
@@ -1935,8 +2841,8 @@ export interface operations {
                 q?: string;
                 /** @description Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases). */
                 mode?: "exact" | "broad";
-                /** @description Restrict to a category slug. */
-                category?: string;
+                /** @description Restrict to these category slugs (repeatable; values OR together). */
+                category?: string[] | null;
                 /** @description Restrict to a book title (a work). */
                 book?: string;
                 /** @description Restrict to a volume number (0 = any). */
@@ -1968,44 +2874,6 @@ export interface operations {
             };
         };
     };
-    _search_books_api_search_books_get: {
-        parameters: {
-            query?: {
-                /** @description Title or author text; folded before matching. */
-                q?: string;
-                /** @description Match field: title, author, or any. */
-                field?: "title" | "author" | "any";
-                /** @description Records per page. */
-                limit?: number;
-                /** @description Records to skip. */
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_Book_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     _search_facets_api_search_facets_get: {
         parameters: {
             query?: {
@@ -2013,8 +2881,8 @@ export interface operations {
                 q?: string;
                 /** @description Match mode: 'exact' (whole phrase) or 'broad' (sub-phrases). */
                 mode?: "exact" | "broad";
-                /** @description Category to scope book facets to. */
-                category?: string;
+                /** @description Restrict to these category slugs (repeatable; values OR together). */
+                category?: string[] | null;
                 /** @description Book to scope volume facets to. */
                 book?: string;
             };
@@ -2053,8 +2921,12 @@ export interface operations {
                 domain?: string | null;
                 /** @description Tradition: sunni, shia, or shared. */
                 tradition?: string | null;
+                /** @description Filter to a canonical rank. */
+                canonical?: ("primary_reference" | "primary" | "secondary" | "tertiary") | null;
                 /** @description Search works by title or author. */
                 q?: string;
+                /** @description Ordering: canonical (rank tier, then death year), death_year_ah (undated last), title_ar, or volume_count. */
+                sort?: ("canonical" | "death_year_ah" | "title_ar" | "volume_count") | null;
                 /** @description Records per page. */
                 limit?: number;
                 /** @description Records to skip. */

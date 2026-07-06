@@ -1,24 +1,26 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { SearchScope } from '../lib/api/client';
 import { SEARCH_SCOPES } from '../lib/api/client';
-import { parseHash } from '../lib/routes';
+import { EMPTY_ROUTE, parseHash } from '../lib/routes';
 import type { RouteState } from '../lib/routes';
+import { saveReading } from '../lib/reading';
+import { recordSearch } from '../lib/searchHistory';
 import { useHashRoute } from '../lib/useHashRoute';
-import { DailyScreen } from '../features/daily/DailyScreen';
 import { GraphScreen } from '../features/graph/GraphScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { LibraryScreen } from '../features/library/LibraryScreen';
+import { QuranScreen } from '../features/quran/QuranScreen';
 import { ReaderScreen } from '../features/reader/ReaderScreen';
 import { SearchResults } from '../features/search/SearchResults';
+import { useContentFilters } from '../features/search/ContentScope';
+import type { ContentFilters } from '../features/search/ContentScope';
 import { DesignSystemScreen } from '../features/design/DesignSystemScreen';
+import { ExtractionScreen } from '../features/extraction/ExtractionScreen';
 import '../lib/design-system/tokens.css';
 import '../lib/design-system/base.css';
 import { AppShell } from './shell/AppShell';
 import type { NavView } from './shell/nav';
-
-// The book Home's "start reading" opens by default.
-const DEFAULT_URN = 'sY-50TSO';
 
 interface Reading {
   urn: string;
@@ -26,17 +28,31 @@ interface Reading {
   query: string;
 }
 
-const coerceScope = (scope: string): SearchScope =>
-  (SEARCH_SCOPES as readonly string[]).includes(scope) ? (scope as SearchScope) : 'content';
+/** Library deep-link scope: at most one of category / domain is set. */
+interface LibScope {
+  cat: string;
+  dom: string;
+}
+
+/** The catalog scopes that predated the folded works search; an old URL's
+    scope lands on its one successor instead of silently becoming content. */
+const LEGACY_WORKS_SCOPES = ['title', 'author', 'book'] as const;
+
+const coerceScope = (scope: string): SearchScope => {
+  if ((LEGACY_WORKS_SCOPES as readonly string[]).includes(scope)) return 'works';
+  return (SEARCH_SCOPES as readonly string[]).includes(scope) ? (scope as SearchScope) : 'content';
+};
 
 interface AppContentProps {
   searching: boolean;
   submitted: string;
   scope: SearchScope;
   view: NavView;
+  lib: LibScope;
+  quranFocus: { surah: number; aya: number } | null;
   runSearch: (next: string, nextScope: SearchScope) => void;
   openReader: (urn: string, page?: number, q?: string) => void;
-  onNav: (v: NavView) => void;
+  contentFilters: ContentFilters;
 }
 
 /** The shell's child: the search overlay when a query is submitted, otherwise the
@@ -46,24 +62,38 @@ function AppContent({
   submitted,
   scope,
   view,
+  lib,
+  quranFocus,
   runSearch,
   openReader,
-  onNav,
+  contentFilters,
 }: AppContentProps) {
   if (searching) {
     return (
-      <SearchResults query={submitted} scope={scope} onSearch={runSearch} onOpenReader={openReader} />
+      <SearchResults
+        query={submitted}
+        scope={scope}
+        onSearch={runSearch}
+        onOpenReader={openReader}
+        contentFilters={contentFilters}
+      />
     );
   }
   return (
     <>
-      {view === 'home' ? (
-        <HomeScreen onNav={onNav} onOpenReader={() => openReader(DEFAULT_URN)} />
+      {view === 'home' ? <HomeScreen onOpenReader={openReader} /> : null}
+      {view === 'library' ? (
+        <LibraryScreen
+          key={`${lib.cat}|${lib.dom}`}
+          initialCategory={lib.cat}
+          initialDomain={lib.dom}
+          onOpenReader={openReader}
+        />
       ) : null}
-      {view === 'library' ? <LibraryScreen onOpenReader={(urn) => openReader(urn)} /> : null}
-      {view === 'daily' ? <DailyScreen onOpenReader={(urn) => openReader(urn)} /> : null}
+      {view === 'quran' ? <QuranScreen query={submitted} focus={quranFocus} /> : null}
       {view === 'graph' ? <GraphScreen /> : null}
       {view === 'design' ? <DesignSystemScreen /> : null}
+      {view === 'extraction' ? <ExtractionScreen /> : null}
     </>
   );
 }
@@ -73,28 +103,70 @@ function AppContent({
     on Enter — never live as you type — so a slow corpus query runs once when you
     finish, not once per word. ``query`` is just the live input text; ``submitted``
     is the single source the SearchResults overlay and the URL read from. The Reader
-    is a full-screen takeover bound to a book URN + page. */
+    is a full-screen takeover bound to a book URN + page; every position it reaches
+    is persisted (reading.ts) so the landing page can offer re-entry. The content
+    scope's filters (mode/categories/book, useContentFilters) are lifted here too,
+    for the same reason: round-tripped through the URL, they survive a Reader visit
+    and back, and make the search results page itself bookmarkable at its exact
+    filtered state. */
 export function App() {
   const initial = parseHash(window.location.hash);
   const [view, setView] = useState<NavView>(initial.view);
   const [query, setQuery] = useState(initial.reading ? '' : initial.query);
   const [submitted, setSubmitted] = useState(initial.reading ? '' : initial.query);
   const [scope, setScope] = useState<SearchScope>(coerceScope(initial.scope));
+  const [lib, setLib] = useState<LibScope>({ cat: initial.cat, dom: initial.dom });
+  const contentFilters = useContentFilters(initial);
   const [reading, setReading] = useState<Reading | null>(
-    initial.reading ? { ...initial.reading, query: '' } : null,
+    initial.reading ? { ...initial.reading } : null,
   );
+  const [quranFocus, setQuranFocus] = useState(initial.focus);
+
+  useEffect(() => {
+    if (reading) saveReading(reading.urn, reading.page);
+  }, [reading]);
 
   const route: RouteState = reading
-    ? { view, query: '', scope, reading: { urn: reading.urn, page: reading.page } }
-    : { view, query: submitted, scope, reading: null };
-  const applyRoute = useCallback((next: RouteState) => {
-    setView(next.view);
-    setScope(coerceScope(next.scope));
-    setQuery(next.reading ? '' : next.query);
-    setSubmitted(next.reading ? '' : next.query);
-    setReading(next.reading ? { ...next.reading, query: '' } : null);
-  }, []);
+    ? {
+        ...EMPTY_ROUTE,
+        view,
+        scope,
+        reading: { urn: reading.urn, page: reading.page, query: reading.query },
+      }
+    : {
+        view,
+        query: submitted,
+        scope,
+        cat: lib.cat,
+        dom: lib.dom,
+        reading: null,
+        focus: view === 'quran' ? quranFocus : null,
+        ...contentFilters.route,
+      };
+  const applyRoute = useCallback(
+    (next: RouteState) => {
+      setView(next.view);
+      setScope(coerceScope(next.scope));
+      setQuery(next.reading ? '' : next.query);
+      setSubmitted(next.reading ? '' : next.query);
+      setLib({ cat: next.cat, dom: next.dom });
+      setReading(next.reading ? { ...next.reading } : null);
+      setQuranFocus(next.focus);
+      contentFilters.restore(next);
+    },
+    [contentFilters.restore],
+  );
   useHashRoute(route, applyRoute);
+
+  // A Qurʾān citation in the reader closes the takeover and opens the Qurʾān
+  // view focused on that verse.
+  const openVerse = (surah: number, aya: number) => {
+    setReading(null);
+    setView('quran');
+    setQuery('');
+    setSubmitted('');
+    setQuranFocus({ surah, aya });
+  };
 
   if (reading) {
     return (
@@ -103,6 +175,8 @@ export function App() {
         page={reading.page}
         initialQuery={reading.query}
         onPage={(p) => setReading((r) => (r ? { ...r, page: p } : r))}
+        onVolume={(u) => setReading((r) => (r ? { ...r, urn: u, page: 1 } : r))}
+        onCite={openVerse}
         onBack={() => setReading(null)}
       />
     );
@@ -113,40 +187,57 @@ export function App() {
     setView(v);
     setQuery('');
     setSubmitted('');
+    setLib({ cat: '', dom: '' });
+    setQuranFocus(null);
+    contentFilters.reset();
   };
   // Typing only updates the field; clearing it closes the results. Enter commits.
   const onQuery = (next: string) => {
     setQuery(next);
     if (!next.trim()) setSubmitted('');
   };
-  const onSearch = () => setSubmitted(query.trim());
+  const onSearch = () => {
+    const trimmed = query.trim();
+    setSubmitted(trimmed);
+    recordSearch(trimmed, scope);
+  };
   // A result can launch a new search (a Qurʾān verse opens its reference): set
-  // scope + query as state and let useHashRoute mirror it to the URL.
+  // scope + query as state and let useHashRoute mirror it to the URL. Also the
+  // header's recent-searches dropdown re-runs a past query+scope through this.
   const runSearch = (next: string, nextScope: SearchScope) => {
     setScope(nextScope);
     setQuery(next);
     setSubmitted(next);
+    recordSearch(next, nextScope);
   };
-  const searching = submitted.trim().length > 0;
+  // On the Qurʾān page the header search is sūra-scoped: the submitted term
+  // filters the open sūra in place instead of opening the overlay, and the
+  // field's clear button restores the unfiltered page.
+  const searching = submitted.trim().length > 0 && view !== 'quran';
 
   return (
     <AppShell
       active={view}
       query={query}
       scope={scope}
+      scopeLock={view === 'quran' ? 'this sūra' : undefined}
       onNav={onNav}
       onQuery={onQuery}
       onSearch={onSearch}
       onScope={setScope}
+      onClear={() => onQuery('')}
+      onPickHistory={runSearch}
     >
       <AppContent
         searching={searching}
         submitted={submitted}
         scope={scope}
         view={view}
+        lib={lib}
+        quranFocus={quranFocus}
         runSearch={runSearch}
         openReader={openReader}
-        onNav={onNav}
+        contentFilters={contentFilters.filters}
       />
     </AppShell>
   );

@@ -19,6 +19,7 @@ from typing import Any
 from backend.build import manuscript as manuscript_build
 from backend.build import runner
 from backend.build.narrator_link import NarratorLinker, annotate_manuscript
+from backend.core.constants import ARTIFACT__MANUSCRIPT_DB
 from backend.core.paths import data_path
 from backend.models.book import Book
 from backend.pipeline.config import Config, load_config
@@ -50,7 +51,12 @@ def _process_book(book: Book, config: Config) -> Manuscript | None:
     if not rows:
         return None
     pages = [
-        ManuscriptPage(page_number=row.page, page_name=str(row.page), text=row.content)
+        ManuscriptPage(
+            page_number=row.page,
+            page_name=str(row.page),
+            text=row.content,
+            footnote=row.footnote,
+        )
         for row in rows
     ]
     manuscript = Manuscript(
@@ -89,6 +95,24 @@ def _build(args: argparse.Namespace) -> dict[str, object]:
         manuscript_build.TABLES,
         _project,
         limit=args.limit,
+        urns=args.urns,
+    )
+
+
+def _add_args(parser: argparse.ArgumentParser) -> None:
+    """Offer ``--urn`` (repeatable): build exactly those catalog entries.
+
+    The targeted-validation path — extraction over one named book, inspected
+    through the dev extraction API — instead of a positional ``--limit``
+    prefix of the whole catalog.
+    """
+    parser.add_argument(
+        "--urn",
+        action="append",
+        dest="urns",
+        default=None,
+        metavar="URN",
+        help="build only this catalog URN; repeat the flag for several books",
     )
 
 
@@ -96,8 +120,9 @@ def main() -> None:
     """Run the manuscript index build CLI."""
     runner.run_build_cli(
         "Build the manuscript span/entity/unit store via segment+extract.",
-        data_path("manuscript.db"),
+        data_path(ARTIFACT__MANUSCRIPT_DB),
         _build,
+        add_args=_add_args,
     )
 
 

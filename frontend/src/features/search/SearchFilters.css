@@ -1,26 +1,18 @@
-/* SearchFilters.css — one unified bar above the results: match mode, the source
-   cascade as chevron-linked chips/menus, and the promoted result count. The
-   controls are design-system primitives; this file owns only the bar layout.
-   Colors/spacing/radii/shadows come only from tokens. */
+/* SearchFilters.css — the flat search toolbar, in the library's chrome
+   dialect: match mode, active-scope chips, and the promoted result count over
+   one hairline rule. No card, no elevation. The controls are design-system
+   primitives; this file owns only the bar layout. Tokens only. */
 .search-filters {
-  position: sticky;
-  top: var(--space-sm);
-  z-index: var(--z-sticky);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  margin-bottom: var(--space-lg);
-  background: color-mix(in oklch, var(--color-surface-raised) 86%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  padding-bottom: var(--space-sm);
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
 }
 
-/* Thin rule between the match toggle and the source cascade. */
+/* Thin rule between the match toggle and the active-scope chips. */
 .search-filters__sep {
   align-self: stretch;
   width: var(--border-width);
@@ -33,10 +25,6 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-xs);
-}
-.search-filters__chevron {
-  display: inline-flex;
-  color: var(--color-text-faint);
 }
 
 .search-filters__count {

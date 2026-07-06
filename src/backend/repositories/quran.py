@@ -17,7 +17,7 @@ from functools import lru_cache
 from typing import Any, cast
 
 from backend.core.errors import ResourceNotFoundError
-from backend.models.quran import Ayah
+from backend.models.quran import Ayah, Surah
 from backend.patterns import WHITESPACE, fold_search, strip_diacritics
 from backend.repositories._data_loader import load_json, slice_page
 
@@ -47,6 +47,26 @@ def get_verse(surah: int, ayah: int) -> Ayah:
     )
 
 
+def get_surah(surah: int) -> Surah:
+    """Resolve a surah number to its full run of numbered ayat, in order.
+
+    The prefatory basmala (key ``0``) is skipped, matching the search index:
+    it is not a numbered ayah.
+    """
+    chapter = _quran().get(str(surah))
+    if not isinstance(chapter, dict):
+        raise ResourceNotFoundError(kind="surah", identifier=str(surah))
+    chapter_dict = cast(dict[str, Any], chapter)
+    verses = cast(dict[str, Any], chapter_dict["verses"])
+    verse_count = cast(int, chapter_dict["verse_count"])
+    ayat = [
+        _make_ayah(surah, n, verse_count, verses[str(n)]["ar"], verses[str(n)].get("en"))
+        for n in sorted(int(a) for a in verses)
+        if n != 0
+    ]
+    return Surah(surah=surah, verse_count=verse_count, verses=ayat)
+
+
 def _make_ayah(surah: int, ayah: int, verse_count: int, text_ar: str, text_en: str | None) -> Ayah:
     """Assemble an :class:`Ayah`, deriving the bare ``text_plain`` from ``text_ar``."""
     return Ayah(
@@ -57,6 +77,13 @@ def _make_ayah(surah: int, ayah: int, verse_count: int, text_ar: str, text_en: s
         text_plain=strip_diacritics(text_ar),
         text_en=text_en,
     )
+
+
+def _search_fold(text: str) -> str:
+    """The one searchable form of Qurʾān text: diacritic-folded via the search
+    SSOT with whitespace collapsed. Index build and query MUST fold identically
+    or every search silently misses, so both call this."""
+    return WHITESPACE.sub(" ", fold_search(text)).strip()
 
 
 @lru_cache(maxsize=1)
@@ -75,7 +102,7 @@ def _folded_index() -> tuple[tuple[int, int, int, str, str, str | None], ...]:
                 continue
             verse = verses[str(ayah)]
             text_ar = verse["ar"]
-            folded = WHITESPACE.sub(" ", fold_search(text_ar)).strip()
+            folded = _search_fold(text_ar)
             rows.append((surah, ayah, verse_count, text_ar, folded, verse.get("en")))
     return tuple(rows)
 
@@ -84,7 +111,7 @@ def search_verses(q: str, limit: int, offset: int) -> tuple[list[Ayah], int]:
     """Find every ayah whose folded text contains the folded query, in surah:ayah
     order, returning the ``(slice, total)`` the route wraps in a Page. A blank
     query matches nothing rather than every verse."""
-    needle = WHITESPACE.sub(" ", fold_search(q)).strip()
+    needle = _search_fold(q)
     if not needle:
         return [], 0
     hits = [

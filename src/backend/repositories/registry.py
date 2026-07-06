@@ -17,12 +17,10 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from backend.core.constants import HTTP__DEFAULT_PAGE_SIZE
+from backend.core.constants import ARTIFACT__REGISTRY_DB, HTTP__DEFAULT_PAGE_SIZE
 from backend.core.errors import ResourceNotFoundError
 from backend.models.narrator import CanonicalEntry, RijalEntry
 from backend.repositories._data_loader import open_ro_db
-
-_DB_FILE = "registry.db"
 
 _RIJAL_FILTER = """
 FROM rijal
@@ -51,7 +49,8 @@ _CANONICAL_PAGE = (
 def _connect() -> sqlite3.Connection:
     """Open the registry database read-only via the shared artifact opener."""
     return open_ro_db(
-        _DB_FILE, "Narrator registry not built; run scripts/build_registry.py to materialize it"
+        ARTIFACT__REGISTRY_DB,
+        "Narrator registry not built; run scripts/build_registry.py to materialize it",
     )
 
 

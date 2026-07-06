@@ -1,0 +1,75 @@
+/* SearchHistoryMenu: the header search field's anchored recent-searches
+   panel. Anchored to .app-header__search (Header.css), dismissible, never a
+   modal. Tokens only, same shell as Menu's ds-menu__list / FilterPopover. */
+
+.search-history {
+  position: absolute;
+  top: calc(100% + var(--space-2xs));
+  left: 0;
+  right: 0;
+  z-index: var(--z-overlay);
+  padding: var(--space-2xs);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+}
+.search-history__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.search-history__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+.search-history__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  text-align: left;
+}
+.search-history__row:hover {
+  background: var(--color-surface-sunken);
+}
+.search-history__icon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.search-history__query {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-history__remove {
+  flex-shrink: 0;
+  padding: var(--space-2xs);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-faint);
+}
+.search-history__remove:hover {
+  color: var(--color-text);
+  background: var(--color-surface-sunken);
+}
+.search-history__foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-2xs) var(--space-sm) 0;
+  border-top: 1px solid var(--color-border-hair);
+  margin-top: var(--space-2xs);
+}
+.search-history__clear {
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+}
+.search-history__clear:hover {
+  background: var(--color-surface-sunken);
+}
