@@ -546,7 +546,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List volume-folded works, optionally filtered by category, domain, or tradition.
+         * List volume-folded works, optionally filtered by category, domain, tradition, or resolved to the exact works containing a given set of volume URNs.
          * @description Wrap the repo's (slice, total) of works into a Page[Work] envelope.
          */
         get: operations["_list_works_api_works_get"];
@@ -3117,6 +3117,8 @@ export interface operations {
                 q?: string;
                 /** @description Ordering: canonical (rank tier, then death year), death_year_ah (undated last), title_ar, or volume_count. */
                 sort?: ("canonical" | "death_year_ah" | "title_ar" | "volume_count") | null;
+                /** @description Resolve to the exact works containing these volume URNs (repeatable), e.g. a content-search hit window's book set. */
+                urn?: string[] | null;
                 /** @description Records per page. */
                 limit?: number;
                 /** @description Records to skip. */

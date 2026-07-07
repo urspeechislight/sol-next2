@@ -38,6 +38,15 @@ async def _list_works(
             )
         ),
     ] = None,
+    urn: Annotated[
+        list[str] | None,
+        Query(
+            description=(
+                "Resolve to the exact works containing these volume URNs "
+                "(repeatable), e.g. a content-search hit window's book set."
+            )
+        ),
+    ] = None,
 ) -> Page[Work]:
     """Wrap the repo's (slice, total) of works into a Page[Work] envelope."""
     reject_unknown("domain", domain, _taxonomy.is_known_domain)
@@ -54,6 +63,7 @@ async def _list_works(
                 canonical=canonical,
                 q=q,
                 sort=sort,
+                urns=frozenset(urn) if urn is not None else None,
             ),
             limit=page.limit,
             offset=page.offset,
@@ -66,5 +76,8 @@ get_route(
     "/works",
     _list_works,
     response_model=Page[Work],
-    summary="List volume-folded works, optionally filtered by category, domain, or tradition.",
+    summary=(
+        "List volume-folded works, optionally filtered by category, domain, tradition, "
+        "or resolved to the exact works containing a given set of volume URNs."
+    ),
 )

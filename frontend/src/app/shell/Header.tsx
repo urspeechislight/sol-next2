@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 
-import { Button, Icon, Input, Link, Logo, Menu, useDismiss } from '../../lib/design-system';
+import { Button, Input, Link, Logo, Menu, useDismiss } from '../../lib/design-system';
 import type { MenuOption } from '../../lib/design-system';
 import type { SearchScope } from '../../lib/api/client';
 import { viewHref } from '../../lib/routes';
@@ -19,20 +19,23 @@ const SCOPES: MenuOption[] = [
   { value: 'quran', label: 'Qurʾān', icon: 'reader' },
 ];
 
+/** Only offered while the Qurʾān reader is open (prepended ahead of SCOPES,
+    so it's the default pick on landing there): filters the currently open
+    sūra in place instead of searching the whole corpus. */
+const SURA_SCOPE: MenuOption = { value: 'sura', label: 'This Sūra', icon: 'bookmark' };
+
 const PLACEHOLDER: Record<SearchScope, string> = {
   content: 'Search book text…',
   works: 'Search works by title or author…',
   narrator: 'Search narrators…',
   quran: 'A word, or Surah:Ayah like 68:4',
+  sura: 'Search this sūra…',
 };
 
 export interface HeaderProps {
   active: NavView;
   query: string;
   scope: SearchScope;
-  /** Locks the search to a contextual scope (shown read-only in the scope
-      menu's slot), e.g. "this sūra" while the Qurʾān page is open. */
-  scopeLock?: string;
   onNav: (view: NavView) => void;
   onQuery: (q: string) => void;
   onSearch: () => void;
@@ -46,7 +49,6 @@ export function Header({
   active,
   query,
   scope,
-  scopeLock,
   onNav,
   onQuery,
   onSearch,
@@ -58,10 +60,10 @@ export function Header({
   const [historyOpen, setHistoryOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   useDismiss(searchRef, historyOpen, () => setHistoryOpen(false));
-  // The dropdown only makes sense for the global header search: while
-  // scope-locked (the Qurʾān page's in-place sūra filter) or once the field
-  // has text, it stays hidden.
-  const showHistory = historyOpen && !scopeLock && !query.trim();
+  // Recent searches are cross-scope by nature: while the Qurʾān page's
+  // in-place sūra filter is active, or once the field has text, it stays hidden.
+  const showHistory = historyOpen && scope !== 'sura' && !query.trim();
+  const scopeOptions = active === 'quran' ? [SURA_SCOPE, ...SCOPES] : SCOPES;
 
   return (
     <header className="app-header">
@@ -94,23 +96,16 @@ export function Header({
           type="search"
           icon="search"
           ariaLabel="Search"
-          placeholder={scopeLock ? `Search ${scopeLock}…` : PLACEHOLDER[scope]}
+          placeholder={PLACEHOLDER[scope]}
           leading={
             <>
-              {scopeLock ? (
-                <span className="app-header__scope-lock">
-                  <Icon name="reader" size="sm" />
-                  {scopeLock}
-                </span>
-              ) : (
-                <Menu
-                  variant="bare"
-                  value={scope}
-                  options={SCOPES}
-                  ariaLabel="Search scope"
-                  onChange={(v) => onScope(v as SearchScope)}
-                />
-              )}
+              <Menu
+                variant="bare"
+                value={scope}
+                options={scopeOptions}
+                ariaLabel="Search scope"
+                onChange={(v) => onScope(v as SearchScope)}
+              />
               <span className="app-header__scope-sep" aria-hidden="true" />
             </>
           }

@@ -151,7 +151,9 @@ class WorksQuery:
 
     ``sort`` draws from the closed ``WorkSort`` set; it is a Literal so the
     API layer rejects an unknown ``?sort=`` with a 422 instead of silently
-    serving storage order.
+    serving storage order. ``urns`` narrows to the exact works containing
+    those volume URNs (e.g. a content-search hit window), resolved through
+    the same URN-stem fold every work uses; ``None`` means no such constraint.
     """
 
     category: str | None = None
@@ -160,6 +162,7 @@ class WorksQuery:
     canonical: Canonical | None = None
     q: str = ""
     sort: WorkSort | None = None
+    urns: frozenset[str] | None = None
 
 
 def _order_works(works: list[Work], sort: WorkSort | None) -> list[Work]:
@@ -208,12 +211,16 @@ def list_works(
     offset: int = 0,
 ) -> tuple[list[Work], int]:
     """Return ``(slice, total)`` of volume-folded works, scoped by category,
-    domain, and/or tradition, optionally narrowed to one canonical rank (the
-    Library's landmark rotations ask for ``primary_reference``), and optionally
+    domain, and/or tradition, optionally resolved to the exact works
+    containing given ``urns``, narrowed to one canonical rank (the Library's
+    landmark rotations ask for ``primary_reference``), and optionally
     text-matched on ``q`` (title or author, diacritic-insensitive for Arabic
     and lower-cased for Latin)."""
     scope = _scope_slugs(query.category, query.domain, query.tradition)
     works = list(_works()) if scope is None else [w for w in _works() if w.category in scope]
+    if query.urns is not None:
+        stems = {_stem(urn) for urn in query.urns}
+        works = [w for w in works if w.stem in stems]
     if query.canonical is not None:
         works = [w for w in works if w.canonical == query.canonical]
     needle = query.q.strip()

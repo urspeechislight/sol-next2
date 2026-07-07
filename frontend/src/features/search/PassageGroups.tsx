@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
+
 import { Highlight, IndexRow, Link, NewTabLink } from '../../lib/design-system';
 import { readerHref } from '../../lib/routes';
-import type { CorpusMatch } from '../../lib/types';
+import type { CorpusMatch, Work } from '../../lib/types';
 import { countLabel } from '../../lib/utils';
-import { groupByWork, refLabel } from './passages';
+import { groupByWork, refLabel, workKey } from './passages';
 import './PassageGroups.css';
 
 export interface PassageGroupsProps {
@@ -15,6 +17,11 @@ export interface PassageGroupsProps {
       category); empty at corpus scope, where the meta slot stays blank
       rather than dressing a window-local number as a total. */
   bookCounts: ReadonlyMap<string, number>;
+  /** The hit window's matched books, already era/author/sort-filtered by the
+      content scope's FilterBar (worksFilter.ts's applyFilters) — narrows and
+      reorders the groups to match. Null while the resolve is still in flight
+      or wasn't requested, so a slow join never blanks the stream. */
+  filteredWorks: readonly Work[] | null;
   onPickBook: (title: string) => void;
   onOpen: (urn: string, page: number) => void;
 }
@@ -31,10 +38,16 @@ export function PassageGroups({
   q,
   activeBook,
   bookCounts,
+  filteredWorks,
   onPickBook,
   onOpen,
 }: PassageGroupsProps) {
-  const groups = groupByWork(items);
+  const groups = useMemo(() => {
+    const all = groupByWork(items);
+    if (!filteredWorks) return all;
+    const rank = new Map(filteredWorks.map((w, i) => [workKey(w), i]));
+    return all.filter((g) => rank.has(g.key)).sort((a, b) => rank.get(a.key)! - rank.get(b.key)!);
+  }, [items, filteredWorks]);
   return (
     <div className="pg">
       {groups.map((g) => {

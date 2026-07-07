@@ -1,0 +1,124 @@
+/* CalendarCard — the folio's bottom-right card, filling the leaf's lower half:
+   today's Hijri date over the month's observances. Today is marked
+   typographically (accent numeral + tag), never with a highlight bubble.
+   Tokens only. */
+
+.calcard {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+.calcard__eyebrow {
+  display: flex;
+  margin-bottom: var(--space-sm);
+}
+
+/* ---- today's date --------------------------------------------------------- */
+.calcard__today {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin: 0;
+}
+.calcard__today-day {
+  font-family: var(--font-serif);
+  font-size: var(--text-display);
+  line-height: 1;
+  color: var(--color-accent-deep);
+}
+.calcard__today-month {
+  font-family: var(--font-ar-display);
+  font-size: var(--text-xl);
+  color: var(--color-text);
+}
+.calcard__today-year {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--color-text-faint);
+}
+.calcard__gregorian {
+  margin: var(--space-2xs) 0 var(--space-md);
+}
+
+/* ---- month observances ----------------------------------------------------- */
+.calcard__month {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.calcard__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+  border-top: 1px solid var(--color-border-hair);
+}
+.calcard__row--past {
+  opacity: 0.55;
+}
+.calcard__row--today .calcard__row-day,
+.calcard__row--today .calcard__row-en {
+  color: var(--color-accent-deep);
+  font-weight: var(--weight-semibold);
+}
+.calcard__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  flex: none;
+  align-self: center;
+}
+.calcard__dot--eid {
+  background: var(--color-accent-strong);
+}
+.calcard__dot--birth {
+  background: var(--color-success);
+}
+.calcard__dot--mourning {
+  background: var(--color-danger);
+}
+.calcard__dot--night {
+  background: var(--color-verse);
+}
+.calcard__dot--observance {
+  background: var(--color-text-ghost);
+}
+.calcard__row-day {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+  width: 1.6em;
+  text-align: right;
+  flex: none;
+}
+.calcard__row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.calcard__row-en {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.calcard__row-ar {
+  font-family: var(--font-ar);
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+  flex: none;
+}
+.calcard__row-tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-deep);
+  flex: none;
+  align-self: center;
+}
