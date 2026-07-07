@@ -43,6 +43,7 @@ export const HOME = {
 export const REGISTRY = {
   RIJAL: 'rijal',
   CANONICAL: 'canonical',
+  PERSON: 'person',
 } as const;
 
 export const THEME = {

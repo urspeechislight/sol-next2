@@ -388,7 +388,7 @@
         "type": "object"
       },
       "CanonicalEntry": {
-        "description": "A canonicalized person, merging one identity across sources.",
+        "description": "A canonicalized person, one identity across sources (legacy; see PersonEntry).",
         "properties": {
           "birth_year": {
             "anyOf": [
@@ -1826,6 +1826,39 @@
         "title": "Page[CorpusMatch]",
         "type": "object"
       },
+      "Page_PersonEntry_": {
+        "properties": {
+          "items": {
+            "description": "Records in this slice.",
+            "items": {
+              "$ref": "#/components/schemas/PersonEntry"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "description": "Slice size requested.",
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "description": "Number of records skipped before this slice.",
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Total records matching the query, across all pages.",
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "limit", "offset"],
+        "title": "Page[PersonEntry]",
+        "type": "object"
+      },
       "Page_RijalEntry_": {
         "properties": {
           "items": {
@@ -1890,6 +1923,196 @@
         },
         "required": ["items", "total", "limit", "offset"],
         "title": "Page[Work]",
+        "type": "object"
+      },
+      "PersonEdge": {
+        "description": "A teacher or student relation of a person, linked to a person id when known.",
+        "properties": {
+          "name": {
+            "description": "The related narrator's name as recorded.",
+            "title": "Name",
+            "type": "string"
+          },
+          "other_person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resolved person id of the relation, or null when unlinked.",
+            "title": "Other Person Id"
+          },
+          "relation": {
+            "description": "'teacher' or 'student'.",
+            "title": "Relation",
+            "type": "string"
+          }
+        },
+        "required": ["relation", "name"],
+        "title": "PersonEdge",
+        "type": "object"
+      },
+      "PersonEntry": {
+        "description": "An authoritative narrator identity, cross-checked across its source entries.",
+        "properties": {
+          "bio": {
+            "default": "",
+            "description": "Longest available biographical snippet.",
+            "title": "Bio",
+            "type": "string"
+          },
+          "birth_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Birth year, Hijri, when known.",
+            "title": "Birth Year"
+          },
+          "confidence": {
+            "default": "medium",
+            "description": "Record confidence (high/medium).",
+            "title": "Confidence",
+            "type": "string"
+          },
+          "death_conflict": {
+            "default": false,
+            "description": "Sources disagree on the death year.",
+            "title": "Death Conflict",
+            "type": "boolean"
+          },
+          "death_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reconciled Hijri death year.",
+            "title": "Death Year"
+          },
+          "event_count": {
+            "description": "Historical events attributed to this person.",
+            "minimum": 0.0,
+            "title": "Event Count",
+            "type": "integer"
+          },
+          "full_name": {
+            "description": "Full name in Arabic.",
+            "title": "Full Name",
+            "type": "string"
+          },
+          "kunya": {
+            "default": "",
+            "description": "Teknonym (Abu/Umm ...), if recorded.",
+            "title": "Kunya",
+            "type": "string"
+          },
+          "n_sources": {
+            "description": "Raw corpus entries merged into this identity.",
+            "minimum": 0.0,
+            "title": "N Sources",
+            "type": "integer"
+          },
+          "name_variants": {
+            "default": "",
+            "description": "Distinct spellings, pipe-separated.",
+            "title": "Name Variants",
+            "type": "string"
+          },
+          "nisba": {
+            "default": "",
+            "description": "Attributive name (tribe/place), if recorded.",
+            "title": "Nisba",
+            "type": "string"
+          },
+          "person_id": {
+            "description": "Stable person identity id + detail-route key.",
+            "minimum": 0.0,
+            "title": "Person Id",
+            "type": "integer"
+          },
+          "places": {
+            "default": "",
+            "description": "Associated places, pipe-separated.",
+            "title": "Places",
+            "type": "string"
+          },
+          "reliability": {
+            "description": "Per-evaluator reliability grades (evaluator=term).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Reliability",
+            "type": "array"
+          },
+          "source_books": {
+            "default": "",
+            "description": "Source works, pipe-separated.",
+            "title": "Source Books",
+            "type": "string"
+          },
+          "stance": {
+            "default": "",
+            "description": "Position vis-a-vis ahlulbayt, when evaluated.",
+            "title": "Stance",
+            "type": "string"
+          },
+          "tradition": {
+            "default": "",
+            "description": "Sunni / shia / both, when classified.",
+            "title": "Tradition",
+            "type": "string"
+          }
+        },
+        "required": ["full_name", "person_id", "n_sources", "event_count"],
+        "title": "PersonEntry",
+        "type": "object"
+      },
+      "PersonEvent": {
+        "description": "A historical event attributed to a person.",
+        "properties": {
+          "event": {
+            "default": "",
+            "description": "Event name (battle, conquest, ...).",
+            "title": "Event",
+            "type": "string"
+          },
+          "event_type": {
+            "default": "",
+            "description": "Event category (BATTLE, CONQUEST, ...).",
+            "title": "Event Type",
+            "type": "string"
+          },
+          "role": {
+            "default": "",
+            "description": "Marker keyword linking person to event.",
+            "title": "Role",
+            "type": "string"
+          },
+          "year_ah": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hijri year of the event, when dated.",
+            "title": "Year Ah"
+          }
+        },
+        "title": "PersonEvent",
         "type": "object"
       },
       "RijalEntry": {
@@ -3164,6 +3387,256 @@
         },
         "summary": "List all knowledge domains and their categories.",
         "tags": ["domains"]
+      }
+    },
+    "/api/person": {
+      "get": {
+        "description": "Wrap the repo's (slice, total) into a Page[PersonEntry] envelope.",
+        "operationId": "_list_person_api_person_get",
+        "parameters": [
+          {
+            "description": "Substring match on name / kunya / nisba / variants.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Substring match on name / kunya / nisba / variants.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by tradition (sunni / shia / both).",
+            "in": "query",
+            "name": "tradition",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Filter by tradition (sunni / shia / both).",
+              "title": "Tradition",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by ahlulbayt stance.",
+            "in": "query",
+            "name": "stance",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Filter by ahlulbayt stance.",
+              "title": "Stance",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by record confidence (high / medium).",
+            "in": "query",
+            "name": "confidence",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Filter by record confidence (high / medium).",
+              "title": "Confidence",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only persons with historical events.",
+            "in": "query",
+            "name": "has_events",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Only persons with historical events.",
+              "title": "Has Events",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Records per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Records per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Records to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Records to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_PersonEntry_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List enriched narrator persons with pagination + filters.",
+        "tags": ["person"]
+      }
+    },
+    "/api/person/{person_id}": {
+      "get": {
+        "description": "Return one enriched person by id, or raise ``ResourceNotFoundError``.",
+        "operationId": "get_person_api_person__person_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get a single enriched person by id.",
+        "tags": ["person"]
+      }
+    },
+    "/api/person/{person_id}/edges": {
+      "get": {
+        "description": "Return a person's teacher/student relations (linked to a person id when known).",
+        "operationId": "get_person_edges_api_person__person_id__edges_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PersonEdge"
+                  },
+                  "title": "Response Get Person Edges Api Person  Person Id  Edges Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get a person's teacher/student relations.",
+        "tags": ["person"]
+      }
+    },
+    "/api/person/{person_id}/events": {
+      "get": {
+        "description": "Return the historical events attributed to a person.",
+        "operationId": "get_person_events_api_person__person_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PersonEvent"
+                  },
+                  "title": "Response Get Person Events Api Person  Person Id  Events Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get the historical events attributed to a person.",
+        "tags": ["person"]
       }
     },
     "/api/quran/search": {

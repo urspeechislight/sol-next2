@@ -355,6 +355,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/person": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List enriched narrator persons with pagination + filters.
+         * @description Wrap the repo's (slice, total) into a Page[PersonEntry] envelope.
+         */
+        get: operations["_list_person_api_person_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/person/{person_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a single enriched person by id.
+         * @description Return one enriched person by id, or raise ``ResourceNotFoundError``.
+         */
+        get: operations["get_person_api_person__person_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/person/{person_id}/edges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a person's teacher/student relations.
+         * @description Return a person's teacher/student relations (linked to a person id when known).
+         */
+        get: operations["get_person_edges_api_person__person_id__edges_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/person/{person_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the historical events attributed to a person.
+         * @description Return the historical events attributed to a person.
+         */
+        get: operations["get_person_events_api_person__person_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/quran/search": {
         parameters: {
             query?: never;
@@ -806,7 +886,7 @@ export interface components {
         };
         /**
          * CanonicalEntry
-         * @description A canonicalized person, merging one identity across sources.
+         * @description A canonicalized person, one identity across sources (legacy; see PersonEntry).
          */
         CanonicalEntry: {
             /**
@@ -1795,6 +1875,29 @@ export interface components {
              */
             total: number;
         };
+        /** Page[PersonEntry] */
+        Page_PersonEntry_: {
+            /**
+             * Items
+             * @description Records in this slice.
+             */
+            items: components["schemas"]["PersonEntry"][];
+            /**
+             * Limit
+             * @description Slice size requested.
+             */
+            limit: number;
+            /**
+             * Offset
+             * @description Number of records skipped before this slice.
+             */
+            offset: number;
+            /**
+             * Total
+             * @description Total records matching the query, across all pages.
+             */
+            total: number;
+        };
         /** Page[RijalEntry] */
         Page_RijalEntry_: {
             /**
@@ -1840,6 +1943,157 @@ export interface components {
              * @description Total records matching the query, across all pages.
              */
             total: number;
+        };
+        /**
+         * PersonEdge
+         * @description A teacher or student relation of a person, linked to a person id when known.
+         */
+        PersonEdge: {
+            /**
+             * Name
+             * @description The related narrator's name as recorded.
+             */
+            name: string;
+            /**
+             * Other Person Id
+             * @description Resolved person id of the relation, or null when unlinked.
+             */
+            other_person_id?: number | null;
+            /**
+             * Relation
+             * @description 'teacher' or 'student'.
+             */
+            relation: string;
+        };
+        /**
+         * PersonEntry
+         * @description An authoritative narrator identity, cross-checked across its source entries.
+         */
+        PersonEntry: {
+            /**
+             * Bio
+             * @description Longest available biographical snippet.
+             * @default
+             */
+            bio: string;
+            /**
+             * Birth Year
+             * @description Birth year, Hijri, when known.
+             */
+            birth_year?: number | null;
+            /**
+             * Confidence
+             * @description Record confidence (high/medium).
+             * @default medium
+             */
+            confidence: string;
+            /**
+             * Death Conflict
+             * @description Sources disagree on the death year.
+             * @default false
+             */
+            death_conflict: boolean;
+            /**
+             * Death Year
+             * @description Reconciled Hijri death year.
+             */
+            death_year?: number | null;
+            /**
+             * Event Count
+             * @description Historical events attributed to this person.
+             */
+            event_count: number;
+            /**
+             * Full Name
+             * @description Full name in Arabic.
+             */
+            full_name: string;
+            /**
+             * Kunya
+             * @description Teknonym (Abu/Umm ...), if recorded.
+             * @default
+             */
+            kunya: string;
+            /**
+             * N Sources
+             * @description Raw corpus entries merged into this identity.
+             */
+            n_sources: number;
+            /**
+             * Name Variants
+             * @description Distinct spellings, pipe-separated.
+             * @default
+             */
+            name_variants: string;
+            /**
+             * Nisba
+             * @description Attributive name (tribe/place), if recorded.
+             * @default
+             */
+            nisba: string;
+            /**
+             * Person Id
+             * @description Stable person identity id + detail-route key.
+             */
+            person_id: number;
+            /**
+             * Places
+             * @description Associated places, pipe-separated.
+             * @default
+             */
+            places: string;
+            /**
+             * Reliability
+             * @description Per-evaluator reliability grades (evaluator=term).
+             */
+            reliability?: string[];
+            /**
+             * Source Books
+             * @description Source works, pipe-separated.
+             * @default
+             */
+            source_books: string;
+            /**
+             * Stance
+             * @description Position vis-a-vis ahlulbayt, when evaluated.
+             * @default
+             */
+            stance: string;
+            /**
+             * Tradition
+             * @description Sunni / shia / both, when classified.
+             * @default
+             */
+            tradition: string;
+        };
+        /**
+         * PersonEvent
+         * @description A historical event attributed to a person.
+         */
+        PersonEvent: {
+            /**
+             * Event
+             * @description Event name (battle, conquest, ...).
+             * @default
+             */
+            event: string;
+            /**
+             * Event Type
+             * @description Event category (BATTLE, CONQUEST, ...).
+             * @default
+             */
+            event_type: string;
+            /**
+             * Role
+             * @description Marker keyword linking person to event.
+             * @default
+             */
+            role: string;
+            /**
+             * Year Ah
+             * @description Hijri year of the event, when dated.
+             */
+            year_ah?: number | null;
         };
         /**
          * RijalEntry
@@ -2652,6 +2906,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Domain"][];
+                };
+            };
+        };
+    };
+    _list_person_api_person_get: {
+        parameters: {
+            query?: {
+                /** @description Substring match on name / kunya / nisba / variants. */
+                q?: string;
+                /** @description Filter by tradition (sunni / shia / both). */
+                tradition?: string;
+                /** @description Filter by ahlulbayt stance. */
+                stance?: string;
+                /** @description Filter by record confidence (high / medium). */
+                confidence?: string;
+                /** @description Only persons with historical events. */
+                has_events?: boolean;
+                /** @description Records per page. */
+                limit?: number;
+                /** @description Records to skip. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PersonEntry_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_person_api_person__person_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_person_edges_api_person__person_id__edges_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonEdge"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_person_events_api_person__person_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonEvent"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

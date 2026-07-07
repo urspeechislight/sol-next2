@@ -9,6 +9,7 @@ export const API = {
   BASE: '/api',
   RIJAL: '/rijal',
   CANONICAL: '/canonical',
+  PERSON: '/person',
   BOOKS: '/books',
   WORKS: '/works',
   DOMAINS: '/domains',
@@ -190,7 +191,6 @@ export function parseHash(hash: string): RouteState {
     mode: params.get('mode') ?? SEARCH.DEFAULT_MODE,
     categories: params.getAll('category'),
     book: fromBase64Url(params.get('book') ?? ''),
-    focus:
-      resolved === 'quran' && surah >= 1 && aya >= 1 ? { surah, aya } : null,
+    focus: resolved === 'quran' && surah >= 1 && aya >= 1 ? { surah, aya } : null,
   };
 }

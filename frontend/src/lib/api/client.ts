@@ -18,6 +18,7 @@ import type {
   ExtractionEntryAudit,
   ExtractionPage,
   Page,
+  PersonEntry,
   QuranCitation,
   RijalEntry,
   SearchFacets,
@@ -296,3 +297,28 @@ export function getRijalEntry(id: number): Promise<RijalEntry> {
 export function getCanonicalEntry(id: number): Promise<CanonicalEntry> {
   return get<CanonicalEntry>(`${API.CANONICAL}/${id}`);
 }
+
+export interface PersonParams {
+  q?: string;
+  tradition?: string;
+  stance?: string;
+  confidence?: string;
+  has_events?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+/** List enriched narrator persons — the Graph browser's person registry. */
+export function getPerson(params: PersonParams = {}): Promise<Page<PersonEntry>> {
+  const qs = query({
+    q: params.q ?? '',
+    tradition: params.tradition ?? '',
+    stance: params.stance ?? '',
+    confidence: params.confidence ?? '',
+    has_events: params.has_events ?? false,
+    limit: params.limit ?? PAGE.defaultLimit,
+    offset: params.offset ?? 0,
+  });
+  return get<Page<PersonEntry>>(`${API.PERSON}${qs}`);
+}
+

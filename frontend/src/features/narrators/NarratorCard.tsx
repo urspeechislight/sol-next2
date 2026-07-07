@@ -1,17 +1,22 @@
 // NarratorCard.tsx:the one narrator-record card, shared by the Graph browser
-// and the narrator search scope. Renders a rijāl OR canonical entry as
-// name + tradition + a kind-specific meta row, so the two surfaces stay
+// and the narrator search scope. Renders a rijāl, canonical, OR enriched person
+// entry as name + tradition + a kind-specific meta row, so the surfaces stay
 // identical instead of each hand-rolling a near-copy.
 import { Badge, Card, Heading, Inline, Stack, Text } from '../../lib/design-system';
-import type { CanonicalEntry, RijalEntry } from '../../lib/types';
+import type { CanonicalEntry, PersonEntry, RijalEntry } from '../../lib/types';
 import { joinDots } from '../../lib/utils';
 import { confidenceBadge, confidenceLabel, reliabilityBadge } from '../../lib/variants';
 
-export type NarratorItem = RijalEntry | CanonicalEntry;
+export type NarratorItem = RijalEntry | CanonicalEntry | PersonEntry;
 
 /** True when a narrator item is a merged canonical profile (vs a rijāl entry). */
 export function isCanonical(item: NarratorItem): item is CanonicalEntry {
   return 'canonical_id' in item;
+}
+
+/** True when a narrator item is an enriched person record. */
+export function isPerson(item: NarratorItem): item is PersonEntry {
+  return 'person_id' in item;
 }
 
 function RijalMeta({ entry }: { entry: RijalEntry }) {
@@ -47,7 +52,37 @@ function CanonicalMeta({ entry }: { entry: CanonicalEntry }) {
   );
 }
 
-/** One narrator record card (rijāl or canonical): name + tradition + meta. */
+function PersonMeta({ entry }: { entry: PersonEntry }) {
+  const topGrade = entry.reliability[0]?.split('=')[1] ?? '';
+  const facts = [
+    entry.death_year ? `d. ${entry.death_year} AH` : '',
+    `${entry.n_sources} sources`,
+    entry.event_count ? `${entry.event_count} events` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  return (
+    <Inline gap="xs" align="center">
+      {topGrade ? (
+        <Badge variant={reliabilityBadge(topGrade)}>
+          <span dir="rtl">{topGrade}</span>
+        </Badge>
+      ) : null}
+      {entry.stance ? <Badge>{entry.stance}</Badge> : null}
+      <Text size="xs" tone="faint" font="mono">
+        {facts}
+      </Text>
+    </Inline>
+  );
+}
+
+function Meta({ item }: { item: NarratorItem }) {
+  if (isPerson(item)) return <PersonMeta entry={item} />;
+  if (isCanonical(item)) return <CanonicalMeta entry={item} />;
+  return <RijalMeta entry={item} />;
+}
+
+/** One narrator record card (rijāl, canonical, or person): name + tradition + meta. */
 export function NarratorCard({ item }: { item: NarratorItem }) {
   const sub = joinDots(item.kunya, item.nisba);
   return (
@@ -64,7 +99,7 @@ export function NarratorCard({ item }: { item: NarratorItem }) {
             {sub}
           </Text>
         ) : null}
-        {isCanonical(item) ? <CanonicalMeta entry={item} /> : <RijalMeta entry={item} />}
+        <Meta item={item} />
       </Stack>
     </Card>
   );
