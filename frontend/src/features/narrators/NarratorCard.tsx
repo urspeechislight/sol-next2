@@ -14,6 +14,15 @@ export function isPerson(item: NarratorItem): item is PersonEntry {
   return 'person_id' in item;
 }
 
+/** Human label for the corpus a narrator is attested in. */
+function traditionLabel(tradition: string): string {
+  if (tradition === 'both') return 'Sunnī + Shīʿī';
+  if (tradition === 'sunni') return 'Sunnī';
+  if (tradition === 'shia') return 'Shīʿī';
+  if (tradition === 'history') return 'History';
+  return tradition;
+}
+
 function RijalMeta({ entry }: { entry: RijalEntry }) {
   return (
     <Inline gap="xs" align="center">
@@ -36,8 +45,10 @@ function RijalMeta({ entry }: { entry: RijalEntry }) {
 
 function PersonMeta({ entry }: { entry: PersonEntry }) {
   const topGrade = entry.reliability[0]?.split('=')[1] ?? '';
+  const residence = entry.places ? entry.places.replace(/ \| /g, ', ') : '';
   const facts = [
     entry.death_year ? `d. ${entry.death_year} AH` : '',
+    residence,
     `${entry.teacher_count} teachers · ${entry.student_count} students`,
     `${entry.n_sources} sources`,
     entry.event_count ? `${entry.event_count} events` : '',
@@ -69,7 +80,7 @@ export function NarratorCard({ item }: { item: NarratorItem }) {
           <Heading level={4} font="arabic" dir="rtl">
             {item.full_name}
           </Heading>
-          {item.tradition ? <Badge>{item.tradition}</Badge> : null}
+          {item.tradition ? <Badge>{traditionLabel(item.tradition)}</Badge> : null}
         </Inline>
         {sub ? (
           <Text size="sm" tone="muted" font="arabic" dir="rtl">

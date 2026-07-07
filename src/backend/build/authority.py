@@ -42,6 +42,15 @@ _PHRASE_TOKENS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in
     ("عن", "من", "في", "بين", "إلى", "الى", "مع", "لم", "أخبار", "الجمع", "غير", "منسوب")
 )
+_KINSHIP_TOKENS: Final[frozenset[str]] = frozenset(
+    normalize_arabic(w) for w in
+    ("أخوه", "أخوها", "أخوهما", "أخوهم", "وأخوه", "وأخوهما", "وأخوهم", "أخته", "حفيده",
+     "حفيدها", "حفيدهما", "أبوه", "أبوها", "ابنه", "ابنها", "ابنته", "عمه", "وعمه", "عمته",
+     "جده", "جدها", "بنته", "زوجته", "زوجها", "مولاه", "تلميذه", "وتلميذه", "والده", "والدته")
+)
+_LINEAGE_TOKENS: Final[frozenset[str]] = frozenset(
+    normalize_arabic(w) for w in ("وأمه", "وأمها", "وأمهما", "وأبوه", "وأبوها", "وابنه")
+)
 _NOISE_LEADS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in
     ("عن", "عنه", "عنهما", "ثم", "انتهى", "جزم", "لم", "أن", "قال", "اقتصر",
@@ -59,6 +68,7 @@ _MIN_SIGNIFICANT_TOKENS: Final[int] = 2
 _SPLIT_ID_BASE: Final[int] = 2_000_000
 _HISTORY_ID_BASE: Final[int] = 1_000_000
 _OVER_MERGE_ROOT_MAX: Final[int] = 2
+_OVER_MERGE_PLACE_MAX: Final[int] = 4
 _NAME_ROOT_TOKENS: Final[int] = 2
 _MAX_VARIANTS: Final[int] = 8
 _MAX_RELIABILITY: Final[int] = 10
@@ -161,11 +171,13 @@ def is_person_name(name: str) -> bool:
     keeps ``ism + nisba`` names that lack an explicit بن (عبد الله الرومي) while
     dropping ``الجمع بين رجال الصحيحين`` and ``عيون أخبار الرضا``.
     """
-    stripped = name.strip()
-    if not stripped or stripped[0].isdigit() or stripped[0] in "([":
+    cropped = crop_name(name)
+    if not cropped or cropped[0].isdigit() or cropped[0] in "([":
         return False
-    toks = normalize_arabic(crop_name(stripped)).split()
+    toks = normalize_arabic(cropped).split()
     if not toks or toks[0] in _JUNK_LEADS or toks[0] == "بن" or _TX_STEM_RE.match(toks[0]):
+        return False
+    if any(t in _KINSHIP_TOKENS for t in toks):
         return False
     return len([t for t in toks if t not in _LINKS]) >= _MIN_SIGNIFICANT_TOKENS
 
@@ -180,16 +192,21 @@ def crop_name(name: str) -> str:
 
     ``فلان بن فلان عن علان`` becomes ``فلان بن فلان`` (a real person with a clean
     name), while ``عيون أخبار الرضا`` crops to ``عيون`` and then fails the token
-    count in ``is_person_name`` (a book title, not a person).
+    count in ``is_person_name`` (a book title, not a person). Leading list-item
+    dashes and bullets are stripped first (``- أبو عبد الله`` becomes a name).
     """
-    surface = name.split()
+    surface = name.strip().lstrip("-–—•*").split()
     norm = normalize_arabic(" ".join(surface)).split()
+    upto = min(len(surface), len(norm))
+    start = 0
+    while start < upto and norm[start] in _KINSHIP_TOKENS:
+        start += 1
     cut = len(surface)
-    for i in range(min(len(surface), len(norm))):
-        if norm[i] in _PHRASE_TOKENS:
+    for i in range(start, upto):
+        if norm[i] in _PHRASE_TOKENS or norm[i] in _LINEAGE_TOKENS:
             cut = i
             break
-    return " ".join(surface[:cut])
+    return " ".join(surface[start:cut])
 
 
 def reconcile_death(years: Counter[int]) -> tuple[int | None, bool]:
@@ -219,15 +236,18 @@ def is_over_merge(entries: list[dict[str, Any]]) -> bool:
     """True when a canonical bucket fuses several distinct people (a shared-kunya collision).
 
     A death conflict or a nisba variant alone does not qualify: sources disagree on
-    one person's death (Sufyan b. Uyayna, 191 vs 198) and record extra nisbas. The
-    robust signal is many distinct name roots - the ism+father core stays constant
-    for one person across all their entries, but a kunya bucket fuses people whose
-    cores differ (بكر بن الحكم, سلمة بن علقمة, ...).
+    one person's death (Sufyan b. Uyayna, 191 vs 198) and record extra nisbas. Two
+    signals do qualify: many distinct name roots (a shared-kunya bucket fusing
+    بكر بن الحكم, سلمة بن علقمة, ...), OR many distinct residences on a single name
+    root (same-name people from different cities fused, e.g. al-Husayn b. Ibrahim
+    recorded as قمي / بغدادي / خراساني / همداني — one lifetime is not five cities).
     """
     roots = {_name_root(e["full_name"]) for e in entries
              if e.get("full_name") and is_person_name(e["full_name"])}
     roots.discard(())
-    return len(roots) > _OVER_MERGE_ROOT_MAX
+    places = {loc if isinstance(loc, str) else str(loc)
+              for e in entries for loc in (e.get("locations") or [])}
+    return len(roots) > _OVER_MERGE_ROOT_MAX or len(places) > _OVER_MERGE_PLACE_MAX
 
 
 def _as_stance(value: Any) -> str:
@@ -283,6 +303,7 @@ def _person_rows(
                 edges.append((pid, relation, name, canon_id_by_norm.get(normalize_arabic(name))))
     teacher_count = sum(1 for edge in edges if edge[1] == "teacher")
     student_count = sum(1 for edge in edges if edge[1] == "student")
+    stance_out = "" if over_merged else (stance.most_common(1)[0][0] if stance else "")
     matched = _matched_events(name_norm, dyear, hist_events)
     events = [(pid, ev.get("event") or "", ev.get("event_type") or "",
                ev.get("year_ah") if isinstance(ev.get("year_ah"), int) else None,
@@ -293,7 +314,7 @@ def _person_rows(
            kunyas.most_common(1)[0][0] if kunyas else "",
            nisbas.most_common(1)[0][0] if nisbas else "",
            births.most_common(1)[0][0] if births else None, dyear, int(conflict),
-           tradition or "", stance.most_common(1)[0][0] if stance else "",
+           tradition or "", stance_out,
            json.dumps([g for g, _ in rel.most_common(_MAX_RELIABILITY)], ensure_ascii=False),
            " | ".join(places[:_MAX_PLACES]), " | ".join(str(s) for s in src[:_MAX_SOURCE_BOOKS]),
            len(entries), teacher_count, student_count, len(matched), bio[:_MAX_BIO_CHARS], confidence)
