@@ -18,6 +18,7 @@ def enforce_failure_budget(
     unclassified_count: int,
     content_span_count: int,
     manifestation_id: str,
+    book_type: str | None = None,
 ) -> None:
     """Halt segmentation when the unrouted share exceeds the budget.
 
@@ -26,6 +27,11 @@ def enforce_failure_budget(
     spans routed to GENERAL_PROSE without an explicit rule exceeds the configured
     ceiling. Inputs below the minimum are skipped (a single-span fixture is not
     statistically meaningful).
+
+    A book_type listed in ``failure_budget.exempt_book_types`` is skipped: for
+    prose genres (adab / language-sciences anthologies) GENERAL_PROSE is the
+    expected classification for most content, not a routing gap, so the ceiling
+    calibrated on the hadith/sira track does not apply.
     """
     if content_span_count == 0:
         return
@@ -37,6 +43,8 @@ def enforce_failure_budget(
             "config/sol.yaml missing failure_budget.unclassified_routed_max_pct "
             "or min_content_spans_for_enforcement — segment requires both."
         )
+    if book_type is not None and book_type in set(budget.get("exempt_book_types", [])):
+        return
     if content_span_count < int(min_spans):
         return
     pct = 100 * unclassified_count / content_span_count

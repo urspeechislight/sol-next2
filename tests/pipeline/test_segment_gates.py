@@ -17,14 +17,17 @@ from backend.pipeline.failure_budget import enforce_failure_budget
 from backend.pipeline.models import Manuscript, ManuscriptPage
 
 
-def _budget_cfg(*, max_pct: float, min_spans: int) -> dict[str, Any]:
+def _budget_cfg(
+    *, max_pct: float, min_spans: int, exempt: list[str] | None = None
+) -> dict[str, Any]:
     """A failure_budget config block with both required keys."""
-    return {
-        "failure_budget": {
-            "unclassified_routed_max_pct": max_pct,
-            "min_content_spans_for_enforcement": min_spans,
-        }
+    block: dict[str, Any] = {
+        "unclassified_routed_max_pct": max_pct,
+        "min_content_spans_for_enforcement": min_spans,
     }
+    if exempt is not None:
+        block["exempt_book_types"] = exempt
+    return {"failure_budget": block}
 
 
 def test_should_skip_failure_budget_when_content_span_count_is_zero() -> None:
@@ -53,6 +56,16 @@ def test_should_raise_when_unrouted_share_exceeds_budget() -> None:
             content_span_count=2,
             manifestation_id="m1",
         )
+
+
+def test_should_skip_failure_budget_when_book_type_exempt() -> None:
+    enforce_failure_budget(
+        _budget_cfg(max_pct=0, min_spans=2, exempt=["arabic-language-sciences"]),
+        unclassified_count=2,
+        content_span_count=2,
+        manifestation_id="m1",
+        book_type="arabic-language-sciences",
+    )
 
 
 def test_should_not_raise_when_unrouted_share_within_budget() -> None:

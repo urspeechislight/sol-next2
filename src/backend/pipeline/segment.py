@@ -135,7 +135,11 @@ def segment(manuscript: Manuscript, config: Config) -> Manuscript:
     unclassified_count, content_span_count = _emit_spans(manuscript, layout, ctx)
     _merge_split_hadith(manuscript, ctx)
     enforce_failure_budget(
-        ctx.config.raw, unclassified_count, content_span_count, manuscript.manifestation_id
+        ctx.config.raw,
+        unclassified_count,
+        content_span_count,
+        manuscript.manifestation_id,
+        manuscript.metadata.get("book_type"),
     )
     _logger.info(
         "segmented",

@@ -697,6 +697,13 @@ failure_budget:
   # requires written justification in PR.
   unclassified_routed_max_pct: 20.0
   min_content_spans_for_enforcement: 20
+  # Prose genres where GENERAL_PROSE is the expected classification for most
+  # content (adab / language-sciences anthologies like Nathr al-Durr), not a
+  # routing gap. The ceiling above is calibrated on the hadith/sira track and
+  # does not apply to these; without the exemption the whole build aborts on
+  # one adab volume. This is a genre carve-out, NOT a raise of the ratchet.
+  exempt_book_types:
+    - arabic-language-sciences
 narrative_genres:
   # book_types where the modern-authorial-narrative routing applies. Used by
   # Phase 2 to gate the HEADING_MARKER / FIQH_RULING drop for long spans
