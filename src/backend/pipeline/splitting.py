@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from backend.core.logging import get_logger
-from backend.patterns import CompiledPattern, cached_compile
+from backend.patterns import CompiledPattern, cached_compile, normalize_honorifics
 from backend.pipeline.errors import SegmentError
 from backend.pipeline.models import ManuscriptPage
 from backend.pipeline.toc_alignment import TocAnchor
@@ -92,7 +92,10 @@ def build_combined_text(
 ) -> tuple[str, list[int], list[ManuscriptPage]]:
     """Concatenate content page texts with cross-page name repair.
 
-    Pages join with ``\\n`` by default. When the previous page's last token is in
+    Each page's spelled-out honorifics are normalized to their ligature signs
+    first (``رضي الله عنه`` -> ``﵁``), so every offset the extraction stores is
+    into honorific-standardized text and the name cleaner cuts salutations
+    uniformly. Pages join with ``\\n`` by default. When the previous page's last token is in
     name_prefix_tokens (عبد, أبو, ابن, ...) AND the next page begins with ال +
     an Arabic letter, pages join with a single space instead — this prevents
     compound names like عبد المطلب from being torn at the page boundary.
@@ -102,19 +105,20 @@ def build_combined_text(
     pages_list: list[ManuscriptPage] = []
     offset = 0
     for page in content_pages:
+        page_text = normalize_honorifics(page.text)
         if parts:
             prev_text = parts[-1]
             last_token = prev_text.rsplit(None, 1)[-1] if prev_text.strip() else ""
             sep = "\n"
-            if last_token in name_prefix_tokens and name_continuation_re.match(page.text):
+            if last_token in name_prefix_tokens and name_continuation_re.match(page_text):
                 sep = " "
                 _logger.info("cross-page-name-repair", prev_token=last_token)
             parts.append(sep)
             offset += len(sep)
         page_starts.append(offset)
         pages_list.append(page)
-        parts.append(page.text)
-        offset += len(page.text)
+        parts.append(page_text)
+        offset += len(page_text)
     return "".join(parts), page_starts, pages_list
 
 

@@ -144,6 +144,65 @@ def strip_tashkeel(text: str) -> str:
     return TASHKEEL_MARKS.sub("", text)
 
 
+_HONORIFIC_INNER_MARKS: Final[str] = r"[ؐ-ًؚ-ٰٟۖ-ۭـ]*"
+_HONORIFIC_PHRASES: Final[tuple[tuple[str, str], ...]] = (
+    ("صلى الله عليه وآله وسلم", "﵌"),
+    ("صلى الله عليه واله وسلم", "﵌"),
+    ("صلى الله عليه وآله", "﵆"),
+    ("صلى الله عليه واله", "﵆"),
+    ("صلى الله عليه وسلم", "ﷺ"),
+    ("عليه الصلاة والسلام", "﵊"),
+    ("عليهما السلام", "﵉"),
+    ("عليهم السلام", "﵈"),
+    ("عليها السلام", "﵍"),
+    ("عليه السلام", "﵇"),
+    ("رضي الله تعالى عنهما", "﵄"),
+    ("رضي الله عنهما", "﵄"),
+    ("رضي الله تعالى عنهم", "﵃"),
+    ("رضي الله عنهم", "﵃"),
+    ("رضي الله تعالى عنهن", "﵅"),
+    ("رضي الله عنهن", "﵅"),
+    ("رضي الله تعالى عنها", "﵂"),
+    ("رضي الله عنها", "﵂"),
+    ("رضي الله تعالى عنه", "﵁"),
+    ("رضي الله عنه", "﵁"),
+    ("رحمهم الله", "﵏"),
+    ("رحمه الله", "﵀"),
+    ("تبارك وتعالى", "﵎"),
+    ("جل جلاله", "ﷻ"),
+    ("قدس سره", "﵋"),
+)
+
+
+def _tolerant_honorific(phrase: str) -> str:
+    """A tashkeel-tolerant, letter-bounded regex for a spelled-out honorific phrase."""
+    words = [
+        _HONORIFIC_INNER_MARKS.join(re.escape(char) for char in word) + _HONORIFIC_INNER_MARKS
+        for word in phrase.split()
+    ]
+    return r"(?<![ء-ي])" + r"\s+".join(words) + r"(?![ء-ي])"
+
+
+_HONORIFIC_RE: Final[tuple[tuple[re.Pattern[str], str], ...]] = tuple(
+    (re.compile(_tolerant_honorific(phrase)), ligature) for phrase, ligature in _HONORIFIC_PHRASES
+)
+
+
+def normalize_honorifics(text: str) -> str:
+    """Replace spelled-out honorific phrases with their single ligature sign.
+
+    ``صلى الله عليه وسلم`` -> ``ﷺ``, ``رضي الله عنه`` -> ``﵁``, ``عليه السلام`` ->
+    ``﵇``, and so on, tashkeel and all (``صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ`` matches too).
+    Standardizing to the ligature is what lets the whole pipeline treat honorifics
+    one way: the name cleaner already cuts a name at the first ligature sign, so a
+    spelled-out salutation no longer runs into a narrator's name. Phrases are
+    ordered longest-first within a family so ``عنهما`` is not clipped to ``عنه``.
+    """
+    for regex, ligature in _HONORIFIC_RE:
+        text = regex.sub(ligature, text)
+    return text
+
+
 @lru_cache(maxsize=SEARCH__PATTERN_CACHE_MAX)
 def cached_compile(pattern: str, flags: int = 0) -> CompiledPattern:
     """Compile ``pattern`` once with ``flags``, cached per (pattern, flags).

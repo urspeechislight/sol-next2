@@ -26,7 +26,7 @@ from backend.pipeline.text import is_footnote_marker_opening, replace_footnote_m
 
 _NAME_TRAILING_PUNCT_REGEX: CompiledPattern = cached_compile(r"[\s،,:.\-]+$")
 _NAME_LIST_SEPARATOR_REGEX: CompiledPattern = cached_compile(
-    r"(?:\s*[،؛,]|\s+(?:عن|قالوا|قالت|قالا|قال|كانت|كان|أنه|انه|إنه|حدثه|يقول|لما)\s).*$"
+    r"(?:\s*[،؛,]|\s+(?:عن|قالوا|قالت|قالا|قال|كانت|كان|أنه|انه|إنه|حدثه|يقول|لما)(?=\s|$)).*$"
 )
 _NAME_HONORIFIC_TAIL_REGEX: CompiledPattern = cached_compile(r"[" + HONORIFIC_SIGNS + r"][\s\S]*$")
 
