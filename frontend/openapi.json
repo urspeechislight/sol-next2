@@ -1550,18 +1550,6 @@
       "Narrator": {
         "description": "One narrator in an isnad.",
         "properties": {
-          "canonical_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Registry link: id in /api/canonical, when the name resolved to a canonical profile instead of a rijal entry. Mutually exclusive with rijal_id.",
-            "title": "Canonical Id"
-          },
           "d": {
             "anyOf": [
               {
@@ -1588,6 +1576,18 @@
             "description": "Name in Arabic.",
             "title": "Name Ar",
             "type": "string"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Registry link: id in /api/person, when the name resolved to an enriched person instead of a rijal entry. Mutually exclusive with rijal_id.",
+            "title": "Person Id"
           },
           "rijal_id": {
             "anyOf": [

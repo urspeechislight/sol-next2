@@ -5,7 +5,7 @@ import { Spinner, Text } from '../../lib/design-system';
 import {
   getBook,
   getBookVolumes,
-  getCanonicalEntry,
+  getPersonEntry,
   getRijalEntry,
   getPage,
   getPageCitations,
@@ -15,7 +15,7 @@ import {
 import { READER } from '../../lib/constants';
 import { matchedMarkers } from '../../lib/footnotes';
 import { useTheme } from '../../lib/useTheme';
-import { buildNarratorIndex, canonicalToRecord, rijalToRecord } from '../../lib/narrators';
+import { buildNarratorIndex, personToRecord, rijalToRecord } from '../../lib/narrators';
 import type {
   Book,
   BookPage,
@@ -51,7 +51,7 @@ const EMPTY_CITATIONS: QuranCitation[] = [];
     fetches the full biography. An unlinked one shows name-only (id -1). */
 function recordFromNarrator(n: Narrator): NarratorRecord {
   return {
-    id: n.rijal_id ?? n.canonical_id ?? -1,
+    id: n.rijal_id ?? n.person_id ?? -1,
     full_name: n.name_ar || n.name,
     kunya: '',
     nisba: '',
@@ -61,7 +61,7 @@ function recordFromNarrator(n: Narrator): NarratorRecord {
     teacher_count: 0,
     student_count: 0,
     reliability_term: n.grade,
-    origin: n.canonical_id != null ? 'canonical' : 'rijal',
+    origin: n.person_id != null ? 'person' : 'rijal',
   };
 }
 
@@ -196,8 +196,8 @@ export function ReaderScreen({
     setRight('tarjama');
     if (record.id < 0) return;
     const detail =
-      record.origin === 'canonical'
-        ? getCanonicalEntry(record.id).then(canonicalToRecord)
+      record.origin === 'person'
+        ? getPersonEntry(record.id).then(personToRecord)
         : getRijalEntry(record.id).then(rijalToRecord);
     detail
       .then((full) =>

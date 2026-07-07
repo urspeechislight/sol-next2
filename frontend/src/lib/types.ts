@@ -105,8 +105,8 @@ export type QuranCitation = Full<S['Citation']>;
 
 // ---- narrator tarjama (DERIVED view-type) ----
 // Reading text carries no narrator IDs, so narrators are joined to the rijāl /
-// canonical registries BY NAME. NarratorRecord is the merged shape the reader
-// surfaces; it is composed client-side from RijalEntry + CanonicalEntry.
+// person registries BY NAME. NarratorRecord is the merged shape the reader
+// surfaces; it is composed client-side from RijalEntry + PersonEntry.
 export interface NarratorRecord {
   id: number;
   full_name: string;
@@ -121,8 +121,8 @@ export interface NarratorRecord {
   reliability_grade?: string | null;
   evaluator?: string | null;
   source_label?: string | null;
-  merge_confidence?: number | null;
-  origin: 'rijal' | 'canonical';
+  stance?: string | null;
+  origin: 'rijal' | 'person';
 }
 
 // ---- share (UI feature, generic; not backend-bound) ----

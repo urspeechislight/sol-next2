@@ -6,7 +6,7 @@ DTO — one Hadith per isnad/matn span, narrators projected from PERSON entities
 Returns ``[]`` when the artifact is absent so the reader serves raw page text
 until the index is built. The DDL + INSERT helpers that materialize this artifact
 live in ``backend.build.manuscript``; CENTRAL-005 permits the read SQL here.
-Narrators carry their registry link (rijal_id / canonical_id) resolved at
+Narrators carry their registry link (rijal_id / person_id) resolved at
 build time; the reader fetches the linked biography from /api/rijal or
 /api/canonical on demand. Romanized name and grade still await registry
 romanization — name carries the Arabic form and grade is blank.
@@ -34,8 +34,8 @@ from backend.core.constants import (
     HADITH__UNIT_MATN,
     NARRATOR_LINK__ID_KEY,
     NARRATOR_LINK__METADATA_KEY,
-    NARRATOR_LINK__ORIGIN_CANONICAL,
     NARRATOR_LINK__ORIGIN_KEY,
+    NARRATOR_LINK__ORIGIN_PERSON,
     NARRATOR_LINK__ORIGIN_RIJAL,
 )
 from backend.core.paths import data_path
@@ -78,7 +78,7 @@ class _EntityRow:
     role_in_context: str
     chain_position: int
     rijal_id: int | None
-    canonical_id: int | None
+    person_id: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,7 +161,7 @@ def _entity_row(d: dict[str, Any]) -> _EntityRow:
         role_in_context=str(metadata.get("role_in_context", "")),
         chain_position=int(metadata.get("chain_position", _DEFAULT_CHAIN_POSITION)),
         rijal_id=link_id if origin == NARRATOR_LINK__ORIGIN_RIJAL else None,
-        canonical_id=link_id if origin == NARRATOR_LINK__ORIGIN_CANONICAL else None,
+        person_id=link_id if origin == NARRATOR_LINK__ORIGIN_PERSON else None,
     )
 
 
@@ -223,7 +223,7 @@ def _narrators_sorted(entities: list[_EntityRow]) -> list[Narrator]:
             role=entity.role_in_context,
             grade=_BLANK_GRADE,
             rijal_id=entity.rijal_id,
-            canonical_id=entity.canonical_id,
+            person_id=entity.person_id,
         )
         for entity in ordered
     ]

@@ -64,11 +64,11 @@ class Narrator(FrozenModel):
             "narrator; the reader shows the name unlinked rather than guessing."
         ),
     )
-    canonical_id: int | None = Field(
+    person_id: int | None = Field(
         default=None,
         description=(
-            "Registry link: id in /api/canonical, when the name resolved to a "
-            "canonical profile instead of a rijal entry. Mutually exclusive "
+            "Registry link: id in /api/person, when the name resolved to an "
+            "enriched person instead of a rijal entry. Mutually exclusive "
             "with rijal_id."
         ),
     )

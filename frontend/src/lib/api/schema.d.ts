@@ -1696,11 +1696,6 @@ export interface components {
          */
         Narrator: {
             /**
-             * Canonical Id
-             * @description Registry link: id in /api/canonical, when the name resolved to a canonical profile instead of a rijal entry. Mutually exclusive with rijal_id.
-             */
-            canonical_id?: number | null;
-            /**
              * D
              * @description Death year, Hijri.
              */
@@ -1720,6 +1715,11 @@ export interface components {
              * @description Name in Arabic.
              */
             name_ar: string;
+            /**
+             * Person Id
+             * @description Registry link: id in /api/person, when the name resolved to an enriched person instead of a rijal entry. Mutually exclusive with rijal_id.
+             */
+            person_id?: number | null;
             /**
              * Rijal Id
              * @description Registry link: id in /api/rijal, resolved at build time by normalized-name match. None when the registry does not know this narrator; the reader shows the name unlinked rather than guessing.

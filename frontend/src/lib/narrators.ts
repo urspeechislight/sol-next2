@@ -7,7 +7,7 @@
 // Pure functions only; no DOM, no fetch.
 
 import { normalizeName } from './arabic';
-import type { CanonicalEntry, NarratorRecord, RijalEntry } from './types';
+import type { NarratorRecord, PersonEntry, RijalEntry } from './types';
 
 const STOP = new Set(['بن', 'ابن', 'بنت', 'عن', 'ابي', 'ابو', 'ال', 'عبد', 'حدثنا', 'اخبرنا']);
 
@@ -122,7 +122,7 @@ function matchAt(parts: string[], start: number, index: NarratorIndex): Match | 
   return null;
 }
 
-// ---- record mappers (RijalEntry / CanonicalEntry -> NarratorRecord) ----
+// ---- record mappers (RijalEntry / PersonEntry -> NarratorRecord) ----
 export function rijalToRecord(e: RijalEntry): NarratorRecord {
   return {
     id: e.id,
@@ -142,18 +142,22 @@ export function rijalToRecord(e: RijalEntry): NarratorRecord {
   };
 }
 
-export function canonicalToRecord(e: CanonicalEntry): NarratorRecord {
+export function personToRecord(e: PersonEntry): NarratorRecord {
+  const [evaluator, term] = (e.reliability[0] ?? '').split('=');
   return {
-    id: e.canonical_id,
+    id: e.person_id,
     full_name: e.full_name,
     kunya: e.kunya,
     nisba: e.nisba,
     tradition: e.tradition,
     birth_year: String(e.birth_year ?? ''),
     death_year: String(e.death_year ?? ''),
-    teacher_count: e.teacher_count,
-    student_count: e.student_count,
-    merge_confidence: e.merge_confidence,
-    origin: 'canonical',
+    teacher_count: 0,
+    student_count: 0,
+    reliability_term: term ?? '',
+    evaluator: evaluator ?? '',
+    source_label: e.source_books.split(' | ')[0] ?? '',
+    stance: e.stance,
+    origin: 'person',
   };
 }

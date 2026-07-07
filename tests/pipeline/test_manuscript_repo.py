@@ -30,7 +30,7 @@ def test_should_reshape_isnad_matn_and_narrators_into_hadith() -> None:
             role_in_context="narrator",
             chain_position=0,
             rijal_id=None,
-            canonical_id=None,
+            person_id=None,
         ),
     ]
 
@@ -57,7 +57,7 @@ def test_should_order_narrators_by_chain_position() -> None:
             role_in_context="narrator",
             chain_position=1,
             rijal_id=None,
-            canonical_id=None,
+            person_id=None,
         ),
         _EntityRow(
             span_id="s1",
@@ -65,7 +65,7 @@ def test_should_order_narrators_by_chain_position() -> None:
             role_in_context="narrator",
             chain_position=0,
             rijal_id=None,
-            canonical_id=None,
+            person_id=None,
         ),
     ]
 

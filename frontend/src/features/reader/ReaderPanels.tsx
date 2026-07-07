@@ -67,7 +67,7 @@ export function IsnadPanel({
 
 function narratorSource(record: NarratorRecord): string {
   if (record.id < 0) return 'Extracted from the text · no registry entry';
-  return record.origin === 'canonical' ? 'Canonical narrator registry' : 'Rijāl registry';
+  return record.origin === 'person' ? 'Enriched person registry' : 'Rijāl registry';
 }
 
 export interface NarratorFetchError {

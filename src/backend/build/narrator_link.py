@@ -3,14 +3,15 @@
 The reader used to join narrator names to the registry in the browser,
 downloading the first 600 of 284k rijal rows and fuzzy-matching client-side.
 This module does that join once at build time against the FULL registry:
-``NarratorLinker`` loads every rijal + canonical name from ``registry.db``,
+``NarratorLinker`` loads every rijal + person name from ``registry.db``,
 indexes them by normalized first token, and ``link`` resolves one extracted
 narrator name to its registry row. The match semantics mirror the frontend's
 ``narrators.ts`` exactly: names of at least two normalized tokens, matched
 token-by-token from the start of the extracted name, allowing connective
 tokens in the text that the registry name omits, longest registry name first,
-rijal winning over canonical for the same normalized name (rijal carries the
-reliability grading the tarjama needs).
+the enriched person record winning over a raw rijal entry for the same
+normalized name (the person carries the reconciled dates, reliability, stance,
+and events the tarjama surfaces).
 
 An unmatched name stays unlinked (``None``): a narrator the registry does not
 know is shown as plain text, never linked to a wrong biography.
@@ -29,8 +30,8 @@ from backend.core.constants import (
     HADITH__ROLE_RELATIVE_REF,
     NARRATOR_LINK__ID_KEY,
     NARRATOR_LINK__METADATA_KEY,
-    NARRATOR_LINK__ORIGIN_CANONICAL,
     NARRATOR_LINK__ORIGIN_KEY,
+    NARRATOR_LINK__ORIGIN_PERSON,
     NARRATOR_LINK__ORIGIN_RIJAL,
 )
 from backend.patterns import normalize_arabic
@@ -41,7 +42,9 @@ _MISSING_HINT: Final[str] = (
     "Narrator registry not built; run scripts/build_registry.py before linking"
 )
 _RIJAL_NAMES_QUERY: Final[str] = "SELECT id, full_name FROM rijal ORDER BY id"
-_CANONICAL_NAMES_QUERY: Final[str] = "SELECT canonical_id, full_name FROM canonical ORDER BY canonical_id"
+_PERSON_NAMES_QUERY: Final[str] = (
+    "SELECT person_id, full_name FROM person ORDER BY n_sources, person_id"
+)
 _MIN_NAME_TOKENS: Final[int] = 2
 
 CONNECTIVE_TOKENS: Final[frozenset[str]] = frozenset(
@@ -75,14 +78,14 @@ class NarratorLinker:
     def from_registry(cls) -> NarratorLinker:
         """Load every registry name and build the first-token index.
 
-        Canonical entries index first and rijal entries overwrite them per
-        normalized full name, mirroring the frontend merge where rijal wins.
+        Rijal entries index first and person entries overwrite them per
+        normalized full name, so the enriched person record wins.
         """
         con = open_ro_db(ARTIFACT__REGISTRY_DB, _MISSING_HINT)
         pairs: list[tuple[str, str, int]] = []
         for query, origin in (
-            (_CANONICAL_NAMES_QUERY, NARRATOR_LINK__ORIGIN_CANONICAL),
             (_RIJAL_NAMES_QUERY, NARRATOR_LINK__ORIGIN_RIJAL),
+            (_PERSON_NAMES_QUERY, NARRATOR_LINK__ORIGIN_PERSON),
         ):
             pairs.extend((origin, str(row[1]), int(row[0])) for row in con.execute(query))
         return cls.from_names(pairs)
@@ -92,7 +95,7 @@ class NarratorLinker:
         """Build the index from ``(origin, full_name, registry_id)`` triples.
 
         Later triples overwrite earlier ones per normalized full name, so
-        callers list canonical entries before rijal to make rijal win.
+        callers list rijal entries before person entries to make person win.
         Single-token names are dropped: too ambiguous to link safely.
         """
         by_name: dict[str, _Candidate] = {}

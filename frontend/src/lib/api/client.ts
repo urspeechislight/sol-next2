@@ -293,10 +293,6 @@ export function getRijalEntry(id: number): Promise<RijalEntry> {
   return get<RijalEntry>(`${API.RIJAL}/${id}`);
 }
 
-/** Fetch one canonical profile by id, for narrators linked to the canonical registry. */
-export function getCanonicalEntry(id: number): Promise<CanonicalEntry> {
-  return get<CanonicalEntry>(`${API.CANONICAL}/${id}`);
-}
 
 export interface PersonParams {
   q?: string;
@@ -322,3 +318,7 @@ export function getPerson(params: PersonParams = {}): Promise<Page<PersonEntry>>
   return get<Page<PersonEntry>>(`${API.PERSON}${qs}`);
 }
 
+/** Fetch one enriched person by id — the reader's tarjama detail for a narrator. */
+export function getPersonEntry(id: number): Promise<PersonEntry> {
+  return get<PersonEntry>(`${API.PERSON}/${id}`);
+}
