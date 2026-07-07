@@ -1,20 +1,26 @@
-"""Pydantic DTOs for the narrator registry: rijal + canonical entries.
+"""Pydantic DTOs for the narrator registry: rijal entries and enriched persons.
 
 These mirror the served columns of ``data/registry.db`` (built by
 ``scripts/build_registry.py`` from sol-next's corpus) and are the SSOT the
 frontend's narrator types bind to. The reader links isnad text to these
-records by name; the graph screens browse them directly.
+records by name; the graph screens browse them directly. ``PersonEntry`` is the
+authoritative per-narrator identity (junk-excluded, over-merge-split,
+death-reconciled) built by ``backend.build.authority``; ``RijalEntry`` remains
+the raw per-source-entry view.
 """
 
 from __future__ import annotations
 
-from pydantic import Field
+import json
+from typing import Any
+
+from pydantic import Field, field_validator
 
 from backend.models._base import FrozenModel
 
 
 class NarratorBase(FrozenModel):
-    """Identity fields shared by a raw rijal entry and a canonicalized person.
+    """Identity fields shared by a raw rijal entry and an enriched person.
 
     Only the fields whose semantics are identical on both sides live here; the
     teacher/student count fields stay per-model because they mean different
@@ -45,7 +51,7 @@ class RijalEntry(NarratorBase):
 
 
 class CanonicalEntry(NarratorBase):
-    """A canonicalized person, merging one identity across sources."""
+    """A canonicalized person, one identity across sources (legacy; see PersonEntry)."""
 
     canonical_id: int = Field(ge=0, description="Stable canonical identity id + detail-route key.")
     death_year: int | None = Field(default=None, description="Death year, Hijri, when known.")
@@ -57,3 +63,48 @@ class CanonicalEntry(NarratorBase):
     merge_confidence: float | None = Field(
         default=None, description="Merge confidence in 0..1, or null when unscored."
     )
+
+
+class PersonEntry(NarratorBase):
+    """An authoritative narrator identity, cross-checked across its source entries."""
+
+    person_id: int = Field(ge=0, description="Stable person identity id + detail-route key.")
+    name_variants: str = Field(default="", description="Distinct spellings, pipe-separated.")
+    birth_year: int | None = Field(default=None, description="Birth year, Hijri, when known.")
+    death_year: int | None = Field(default=None, description="Reconciled Hijri death year.")
+    death_conflict: bool = Field(default=False, description="Sources disagree on the death year.")
+    stance: str = Field(default="", description="Position vis-a-vis ahlulbayt, when evaluated.")
+    reliability: list[str] = Field(
+        default_factory=list, description="Per-evaluator reliability grades (evaluator=term)."
+    )
+    places: str = Field(default="", description="Associated places, pipe-separated.")
+    source_books: str = Field(default="", description="Source works, pipe-separated.")
+    n_sources: int = Field(ge=0, description="Raw corpus entries merged into this identity.")
+    event_count: int = Field(ge=0, description="Historical events attributed to this person.")
+    bio: str = Field(default="", description="Longest available biographical snippet.")
+    confidence: str = Field(default="medium", description="Record confidence (high/medium).")
+
+    @field_validator("reliability", mode="before")
+    @classmethod
+    def _parse_reliability(cls, value: Any) -> Any:
+        """Decode the stored JSON array of reliability grades into a list."""
+        return json.loads(value) if isinstance(value, str) else value
+
+
+class PersonEdge(FrozenModel):
+    """A teacher or student relation of a person, linked to a person id when known."""
+
+    relation: str = Field(description="'teacher' or 'student'.")
+    name: str = Field(description="The related narrator's name as recorded.")
+    other_person_id: int | None = Field(
+        default=None, description="Resolved person id of the relation, or null when unlinked."
+    )
+
+
+class PersonEvent(FrozenModel):
+    """A historical event attributed to a person."""
+
+    event: str = Field(default="", description="Event name (battle, conquest, ...).")
+    event_type: str = Field(default="", description="Event category (BATTLE, CONQUEST, ...).")
+    year_ah: int | None = Field(default=None, description="Hijri year of the event, when dated.")
+    role: str = Field(default="", description="Marker keyword linking person to event.")

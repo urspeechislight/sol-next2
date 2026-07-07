@@ -1,0 +1,409 @@
+"""Build layer: materialize the enriched authoritative person corpus.
+
+Turns sol-next's pipeline-produced rijal corpus (per-entry JSONL), canonical
+dedup (``canonical.json``), and history corpus (event records) into the
+``person`` / ``person_edge`` / ``person_event`` tables of ``registry.db``.
+This supersedes the thin ``canonical`` projection: one ``person`` row per
+distinct narrator carrying VALIDATED, CONSOLIDATED attributes cross-checked
+across its source entries, not raw upstream values.
+
+Three corrections happen here that the raw canonical dedup lacks:
+  * junk exclusion  - isnad chain fragments, book titles, and theophoric
+    truncations that are not people are dropped, not served (``is_person_name``).
+  * over-merge split - a canonical record that fused several people who merely
+    share a kunya (``is_over_merge``) is re-clustered by each entry's own full
+    name, so pooled reliability grades are re-attributed to the right person.
+  * death reconciliation - a two-digit year is folded into the century that
+    ends in it (72 under 172), with a conflict flag when sources disagree.
+
+Confident history events (a hijri year or a gazetteer match) attach as
+``person_event``, disambiguated by name distinctiveness or a death-year match
+so a common name does not inherit another person's battles. Teacher/student
+names are filtered against the corpus of real people and linked to a person id
+when known (``person_edge``). CENTRAL-005 permits the DDL/INSERT SQL here; the
+classification regex compiles through ``backend.patterns.cached_compile``
+(CENTRAL-002).
+"""
+
+from __future__ import annotations
+
+import json
+import sqlite3
+from collections import Counter, defaultdict
+from pathlib import Path
+from typing import Any, Final
+
+import ijson
+
+from backend.patterns import cached_compile, normalize_arabic
+
+_LINKS: Final[frozenset[str]] = frozenset(normalize_arabic(w) for w in ("بن", "ابن", "بنت", "ابنة"))
+_PHRASE_TOKENS: Final[frozenset[str]] = frozenset(
+    normalize_arabic(w) for w in
+    ("عن", "من", "في", "بين", "إلى", "الى", "مع", "لم", "أخبار", "الجمع", "غير", "منسوب")
+)
+_NOISE_LEADS: Final[frozenset[str]] = frozenset(
+    normalize_arabic(w) for w in
+    ("عن", "عنه", "عنهما", "ثم", "انتهى", "جزم", "لم", "أن", "قال", "اقتصر",
+     "سمعت", "روى", "وكان", "كان", "ذكر", "قلت", "قوله", "منه", "وقال", "فقال", "به")
+)
+_BOOK_LEADS: Final[tuple[str, ...]] = (
+    "الموطأ", "كتاب", "باب", "الجزء", "حديث", "مسند", "فصل", "الفهرست",
+    "رجال", "تاريخ", "طبقات", "الطبقات", "معجم",
+)
+_NON_HEAD: Final[frozenset[str]] = frozenset(normalize_arabic(w) for w in ("الله", "رسول", "النبي", "نبي"))
+_TX_STEM_RE = cached_compile(r"^(?:و|ف)?(?:حدث|اخبر|انبا)")
+
+_DISTINCTIVE_NAME_TOKENS: Final[int] = 4
+_MIN_SIGNIFICANT_TOKENS: Final[int] = 2
+_SPLIT_ID_BASE: Final[int] = 2_000_000
+_HISTORY_ID_BASE: Final[int] = 1_000_000
+_OVER_MERGE_ROOT_MAX: Final[int] = 2
+_NAME_ROOT_TOKENS: Final[int] = 2
+_MAX_VARIANTS: Final[int] = 8
+_MAX_RELIABILITY: Final[int] = 10
+_MAX_PLACES: Final[int] = 6
+_MAX_SOURCE_BOOKS: Final[int] = 12
+_MAX_BIO_CHARS: Final[int] = 600
+
+PERSON_SCHEMA: Final[str] = """
+CREATE TABLE person (
+  person_id      INTEGER PRIMARY KEY,
+  full_name      TEXT NOT NULL,
+  name_norm      TEXT NOT NULL DEFAULT '',
+  name_variants  TEXT NOT NULL DEFAULT '',
+  kunya          TEXT NOT NULL DEFAULT '',
+  nisba          TEXT NOT NULL DEFAULT '',
+  birth_year     INTEGER,
+  death_year     INTEGER,
+  death_conflict INTEGER NOT NULL DEFAULT 0,
+  tradition      TEXT NOT NULL DEFAULT '',
+  stance         TEXT NOT NULL DEFAULT '',
+  reliability    TEXT NOT NULL DEFAULT '[]',
+  places         TEXT NOT NULL DEFAULT '',
+  source_books   TEXT NOT NULL DEFAULT '',
+  n_sources      INTEGER NOT NULL DEFAULT 0,
+  event_count    INTEGER NOT NULL DEFAULT 0,
+  bio            TEXT NOT NULL DEFAULT '',
+  confidence     TEXT NOT NULL DEFAULT 'medium'
+);
+CREATE INDEX idx_person_name_norm ON person (name_norm);
+CREATE INDEX idx_person_kunya ON person (kunya);
+CREATE INDEX idx_person_tradition ON person (tradition);
+CREATE INDEX idx_person_confidence ON person (confidence);
+CREATE TABLE person_edge (
+  person_id       INTEGER NOT NULL,
+  relation        TEXT NOT NULL,
+  name            TEXT NOT NULL,
+  other_person_id INTEGER
+);
+CREATE INDEX idx_edge_person ON person_edge (person_id);
+CREATE TABLE person_event (
+  person_id  INTEGER NOT NULL,
+  event      TEXT NOT NULL DEFAULT '',
+  event_type TEXT NOT NULL DEFAULT '',
+  year_ah    INTEGER,
+  role       TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX idx_event_person ON person_event (person_id);
+"""
+
+_PERSON_INSERT: Final[str] = (
+    "INSERT INTO person (person_id, full_name, name_norm, name_variants, kunya, nisba,"
+    " birth_year, death_year, death_conflict, tradition, stance, reliability, places,"
+    " source_books, n_sources, event_count, bio, confidence)"
+    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+)
+_EDGE_INSERT: Final[str] = "INSERT INTO person_edge (person_id, relation, name, other_person_id) VALUES (?,?,?,?)"
+_EVENT_INSERT: Final[str] = "INSERT INTO person_event (person_id, event, event_type, year_ah, role) VALUES (?,?,?,?,?)"
+
+TABLES: Final[dict[str, str]] = {"person": _PERSON_INSERT, "person_edge": _EDGE_INSERT, "person_event": _EVENT_INSERT}
+
+
+def _transmission_forms() -> set[str]:
+    """The closed morphological class of isnad transmission verbs, generated not enumerated.
+
+    Each form is an optional wa-/fa- prefix, a haddatha/akhbara/anbaa stem, and a
+    subject/object pronoun suffix, plus the speech and riwaya verbs. A canonical
+    entry that leads with one of these is an isnad chain fragment, never a person.
+    """
+    stems = ("حدث", "أخبر", "أنبأ", "أنبا", "نبأ")
+    suffixes = ("", "نا", "ني", "ه", "هم", "ناه", "نيه", "هما", "تنا", "تني")
+    prefixes = ("", "و", "ف")
+    forms = {pre + stem + suf for pre in prefixes for stem in stems for suf in suffixes}
+    forms |= {"قال", "قاله", "قالها", "قالت", "قالوا", "قالا", "قالهما", "قلت", "قلنا", "قالوه",
+              "روى", "رواه", "رواها", "رواهما", "يروي", "يرويه", "يرويها", "نروي", "روينا",
+              "رويناه", "رويت", "أروي", "سمعت", "سمعته", "سمعنا", "سمعناه", "ثنا", "نا", "انا",
+              "ابنا", "أبنا", "قرأت", "قرأنا", "قرئ", "أنشدنا", "أنشدني", "ناوله", "وحدث", "وسمعت"}
+    return forms
+
+
+_JUNK_LEADS: Final[frozenset[str]] = frozenset(
+    _NOISE_LEADS | _NON_HEAD
+    | {normalize_arabic(w) for w in _transmission_forms()}
+    | {normalize_arabic(w) for w in _BOOK_LEADS}
+)
+
+
+def is_name(name: str) -> bool:
+    """A name-shaped token sequence usable for a teacher/student edge label."""
+    toks = normalize_arabic(name).split()
+    return bool(toks) and toks[0] not in _NOISE_LEADS and len([t for t in toks if t not in _LINKS]) >= _MIN_SIGNIFICANT_TOKENS
+
+
+def is_person_name(name: str) -> bool:
+    """A real person name: not a chain fragment, digit-led string, or a book/citation phrase.
+
+    A phrase token (a preposition or citation word such as عن / في / بين / أخبار)
+    marks a book title or matn fragment; a real name never contains one. This
+    keeps ``ism + nisba`` names that lack an explicit بن (عبد الله الرومي) while
+    dropping ``الجمع بين رجال الصحيحين`` and ``عيون أخبار الرضا``.
+    """
+    stripped = name.strip()
+    if not stripped or stripped[0].isdigit() or stripped[0] in "([":
+        return False
+    toks = normalize_arabic(crop_name(stripped)).split()
+    if not toks or toks[0] in _JUNK_LEADS or toks[0] == "بن" or _TX_STEM_RE.match(toks[0]):
+        return False
+    return len([t for t in toks if t not in _LINKS]) >= _MIN_SIGNIFICANT_TOKENS
+
+
+def clean_ws(name: str) -> str:
+    """Collapse embedded newlines and runs of whitespace in a display name."""
+    return " ".join(name.split())
+
+
+def crop_name(name: str) -> str:
+    """Crop a name at the first chain/citation token, dropping trailing isnad or book context.
+
+    ``فلان بن فلان عن علان`` becomes ``فلان بن فلان`` (a real person with a clean
+    name), while ``عيون أخبار الرضا`` crops to ``عيون`` and then fails the token
+    count in ``is_person_name`` (a book title, not a person).
+    """
+    surface = name.split()
+    norm = normalize_arabic(" ".join(surface)).split()
+    cut = len(surface)
+    for i in range(min(len(surface), len(norm))):
+        if norm[i] in _PHRASE_TOKENS:
+            cut = i
+            break
+    return " ".join(surface[:cut])
+
+
+def reconcile_death(years: Counter[int]) -> tuple[int | None, bool]:
+    """Return (death year, conflict). Fold a two-digit year into a 1XX that ends in it."""
+    if not years:
+        return None, False
+    vals = set(years)
+    folded: Counter[int] = Counter()
+    for year, count in years.items():
+        target = year
+        if year < 100:
+            three = next((v for v in vals if v >= 100 and v % 100 == year), None)
+            target = three if three is not None else year
+        folded[target] += count
+    top = folded.most_common()
+    conflict = len([y for y in folded if y]) > 1 and top[0][1] < sum(folded.values())
+    return top[0][0], conflict
+
+
+def _name_root(name: str) -> tuple[str, ...]:
+    """The ism + father core of a name (its first significant tokens), for identity grouping."""
+    significant = [t for t in normalize_arabic(crop_name(name)).split() if t not in _LINKS]
+    return tuple(significant[:_NAME_ROOT_TOKENS])
+
+
+def is_over_merge(entries: list[dict[str, Any]]) -> bool:
+    """True when a canonical bucket fuses several distinct people (a shared-kunya collision).
+
+    A death conflict or a nisba variant alone does not qualify: sources disagree on
+    one person's death (Sufyan b. Uyayna, 191 vs 198) and record extra nisbas. The
+    robust signal is many distinct name roots - the ism+father core stays constant
+    for one person across all their entries, but a kunya bucket fuses people whose
+    cores differ (بكر بن الحكم, سلمة بن علقمة, ...).
+    """
+    roots = {_name_root(e["full_name"]) for e in entries
+             if e.get("full_name") and is_person_name(e["full_name"])}
+    roots.discard(())
+    return len(roots) > _OVER_MERGE_ROOT_MAX
+
+
+def _as_stance(value: Any) -> str:
+    """Coerce a raw stance entry (string or dict) to its stance token."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return str(value.get("stance"))
+    return str(value)
+
+
+def _matched_events(
+    name_norm: str, dyear: int | None, hist_events: dict[str, list[tuple[dict[str, Any], int | None]]]
+) -> list[dict[str, Any]]:
+    """Select history events safe to attribute: a distinctive name, or a death-year match."""
+    candidate = hist_events.get(name_norm, [])
+    significant = len([t for t in name_norm.split() if t not in _LINKS])
+    if significant >= _DISTINCTIVE_NAME_TOKENS:
+        return [ev for ev, _ in candidate]
+    if dyear is not None:
+        return [ev for ev, hist_death in candidate if hist_death == dyear]
+    return []
+
+
+def _person_rows(
+    pid: int,
+    entries: list[dict[str, Any]],
+    tradition: str,
+    display_name: str,
+    canon_id_by_norm: dict[str, int],
+    hist_events: dict[str, list[tuple[dict[str, Any], int | None]]],
+) -> tuple[tuple[Any, ...], list[tuple[Any, ...]], list[tuple[Any, ...]]]:
+    """Aggregate one person's entries into (person row, edge rows, event rows)."""
+    kunyas = Counter(e["kunya"] for e in entries if e.get("kunya"))
+    nisbas = Counter(e["nisba"] for e in entries if e.get("nisba"))
+    births = Counter(e["birth_year"] for e in entries if e.get("birth_year"))
+    dyear, conflict = reconcile_death(Counter(e["death_year"] for e in entries if e.get("death_year")))
+    display = crop_name(display_name)
+    variants = list(dict.fromkeys(crop_name(e["full_name"]) for e in entries if e.get("full_name")))[:_MAX_VARIANTS]
+    rel = Counter(f"{r.get('evaluator')}={r.get('term')}" for e in entries for r in (e.get("reliability") or []))
+    stance = Counter(_as_stance(s) for e in entries for s in (e.get("stance") or []))
+    places = list(dict.fromkeys(loc if isinstance(loc, str) else str(loc)
+                                for e in entries for loc in (e.get("locations") or [])))
+    src = list(dict.fromkeys(e["source"].get("title") for e in entries if e.get("source")))
+    bio = max((e.get("bio_text") or "" for e in entries), key=len, default="")
+    over_merged = is_over_merge(entries)
+    confidence = "low" if over_merged else ("high" if (kunyas or nisbas) and dyear else "medium")
+    name_norm = normalize_arabic(display)
+    edges: list[tuple[Any, ...]] = []
+    for relation, field in (("teacher", "teacher_names"), ("student", "student_names")):
+        for name in dict.fromkeys(n for e in entries for n in (e.get(field) or [])):
+            if is_name(name):
+                edges.append((pid, relation, name, canon_id_by_norm.get(normalize_arabic(name))))
+    matched = _matched_events(name_norm, dyear, hist_events)
+    events = [(pid, ev.get("event") or "", ev.get("event_type") or "",
+               ev.get("year_ah") if isinstance(ev.get("year_ah"), int) else None,
+               ev.get("marker_keyword") or "")
+              for ev in {(e.get("event"), e.get("event_type"), e.get("year_ah"), e.get("marker_keyword")): e
+                         for e in matched}.values()]
+    row = (pid, display, name_norm, " | ".join(variants),
+           kunyas.most_common(1)[0][0] if kunyas else "",
+           nisbas.most_common(1)[0][0] if nisbas else "",
+           births.most_common(1)[0][0] if births else None, dyear, int(conflict),
+           tradition or "", stance.most_common(1)[0][0] if stance else "",
+           json.dumps([g for g, _ in rel.most_common(_MAX_RELIABILITY)], ensure_ascii=False),
+           " | ".join(places[:_MAX_PLACES]), " | ".join(str(s) for s in src[:_MAX_SOURCE_BOOKS]),
+           len(entries), len(matched), bio[:_MAX_BIO_CHARS], confidence)
+    return row, edges, events
+
+
+def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Read a JSONL corpus file into a list of entry dicts, failing loud if absent."""
+    if not path.exists():
+        raise SystemExit(f"Corpus file not found: {path}")
+    with path.open(encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
+def _stream_history(
+    path: Path, real_names: set[str]
+) -> tuple[dict[str, list[tuple[dict[str, Any], int | None]]], dict[tuple[str, int | None], dict[str, Any]]]:
+    """Stream history event records into (linked-narrator events, history-only persons keyed by name+death)."""
+    if not path.exists():
+        raise SystemExit(f"History corpus not found: {path}")
+    linked: dict[str, list[tuple[dict[str, Any], int | None]]] = defaultdict(list)
+    history_only: dict[tuple[str, int | None], dict[str, Any]] = {}
+    with path.open(encoding="utf-8") as handle:
+        for person in ijson.items(handle, "item"):
+            events = person.get("events") or []
+            if not events:
+                continue
+            name = (person.get("full_name") or "").strip()
+            name_norm = normalize_arabic(name)
+            hist_death = person.get("death_year") if isinstance(person.get("death_year"), int) else None
+            good = [ev for ev in events if ev.get("year_ah") or ev.get("gazetteer_match")]
+            if name_norm in real_names:
+                for ev in good:
+                    linked[name_norm].append((ev, hist_death))
+            elif good and is_person_name(name):
+                key = (name_norm, hist_death)
+                record = history_only.get(key)
+                if record is None:
+                    history_only[key] = {"name": name, "kunya": person.get("kunya") or "",
+                                         "nisba": person.get("nisba") or "", "death": hist_death,
+                                         "events": list(good)}
+                else:
+                    record["events"].extend(good)
+    return linked, history_only
+
+
+def build_person_tables(
+    con: sqlite3.Connection, canonical_path: Path, corpus_path: Path, history_path: Path | None
+) -> dict[str, int]:
+    """Materialize the person / person_edge / person_event tables into ``con``; return row counts.
+
+    ``history_path`` is the optional 3.4 GB history corpus. When absent, persons
+    carry no events and no history-only actors are added; the rijal enrichment
+    (kunya, death, reliability, stance, edges) is built either way.
+    """
+    corpus = _load_jsonl(corpus_path)
+    with canonical_path.open(encoding="utf-8") as handle:
+        canon = json.load(handle)
+    canon_id_by_norm: dict[str, int] = {}
+    for record in canon:
+        canon_id_by_norm.setdefault(normalize_arabic(record["full_name"]), record["canonical_id"])
+    real_names = set(canon_id_by_norm)
+    hist_events: dict[str, list[tuple[dict[str, Any], int | None]]] = {}
+    history_only: dict[tuple[str, int | None], dict[str, Any]] = {}
+    if history_path is not None:
+        hist_events, history_only = _stream_history(history_path, real_names)
+
+    persons: list[tuple[Any, ...]] = []
+    edges: list[tuple[Any, ...]] = []
+    events: list[tuple[Any, ...]] = []
+    split_id = _SPLIT_ID_BASE
+    for record in canon:
+        if not is_person_name(record["full_name"]):
+            continue
+        entries = [corpus[i] for i in record["entry_ids"] if i < len(corpus)]
+        if not entries:
+            continue
+        if is_over_merge(entries):
+            clusters: dict[str, list[dict[str, Any]]] = defaultdict(list)
+            for entry in entries:
+                full = entry.get("full_name") or ""
+                if is_person_name(full):
+                    clusters[normalize_arabic(crop_name(full))].append(entry)
+            for cluster in clusters.values():
+                split_id += 1
+                display = Counter(crop_name(e["full_name"]) for e in cluster).most_common(1)[0][0]
+                row, cluster_edges, cluster_events = _person_rows(
+                    split_id, cluster, record.get("tradition") or "", display, canon_id_by_norm, hist_events)
+                persons.append(row)
+                edges.extend(cluster_edges)
+                events.extend(cluster_events)
+        else:
+            row, record_edges, record_events = _person_rows(
+                record["canonical_id"], entries, record.get("tradition") or "",
+                record["full_name"], canon_id_by_norm, hist_events)
+            persons.append(row)
+            edges.extend(record_edges)
+            events.extend(record_events)
+
+    hid = _HISTORY_ID_BASE
+    for (_key_norm, _death), record in history_only.items():
+        hid += 1
+        record_events = list({(e.get("event"), e.get("event_type"), e.get("year_ah"), e.get("marker_keyword")): e
+                              for e in record["events"]}.values())
+        display = crop_name(record["name"])
+        persons.append((hid, display, normalize_arabic(display), display,
+                        record["kunya"], record["nisba"], None, record["death"], 0, "history", "",
+                        "[]", "", "", 0, len(record_events), "", "history_person"))
+        for ev in record_events:
+            events.append((hid, ev.get("event") or "", ev.get("event_type") or "",
+                           ev.get("year_ah") if isinstance(ev.get("year_ah"), int) else None,
+                           ev.get("marker_keyword") or ""))
+
+    con.executemany(_PERSON_INSERT, persons)
+    con.executemany(_EDGE_INSERT, edges)
+    con.executemany(_EVENT_INSERT, events)
+    return {"person": len(persons), "person_edge": len(edges), "person_event": len(events)}
