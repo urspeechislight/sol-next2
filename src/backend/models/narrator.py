@@ -50,21 +50,6 @@ class RijalEntry(NarratorBase):
     book_path: str = Field(default="", description="Relative path of the source corpus file.")
 
 
-class CanonicalEntry(NarratorBase):
-    """A canonicalized person, one identity across sources (legacy; see PersonEntry)."""
-
-    canonical_id: int = Field(ge=0, description="Stable canonical identity id + detail-route key.")
-    death_year: int | None = Field(default=None, description="Death year, Hijri, when known.")
-    birth_year: int | None = Field(default=None, description="Birth year, Hijri, when known.")
-    entry_count: int = Field(ge=0, description="Raw corpus entries merged into this identity.")
-    source_count: int = Field(ge=0, description="Distinct source works contributing entries.")
-    teacher_count: int = Field(ge=0, description="Union of recorded teachers across entries.")
-    student_count: int = Field(ge=0, description="Union of recorded students across entries.")
-    merge_confidence: float | None = Field(
-        default=None, description="Merge confidence in 0..1, or null when unscored."
-    )
-
-
 class PersonEntry(NarratorBase):
     """An authoritative narrator identity, cross-checked across its source entries."""
 

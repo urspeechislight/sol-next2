@@ -42,7 +42,6 @@ export const HOME = {
 // the narrator registries that the graph browses
 export const REGISTRY = {
   RIJAL: 'rijal',
-  CANONICAL: 'canonical',
   PERSON: 'person',
 } as const;
 

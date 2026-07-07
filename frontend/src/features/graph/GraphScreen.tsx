@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 
 import { Heading, Inline, Pager, Segmented, Stack, Text } from '../../lib/design-system';
 import { DataView } from '../../lib/DataView';
-import { getCanonical, getPerson, getRijal } from '../../lib/api/client';
+import { getPerson, getRijal } from '../../lib/api/client';
 import { PAGE, REGISTRY } from '../../lib/constants';
 import type { Page } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { pageCount } from '../../lib/utils';
-import { isCanonical, isPerson, NarratorCard, type NarratorItem } from '../narrators/NarratorCard';
+import { isPerson, NarratorCard, type NarratorItem } from '../narrators/NarratorCard';
 import '../screens.css';
 
 const PER_PAGE = PAGE.graphPerPage;
@@ -15,13 +15,10 @@ const PER_PAGE = PAGE.graphPerPage;
 const TABS = [
   { value: REGISTRY.RIJAL, label: 'Rijāl', icon: 'node' as const },
   { value: REGISTRY.PERSON, label: 'Persons', icon: 'users' as const },
-  { value: REGISTRY.CANONICAL, label: 'Canonical', icon: 'layers' as const },
 ];
 
 function itemKey(item: NarratorItem): string {
-  if (isPerson(item)) return `p${item.person_id}`;
-  if (isCanonical(item)) return `c${item.canonical_id}`;
-  return `r${item.id}`;
+  return isPerson(item) ? `p${item.person_id}` : `r${item.id}`;
 }
 
 export function GraphScreen() {
@@ -35,7 +32,6 @@ export function GraphScreen() {
 
   const result = useAsync<Page<NarratorItem>>(() => {
     if (registry === REGISTRY.PERSON) return getPerson({ limit: PER_PAGE, offset });
-    if (registry === REGISTRY.CANONICAL) return getCanonical({ limit: PER_PAGE, offset });
     return getRijal({ limit: PER_PAGE, offset });
   }, [registry, page]);
 

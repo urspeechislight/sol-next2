@@ -180,46 +180,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/canonical": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List canonical narrator profiles with pagination + filters.
-         * @description Wrap the repo's (slice, total) into a Page[CanonicalEntry] envelope.
-         */
-        get: operations["_list_canonical_api_canonical_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/canonical/{canonical_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get a single canonical profile by id.
-         * @description Return one canonical profile by id, or raise ``ResourceNotFoundError``.
-         */
-        get: operations["get_canonical_api_canonical__canonical_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/citations/{surah}/{aya}/books": {
         parameters: {
             query?: never;
@@ -883,75 +843,6 @@ export interface components {
              * @description Excerpt of the matching unit (Arabic).
              */
             snippet: string;
-        };
-        /**
-         * CanonicalEntry
-         * @description A canonicalized person, one identity across sources (legacy; see PersonEntry).
-         */
-        CanonicalEntry: {
-            /**
-             * Birth Year
-             * @description Birth year, Hijri, when known.
-             */
-            birth_year?: number | null;
-            /**
-             * Canonical Id
-             * @description Stable canonical identity id + detail-route key.
-             */
-            canonical_id: number;
-            /**
-             * Death Year
-             * @description Death year, Hijri, when known.
-             */
-            death_year?: number | null;
-            /**
-             * Entry Count
-             * @description Raw corpus entries merged into this identity.
-             */
-            entry_count: number;
-            /**
-             * Full Name
-             * @description Full name in Arabic.
-             */
-            full_name: string;
-            /**
-             * Kunya
-             * @description Teknonym (Abu/Umm ...), if recorded.
-             * @default
-             */
-            kunya: string;
-            /**
-             * Merge Confidence
-             * @description Merge confidence in 0..1, or null when unscored.
-             */
-            merge_confidence?: number | null;
-            /**
-             * Nisba
-             * @description Attributive name (tribe/place), if recorded.
-             * @default
-             */
-            nisba: string;
-            /**
-             * Source Count
-             * @description Distinct source works contributing entries.
-             */
-            source_count: number;
-            /**
-             * Student Count
-             * @description Union of recorded students across entries.
-             */
-            student_count: number;
-            /**
-             * Teacher Count
-             * @description Union of recorded teachers across entries.
-             */
-            teacher_count: number;
-            /**
-             * Tradition
-             * @description Sunni / shia / both, when classified.
-             * @default
-             */
-            tradition: string;
         };
         /**
          * Category
@@ -1829,29 +1720,6 @@ export interface components {
              */
             total: number;
         };
-        /** Page[CanonicalEntry] */
-        Page_CanonicalEntry_: {
-            /**
-             * Items
-             * @description Records in this slice.
-             */
-            items: components["schemas"]["CanonicalEntry"][];
-            /**
-             * Limit
-             * @description Slice size requested.
-             */
-            limit: number;
-            /**
-             * Offset
-             * @description Number of records skipped before this slice.
-             */
-            offset: number;
-            /**
-             * Total
-             * @description Total records matching the query, across all pages.
-             */
-            total: number;
-        };
         /** Page[CorpusMatch] */
         Page_CorpusMatch_: {
             /**
@@ -2671,75 +2539,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Book"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    _list_canonical_api_canonical_get: {
-        parameters: {
-            query?: {
-                /** @description Substring match on name / kunya / nisba. */
-                q?: string;
-                /** @description Only profiles merged from more than one raw entry. */
-                merged_only?: boolean;
-                /** @description Records per page. */
-                limit?: number;
-                /** @description Records to skip. */
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_CanonicalEntry_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_canonical_api_canonical__canonical_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                canonical_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CanonicalEntry"];
                 };
             };
             /** @description Validation Error */

@@ -9,7 +9,6 @@ import type {
   Book,
   BookPage,
   BookSearchMatch,
-  CanonicalEntry,
   CanonicalRank,
   CorpusMatch,
   Daily,
@@ -269,23 +268,6 @@ export function getRijal(params: RijalParams = {}): Promise<Page<RijalEntry>> {
     offset: params.offset ?? 0,
   });
   return get<Page<RijalEntry>>(`${API.RIJAL}${qs}`);
-}
-
-export interface CanonicalParams {
-  q?: string;
-  merged_only?: boolean;
-  limit?: number;
-  offset?: number;
-}
-
-export function getCanonical(params: CanonicalParams = {}): Promise<Page<CanonicalEntry>> {
-  const qs = query({
-    q: params.q ?? '',
-    merged_only: params.merged_only ?? false,
-    limit: params.limit ?? PAGE.defaultLimit,
-    offset: params.offset ?? 0,
-  });
-  return get<Page<CanonicalEntry>>(`${API.CANONICAL}${qs}`);
 }
 
 /** Fetch one rijal entry by id — the reader's tarjama detail for a linked narrator. */

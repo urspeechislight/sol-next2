@@ -40,21 +40,6 @@ CREATE TABLE rijal (
 );
 CREATE INDEX idx_rijal_tradition ON rijal (tradition);
 CREATE INDEX idx_rijal_category ON rijal (category);
-CREATE TABLE canonical (
-  canonical_id   INTEGER PRIMARY KEY,
-  full_name      TEXT NOT NULL,
-  kunya          TEXT NOT NULL DEFAULT '',
-  nisba          TEXT NOT NULL DEFAULT '',
-  tradition      TEXT NOT NULL DEFAULT '',
-  death_year     INTEGER,
-  birth_year     INTEGER,
-  entry_count    INTEGER NOT NULL DEFAULT 1,
-  source_count   INTEGER NOT NULL DEFAULT 0,
-  teacher_count  INTEGER NOT NULL DEFAULT 0,
-  student_count  INTEGER NOT NULL DEFAULT 0,
-  merge_confidence REAL
-);
-CREATE INDEX idx_canonical_tradition ON canonical (tradition);
 """
 
 _RIJAL_INSERT = """
@@ -68,16 +53,7 @@ VALUES
    :evaluator, :source_label, :book_path)
 """
 
-_CANONICAL_INSERT = """
-INSERT INTO canonical
-  (canonical_id, full_name, kunya, nisba, tradition, death_year, birth_year,
-   entry_count, source_count, teacher_count, student_count, merge_confidence)
-VALUES
-  (:canonical_id, :full_name, :kunya, :nisba, :tradition, :death_year, :birth_year,
-   :entry_count, :source_count, :teacher_count, :student_count, :merge_confidence)
-"""
-
-TABLES: dict[str, str] = {"rijal": _RIJAL_INSERT, "canonical": _CANONICAL_INSERT}
+TABLES: dict[str, str] = {"rijal": _RIJAL_INSERT}
 
 _ISNAD_MIN_CHARS: Final[int] = 60
 _LONG_MIN_CHARS: Final[int] = 80
@@ -134,27 +110,6 @@ def rijal_row(index: int, entry: dict[str, Any]) -> dict[str, Any]:
         "evaluator": rel0.get("evaluator", "") or "",
         "source_label": _source_label(entry.get("source") or {}),
         "book_path": entry.get("book_path", "") or "",
-    }
-
-
-def canonical_row(entry: dict[str, Any]) -> dict[str, Any]:
-    """Project one raw canonical profile into a served canonical row dict."""
-    sources: list[Any] = entry.get("sources") or []
-    teachers: list[Any] = entry.get("teacher_names") or []
-    students: list[Any] = entry.get("student_names") or []
-    return {
-        "canonical_id": entry.get("canonical_id"),
-        "full_name": entry.get("full_name", "") or "",
-        "kunya": entry.get("kunya") or "",
-        "nisba": entry.get("nisba") or "",
-        "tradition": entry.get("tradition", "") or "",
-        "death_year": entry.get("death_year"),
-        "birth_year": entry.get("birth_year"),
-        "entry_count": entry.get("entry_count", 1),
-        "source_count": len(sources),
-        "teacher_count": len(teachers),
-        "student_count": len(students),
-        "merge_confidence": entry.get("merge_confidence"),
     }
 
 

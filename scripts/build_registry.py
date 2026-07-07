@@ -44,13 +44,6 @@ def _build(args: argparse.Namespace) -> dict[str, object]:
         ]
         with con:
             con.executemany(rijal_build.TABLES["rijal"], rijal_rows)
-        canon_rows = [
-            rijal_build.canonical_row(e)
-            for e in rijal_build.load_array(args.canonical)
-            if e.get("canonical_id") is not None
-        ]
-        with con:
-            con.executemany(rijal_build.TABLES["canonical"], canon_rows)
         history = None if args.no_history else args.history
         with con:
             person_counts = authority.build_person_tables(
@@ -59,7 +52,7 @@ def _build(args: argparse.Namespace) -> dict[str, object]:
         runner.finalize(con)
     finally:
         con.close()
-    return {"rijal": len(rijal_rows), "canonical": len(canon_rows), **person_counts}
+    return {"rijal": len(rijal_rows), **person_counts}
 
 
 def _add_args(parser: argparse.ArgumentParser) -> None:

@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 from backend.core.constants import ARTIFACT__REGISTRY_DB, HTTP__DEFAULT_PAGE_SIZE
 from backend.core.errors import ResourceNotFoundError
-from backend.models.narrator import CanonicalEntry, PersonEdge, PersonEntry, PersonEvent, RijalEntry
+from backend.models.narrator import PersonEdge, PersonEntry, PersonEvent, RijalEntry
 from backend.repositories._data_loader import open_ro_db
 
 _RIJAL_FILTER = """
@@ -33,17 +33,6 @@ WHERE (:q = '' OR full_name LIKE :qlike OR kunya LIKE :qlike OR nisba LIKE :qlik
 
 _RIJAL_COUNT = "SELECT COUNT(*) " + _RIJAL_FILTER
 _RIJAL_PAGE = "SELECT * " + _RIJAL_FILTER + " ORDER BY id LIMIT :limit OFFSET :offset"
-
-_CANONICAL_FILTER = """
-FROM canonical
-WHERE (:q = '' OR full_name LIKE :qlike OR kunya LIKE :qlike OR nisba LIKE :qlike)
-  AND (:merged_only = 0 OR entry_count > 1)
-"""
-
-_CANONICAL_COUNT = "SELECT COUNT(*) " + _CANONICAL_FILTER
-_CANONICAL_PAGE = (
-    "SELECT * " + _CANONICAL_FILTER + " ORDER BY canonical_id LIMIT :limit OFFSET :offset"
-)
 
 _PERSON_FILTER = """
 FROM person
@@ -149,27 +138,6 @@ def list_rijal(
 def get_rijal(entry_id: int) -> RijalEntry:
     """Return one rijal entry by id, or raise ``ResourceNotFoundError``."""
     return _get_one("SELECT * FROM rijal WHERE id = :id", entry_id, RijalEntry, "rijal")
-
-
-def list_canonical(
-    q: str = "",
-    merged_only: bool = False,
-    limit: int = HTTP__DEFAULT_PAGE_SIZE,
-    offset: int = 0,
-) -> tuple[list[CanonicalEntry], int]:
-    """Return ``(slice, total)`` of canonical profiles matching the filters."""
-    params: dict[str, Any] = {"q": q, "qlike": f"%{q}%", "merged_only": int(merged_only)}
-    return _paged_query(_CANONICAL_COUNT, _CANONICAL_PAGE, params, CanonicalEntry, limit, offset)
-
-
-def get_canonical(canonical_id: int) -> CanonicalEntry:
-    """Return one canonical profile by id, or raise ``ResourceNotFoundError``."""
-    return _get_one(
-        "SELECT * FROM canonical WHERE canonical_id = :id",
-        canonical_id,
-        CanonicalEntry,
-        "canonical",
-    )
 
 
 def list_person(
