@@ -70,6 +70,7 @@ class PersonEntry(NarratorBase):
     event_count: int = Field(ge=0, description="Historical events attributed to this person.")
     bio: str = Field(default="", description="Longest available biographical snippet.")
     confidence: str = Field(default="medium", description="Record confidence (high/medium).")
+    generation: str = Field(default="", description="companion / successor, when derivable.")
 
     @field_validator("reliability", mode="before")
     @classmethod

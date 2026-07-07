@@ -51,6 +51,15 @@ _KINSHIP_TOKENS: Final[frozenset[str]] = frozenset(
 _LINEAGE_TOKENS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in ("وأمه", "وأمها", "وأمهما", "وأبوه", "وأبوها", "وابنه")
 )
+_PROPHET_MARKERS: Final[frozenset[str]] = frozenset(
+    normalize_arabic(w) for w in ("رسول الله", "النبي", "النبى")
+)
+_COMMENTARY_TOKENS: Final[frozenset[str]] = frozenset(
+    normalize_arabic(w) for w in
+    ("سمعت", "يقول", "ذلك", "توقف", "ضعفوا", "ضعف", "غمز", "يترك", "فيترك", "الترك", "أولى",
+     "مطلقا", "شاهدا", "جماعة", "القدماء", "المتأخرين", "هؤلاء", "منهم", "روى", "يروي", "يرويه")
+)
+_COMPANION_DEATH_MAX: Final[int] = 110
 _NOISE_LEADS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in
     ("عن", "عنه", "عنهما", "ثم", "انتهى", "جزم", "لم", "أن", "قال", "اقتصر",
@@ -97,7 +106,8 @@ CREATE TABLE person (
   student_count  INTEGER NOT NULL DEFAULT 0,
   event_count    INTEGER NOT NULL DEFAULT 0,
   bio            TEXT NOT NULL DEFAULT '',
-  confidence     TEXT NOT NULL DEFAULT 'medium'
+  confidence     TEXT NOT NULL DEFAULT 'medium',
+  generation     TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX idx_person_name_norm ON person (name_norm);
 CREATE INDEX idx_person_kunya ON person (kunya);
@@ -123,8 +133,9 @@ CREATE INDEX idx_event_person ON person_event (person_id);
 _PERSON_INSERT: Final[str] = (
     "INSERT INTO person (person_id, full_name, name_norm, name_variants, kunya, nisba,"
     " birth_year, death_year, death_conflict, tradition, stance, reliability, places,"
-    " source_books, n_sources, teacher_count, student_count, event_count, bio, confidence)"
-    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    " source_books, n_sources, teacher_count, student_count, event_count, bio, confidence,"
+    " generation)"
+    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 )
 _EDGE_INSERT: Final[str] = "INSERT INTO person_edge (person_id, relation, name, other_person_id) VALUES (?,?,?,?)"
 _EVENT_INSERT: Final[str] = "INSERT INTO person_event (person_id, event, event_type, year_ah, role) VALUES (?,?,?,?,?)"
@@ -203,7 +214,7 @@ def crop_name(name: str) -> str:
         start += 1
     cut = len(surface)
     for i in range(start, upto):
-        if norm[i] in _PHRASE_TOKENS or norm[i] in _LINEAGE_TOKENS:
+        if norm[i] in _PHRASE_TOKENS or norm[i] in _LINEAGE_TOKENS or norm[i] in _COMMENTARY_TOKENS:
             cut = i
             break
     return " ".join(surface[start:cut])
@@ -259,6 +270,30 @@ def _as_stance(value: Any) -> str:
     return str(value)
 
 
+def _generation(categories: list[str], teacher_names: set[str], death_year: int | None) -> str:
+    """Derive the narrator generation from source category tags and named teachers.
+
+    ``صحابي`` among the categories marks a Companion (ṣaḥābī); the Prophet among the
+    teachers he heard from confirms one only when the death year is early enough to
+    be plausible (a polluted ``رسول الله`` edge must not tag a 128 AH narrator);
+    ``تابع التابعين`` a follower's follower; ``تابعي`` a Successor (tābiʿī).
+    """
+    joined = normalize_arabic(" ".join(categories))
+    if "صحاب" in joined:
+        return "companion"
+    heard_prophet = any(
+        any(marker in normalize_arabic(name) for marker in _PROPHET_MARKERS)
+        for name in teacher_names
+    )
+    if heard_prophet and (death_year is None or death_year <= _COMPANION_DEATH_MAX):
+        return "companion"
+    if "تابع التابع" in joined:
+        return "successor_of_successors"
+    if "تابع" in joined:
+        return "successor"
+    return ""
+
+
 def _matched_events(
     name_norm: str, dyear: int | None, hist_events: dict[str, list[tuple[dict[str, Any], int | None]]]
 ) -> list[dict[str, Any]]:
@@ -287,7 +322,13 @@ def _person_rows(
     dyear, conflict = reconcile_death(Counter(e["death_year"] for e in entries if e.get("death_year")))
     display = crop_name(display_name)
     variants = list(dict.fromkeys(crop_name(e["full_name"]) for e in entries if e.get("full_name")))[:_MAX_VARIANTS]
-    rel = Counter(f"{r.get('evaluator')}={r.get('term')}" for e in entries for r in (e.get("reliability") or []))
+    by_evaluator: dict[str, Counter[str]] = defaultdict(Counter)
+    for entry in entries:
+        for grade in (entry.get("reliability") or []):
+            evaluator, term = grade.get("evaluator"), grade.get("term")
+            if evaluator and term:
+                by_evaluator[evaluator][term] += 1
+    reliability = [f"{ev}={terms.most_common(1)[0][0]}" for ev, terms in by_evaluator.items()]
     stance = Counter(_as_stance(s) for e in entries for s in (e.get("stance") or []))
     places = list(dict.fromkeys(loc if isinstance(loc, str) else str(loc)
                                 for e in entries for loc in (e.get("locations") or [])))
@@ -299,11 +340,15 @@ def _person_rows(
     edges: list[tuple[Any, ...]] = []
     for relation, field in (("teacher", "teacher_names"), ("student", "student_names")):
         for name in dict.fromkeys(n for e in entries for n in (e.get(field) or [])):
-            if is_name(name):
-                edges.append((pid, relation, name, canon_id_by_norm.get(normalize_arabic(name))))
+            clean = crop_name(name)
+            clean_norm = normalize_arabic(clean)
+            if is_person_name(name) and clean_norm != name_norm:
+                edges.append((pid, relation, clean, canon_id_by_norm.get(clean_norm)))
     teacher_count = sum(1 for edge in edges if edge[1] == "teacher")
     student_count = sum(1 for edge in edges if edge[1] == "student")
     stance_out = "" if over_merged else (stance.most_common(1)[0][0] if stance else "")
+    generation = _generation([c for e in entries for c in (e.get("categories") or [])],
+                             {n for e in entries for n in (e.get("teacher_names") or [])}, dyear)
     matched = _matched_events(name_norm, dyear, hist_events)
     events = [(pid, ev.get("event") or "", ev.get("event_type") or "",
                ev.get("year_ah") if isinstance(ev.get("year_ah"), int) else None,
@@ -315,9 +360,10 @@ def _person_rows(
            nisbas.most_common(1)[0][0] if nisbas else "",
            births.most_common(1)[0][0] if births else None, dyear, int(conflict),
            tradition or "", stance_out,
-           json.dumps([g for g, _ in rel.most_common(_MAX_RELIABILITY)], ensure_ascii=False),
+           json.dumps(reliability[:_MAX_RELIABILITY], ensure_ascii=False),
            " | ".join(places[:_MAX_PLACES]), " | ".join(str(s) for s in src[:_MAX_SOURCE_BOOKS]),
-           len(entries), teacher_count, student_count, len(matched), bio[:_MAX_BIO_CHARS], confidence)
+           len(entries), teacher_count, student_count, len(matched), bio[:_MAX_BIO_CHARS],
+           confidence, generation)
     return row, edges, events
 
 
@@ -422,7 +468,7 @@ def build_person_tables(
         display = crop_name(record["name"])
         persons.append((hid, display, normalize_arabic(display), display,
                         record["kunya"], record["nisba"], None, record["death"], 0, "history", "",
-                        "[]", "", "", 0, 0, 0, len(record_events), "", "history_person"))
+                        "[]", "", "", 0, 0, 0, len(record_events), "", "history_person", ""))
         for ev in record_events:
             events.append((hid, ev.get("event") or "", ev.get("event_type") or "",
                            ev.get("year_ah") if isinstance(ev.get("year_ah"), int) else None,

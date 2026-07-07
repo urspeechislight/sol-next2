@@ -1877,6 +1877,12 @@ export interface components {
              */
             full_name: string;
             /**
+             * Generation
+             * @description companion / successor, when derivable.
+             * @default
+             */
+            generation: string;
+            /**
              * Kunya
              * @description Teknonym (Abu/Umm ...), if recorded.
              * @default

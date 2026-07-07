@@ -1874,6 +1874,12 @@
             "title": "Full Name",
             "type": "string"
           },
+          "generation": {
+            "default": "",
+            "description": "companion / successor, when derivable.",
+            "title": "Generation",
+            "type": "string"
+          },
           "kunya": {
             "default": "",
             "description": "Teknonym (Abu/Umm ...), if recorded.",

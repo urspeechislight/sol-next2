@@ -30,6 +30,7 @@ export interface Page<T> {
 // ---- narrator registry (GET /api/rijal, /api/canonical) ----
 export type RijalEntry = Full<S['RijalEntry']>;
 export type PersonEntry = Full<S['PersonEntry']>;
+export type PersonEdge = Full<S['PersonEdge']>;
 
 // ---- catalog + taxonomy (GET /api/books, /api/domains) ----
 export type Book = Full<S['Book']>;

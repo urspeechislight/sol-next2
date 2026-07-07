@@ -17,6 +17,7 @@ import type {
   ExtractionEntryAudit,
   ExtractionPage,
   Page,
+  PersonEdge,
   PersonEntry,
   QuranCitation,
   RijalEntry,
@@ -309,4 +310,9 @@ export function getPerson(params: PersonParams = {}): Promise<Page<PersonEntry>>
 /** Fetch one enriched person by id — the reader's tarjama detail for a narrator. */
 export function getPersonEntry(id: number): Promise<PersonEntry> {
   return get<PersonEntry>(`${API.PERSON}/${id}`);
+}
+
+/** A person's teacher/student relations, linked to a person id when known. */
+export function getPersonEdges(id: number): Promise<PersonEdge[]> {
+  return get<PersonEdge[]>(`${API.PERSON}/${id}/edges`);
 }
