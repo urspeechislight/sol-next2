@@ -1930,6 +1930,18 @@
             "title": "Stance",
             "type": "string"
           },
+          "student_count": {
+            "description": "Distinct recorded students (person_edge).",
+            "minimum": 0.0,
+            "title": "Student Count",
+            "type": "integer"
+          },
+          "teacher_count": {
+            "description": "Distinct recorded teachers (person_edge).",
+            "minimum": 0.0,
+            "title": "Teacher Count",
+            "type": "integer"
+          },
           "tradition": {
             "default": "",
             "description": "Sunni / shia / both, when classified.",
@@ -1937,7 +1949,14 @@
             "type": "string"
           }
         },
-        "required": ["full_name", "person_id", "n_sources", "event_count"],
+        "required": [
+          "full_name",
+          "person_id",
+          "n_sources",
+          "teacher_count",
+          "student_count",
+          "event_count"
+        ],
         "title": "PersonEntry",
         "type": "object"
       },

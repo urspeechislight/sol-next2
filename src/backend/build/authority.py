@@ -83,6 +83,8 @@ CREATE TABLE person (
   places         TEXT NOT NULL DEFAULT '',
   source_books   TEXT NOT NULL DEFAULT '',
   n_sources      INTEGER NOT NULL DEFAULT 0,
+  teacher_count  INTEGER NOT NULL DEFAULT 0,
+  student_count  INTEGER NOT NULL DEFAULT 0,
   event_count    INTEGER NOT NULL DEFAULT 0,
   bio            TEXT NOT NULL DEFAULT '',
   confidence     TEXT NOT NULL DEFAULT 'medium'
@@ -111,8 +113,8 @@ CREATE INDEX idx_event_person ON person_event (person_id);
 _PERSON_INSERT: Final[str] = (
     "INSERT INTO person (person_id, full_name, name_norm, name_variants, kunya, nisba,"
     " birth_year, death_year, death_conflict, tradition, stance, reliability, places,"
-    " source_books, n_sources, event_count, bio, confidence)"
-    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    " source_books, n_sources, teacher_count, student_count, event_count, bio, confidence)"
+    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 )
 _EDGE_INSERT: Final[str] = "INSERT INTO person_edge (person_id, relation, name, other_person_id) VALUES (?,?,?,?)"
 _EVENT_INSERT: Final[str] = "INSERT INTO person_event (person_id, event, event_type, year_ah, role) VALUES (?,?,?,?,?)"
@@ -279,6 +281,8 @@ def _person_rows(
         for name in dict.fromkeys(n for e in entries for n in (e.get(field) or [])):
             if is_name(name):
                 edges.append((pid, relation, name, canon_id_by_norm.get(normalize_arabic(name))))
+    teacher_count = sum(1 for edge in edges if edge[1] == "teacher")
+    student_count = sum(1 for edge in edges if edge[1] == "student")
     matched = _matched_events(name_norm, dyear, hist_events)
     events = [(pid, ev.get("event") or "", ev.get("event_type") or "",
                ev.get("year_ah") if isinstance(ev.get("year_ah"), int) else None,
@@ -292,7 +296,7 @@ def _person_rows(
            tradition or "", stance.most_common(1)[0][0] if stance else "",
            json.dumps([g for g, _ in rel.most_common(_MAX_RELIABILITY)], ensure_ascii=False),
            " | ".join(places[:_MAX_PLACES]), " | ".join(str(s) for s in src[:_MAX_SOURCE_BOOKS]),
-           len(entries), len(matched), bio[:_MAX_BIO_CHARS], confidence)
+           len(entries), teacher_count, student_count, len(matched), bio[:_MAX_BIO_CHARS], confidence)
     return row, edges, events
 
 
@@ -397,7 +401,7 @@ def build_person_tables(
         display = crop_name(record["name"])
         persons.append((hid, display, normalize_arabic(display), display,
                         record["kunya"], record["nisba"], None, record["death"], 0, "history", "",
-                        "[]", "", "", 0, len(record_events), "", "history_person"))
+                        "[]", "", "", 0, 0, 0, len(record_events), "", "history_person"))
         for ev in record_events:
             events.append((hid, ev.get("event") or "", ev.get("event_type") or "",
                            ev.get("year_ah") if isinstance(ev.get("year_ah"), int) else None,

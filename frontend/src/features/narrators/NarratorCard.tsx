@@ -38,6 +38,7 @@ function PersonMeta({ entry }: { entry: PersonEntry }) {
   const topGrade = entry.reliability[0]?.split('=')[1] ?? '';
   const facts = [
     entry.death_year ? `d. ${entry.death_year} AH` : '',
+    `${entry.teacher_count} teachers · ${entry.student_count} students`,
     `${entry.n_sources} sources`,
     entry.event_count ? `${entry.event_count} events` : '',
   ]

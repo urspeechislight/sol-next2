@@ -65,6 +65,8 @@ class PersonEntry(NarratorBase):
     places: str = Field(default="", description="Associated places, pipe-separated.")
     source_books: str = Field(default="", description="Source works, pipe-separated.")
     n_sources: int = Field(ge=0, description="Raw corpus entries merged into this identity.")
+    teacher_count: int = Field(ge=0, description="Distinct recorded teachers (person_edge).")
+    student_count: int = Field(ge=0, description="Distinct recorded students (person_edge).")
     event_count: int = Field(ge=0, description="Historical events attributed to this person.")
     bio: str = Field(default="", description="Longest available biographical snippet.")
     confidence: str = Field(default="medium", description="Record confidence (high/medium).")

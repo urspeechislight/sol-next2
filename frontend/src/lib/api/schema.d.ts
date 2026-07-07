@@ -1928,6 +1928,16 @@ export interface components {
              */
             stance: string;
             /**
+             * Student Count
+             * @description Distinct recorded students (person_edge).
+             */
+            student_count: number;
+            /**
+             * Teacher Count
+             * @description Distinct recorded teachers (person_edge).
+             */
+            teacher_count: number;
+            /**
              * Tradition
              * @description Sunni / shia / both, when classified.
              * @default
