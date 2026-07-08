@@ -10,10 +10,12 @@ across its source entries, not raw upstream values.
 Three corrections happen here that the raw canonical dedup lacks:
   * junk exclusion  - isnad chain fragments, book titles, and theophoric
     truncations that are not people are dropped, not served (``is_person_name``).
-  * identity split - a canonical bucket that fused several narrators who merely
-    share an ism and father is partitioned by each entry's identity key
-    (``_identity_clusters``): a distinct grandfather chain or primary nisba marks
-    a distinct man, so pooled reliability grades attach to the right person.
+  * identity resolution - each entry is keyed by ``_identity_parse`` (leading name
+    unit + nasab chain, discriminating nisba). Distinct grandfather chains or nisbas
+    make distinct people so pooled grades attach to the right man, while a SPECIFIC
+    key (grandfather chain or appended nisba) merges one narrator's entries across
+    canonical buckets so a prolific narrator is one record, not many fragments; a
+    bare ism+father, lone kunya, or title stays bucket-local so common names never fuse.
   * death reconciliation - a two-digit year is folded into the century that
     ends in it (72 under 172), with a conflict flag when sources disagree.
 
@@ -87,7 +89,6 @@ _TX_STEM_RE = cached_compile(r"^(?:و|ف)?(?:حدث|اخبر|انبا)")
 
 _DISTINCTIVE_NAME_TOKENS: Final[int] = 4
 _MIN_SIGNIFICANT_TOKENS: Final[int] = 2
-_SPLIT_ID_BASE: Final[int] = 2_000_000
 _HISTORY_ID_BASE: Final[int] = 1_000_000
 _OVER_MERGE_ROOT_MAX: Final[int] = 2
 _OVER_MERGE_PLACE_MAX: Final[int] = 4
@@ -310,19 +311,22 @@ def _leading_unit(toks: list[str]) -> int:
     return 1
 
 
-def _identity_key(name: str) -> tuple[str, ...]:
-    """A narrator's identity key: leading name unit + nasab chain, plus the first nisba when only a father is named.
+def _identity_parse(name: str) -> tuple[tuple[str, ...], bool]:
+    """Return ``(identity key, specific)`` for a narrator name.
 
-    Two men who share the same head are told apart by what follows: a distinct grandfather chain
-    (بن أبي نمر vs بن رفاعة) or, when neither has a grandfather, a distinct primary nisba (النخعي vs
-    الجعفي) each produce a different key, so they never fuse. Trailing laqab, residence, and grading
-    tokens fall past the key, so surface variants of one man collapse together. The head is the ism
-    for an ism-led name and the kunya for a kunya-led one (``_leading_unit``); the nisba is appended
-    only when the nasab is just the father, since a spelled-out grandfather already disambiguates.
+    The key is the leading name unit plus the nasab chain, with the first nisba appended only when
+    the nasab is just the father. The head is the ism for an ism-led name and the kunya for a
+    kunya-led one (``_leading_unit``). Two men who share a head are told apart by a distinct
+    grandfather chain (بن أبي نمر vs بن رفاعة) or, absent one, a distinct primary nisba (النخعي vs
+    الجعفي), while trailing laqab / residence / grading tokens fall past the key so surface variants
+    of one man collapse. ``specific`` is true when the key carries a grandfather chain (depth >= 2)
+    or a genuinely appended nisba; that is the signal it names one man precisely enough to merge his
+    entries across canonical buckets. A bare ism+father, a lone kunya, or a title (الشيخ) is NOT
+    specific: those keys stay bucket-local so common names and honorifics never fuse into one person.
     """
     toks = normalize_arabic(crop_name(name)).split()
     if not toks:
-        return ()
+        return (), False
     j = _leading_unit(toks)
     depth = 0
     while j < len(toks) and toks[j] in _LINKS:
@@ -330,21 +334,22 @@ def _identity_key(name: str) -> tuple[str, ...]:
         j = nxt + 2 if (nxt < len(toks) and toks[nxt] in _COMPOUND_LEADS) else nxt + 1
         depth += 1
     key = toks[:j]
+    nisba_appended = False
     if depth <= 1 and j < len(toks) and toks[j].startswith(_NISBA_PREFIX):
         key = toks[: j + 1]
-    return tuple(key)
+        nisba_appended = True
+    return tuple(key), (depth >= 2 or nisba_appended)
 
 
-def _identity_clusters(entries: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
-    """Partition a canonical bucket into one entry-list per distinct narrator identity, largest first."""
-    by_key: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
-    for entry in entries:
-        full = entry.get("full_name") or ""
-        if is_person_name(full):
-            key = _identity_key(full)
-            if key:
-                by_key[key].append(entry)
-    return sorted(by_key.values(), key=len, reverse=True)
+def _combine_tradition(counter: Counter[str]) -> str:
+    """Fold the traditions of a merged person's source buckets into one label; mixed sunni+shia is ``both``."""
+    present = set(counter)
+    if "both" in present or {"sunni", "shia"} <= present:
+        return "both"
+    for tradition in ("sunni", "shia", "history"):
+        if tradition in present:
+            return tradition
+    return ""
 
 
 def _as_stance(value: Any) -> str:
@@ -398,7 +403,7 @@ def _person_rows(
     entries: list[dict[str, Any]],
     tradition: str,
     display_name: str,
-    canon_id_by_norm: dict[str, int],
+    pid_by_name: dict[str, int],
     hist_events: dict[str, list[tuple[dict[str, Any], int | None]]],
     grade_fn: Callable[[list[dict[str, Any]], str], list[dict[str, Any]]],
 ) -> tuple[tuple[Any, ...], list[tuple[Any, ...]], list[tuple[Any, ...]], list[tuple[Any, ...]]]:
@@ -407,7 +412,9 @@ def _person_rows(
     Reliability is not trusted from the raw extraction: ``grade_fn`` re-validates each
     grade against its cited source page and returns only the grades that survive, each
     already carrying a reader deep-link. The person's ``reliability`` summary column and
-    the ``person_grade`` rows are both derived from that single validated set.
+    the ``person_grade`` rows are both derived from that single validated set. ``pid_by_name``
+    maps a normalized clean name to the person id it resolved to, so a teacher/student edge
+    links to that person when known.
     """
     kunyas = Counter(e["kunya"] for e in entries if e.get("kunya"))
     nisbas = Counter(e["nisba"] for e in entries if e.get("nisba"))
@@ -432,7 +439,7 @@ def _person_rows(
             clean = crop_name(name)
             clean_norm = normalize_arabic(clean)
             if is_person_name(name) and clean_norm != name_norm:
-                edges.append((pid, relation, clean, canon_id_by_norm.get(clean_norm)))
+                edges.append((pid, relation, clean, pid_by_name.get(clean_norm)))
     teacher_count = sum(1 for edge in edges if edge[1] == "teacher")
     student_count = sum(1 for edge in edges if edge[1] == "student")
     stance_out = "" if over_merged else (stance.most_common(1)[0][0] if stance else "")
@@ -576,10 +583,7 @@ def build_person_tables(
     with canonical_path.open(encoding="utf-8") as handle:
         canon = json.load(handle)
     grade_fn = _grade_validator(_source_map(books_dir), books_dir)
-    canon_id_by_norm: dict[str, int] = {}
-    for record in canon:
-        canon_id_by_norm.setdefault(normalize_arabic(record["full_name"]), record["canonical_id"])
-    real_names = set(canon_id_by_norm)
+    real_names = {normalize_arabic(record["full_name"]) for record in canon}
     hist_events: dict[str, list[tuple[dict[str, Any], int | None]]] = {}
     history_only: dict[tuple[str, int | None], dict[str, Any]] = {}
     if history_path is not None:
@@ -589,7 +593,9 @@ def build_person_tables(
     edges: list[tuple[Any, ...]] = []
     events: list[tuple[Any, ...]] = []
     grades: list[tuple[Any, ...]] = []
-    split_id = _SPLIT_ID_BASE
+    specific_buckets: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
+    specific_tradition: dict[tuple[str, ...], Counter[str]] = defaultdict(Counter)
+    local_clusters: list[tuple[list[dict[str, Any]], str]] = []
     for record in canon:
         if not is_person_name(record["full_name"]):
             continue
@@ -597,19 +603,45 @@ def build_person_tables(
         if not entries:
             continue
         tradition = record.get("tradition") or ""
-        for pos, cluster in enumerate(_identity_clusters(entries)):
-            if pos == 0:
-                pid = record["canonical_id"]
+        by_key: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
+        specific: dict[tuple[str, ...], bool] = {}
+        for entry in entries:
+            full = entry.get("full_name") or ""
+            if is_person_name(full):
+                key, is_specific = _identity_parse(full)
+                if key:
+                    by_key[key].append(entry)
+                    specific[key] = is_specific
+        for key, cluster in by_key.items():
+            if specific[key]:
+                specific_buckets[key].extend(cluster)
+                if tradition:
+                    specific_tradition[key][tradition] += 1
             else:
-                split_id += 1
-                pid = split_id
-            display = Counter(crop_name(e["full_name"]) for e in cluster).most_common(1)[0][0]
-            row, cluster_edges, cluster_events, cluster_grades = _person_rows(
-                pid, cluster, tradition, display, canon_id_by_norm, hist_events, grade_fn)
-            persons.append(row)
-            edges.extend(cluster_edges)
-            events.extend(cluster_events)
-            grades.extend(cluster_grades)
+                local_clusters.append((cluster, tradition))
+
+    groups: list[tuple[int, list[dict[str, Any]], str]] = []
+    pid_by_name: dict[str, int] = {}
+    pid = 0
+    for key, cluster in specific_buckets.items():
+        pid += 1
+        groups.append((pid, cluster, _combine_tradition(specific_tradition[key])))
+        for entry in cluster:
+            pid_by_name[normalize_arabic(crop_name(entry["full_name"]))] = pid
+    for cluster, tradition in local_clusters:
+        pid += 1
+        groups.append((pid, cluster, tradition))
+        for entry in cluster:
+            pid_by_name[normalize_arabic(crop_name(entry["full_name"]))] = pid
+
+    for person_id, cluster, tradition in groups:
+        display = Counter(crop_name(e["full_name"]) for e in cluster).most_common(1)[0][0]
+        row, cluster_edges, cluster_events, cluster_grades = _person_rows(
+            person_id, cluster, tradition, display, pid_by_name, hist_events, grade_fn)
+        persons.append(row)
+        edges.extend(cluster_edges)
+        events.extend(cluster_events)
+        grades.extend(cluster_grades)
 
     hid = _HISTORY_ID_BASE
     for (_key_norm, _death), record in history_only.items():
