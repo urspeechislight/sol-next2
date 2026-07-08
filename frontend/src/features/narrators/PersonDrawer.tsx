@@ -1,11 +1,12 @@
-// PersonDrawer.tsx: the expandable detail panel under a person card. Enumerates
-// the full teacher/student lists (fetched on demand), the source works the
-// person is recorded in, every reliability grade re-validated against its cited
-// source page (each a reader deep-link), and the biography.
+// PersonDrawer.tsx: the expandable detail panel under a person card. Lays out the
+// labelled identity (kunya, nisba, tradition, Ahl al-Bayt stance, generation), the
+// full teacher/student lists, every reliability grade re-validated against its cited
+// source page (each a reader deep-link), the source works, and the biography.
 import { Link, Stack, Text } from '../../lib/design-system';
 import { getPersonEdges, getPersonGrades } from '../../lib/api/client';
-import type { PersonEntry, PersonGrade } from '../../lib/types';
+import type { PersonEdge, PersonEntry, PersonGrade } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
+import { generationLabel, residenceLabel, stanceHelp, stanceLabel, traditionLabel } from './labels';
 
 function Section({ label, value }: { label: string; value: string }) {
   if (!value) return null;
@@ -17,6 +18,60 @@ function Section({ label, value }: { label: string; value: string }) {
       <Text size="sm" tone="muted" font="arabic" dir="rtl">
         {value}
       </Text>
+    </div>
+  );
+}
+
+/** One labelled identity fact; the label names the concept so a reader learns the term. */
+function Fact({
+  label,
+  value,
+  help,
+  arabic,
+}: {
+  label: string;
+  value: string;
+  help?: string;
+  arabic?: boolean;
+}) {
+  if (!value) return null;
+  return (
+    <div>
+      <Text size="xs" tone="muted" weight="semibold">
+        {label}
+      </Text>
+      <Text
+        size="sm"
+        tone="muted"
+        font={arabic ? 'arabic' : undefined}
+        dir={arabic ? 'rtl' : undefined}
+      >
+        {value}
+      </Text>
+      {help ? (
+        <Text size="xs" tone="faint">
+          {help}
+        </Text>
+      ) : null}
+    </div>
+  );
+}
+
+/** A teacher/student relation list: one name per row, matching the grade list format. */
+function NameList({ label, edges }: { label: string; edges: PersonEdge[] }) {
+  if (edges.length === 0) return null;
+  return (
+    <div>
+      <Text size="xs" tone="muted" weight="semibold">
+        {label}
+      </Text>
+      <Stack gap="xs">
+        {edges.map((e, i) => (
+          <Text key={`${e.name}-${i}`} size="sm" tone="muted" font="arabic" dir="rtl">
+            {e.name}
+          </Text>
+        ))}
+      </Stack>
     </div>
   );
 }
@@ -59,7 +114,10 @@ export function PersonDrawer({ entry }: { entry: PersonEntry }) {
   const all = edges.data ?? [];
   const teachers = all.filter((e) => e.relation === 'teacher');
   const students = all.filter((e) => e.relation === 'student');
-  const names = (list: typeof all) => list.map((e) => e.name).join(' · ');
+  const stanceValue = entry.stance ? stanceLabel(entry.stance) : 'Not evaluated in the sources';
+  const died = entry.death_year
+    ? `${entry.death_year} AH${entry.death_conflict ? ' (sources differ)' : ''}`
+    : '';
   return (
     <Stack gap="sm">
       {edges.loading || grades.loading ? (
@@ -67,10 +125,25 @@ export function PersonDrawer({ entry }: { entry: PersonEntry }) {
           Loading detail…
         </Text>
       ) : null}
-      <Section label={`Teachers (${teachers.length})`} value={names(teachers)} />
-      <Section label={`Students (${students.length})`} value={names(students)} />
-      <Section label="Recorded in" value={entry.source_books.replace(/ \| /g, ' · ')} />
+      <Fact label="Kunya (teknonym, Abū / Umm …)" value={entry.kunya} arabic />
+      <Fact
+        label="Nisba (lineage or place)"
+        value={entry.nisba || 'Not recorded in his own entries'}
+        arabic={Boolean(entry.nisba)}
+      />
+      <Fact label="Attested in" value={traditionLabel(entry.tradition)} />
+      <Fact
+        label="Ahl al-Bayt stance"
+        value={stanceValue}
+        help={entry.stance ? stanceHelp(entry.stance) : ''}
+      />
+      <Fact label="Generation (ṭabaqa)" value={generationLabel(entry.generation)} />
+      <Fact label="Died" value={died} />
+      <Fact label="Residence" value={entry.places ? residenceLabel(entry.places) : ''} />
+      <NameList label={`Teachers (${teachers.length})`} edges={teachers} />
+      <NameList label={`Students (${students.length})`} edges={students} />
       <Gradings grades={grades.data ?? []} />
+      <Section label="Recorded in" value={entry.source_books.replace(/ \| /g, ' · ')} />
       {entry.bio ? <Section label="Biography" value={entry.bio} /> : null}
     </Stack>
   );

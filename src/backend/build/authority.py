@@ -47,6 +47,9 @@ _LINKS: Final[frozenset[str]] = frozenset(normalize_arabic(w) for w in ("بن", 
 _COMPOUND_LEADS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in ("عبد", "عبيد", "أبي", "ابي", "أبو", "ابو", "أم", "ام")
 )
+_KUNYA_LEADS: Final[frozenset[str]] = frozenset(
+    normalize_arabic(w) for w in ("أبو", "ابو", "أبي", "ابي", "أبا", "ابا", "أم", "ام", "ابن")
+)
 _NISBA_PREFIX: Final[str] = "ال"
 _PHRASE_TOKENS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in
@@ -89,6 +92,7 @@ _HISTORY_ID_BASE: Final[int] = 1_000_000
 _OVER_MERGE_ROOT_MAX: Final[int] = 2
 _OVER_MERGE_PLACE_MAX: Final[int] = 4
 _NAME_ROOT_TOKENS: Final[int] = 2
+_THEOPHORIC_KUNYA_TOKENS: Final[int] = 3
 _MAX_VARIANTS: Final[int] = 8
 _MAX_RELIABILITY: Final[int] = 10
 _MAX_PLACES: Final[int] = 6
@@ -288,20 +292,38 @@ def is_over_merge(entries: list[dict[str, Any]]) -> bool:
     return len(roots) > _OVER_MERGE_ROOT_MAX or len(places) > _OVER_MERGE_PLACE_MAX
 
 
-def _identity_key(name: str) -> tuple[str, ...]:
-    """A narrator's identity key: ism + nasab chain, plus the first nisba when only a father is named.
+def _leading_unit(toks: list[str]) -> int:
+    """Length of the leading name unit before the nasab chain: kunya, theophoric ism, or plain ism.
 
-    Two men who share ism and father are told apart by what follows: a distinct grandfather
-    chain (بن أبي نمر vs بن رفاعة) or, when neither has a grandfather, a distinct primary nisba
-    (النخعي vs الجعفي) each produce a different key, so they never fuse into one record. Trailing
-    laqab, residence, kunya, and grading tokens fall past the key, so surface variants of one man
-    (النخعي القاضي كوفي, النخعي أبو عبد الله القاضي) collapse to the same key. The nisba is added
+    A kunya-led name (``أبو بكر …``, ``ابن عمر …``) carries no ism at token 0, so the two-token
+    kunya IS the identifying head; ``أبو عبد الله`` extends to three when the second token is a
+    theophoric lead. A compound ism (``عبد الله …``) takes two tokens; any other ism takes one.
+    Without this, the نسب walk (which expects ``بن`` right after a one-token ism) never starts on a
+    kunya-led name and every ``أبو``-led narrator collapses to the same one-token key.
+    """
+    if not toks:
+        return 0
+    if toks[0] in _KUNYA_LEADS:
+        return _THEOPHORIC_KUNYA_TOKENS if len(toks) > 1 and toks[1] in _COMPOUND_LEADS else 2
+    if toks[0] in _COMPOUND_LEADS:
+        return 2
+    return 1
+
+
+def _identity_key(name: str) -> tuple[str, ...]:
+    """A narrator's identity key: leading name unit + nasab chain, plus the first nisba when only a father is named.
+
+    Two men who share the same head are told apart by what follows: a distinct grandfather chain
+    (بن أبي نمر vs بن رفاعة) or, when neither has a grandfather, a distinct primary nisba (النخعي vs
+    الجعفي) each produce a different key, so they never fuse. Trailing laqab, residence, and grading
+    tokens fall past the key, so surface variants of one man collapse together. The head is the ism
+    for an ism-led name and the kunya for a kunya-led one (``_leading_unit``); the nisba is appended
     only when the nasab is just the father, since a spelled-out grandfather already disambiguates.
     """
     toks = normalize_arabic(crop_name(name)).split()
     if not toks:
         return ()
-    j = 1
+    j = _leading_unit(toks)
     depth = 0
     while j < len(toks) and toks[j] in _LINKS:
         nxt = j + 1

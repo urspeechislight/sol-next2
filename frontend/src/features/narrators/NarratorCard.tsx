@@ -1,13 +1,14 @@
 // NarratorCard.tsx:the one narrator-record card, shared by the Graph browser
 // and the narrator search scope. Renders a rijāl OR enriched person entry as
 // name + tradition + a kind-specific meta row; a person card also expands into
-// a detail drawer (teachers, students, sources, bio).
+// a detail drawer (identity, teachers, students, sources, grades, bio).
 import { useState } from 'react';
 
 import { Badge, Card, Heading, Inline, Stack, Text, UnstyledButton } from '../../lib/design-system';
 import type { PersonEntry, RijalEntry } from '../../lib/types';
 import { joinDots } from '../../lib/utils';
 import { reliabilityBadge } from '../../lib/variants';
+import { generationLabel, residenceLabel, stanceLabel, traditionLabel } from './labels';
 import { PersonDrawer } from './PersonDrawer';
 
 export type NarratorItem = RijalEntry | PersonEntry;
@@ -15,56 +16,6 @@ export type NarratorItem = RijalEntry | PersonEntry;
 /** True when a narrator item is an enriched person record (vs a raw rijāl entry). */
 export function isPerson(item: NarratorItem): item is PersonEntry {
   return 'person_id' in item;
-}
-
-/** Human label for the corpus a narrator is attested in. */
-function traditionLabel(tradition: string): string {
-  if (tradition === 'both') return 'Sunnī + Shīʿī';
-  if (tradition === 'sunni') return 'Sunnī';
-  if (tradition === 'shia') return 'Shīʿī';
-  if (tradition === 'history') return 'History';
-  return tradition;
-}
-
-/** Human label for a derived narrator generation. */
-function generationLabel(generation: string): string {
-  if (generation === 'companion') return 'Ṣaḥābī';
-  if (generation === 'successor') return 'Tābiʿī';
-  if (generation === 'successor_of_successors') return 'Tābiʿ al-tābiʿīn';
-  return '';
-}
-
-const RESIDENCE_EN: Record<string, string> = {
-  كوفي: 'Kufan',
-  مكي: 'Meccan',
-  مدني: 'Medinan',
-  بصري: 'Basran',
-  بغدادي: 'Baghdadi',
-  دمشقي: 'Damascene',
-  مصري: 'Egyptian',
-  شامي: 'Syrian',
-  يمني: 'Yemeni',
-  رازي: 'of Rayy',
-  همداني: 'Hamadhani',
-  قمي: 'Qummi',
-  خراساني: 'Khurasani',
-  واسطي: 'Wasiti',
-  أصبهاني: 'Isfahani',
-  اصبهاني: 'Isfahani',
-  نيسابوري: 'Nishapuri',
-  حمصي: 'of Homs',
-  قزويني: 'of Qazwin',
-  جرجاني: 'of Gurgan',
-  مروزي: 'of Merv',
-  بلخي: 'Balkhi',
-};
-
-/** Render the residence nisbas in English (Kufan, Medinan, …), passing through the rest. */
-function residenceLabel(places: string): string {
-  return places
-    .split(' | ')
-    .map((place) => RESIDENCE_EN[place.trim()] ?? place.trim())
-    .join(', ');
 }
 
 function RijalMeta({ entry }: { entry: RijalEntry }) {
@@ -101,13 +52,15 @@ function PersonMeta({ entry }: { entry: PersonEntry }) {
     .join(' · ');
   return (
     <Inline gap="xs" align="center">
-      {entry.generation ? <Badge variant="success">{generationLabel(entry.generation)}</Badge> : null}
+      {entry.generation ? (
+        <Badge variant="success">{generationLabel(entry.generation)}</Badge>
+      ) : null}
       {topGrade ? (
         <Badge variant={reliabilityBadge(topGrade)}>
           <span dir="rtl">{topGrade}</span>
         </Badge>
       ) : null}
-      {entry.stance ? <Badge>{entry.stance}</Badge> : null}
+      {entry.stance ? <Badge>{stanceLabel(entry.stance)}</Badge> : null}
       <Text size="xs" tone="faint" font="mono">
         {facts}
       </Text>
@@ -146,7 +99,7 @@ export function NarratorCard({ item }: { item: NarratorItem }) {
         {person ? (
           <UnstyledButton onClick={() => setOpen((value) => !value)}>
             <Text size="xs" tone="accent">
-              {open ? 'Hide detail' : 'Show teachers, students, sources, bio'}
+              {open ? 'Hide detail' : 'Show identity, teachers, students, sources, grades'}
             </Text>
           </UnstyledButton>
         ) : null}
