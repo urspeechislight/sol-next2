@@ -2009,6 +2009,49 @@
         "title": "PersonEvent",
         "type": "object"
       },
+      "PersonGrade": {
+        "description": "One reliability grade re-validated against its cited source page.\n\nEach grade names the critic (``evaluator``), the verdict term as it appears in that\ncritic's segment of the narrator's own entry, and the source book + page it was read\nfrom; ``link`` is a relative, URL-independent reader deep-link to exactly that page.\nGrades that could not be located in their cited page are not built, so every row here\nis one a reader can open and confirm.",
+        "properties": {
+          "book": {
+            "default": "",
+            "description": "Source work the verdict was read from.",
+            "title": "Book",
+            "type": "string"
+          },
+          "evaluator": {
+            "default": "",
+            "description": "Critic who issued the verdict.",
+            "title": "Evaluator",
+            "type": "string"
+          },
+          "link": {
+            "default": "",
+            "description": "Relative reader deep-link to where it is recorded.",
+            "title": "Link",
+            "type": "string"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cited page number in the source work.",
+            "title": "Page"
+          },
+          "term": {
+            "default": "",
+            "description": "Verdict term, verbatim from the critic's segment.",
+            "title": "Term",
+            "type": "string"
+          }
+        },
+        "title": "PersonGrade",
+        "type": "object"
+      },
       "RijalEntry": {
         "description": "One narrator in the rijal registry (reliability-graded).",
         "properties": {
@@ -3406,6 +3449,51 @@
           }
         },
         "summary": "Get the historical events attributed to a person.",
+        "tags": ["person"]
+      }
+    },
+    "/api/person/{person_id}/grades": {
+      "get": {
+        "description": "Return a person's source-validated reliability grades, each with its reader deep-link.",
+        "operationId": "get_person_grades_api_person__person_id__grades_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PersonGrade"
+                  },
+                  "title": "Response Get Person Grades Api Person  Person Id  Grades Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get a person's source-validated reliability grades with reader links.",
         "tags": ["person"]
       }
     },

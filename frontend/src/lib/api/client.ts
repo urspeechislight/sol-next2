@@ -19,6 +19,7 @@ import type {
   Page,
   PersonEdge,
   PersonEntry,
+  PersonGrade,
   QuranCitation,
   RijalEntry,
   SearchFacets,
@@ -282,7 +283,6 @@ export function getRijalEntry(id: number): Promise<RijalEntry> {
   return get<RijalEntry>(`${API.RIJAL}/${id}`);
 }
 
-
 export interface PersonParams {
   q?: string;
   tradition?: string;
@@ -315,4 +315,9 @@ export function getPersonEntry(id: number): Promise<PersonEntry> {
 /** A person's teacher/student relations, linked to a person id when known. */
 export function getPersonEdges(id: number): Promise<PersonEdge[]> {
   return get<PersonEdge[]>(`${API.PERSON}/${id}/edges`);
+}
+
+/** A person's source-validated reliability grades, each with a relative reader deep-link. */
+export function getPersonGrades(id: number): Promise<PersonGrade[]> {
+  return get<PersonGrade[]>(`${API.PERSON}/${id}/grades`);
 }

@@ -31,6 +31,7 @@ export interface Page<T> {
 export type RijalEntry = Full<S['RijalEntry']>;
 export type PersonEntry = Full<S['PersonEntry']>;
 export type PersonEdge = Full<S['PersonEdge']>;
+export type PersonGrade = Full<S['PersonGrade']>;
 
 // ---- catalog + taxonomy (GET /api/books, /api/domains) ----
 export type Book = Full<S['Book']>;

@@ -99,3 +99,20 @@ class PersonEvent(FrozenModel):
     event_type: str = Field(default="", description="Event category (BATTLE, CONQUEST, ...).")
     year_ah: int | None = Field(default=None, description="Hijri year of the event, when dated.")
     role: str = Field(default="", description="Marker keyword linking person to event.")
+
+
+class PersonGrade(FrozenModel):
+    """One reliability grade re-validated against its cited source page.
+
+    Each grade names the critic (``evaluator``), the verdict term as it appears in that
+    critic's segment of the narrator's own entry, and the source book + page it was read
+    from; ``link`` is a relative, URL-independent reader deep-link to exactly that page.
+    Grades that could not be located in their cited page are not built, so every row here
+    is one a reader can open and confirm.
+    """
+
+    evaluator: str = Field(default="", description="Critic who issued the verdict.")
+    term: str = Field(default="", description="Verdict term, verbatim from the critic's segment.")
+    book: str = Field(default="", description="Source work the verdict was read from.")
+    page: int | None = Field(default=None, description="Cited page number in the source work.")
+    link: str = Field(default="", description="Relative reader deep-link to where it is recorded.")

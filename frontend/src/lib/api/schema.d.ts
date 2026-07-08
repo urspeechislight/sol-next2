@@ -395,6 +395,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/person/{person_id}/grades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a person's source-validated reliability grades with reader links.
+         * @description Return a person's source-validated reliability grades, each with its reader deep-link.
+         */
+        get: operations["get_person_grades_api_person__person_id__grades_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/quran/search": {
         parameters: {
             query?: never;
@@ -1986,6 +2006,47 @@ export interface components {
             year_ah?: number | null;
         };
         /**
+         * PersonGrade
+         * @description One reliability grade re-validated against its cited source page.
+         *
+         *     Each grade names the critic (``evaluator``), the verdict term as it appears in that
+         *     critic's segment of the narrator's own entry, and the source book + page it was read
+         *     from; ``link`` is a relative, URL-independent reader deep-link to exactly that page.
+         *     Grades that could not be located in their cited page are not built, so every row here
+         *     is one a reader can open and confirm.
+         */
+        PersonGrade: {
+            /**
+             * Book
+             * @description Source work the verdict was read from.
+             * @default
+             */
+            book: string;
+            /**
+             * Evaluator
+             * @description Critic who issued the verdict.
+             * @default
+             */
+            evaluator: string;
+            /**
+             * Link
+             * @description Relative reader deep-link to where it is recorded.
+             * @default
+             */
+            link: string;
+            /**
+             * Page
+             * @description Cited page number in the source work.
+             */
+            page?: number | null;
+            /**
+             * Term
+             * @description Verdict term, verbatim from the critic's segment.
+             * @default
+             */
+            term: string;
+        };
+        /**
          * RijalEntry
          * @description One narrator in the rijal registry (reliability-graded).
          */
@@ -2855,6 +2916,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PersonEvent"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_person_grades_api_person__person_id__grades_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonGrade"][];
                 };
             };
             /** @description Validation Error */

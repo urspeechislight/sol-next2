@@ -1,8 +1,8 @@
-"""HTTP routes for enriched narrator persons: paginated list + detail + relations + events.
+"""HTTP routes for enriched narrator persons: paginated list + detail + relations + events + grades.
 
 The list handler filters + wraps the repo's ``(slice, total)`` into a ``Page``
-envelope and takes the shared ``PageParams``; the detail, edges, and events
-routes bind their repo functions directly (person id from the path).
+envelope and takes the shared ``PageParams``; the detail, edges, events, and
+grades routes bind their repo functions directly (person id from the path).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from fastapi import APIRouter, Query
 
 from backend.api._pagination import PageDep
 from backend.api._routes import as_page, get_route
-from backend.models.narrator import PersonEdge, PersonEntry, PersonEvent
+from backend.models.narrator import PersonEdge, PersonEntry, PersonEvent, PersonGrade
 from backend.models.pagination import Page
 from backend.repositories import registry
 
@@ -71,4 +71,11 @@ get_route(
     registry.get_person_events,
     response_model=list[PersonEvent],
     summary="Get the historical events attributed to a person.",
+)
+get_route(
+    router,
+    "/person/{person_id}/grades",
+    registry.get_person_grades,
+    response_model=list[PersonGrade],
+    summary="Get a person's source-validated reliability grades with reader links.",
 )

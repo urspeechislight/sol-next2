@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 from backend.core.constants import ARTIFACT__REGISTRY_DB, HTTP__DEFAULT_PAGE_SIZE
 from backend.core.errors import ResourceNotFoundError
-from backend.models.narrator import PersonEdge, PersonEntry, PersonEvent, RijalEntry
+from backend.models.narrator import PersonEdge, PersonEntry, PersonEvent, PersonGrade, RijalEntry
 from backend.repositories._data_loader import open_ro_db
 
 _RIJAL_FILTER = """
@@ -56,6 +56,10 @@ _PERSON_EDGES = (
 _PERSON_EVENTS = (
     "SELECT event, event_type, year_ah, role FROM person_event "
     "WHERE person_id = :id ORDER BY year_ah"
+)
+_PERSON_GRADES = (
+    "SELECT evaluator, term, book, page, link FROM person_grade "
+    "WHERE person_id = :id ORDER BY evaluator, page, term"
 )
 
 
@@ -170,3 +174,8 @@ def get_person_edges(person_id: int) -> list[PersonEdge]:
 def get_person_events(person_id: int) -> list[PersonEvent]:
     """Return the historical events attributed to a person."""
     return _list_by_id(_PERSON_EVENTS, person_id, PersonEvent)
+
+
+def get_person_grades(person_id: int) -> list[PersonGrade]:
+    """Return a person's source-validated reliability grades, each with its reader deep-link."""
+    return _list_by_id(_PERSON_GRADES, person_id, PersonGrade)

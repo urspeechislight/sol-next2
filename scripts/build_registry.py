@@ -12,7 +12,8 @@ with reliability, stance, teacher/student edges, and history events) lives in
 ``backend.build.authority``; the artifact lifecycle and CLI shell live in
 ``backend.build.runner``. The 3.4 GB history corpus is streamed for the
 event/history-actor pass by default; ``--no-history`` builds the rijal
-enrichment alone. Run on buildhost::
+enrichment alone. Reliability grades are re-validated against their cited page
+in ``--books-dir`` (sol's ``data/books``) before being served. Run on buildhost::
 
     uv run python scripts/build_registry.py
     uv run python scripts/build_registry.py --no-history --out data/registry.db
@@ -33,6 +34,7 @@ _SOLNEXT_RIJAL: Final[Path] = Path.home() / "code" / "sol-next" / "data" / "rija
 _SOLNEXT_HISTORY: Final[Path] = (
     Path.home() / "code" / "sol-next" / "data" / "history_corpus_v5.json"
 )
+_SOL_BOOKS: Final[Path] = Path.home() / "code" / "sol" / "data" / "books"
 
 
 def _build(args: argparse.Namespace) -> dict[str, object]:
@@ -47,7 +49,7 @@ def _build(args: argparse.Namespace) -> dict[str, object]:
         history = None if args.no_history else args.history
         with con:
             person_counts = authority.build_person_tables(
-                con, args.canonical, args.corpus_jsonl, history
+                con, args.canonical, args.corpus_jsonl, history, args.books_dir
             )
         runner.finalize(con)
     finally:
@@ -61,6 +63,7 @@ def _add_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--canonical", type=Path, default=_SOLNEXT_RIJAL / "canonical.json")
     parser.add_argument("--corpus-jsonl", type=Path, default=_SOLNEXT_RIJAL / "corpus.jsonl")
     parser.add_argument("--history", type=Path, default=_SOLNEXT_HISTORY)
+    parser.add_argument("--books-dir", type=Path, default=_SOL_BOOKS)
     parser.add_argument(
         "--no-history",
         action="store_true",

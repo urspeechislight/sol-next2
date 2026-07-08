@@ -10,9 +10,10 @@ across its source entries, not raw upstream values.
 Three corrections happen here that the raw canonical dedup lacks:
   * junk exclusion  - isnad chain fragments, book titles, and theophoric
     truncations that are not people are dropped, not served (``is_person_name``).
-  * over-merge split - a canonical record that fused several people who merely
-    share a kunya (``is_over_merge``) is re-clustered by each entry's own full
-    name, so pooled reliability grades are re-attributed to the right person.
+  * identity split - a canonical bucket that fused several narrators who merely
+    share an ism and father is partitioned by each entry's identity key
+    (``_identity_clusters``): a distinct grandfather chain or primary nisba marks
+    a distinct man, so pooled reliability grades attach to the right person.
   * death reconciliation - a two-digit year is folded into the century that
     ends in it (72 under 172), with a conflict flag when sources disagree.
 
@@ -30,15 +31,23 @@ from __future__ import annotations
 import json
 import sqlite3
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
 
 import ijson
 
+from backend.build.grade_extract import deep_link, load_book_pages, validate_grade
 from backend.build.transliterate import transliterate
 from backend.patterns import cached_compile, normalize_arabic
 
+_ARABIC_SEP: Final[str] = "_Arabic_"
+_JSON_SUFFIX: Final[str] = ".json"
 _LINKS: Final[frozenset[str]] = frozenset(normalize_arabic(w) for w in ("بن", "ابن", "بنت", "ابنة"))
+_COMPOUND_LEADS: Final[frozenset[str]] = frozenset(
+    normalize_arabic(w) for w in ("عبد", "عبيد", "أبي", "ابي", "أبو", "ابو", "أم", "ام")
+)
+_NISBA_PREFIX: Final[str] = "ال"
 _PHRASE_TOKENS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in
     ("عن", "من", "في", "بين", "إلى", "الى", "مع", "لم", "أخبار", "الجمع", "غير", "منسوب")
@@ -130,6 +139,15 @@ CREATE TABLE person_event (
   role       TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX idx_event_person ON person_event (person_id);
+CREATE TABLE person_grade (
+  person_id INTEGER NOT NULL,
+  evaluator TEXT NOT NULL DEFAULT '',
+  term      TEXT NOT NULL DEFAULT '',
+  book      TEXT NOT NULL DEFAULT '',
+  page      INTEGER,
+  link      TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX idx_grade_person ON person_grade (person_id);
 """
 
 _PERSON_INSERT: Final[str] = (
@@ -141,8 +159,14 @@ _PERSON_INSERT: Final[str] = (
 )
 _EDGE_INSERT: Final[str] = "INSERT INTO person_edge (person_id, relation, name, other_person_id) VALUES (?,?,?,?)"
 _EVENT_INSERT: Final[str] = "INSERT INTO person_event (person_id, event, event_type, year_ah, role) VALUES (?,?,?,?,?)"
+_GRADE_INSERT: Final[str] = (
+    "INSERT INTO person_grade (person_id, evaluator, term, book, page, link) VALUES (?,?,?,?,?,?)"
+)
 
-TABLES: Final[dict[str, str]] = {"person": _PERSON_INSERT, "person_edge": _EDGE_INSERT, "person_event": _EVENT_INSERT}
+TABLES: Final[dict[str, str]] = {
+    "person": _PERSON_INSERT, "person_edge": _EDGE_INSERT,
+    "person_event": _EVENT_INSERT, "person_grade": _GRADE_INSERT,
+}
 
 
 def _transmission_forms() -> set[str]:
@@ -206,9 +230,10 @@ def crop_name(name: str) -> str:
     ``فلان بن فلان عن علان`` becomes ``فلان بن فلان`` (a real person with a clean
     name), while ``عيون أخبار الرضا`` crops to ``عيون`` and then fails the token
     count in ``is_person_name`` (a book title, not a person). Leading list-item
-    dashes and bullets are stripped first (``- أبو عبد الله`` becomes a name).
+    dashes, slashes, and bullets are stripped first (``- أبو عبد الله`` and
+    ``/ إسماعيل`` become clean names).
     """
-    surface = name.strip().lstrip("-–—•*").split()
+    surface = name.strip().lstrip("-–—•*/\\،").split()
     norm = normalize_arabic(" ".join(surface)).split()
     upto = min(len(surface), len(norm))
     start = 0
@@ -261,6 +286,43 @@ def is_over_merge(entries: list[dict[str, Any]]) -> bool:
     places = {loc if isinstance(loc, str) else str(loc)
               for e in entries for loc in (e.get("locations") or [])}
     return len(roots) > _OVER_MERGE_ROOT_MAX or len(places) > _OVER_MERGE_PLACE_MAX
+
+
+def _identity_key(name: str) -> tuple[str, ...]:
+    """A narrator's identity key: ism + nasab chain, plus the first nisba when only a father is named.
+
+    Two men who share ism and father are told apart by what follows: a distinct grandfather
+    chain (بن أبي نمر vs بن رفاعة) or, when neither has a grandfather, a distinct primary nisba
+    (النخعي vs الجعفي) each produce a different key, so they never fuse into one record. Trailing
+    laqab, residence, kunya, and grading tokens fall past the key, so surface variants of one man
+    (النخعي القاضي كوفي, النخعي أبو عبد الله القاضي) collapse to the same key. The nisba is added
+    only when the nasab is just the father, since a spelled-out grandfather already disambiguates.
+    """
+    toks = normalize_arabic(crop_name(name)).split()
+    if not toks:
+        return ()
+    j = 1
+    depth = 0
+    while j < len(toks) and toks[j] in _LINKS:
+        nxt = j + 1
+        j = nxt + 2 if (nxt < len(toks) and toks[nxt] in _COMPOUND_LEADS) else nxt + 1
+        depth += 1
+    key = toks[:j]
+    if depth <= 1 and j < len(toks) and toks[j].startswith(_NISBA_PREFIX):
+        key = toks[: j + 1]
+    return tuple(key)
+
+
+def _identity_clusters(entries: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    """Partition a canonical bucket into one entry-list per distinct narrator identity, largest first."""
+    by_key: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
+    for entry in entries:
+        full = entry.get("full_name") or ""
+        if is_person_name(full):
+            key = _identity_key(full)
+            if key:
+                by_key[key].append(entry)
+    return sorted(by_key.values(), key=len, reverse=True)
 
 
 def _as_stance(value: Any) -> str:
@@ -316,21 +378,24 @@ def _person_rows(
     display_name: str,
     canon_id_by_norm: dict[str, int],
     hist_events: dict[str, list[tuple[dict[str, Any], int | None]]],
-) -> tuple[tuple[Any, ...], list[tuple[Any, ...]], list[tuple[Any, ...]]]:
-    """Aggregate one person's entries into (person row, edge rows, event rows)."""
+    grade_fn: Callable[[list[dict[str, Any]], str], list[dict[str, Any]]],
+) -> tuple[tuple[Any, ...], list[tuple[Any, ...]], list[tuple[Any, ...]], list[tuple[Any, ...]]]:
+    """Aggregate one person's entries into (person row, edge rows, event rows, grade rows).
+
+    Reliability is not trusted from the raw extraction: ``grade_fn`` re-validates each
+    grade against its cited source page and returns only the grades that survive, each
+    already carrying a reader deep-link. The person's ``reliability`` summary column and
+    the ``person_grade`` rows are both derived from that single validated set.
+    """
     kunyas = Counter(e["kunya"] for e in entries if e.get("kunya"))
     nisbas = Counter(e["nisba"] for e in entries if e.get("nisba"))
     births = Counter(e["birth_year"] for e in entries if e.get("birth_year"))
     dyear, conflict = reconcile_death(Counter(e["death_year"] for e in entries if e.get("death_year")))
     display = crop_name(display_name)
     variants = list(dict.fromkeys(crop_name(e["full_name"]) for e in entries if e.get("full_name")))[:_MAX_VARIANTS]
-    by_evaluator: dict[str, Counter[str]] = defaultdict(Counter)
-    for entry in entries:
-        for grade in (entry.get("reliability") or []):
-            evaluator, term = grade.get("evaluator"), grade.get("term")
-            if evaluator and term:
-                by_evaluator[evaluator][term] += 1
-    reliability = [f"{ev}={terms.most_common(1)[0][0]}" for ev, terms in by_evaluator.items()]
+    graded = grade_fn(entries, display)
+    reliability = list(dict.fromkeys(f"{g['evaluator']}={g['term']}" for g in graded))
+    grades = [(pid, g["evaluator"], g["term"], g["book"], g["page"], g["link"]) for g in graded]
     stance = Counter(_as_stance(s) for e in entries for s in (e.get("stance") or []))
     places = list(dict.fromkeys(loc if isinstance(loc, str) else str(loc)
                                 for e in entries for loc in (e.get("locations") or [])))
@@ -366,7 +431,7 @@ def _person_rows(
            " | ".join(places[:_MAX_PLACES]), " | ".join(str(s) for s in src[:_MAX_SOURCE_BOOKS]),
            len(entries), teacher_count, student_count, len(matched), bio[:_MAX_BIO_CHARS],
            confidence, generation, transliterate(display))
-    return row, edges, events
+    return row, edges, events, grades
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -409,18 +474,86 @@ def _stream_history(
     return linked, history_only
 
 
+def _source_map(books_dir: Path) -> dict[str, str]:
+    """Map each source book's ``sol_id`` work-id to its path relative to ``books_dir``.
+
+    The map is derived from the filenames under ``books_dir``: every book is named
+    ``<...>_Arabic_<sol_id>.json`` and its trailing token is exactly the ``frontmatter.sol_id``
+    a grade cites as ``work_id`` (verified against the file metadata). A grade whose work-id is
+    absent here has no locatable source page and cannot be validated.
+    """
+    out: dict[str, str] = {}
+    for path in books_dir.rglob("*.json"):
+        work_id = path.name.split(_ARABIC_SEP)[-1].removesuffix(_JSON_SUFFIX)
+        if work_id:
+            out[work_id] = str(path.relative_to(books_dir))
+    return out
+
+
+def _grade_validator(
+    sources: dict[str, str], books_dir: Path
+) -> Callable[[list[dict[str, Any]], str], list[dict[str, Any]]]:
+    """Build a closure that keeps only grades validated against their cited source page.
+
+    Each source book's pages are read once and cached. For every reliability grade whose
+    ``source`` names a known book and page, the grade survives only when ``validate_grade``
+    confirms its term sits in the correct critic's segment of the narrator's own entry, and
+    a survivor carries a relative reader deep-link to where it is recorded. A grade citing an
+    unknown book, or one that does not validate, is dropped rather than shown.
+    """
+    pages_cache: dict[str, dict[int, str]] = {}
+
+    def pages_for(work_id: str) -> dict[int, str]:
+        """Return the cited book's ``{page: text}`` map, reading and caching it once."""
+        cached = pages_cache.get(work_id)
+        if cached is None:
+            rel = sources.get(work_id) or ""
+            cached = load_book_pages(books_dir / rel) if rel else {}
+            pages_cache[work_id] = cached
+        return cached
+
+    def validate(entries: list[dict[str, Any]], name: str) -> list[dict[str, Any]]:
+        """Return this person's grades that validate against their source page, deduped and linked.
+
+        A grade is located on its page using its own entry's ``full_name`` as it appears in the
+        source, so it validates against the exact entry it was scraped from; the reader link then
+        highlights the clean person ``name`` rather than that raw, sometimes noisy, entry string.
+        """
+        out: dict[tuple[str, str, str, int], dict[str, Any]] = {}
+        for entry in entries:
+            entry_name = entry.get("full_name") or name
+            for grade in (entry.get("reliability") or []):
+                src = grade.get("source") or {}
+                work_id, page = src.get("work_id"), src.get("page")
+                evaluator, term = grade.get("evaluator"), grade.get("term")
+                if not (work_id and isinstance(page, int) and evaluator and term):
+                    continue
+                key = (evaluator, term, work_id, page)
+                if key not in out and validate_grade(pages_for(work_id), grade, entry_name):
+                    out[key] = {"evaluator": evaluator, "term": term,
+                                "book": src.get("title") or work_id, "page": page,
+                                "link": deep_link(work_id, page, name)}
+        return list(out.values())
+
+    return validate
+
+
 def build_person_tables(
-    con: sqlite3.Connection, canonical_path: Path, corpus_path: Path, history_path: Path | None
+    con: sqlite3.Connection, canonical_path: Path, corpus_path: Path, history_path: Path | None,
+    books_dir: Path,
 ) -> dict[str, int]:
-    """Materialize the person / person_edge / person_event tables into ``con``; return row counts.
+    """Materialize the person / person_edge / person_event / person_grade tables; return counts.
 
     ``history_path`` is the optional 3.4 GB history corpus. When absent, persons
     carry no events and no history-only actors are added; the rijal enrichment
-    (kunya, death, reliability, stance, edges) is built either way.
+    (kunya, death, reliability, stance, edges) is built either way. ``books_dir`` roots
+    the source books (``sol-next``'s ``data/books``) so every reliability grade can be
+    re-validated against its cited source page before it is served.
     """
     corpus = _load_jsonl(corpus_path)
     with canonical_path.open(encoding="utf-8") as handle:
         canon = json.load(handle)
+    grade_fn = _grade_validator(_source_map(books_dir), books_dir)
     canon_id_by_norm: dict[str, int] = {}
     for record in canon:
         canon_id_by_norm.setdefault(normalize_arabic(record["full_name"]), record["canonical_id"])
@@ -433,6 +566,7 @@ def build_person_tables(
     persons: list[tuple[Any, ...]] = []
     edges: list[tuple[Any, ...]] = []
     events: list[tuple[Any, ...]] = []
+    grades: list[tuple[Any, ...]] = []
     split_id = _SPLIT_ID_BASE
     for record in canon:
         if not is_person_name(record["full_name"]):
@@ -440,27 +574,20 @@ def build_person_tables(
         entries = [corpus[i] for i in record["entry_ids"] if i < len(corpus)]
         if not entries:
             continue
-        if is_over_merge(entries):
-            clusters: dict[str, list[dict[str, Any]]] = defaultdict(list)
-            for entry in entries:
-                full = entry.get("full_name") or ""
-                if is_person_name(full):
-                    clusters[normalize_arabic(crop_name(full))].append(entry)
-            for cluster in clusters.values():
+        tradition = record.get("tradition") or ""
+        for pos, cluster in enumerate(_identity_clusters(entries)):
+            if pos == 0:
+                pid = record["canonical_id"]
+            else:
                 split_id += 1
-                display = Counter(crop_name(e["full_name"]) for e in cluster).most_common(1)[0][0]
-                row, cluster_edges, cluster_events = _person_rows(
-                    split_id, cluster, record.get("tradition") or "", display, canon_id_by_norm, hist_events)
-                persons.append(row)
-                edges.extend(cluster_edges)
-                events.extend(cluster_events)
-        else:
-            row, record_edges, record_events = _person_rows(
-                record["canonical_id"], entries, record.get("tradition") or "",
-                record["full_name"], canon_id_by_norm, hist_events)
+                pid = split_id
+            display = Counter(crop_name(e["full_name"]) for e in cluster).most_common(1)[0][0]
+            row, cluster_edges, cluster_events, cluster_grades = _person_rows(
+                pid, cluster, tradition, display, canon_id_by_norm, hist_events, grade_fn)
             persons.append(row)
-            edges.extend(record_edges)
-            events.extend(record_events)
+            edges.extend(cluster_edges)
+            events.extend(cluster_events)
+            grades.extend(cluster_grades)
 
     hid = _HISTORY_ID_BASE
     for (_key_norm, _death), record in history_only.items():
@@ -480,4 +607,6 @@ def build_person_tables(
     con.executemany(_PERSON_INSERT, persons)
     con.executemany(_EDGE_INSERT, edges)
     con.executemany(_EVENT_INSERT, events)
-    return {"person": len(persons), "person_edge": len(edges), "person_event": len(events)}
+    con.executemany(_GRADE_INSERT, grades)
+    return {"person": len(persons), "person_edge": len(edges),
+            "person_event": len(events), "person_grade": len(grades)}
