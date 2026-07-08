@@ -120,13 +120,21 @@ export function NarratorCard({ item }: { item: NarratorItem }) {
   const [open, setOpen] = useState(false);
   const sub = joinDots(item.kunya, item.nisba);
   const person = isPerson(item);
+  const latin = isPerson(item) ? item.name_latin : '';
   return (
     <Card variant="flat" pad="md">
       <Stack gap="xs">
-        <Inline gap="sm" align="center" justify="between">
-          <Heading level={4} font="arabic" dir="rtl">
-            {item.full_name}
-          </Heading>
+        <Inline gap="sm" align="start" justify="between">
+          <Stack gap="xs">
+            {latin ? (
+              <Text size="sm" weight="semibold">
+                {latin}
+              </Text>
+            ) : null}
+            <Heading level={4} font="arabic" dir="rtl">
+              {item.full_name}
+            </Heading>
+          </Stack>
           {item.tradition ? <Badge>{traditionLabel(item.tradition)}</Badge> : null}
         </Inline>
         {sub ? (

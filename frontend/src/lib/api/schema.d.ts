@@ -1894,6 +1894,12 @@ export interface components {
              */
             n_sources: number;
             /**
+             * Name Latin
+             * @description Approximate ALA-LC transliteration of the name.
+             * @default
+             */
+            name_latin: string;
+            /**
              * Name Variants
              * @description Distinct spellings, pipe-separated.
              * @default

@@ -71,6 +71,9 @@ class PersonEntry(NarratorBase):
     bio: str = Field(default="", description="Longest available biographical snippet.")
     confidence: str = Field(default="medium", description="Record confidence (high/medium).")
     generation: str = Field(default="", description="companion / successor, when derivable.")
+    name_latin: str = Field(
+        default="", description="Approximate ALA-LC transliteration of the name."
+    )
 
     @field_validator("reliability", mode="before")
     @classmethod

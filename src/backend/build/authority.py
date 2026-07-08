@@ -35,6 +35,7 @@ from typing import Any, Final
 
 import ijson
 
+from backend.build.transliterate import transliterate
 from backend.patterns import cached_compile, normalize_arabic
 
 _LINKS: Final[frozenset[str]] = frozenset(normalize_arabic(w) for w in ("بن", "ابن", "بنت", "ابنة"))
@@ -107,7 +108,8 @@ CREATE TABLE person (
   event_count    INTEGER NOT NULL DEFAULT 0,
   bio            TEXT NOT NULL DEFAULT '',
   confidence     TEXT NOT NULL DEFAULT 'medium',
-  generation     TEXT NOT NULL DEFAULT ''
+  generation     TEXT NOT NULL DEFAULT '',
+  name_latin     TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX idx_person_name_norm ON person (name_norm);
 CREATE INDEX idx_person_kunya ON person (kunya);
@@ -134,8 +136,8 @@ _PERSON_INSERT: Final[str] = (
     "INSERT INTO person (person_id, full_name, name_norm, name_variants, kunya, nisba,"
     " birth_year, death_year, death_conflict, tradition, stance, reliability, places,"
     " source_books, n_sources, teacher_count, student_count, event_count, bio, confidence,"
-    " generation)"
-    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    " generation, name_latin)"
+    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 )
 _EDGE_INSERT: Final[str] = "INSERT INTO person_edge (person_id, relation, name, other_person_id) VALUES (?,?,?,?)"
 _EVENT_INSERT: Final[str] = "INSERT INTO person_event (person_id, event, event_type, year_ah, role) VALUES (?,?,?,?,?)"
@@ -363,7 +365,7 @@ def _person_rows(
            json.dumps(reliability[:_MAX_RELIABILITY], ensure_ascii=False),
            " | ".join(places[:_MAX_PLACES]), " | ".join(str(s) for s in src[:_MAX_SOURCE_BOOKS]),
            len(entries), teacher_count, student_count, len(matched), bio[:_MAX_BIO_CHARS],
-           confidence, generation)
+           confidence, generation, transliterate(display))
     return row, edges, events
 
 
@@ -468,7 +470,8 @@ def build_person_tables(
         display = crop_name(record["name"])
         persons.append((hid, display, normalize_arabic(display), display,
                         record["kunya"], record["nisba"], None, record["death"], 0, "history", "",
-                        "[]", "", "", 0, 0, 0, len(record_events), "", "history_person", ""))
+                        "[]", "", "", 0, 0, 0, len(record_events), "", "history_person", "",
+                        transliterate(display)))
         for ev in record_events:
             events.append((hid, ev.get("event") or "", ev.get("event_type") or "",
                            ev.get("year_ah") if isinstance(ev.get("year_ah"), int) else None,

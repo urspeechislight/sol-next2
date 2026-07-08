@@ -1892,6 +1892,12 @@
             "title": "N Sources",
             "type": "integer"
           },
+          "name_latin": {
+            "default": "",
+            "description": "Approximate ALA-LC transliteration of the name.",
+            "title": "Name Latin",
+            "type": "string"
+          },
           "name_variants": {
             "default": "",
             "description": "Distinct spellings, pipe-separated.",
