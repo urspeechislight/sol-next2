@@ -17,6 +17,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from backend.build.transliterate import transliterate
 from backend.core.constants import ARTIFACT__REGISTRY_DB, HTTP__DEFAULT_PAGE_SIZE
 from backend.core.errors import ResourceNotFoundError
 from backend.models.narrator import PersonEdge, PersonEntry, PersonEvent, PersonGrade, RijalEntry
@@ -167,8 +168,29 @@ def get_person(person_id: int) -> PersonEntry:
 
 
 def get_person_edges(person_id: int) -> list[PersonEdge]:
-    """Return a person's teacher/student relations (linked to a person id when known)."""
-    return _list_by_id(_PERSON_EDGES, person_id, PersonEdge)
+    """Return a person's teacher/student relations, each split out and transliterated.
+
+    A stored edge name may be a comma-joined list of several narrators (Arabic ``،``
+    or ASCII ``,``); each is emitted as its own edge so the reader sees one card per
+    person, and each carries a Latin reading from the one shared transliterator
+    (the same function that builds ``PersonEntry.name_latin`` at build time).
+    """
+    rows = _connect().execute(_PERSON_EDGES, {"id": person_id}).fetchall()
+    edges: list[PersonEdge] = []
+    for row in rows:
+        record = dict(row)
+        for part in (segment.strip() for segment in record["name"].replace("،", ",").split(",")):
+            if not part:
+                continue
+            edges.append(
+                PersonEdge(
+                    relation=record["relation"],
+                    name=part,
+                    name_latin=transliterate(part),
+                    other_person_id=record["other_person_id"],
+                )
+            )
+    return edges
 
 
 def get_person_events(person_id: int) -> list[PersonEvent]:

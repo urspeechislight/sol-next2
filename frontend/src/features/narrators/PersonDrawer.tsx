@@ -2,7 +2,7 @@
 // labelled identity (kunya, nisba, tradition, Ahl al-Bayt stance, generation), the
 // full teacher/student lists, every reliability grade re-validated against its cited
 // source page (each a reader deep-link), the source works, and the biography.
-import { Link, Stack, Text } from '../../lib/design-system';
+import { Card, Inline, Link, Stack, Text } from '../../lib/design-system';
 import { getPersonEdges, getPersonGrades } from '../../lib/api/client';
 import { parseHash, readerHref } from '../../lib/routes';
 import type { PersonEdge, PersonEntry, PersonGrade } from '../../lib/types';
@@ -62,7 +62,10 @@ function Fact({
   );
 }
 
-/** A teacher/student relation list: one name per row, matching the grade list format. */
+/** A teacher/student relation list as compact bilingual mini-cards: the Latin
+    reading above the Arabic name, wrapped in a flowing row so a long list stays
+    dense instead of one tall column. Mirrors the person card's name lockup at a
+    smaller scale (Card pad="sm"), reusing the primitives, not a bespoke tile. */
 function NameList({ label, edges }: { label: string; edges: PersonEdge[] }) {
   if (edges.length === 0) return null;
   return (
@@ -70,13 +73,22 @@ function NameList({ label, edges }: { label: string; edges: PersonEdge[] }) {
       <Text size="xs" tone="muted" weight="semibold">
         {label}
       </Text>
-      <Stack gap="xs">
+      <Inline gap="xs" wrap>
         {edges.map((e, i) => (
-          <Text key={`${e.name}-${i}`} size="sm" tone="muted" font="arabic" dir="rtl">
-            {e.name}
-          </Text>
+          <Card key={`${e.name}-${i}`} variant="flat" pad="sm">
+            <Stack gap="xs">
+              {e.name_latin ? (
+                <Text size="xs" tone="muted" weight="semibold">
+                  {e.name_latin}
+                </Text>
+              ) : null}
+              <Text size="sm" font="arabic" dir="rtl">
+                {e.name}
+              </Text>
+            </Stack>
+          </Card>
         ))}
-      </Stack>
+      </Inline>
     </div>
   );
 }

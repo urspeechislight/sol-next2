@@ -86,7 +86,8 @@ class PersonEdge(FrozenModel):
     """A teacher or student relation of a person, linked to a person id when known."""
 
     relation: str = Field(description="'teacher' or 'student'.")
-    name: str = Field(description="The related narrator's name as recorded.")
+    name: str = Field(description="The related narrator's name as recorded (Arabic).")
+    name_latin: str = Field(default="", description="Latin (ALA-LC-style) reading of the name.")
     other_person_id: int | None = Field(
         default=None, description="Resolved person id of the relation, or null when unlinked."
     )

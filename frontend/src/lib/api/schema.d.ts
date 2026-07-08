@@ -364,7 +364,12 @@ export interface paths {
         };
         /**
          * Get a person's teacher/student relations.
-         * @description Return a person's teacher/student relations (linked to a person id when known).
+         * @description Return a person's teacher/student relations, each split out and transliterated.
+         *
+         *     A stored edge name may be a comma-joined list of several narrators (Arabic ``،``
+         *     or ASCII ``,``); each is emitted as its own edge so the reader sees one card per
+         *     person, and each carries a Latin reading from the one shared transliterator
+         *     (the same function that builds ``PersonEntry.name_latin`` at build time).
          */
         get: operations["get_person_edges_api_person__person_id__edges_get"];
         put?: never;
@@ -1839,9 +1844,15 @@ export interface components {
         PersonEdge: {
             /**
              * Name
-             * @description The related narrator's name as recorded.
+             * @description The related narrator's name as recorded (Arabic).
              */
             name: string;
+            /**
+             * Name Latin
+             * @description Latin (ALA-LC-style) reading of the name.
+             * @default
+             */
+            name_latin: string;
             /**
              * Other Person Id
              * @description Resolved person id of the relation, or null when unlinked.

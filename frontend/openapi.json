@@ -1792,8 +1792,14 @@
         "description": "A teacher or student relation of a person, linked to a person id when known.",
         "properties": {
           "name": {
-            "description": "The related narrator's name as recorded.",
+            "description": "The related narrator's name as recorded (Arabic).",
             "title": "Name",
+            "type": "string"
+          },
+          "name_latin": {
+            "default": "",
+            "description": "Latin (ALA-LC-style) reading of the name.",
+            "title": "Name Latin",
             "type": "string"
           },
           "other_person_id": {
@@ -3364,7 +3370,7 @@
     },
     "/api/person/{person_id}/edges": {
       "get": {
-        "description": "Return a person's teacher/student relations (linked to a person id when known).",
+        "description": "Return a person's teacher/student relations, each split out and transliterated.\n\nA stored edge name may be a comma-joined list of several narrators (Arabic ``\u060c``\nor ASCII ``,``); each is emitted as its own edge so the reader sees one card per\nperson, and each carries a Latin reading from the one shared transliterator\n(the same function that builds ``PersonEntry.name_latin`` at build time).",
         "operationId": "get_person_edges_api_person__person_id__edges_get",
         "parameters": [
           {
