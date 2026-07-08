@@ -7,7 +7,8 @@ import type { RouteState } from '../lib/routes';
 import { saveReading } from '../lib/reading';
 import { recordSearch } from '../lib/searchHistory';
 import { useHashRoute } from '../lib/useHashRoute';
-import { GraphScreen } from '../features/graph/GraphScreen';
+import { EMPTY_GRAPH, GraphScreen } from '../features/graph/GraphScreen';
+import type { GraphState } from '../features/graph/GraphScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { LibraryScreen } from '../features/library/LibraryScreen';
 import { QuranScreen } from '../features/quran/QuranScreen';
@@ -56,6 +57,8 @@ interface AppContentProps {
   scope: SearchScope;
   view: NavView;
   lib: LibScope;
+  graph: GraphState;
+  setGraph: (next: GraphState) => void;
   quranFocus: { surah: number; aya: number } | null;
   openVerse: (surah: number, aya: number) => void;
   openReader: (urn: string, page?: number, q?: string) => void;
@@ -70,6 +73,8 @@ function AppContent({
   scope,
   view,
   lib,
+  graph,
+  setGraph,
   quranFocus,
   openVerse,
   openReader,
@@ -98,7 +103,9 @@ function AppContent({
         />
       ) : null}
       {view === 'quran' ? <QuranScreen query={submitted} focus={quranFocus} /> : null}
-      {view === 'graph' ? <GraphScreen /> : null}
+      {view === 'graph' ? (
+        <GraphScreen state={graph} onState={setGraph} onOpenReader={openReader} />
+      ) : null}
       {view === 'design' ? <DesignSystemScreen /> : null}
       {view === 'extraction' ? <ExtractionScreen /> : null}
     </>
@@ -123,6 +130,7 @@ export function App() {
   const [submitted, setSubmitted] = useState(initial.reading ? '' : initial.query);
   const [scope, setScope] = useState<SearchScope>(coerceScope(initial.scope, initial.view));
   const [lib, setLib] = useState<LibScope>({ cat: initial.cat, dom: initial.dom });
+  const [graph, setGraph] = useState<GraphState>(EMPTY_GRAPH);
   const contentFilters = useContentFilters(initial);
   const [reading, setReading] = useState<Reading | null>(
     initial.reading ? { ...initial.reading } : null,
@@ -248,6 +256,8 @@ export function App() {
         scope={scope}
         view={view}
         lib={lib}
+        graph={graph}
+        setGraph={setGraph}
         quranFocus={quranFocus}
         openVerse={openVerse}
         openReader={openReader}

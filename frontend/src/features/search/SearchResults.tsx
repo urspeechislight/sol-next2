@@ -20,7 +20,13 @@ import './SearchResults.css';
 /** The narrator scope has no server facet endpoint: fetch one page, derive the
     category filter from the returned rows (categoryFacets), apply it on the
     client, and render through the shared ResultsFrame. */
-function NarratorScope({ q }: { q: string }) {
+function NarratorScope({
+  q,
+  onOpenReader,
+}: {
+  q: string;
+  onOpenReader: (urn: string, page: number, query: string) => void;
+}) {
   const res = useAsync<Page<RijalEntry>>(() => getRijal({ q, limit: PAGE.facetLimit }), [q]);
   const labelOf = useCategoryLabels();
   const [category, setCategory] = useState('');
@@ -54,7 +60,7 @@ function NarratorScope({ q }: { q: string }) {
       {res.data ? (
         <div className="ds-records">
           {shown.map((e) => (
-            <NarratorCard key={e.id} item={e} />
+            <NarratorCard key={e.id} item={e} onOpenReader={onOpenReader} />
           ))}
         </div>
       ) : null}
@@ -104,7 +110,7 @@ export function SearchResults({
       {scope === 'works' ? (
         <WorksQueryResults q={q} onOpen={(urn, page) => onOpenReader(urn, page ?? 1, '')} />
       ) : null}
-      {scope === 'narrator' ? <NarratorScope q={q} /> : null}
+      {scope === 'narrator' ? <NarratorScope q={q} onOpenReader={onOpenReader} /> : null}
     </section>
   );
 }

@@ -4,9 +4,14 @@
 // source page (each a reader deep-link), the source works, and the biography.
 import { Link, Stack, Text } from '../../lib/design-system';
 import { getPersonEdges, getPersonGrades } from '../../lib/api/client';
+import { parseHash, readerHref } from '../../lib/routes';
 import type { PersonEdge, PersonEntry, PersonGrade } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { generationLabel, residenceLabel, stanceHelp, stanceLabel, traditionLabel } from './labels';
+
+/** A person's reader-opener: the app callback that opens the book at a page with
+    a highlight term, preserving the browse view underneath (unlike a raw hash link). */
+type OpenReader = (urn: string, page: number, query: string) => void;
 
 function Section({ label, value }: { label: string; value: string }) {
   if (!value) return null;
@@ -76,11 +81,31 @@ function NameList({ label, edges }: { label: string; edges: PersonEdge[] }) {
   );
 }
 
-function GradeRow({ grade }: { grade: PersonGrade }) {
+/** One grade row. The stored ``grade.link`` carries the right book + page but
+    percent-encodes its highlight term, which the reader (base64url) cannot read;
+    re-composing the href through ``readerHref`` and opening via ``onOpenReader``
+    routes the click through the one reader-link builder, so the name highlights
+    and the browse view underneath is preserved. */
+function GradeRow({
+  grade,
+  personName,
+  onOpenReader,
+}: {
+  grade: PersonGrade;
+  personName: string;
+  onOpenReader: OpenReader;
+}) {
   const where = grade.page ? `${grade.book} · ص ${grade.page}` : grade.book;
+  const target = parseHash(grade.link).reading;
+  const href = target ? readerHref(target.urn, target.page, personName) : grade.link;
   return (
     <div>
-      <Link href={grade.link} variant="accent" dir="rtl">
+      <Link
+        href={href}
+        variant="accent"
+        dir="rtl"
+        onActivate={target ? () => onOpenReader(target.urn, target.page, personName) : undefined}
+      >
         <Text size="sm" font="arabic" dir="rtl">
           {grade.evaluator}: {grade.term}
         </Text>
@@ -92,7 +117,15 @@ function GradeRow({ grade }: { grade: PersonGrade }) {
   );
 }
 
-function Gradings({ grades }: { grades: PersonGrade[] }) {
+function Gradings({
+  grades,
+  personName,
+  onOpenReader,
+}: {
+  grades: PersonGrade[];
+  personName: string;
+  onOpenReader: OpenReader;
+}) {
   if (grades.length === 0) return null;
   return (
     <div>
@@ -101,14 +134,25 @@ function Gradings({ grades }: { grades: PersonGrade[] }) {
       </Text>
       <Stack gap="xs">
         {grades.map((g, i) => (
-          <GradeRow key={`${g.evaluator}-${g.page}-${g.term}-${i}`} grade={g} />
+          <GradeRow
+            key={`${g.evaluator}-${g.page}-${g.term}-${i}`}
+            grade={g}
+            personName={personName}
+            onOpenReader={onOpenReader}
+          />
         ))}
       </Stack>
     </div>
   );
 }
 
-export function PersonDrawer({ entry }: { entry: PersonEntry }) {
+export function PersonDrawer({
+  entry,
+  onOpenReader,
+}: {
+  entry: PersonEntry;
+  onOpenReader: OpenReader;
+}) {
   const edges = useAsync(() => getPersonEdges(entry.person_id), [entry.person_id]);
   const grades = useAsync(() => getPersonGrades(entry.person_id), [entry.person_id]);
   const all = edges.data ?? [];
@@ -142,7 +186,11 @@ export function PersonDrawer({ entry }: { entry: PersonEntry }) {
       <Fact label="Residence" value={entry.places ? residenceLabel(entry.places) : ''} />
       <NameList label={`Teachers (${teachers.length})`} edges={teachers} />
       <NameList label={`Students (${students.length})`} edges={students} />
-      <Gradings grades={grades.data ?? []} />
+      <Gradings
+        grades={grades.data ?? []}
+        personName={entry.full_name}
+        onOpenReader={onOpenReader}
+      />
       <Section label="Recorded in" value={entry.source_books.replace(/ \| /g, ' · ')} />
       {entry.bio ? <Section label="Biography" value={entry.bio} /> : null}
     </Stack>

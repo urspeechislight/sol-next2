@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import {
   Heading,
@@ -21,6 +21,28 @@ import { isPerson, NarratorCard, type NarratorItem } from '../narrators/Narrator
 import '../screens.css';
 
 const PER_PAGE = PAGE.graphPerPage;
+
+/** The registry browser's committed state. Lifted to App (not held locally) so it
+    survives the reader takeover: opening a source book unmounts this screen, and
+    without lifting, Back would remount it reset to page 1 with filters cleared. */
+export interface GraphState {
+  registry: string;
+  page: number;
+  q: string;
+  tradition: string;
+  stance: string;
+  category: string;
+}
+
+/** The initial registry browse state, spread by App's useState initializer. */
+export const EMPTY_GRAPH: GraphState = {
+  registry: REGISTRY.RIJAL,
+  page: 1,
+  q: '',
+  tradition: '',
+  stance: '',
+  category: '',
+};
 
 const TABS = [
   { value: REGISTRY.RIJAL, label: 'Rijāl', icon: 'node' as const },
@@ -59,20 +81,28 @@ function itemKey(item: NarratorItem): string {
   return isPerson(item) ? `p${item.person_id}` : `r${item.id}`;
 }
 
-export function GraphScreen() {
-  const [registry, setRegistry] = useState<string>(REGISTRY.RIJAL);
-  const [page, setPage] = useState(1);
-  const [draft, setDraft] = useState('');
-  const [q, setQ] = useState('');
-  const [tradition, setTradition] = useState('');
-  const [stance, setStance] = useState('');
-  const [category, setCategory] = useState('');
+interface GraphScreenProps {
+  state: GraphState;
+  onState: (next: GraphState) => void;
+  onOpenReader: (urn: string, page: number, query: string) => void;
+}
+
+export function GraphScreen({ state, onState, onOpenReader }: GraphScreenProps) {
+  const { registry, page, q, tradition, stance, category } = state;
+  const [draft, setDraft] = useState(q);
   const offset = (page - 1) * PER_PAGE;
   const persons = registry === REGISTRY.PERSON;
 
-  useEffect(() => {
-    setPage(1);
-  }, [registry, q, tradition, stance, category]);
+  const setRegistry = (value: string) => onState({ ...state, registry: value, page: 1 });
+  const setTradition = (value: string) => onState({ ...state, tradition: value, page: 1 });
+  const setStance = (value: string) => onState({ ...state, stance: value, page: 1 });
+  const setCategory = (value: string) => onState({ ...state, category: value, page: 1 });
+  const submitQuery = () => onState({ ...state, q: draft, page: 1 });
+  const setPage = (value: number) => onState({ ...state, page: value });
+  const clearSearch = () => {
+    setDraft('');
+    onState({ ...state, q: '', page: 1 });
+  };
 
   const result = useAsync<Page<NarratorItem>>(() => {
     if (persons) return getPerson({ q, tradition, stance, limit: PER_PAGE, offset });
@@ -80,11 +110,6 @@ export function GraphScreen() {
   }, [registry, page, q, tradition, stance, category]);
 
   const totalPages = result.data ? pageCount(result.data.total, PER_PAGE) : 1;
-
-  const clearSearch = () => {
-    setDraft('');
-    setQ('');
-  };
 
   return (
     <section>
@@ -111,7 +136,7 @@ export function GraphScreen() {
             placeholder="Search narrators by name…"
             ariaLabel="Search narrators by name"
             onInput={setDraft}
-            onSubmit={() => setQ(draft)}
+            onSubmit={submitQuery}
             onClear={clearSearch}
             clearLabel="Clear search"
           />
@@ -155,7 +180,7 @@ export function GraphScreen() {
             <>
               <Stack gap="sm">
                 {data.items.map((item) => (
-                  <NarratorCard key={itemKey(item)} item={item} />
+                  <NarratorCard key={itemKey(item)} item={item} onOpenReader={onOpenReader} />
                 ))}
               </Stack>
               <Pager page={page} totalPages={totalPages} onPage={setPage} />

@@ -13,6 +13,10 @@ import { PersonDrawer } from './PersonDrawer';
 
 export type NarratorItem = RijalEntry | PersonEntry;
 
+/** Opens a source book at a page with a highlight term (App's reader opener),
+    threaded to the grade rows in the person drawer. */
+type OpenReader = (urn: string, page: number, query: string) => void;
+
 /** True when a narrator item is an enriched person record (vs a raw rijāl entry). */
 export function isPerson(item: NarratorItem): item is PersonEntry {
   return 'person_id' in item;
@@ -69,7 +73,13 @@ function PersonMeta({ entry }: { entry: PersonEntry }) {
 }
 
 /** One narrator record card (rijāl or person): name + tradition + meta + detail. */
-export function NarratorCard({ item }: { item: NarratorItem }) {
+export function NarratorCard({
+  item,
+  onOpenReader,
+}: {
+  item: NarratorItem;
+  onOpenReader: OpenReader;
+}) {
   const [open, setOpen] = useState(false);
   const sub = joinDots(item.kunya, item.nisba);
   const person = isPerson(item);
@@ -103,7 +113,7 @@ export function NarratorCard({ item }: { item: NarratorItem }) {
             </Text>
           </UnstyledButton>
         ) : null}
-        {person && open ? <PersonDrawer entry={item} /> : null}
+        {person && open ? <PersonDrawer entry={item} onOpenReader={onOpenReader} /> : null}
       </Stack>
     </Card>
   );
