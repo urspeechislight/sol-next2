@@ -21,7 +21,7 @@ DOC = "docs/quality-standards.md#security"
 
 # Hostnames or URL substrings to block outright. Extend in your fork.
 _DENY_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"://(?:localhost|127\.0\.0\.1|0\.0\.0\.0|169\.254\."),
+    re.compile(r"://(?:localhost|127\.0\.0\.1|0\.0\.0\.0|169\.254\.)"),
     re.compile(r"://[^/]*\.local(?:/|$)"),
     re.compile(r"://[^/]*\.internal(?:/|$)"),
 )
