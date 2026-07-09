@@ -12,13 +12,14 @@ import type { Domain } from '../../lib/types';
 import { viewHref } from '../../lib/routes';
 import { corpusTotals, sumCount } from '../../lib/taxonomy';
 import { formatCount } from '../../lib/utils';
+import { traditionLabel } from '../narrators/labels';
 import { domainIcon, visibleCategories } from './lib';
 import type { TraditionLens } from './lib';
 
 const TRADITIONS = [
   { value: 'all', label: 'All' },
-  { value: 'sunni', label: 'Sunni' },
-  { value: 'shia', label: 'Shia' },
+  { value: 'sunni', label: traditionLabel('sunni') },
+  { value: 'shia', label: traditionLabel('shia') },
 ];
 
 interface CategoryRowProps {
@@ -167,8 +168,8 @@ export function FihristRail({
           The Library · الفِهرِست
         </Text>
         <Text as="p" size="xs" tone="faint" font="mono" className="fih-mast__stat">
-          {formatCount(t.works)} works · {formatCount(t.volumes)} volumes · {t.domains}{' '}
-          domains · {t.categories} categories
+          {formatCount(t.works)} works · {formatCount(t.volumes)} volumes · {t.domains} domains ·{' '}
+          {t.categories} categories
         </Text>
       </header>
       <div className="fih-controls">

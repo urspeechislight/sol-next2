@@ -17,6 +17,7 @@ import { PAGE, REGISTRY } from '../../lib/constants';
 import type { Page } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { formatCount, pageCount, pluralNoun } from '../../lib/utils';
+import { STANCE_OPTIONS, TRADITION_OPTIONS } from '../narrators/labels';
 import { isPerson, NarratorCard, type NarratorItem } from '../narrators/NarratorCard';
 import '../screens.css';
 
@@ -50,22 +51,10 @@ const TABS = [
 ];
 
 /** Tradition applies to both registries; the backend filters server-side on these tokens. */
-const TRADITIONS: MenuOption[] = [
-  { value: '', label: 'All traditions' },
-  { value: 'sunni', label: 'Sunnī' },
-  { value: 'shia', label: 'Shīʿī' },
-  { value: 'both', label: 'Sunnī + Shīʿī' },
-  { value: 'history', label: 'History' },
-];
+const TRADITIONS: MenuOption[] = [{ value: '', label: 'All traditions' }, ...TRADITION_OPTIONS];
 
 /** Person stance vis-à-vis the Ahl al-Bayt (only a minority of narrators are evaluated). */
-const STANCES: MenuOption[] = [
-  { value: '', label: 'Any stance' },
-  { value: 'ahlulbayt_member', label: 'Ahl al-Bayt' },
-  { value: 'pro_ahlulbayt', label: 'Pro-Ahl al-Bayt' },
-  { value: 'anti_ahlulbayt', label: 'Anti-Ahl al-Bayt' },
-  { value: 'khariji', label: 'Khārijī' },
-];
+const STANCES: MenuOption[] = [{ value: '', label: 'Any stance' }, ...STANCE_OPTIONS];
 
 /** Rijāl entry data-quality class. */
 const CATEGORIES: MenuOption[] = [
@@ -119,7 +108,7 @@ export function GraphScreen({ state, onState, onOpenReader }: GraphScreenProps) 
         </Text>
         <Heading level={1}>Transmission registry</Heading>
         <Text as="p" size="md" tone="muted" className="scr__lede">
-          {result.data ? `${result.data.total.toLocaleString()} ` : ''}
+          {result.data ? `${formatCount(result.data.total)} ` : ''}
           reliability-graded narrators and enriched person identities with death years, ahlulbayt
           stance, and historical events, drawn from the rijāl corpus. Search by name and filter by
           tradition, stance, or entry class.

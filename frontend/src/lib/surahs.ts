@@ -132,6 +132,9 @@ export const SURAHS: readonly SurahName[] = [
   { n: 114, ar: 'الناس', en: 'al-Nās' },
 ] as const;
 
+/** The number of sūras in the Qurʾān, derived from the table so the two never diverge. */
+export const SURAH_COUNT = SURAHS.length;
+
 /** Name lookup by surah number; unknown numbers fail loud. */
 export function surahName(n: number): SurahName {
   const entry = SURAHS[n - 1];

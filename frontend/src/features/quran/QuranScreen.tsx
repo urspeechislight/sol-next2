@@ -11,7 +11,7 @@ import {
   Text,
 } from '../../lib/design-system';
 import { getSurah } from '../../lib/api/client';
-import { surahName, verseMatches } from '../../lib/surahs';
+import { SURAH_COUNT, surahName, verseMatches } from '../../lib/surahs';
 import type { SurahName } from '../../lib/surahs';
 import type { Ayah, Surah } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
@@ -26,7 +26,7 @@ type QuranLang = 'ar' | 'both' | 'en';
 type ResearchTab = 'tafsir' | 'lexicon' | 'morphology';
 
 const SURAH_MIN = 1;
-const SURAH_MAX = 114;
+const SURAH_MAX = SURAH_COUNT;
 
 const LANGS = [
   { value: 'en', label: 'EN' },
