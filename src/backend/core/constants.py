@@ -80,6 +80,15 @@ ARTIFACT__MANUSCRIPT_DB: Final[str] = "manuscript.db"
 ARTIFACT__REGISTRY_DB: Final[str] = "registry.db"
 ARTIFACT__CITATIONS_DB: Final[str] = "citations.db"
 ARTIFACT__BOOKS_INDEX: Final[str] = "books_index.json"
+ARTIFACT__TOC_INDEX: Final[str] = "toc_index.json"
+
+TOC_SYNTH__LETTER_MIN: Final[int] = 3
+TOC_SYNTH__NUMBERED_MIN: Final[int] = 10
+TOC_SYNTH__NUMBERED_MIN_PAGES: Final[int] = 8
+TOC_SYNTH__NUMBERED_MIN_SPAN: Final[float] = 0.2
+TOC_SYNTH__TITLE_MAX_CHARS: Final[int] = 40
+TOC_SYNTH__SCRAPED_SPARSE_MAX: Final[int] = 2
+TOC_SYNTH__MIN_CONTENT_PAGES: Final[int] = 20
 
 NARRATOR_LINK__METADATA_KEY: Final[str] = "narrator_link"
 NARRATOR_LINK__ORIGIN_KEY: Final[str] = "origin"
