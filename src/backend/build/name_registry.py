@@ -30,6 +30,7 @@ from __future__ import annotations
 
 from typing import Final
 
+from backend.build.mizan_names import BIO_MARKERS, decompose
 from backend.patterns import cached_compile, normalize_arabic
 
 
@@ -54,23 +55,9 @@ _CONNECTIVE_VERBS: Final[frozenset[str]] = _norm_set(
         "حدثه", "أخبرنا", "أخبرني", "أنبأنا", "نبأنا", "قال", "وقال", "فقال", "قالوا",
         "قلت", "وقلت", "قلنا", "روى", "رواه", "يروي", "ذكر", "وذكر", "ذكره", "رأيت",
         "قرأت", "كتب", "أنشدنا", "أنشدني", "زعم", "يقول", "قوله", "انتهى", "اقتصر",
-        "اتهمه", "اتهم", "متهم", "مذكور", "كذبه", "ضعفه", "وثقه", "رماه", "رموه",
-        "غمزه", "تركه", "وهاه", "نسبوه", "قيل", "وقيل", "ويقال", "يقال",
     )
 )
 
-_STOP_TOKENS: Final[frozenset[str]] = _norm_set(
-    (
-        "عن", "من", "في", "بين", "إلى", "الى", "مع", "ثم", "الذي", "التي", "الذين",
-        "مولى", "مولاه", "منسوب", "أخبار", "الجمع", "بهذا", "بهذه", "الاسناد",
-        "الإسناد", "قال", "يقول", "سمعت", "أنه", "أنها", "لما", "وكان", "كان",
-        "يعرف", "المعروف", "يكنى", "لقبه", "الملقب", "غير", "لم", "به", "منه",
-        "عمن", "عنه", "عنهم", "مرفوعا", "موقوفا", "مسندا", "معلقا", "سنة", "مات", "توفي",
-    )
-)
-
-_TRAILING_DROP: Final[frozenset[str]] = _norm_set(("الذي", "التي", "الذين", "غيره", "وغيره"))
-_HAS_ARABIC_RE = cached_compile(r"[ء-ي]")
 
 _TITLE_LEADS: Final[frozenset[str]] = _norm_set(
     (
@@ -92,7 +79,9 @@ _BOOK_LEADS: Final[frozenset[str]] = _norm_set(
     )
 )
 
-_NON_HEAD: Final[frozenset[str]] = _norm_set(("الله", "رسول", "النبي", "نبي", "نبى"))
+_NON_HEAD: Final[frozenset[str]] = _norm_set(
+    ("الله", "رسول", "النبي", "نبي", "نبى", "هذا", "هذه", "بهذا", "وبهذا", "بهذه", "ذلك")
+)
 
 _HEADING_LEADS: Final[frozenset[str]] = _norm_set(
     (
@@ -104,6 +93,9 @@ _HEADING_LEADS: Final[frozenset[str]] = _norm_set(
 )
 
 _TX_STEM_RE = cached_compile(r"^(?:و|ف)?(?:حدث|اخبر|انبا)")
+_HAS_ARABIC_RE = cached_compile(r"[ء-ي]")
+
+_BIO_LEADS: Final[frozenset[str]] = _norm_set(tuple(BIO_MARKERS))
 
 _MIN_SIGNIFICANT_TOKENS: Final[int] = 2
 _DEFINITE_ARTICLE: Final[str] = "ال"
@@ -117,16 +109,19 @@ def _significant(tokens: list[str]) -> list[str]:
 
 
 def _strip_leading_connective(tokens: list[str]) -> list[str]:
-    """Drop a leading isnad/speech verb (سألت، حدثنا، قال ...) or standalone honorific
+    """Drop a leading isnad/speech verb (سألت، حدثنا، قال ...), grading verb (وثقه،
 
-    title (الشيخ، السيد ...) so the real name that follows survives. ``سألت يحيى بن
-    معين`` keeps ``يحيى بن معين``; ``الشيخ محمد بن محمد بن النعمان`` keeps ``محمد بن
-    محمد بن النعمان``; a bare ``سألت أبي`` reduces to ``أبي`` and is rejected later.
-    Only a LEADING title is dropped, so ``أبو الشيخ`` keeps ``الشيخ`` as a kunya tail.
+    ضعفه ...), or standalone honorific title (الشيخ، السيد ...) so the real name that
+    follows survives. ``سألت يحيى بن معين`` keeps ``يحيى بن معين``; ``وثقه النجاشي``
+    reduces to ``النجاشي`` and is rejected later; ``الشيخ محمد بن محمد بن النعمان`` keeps
+    ``محمد بن محمد بن النعمان``. Only a LEADING word is dropped, so ``أبو الشيخ`` keeps
+    ``الشيخ`` as a kunya tail. Grading verbs reuse :data:`BIO_MARKERS`, the bounded set
+    :func:`decompose` stops its walk on, rather than a second hand-maintained list.
     """
     while tokens and (
         normalize_arabic(tokens[0]) in _CONNECTIVE_VERBS
         or normalize_arabic(tokens[0]) in _TITLE_LEADS
+        or normalize_arabic(tokens[0]) in _BIO_LEADS
     ):
         tokens = tokens[1:]
     return tokens
@@ -153,39 +148,28 @@ def _unglue_prefix(token: str) -> str:
 def clean_name(name: str) -> str:
     """Return the person-name core of a raw string, or '' when nothing name-like remains.
 
-    Strips a leading connective verb, ungluess a ``فـ``/``وـ`` on the head, crops at
-    the first stop token (``عن``/``ثم``/``مولى``/``اتهمه`` ...), and drops a trailing
-    relative pronoun, a bare death-year number (``… الأشعري 191``), or an honorific
-    sign - any trailing token with no Arabic letter. The surface tokens are otherwise
-    preserved (only trimmed), so char offsets into a kept slice stay valid.
+    A raw entry head is ``<name> <biography prose>``; the durable boundary is the name
+    GRAMMAR, not a blocklist of prose words. This strips a leading prose word that the
+    grammar cannot see because it sits where the ism would go (a narration verb ``سألت``
+    or a standalone title ``الشيخ``), ungluess a ``فـ``/``وـ`` conjunction on the head,
+    then hands the rest to :func:`decompose`, which walks ism + nasab chain + kunya +
+    nisba/laqab and STOPS at the first token that opens biography. Everything past that
+    (a death year, ``متهم بالكذب``, ``- 6 أبو بشر``, a wāw co-narrator) is dropped by
+    construction, so no death-year/commentary/punctuation list has to be maintained.
+
+    Two structural guards precede the grammar: a token carries a name only when it holds
+    an Arabic letter, so entry numbers and separator dashes (``بن -``, ``... بن 506``) are
+    dropped rather than parsed as a nasab element; and a leading grading verb the ism slot
+    would otherwise swallow (``وثقه النجاشي``) is peeled using :data:`BIO_MARKERS`, the same
+    bounded set :func:`decompose` already stops the walk on.
     """
-    surface = name.strip().split()
-    while surface and not _HAS_ARABIC_RE.search(surface[0]):
-        surface = surface[1:]
-    if not surface:
-        return ""
-    surface = _strip_leading_connective(surface)
+    surface = _strip_leading_connective(
+        [token for token in name.strip().split() if _HAS_ARABIC_RE.search(token)]
+    )
     if not surface:
         return ""
     surface[0] = _unglue_prefix(surface[0])
-    norm = [normalize_arabic(t) for t in surface]
-    cut = len(surface)
-    for i in range(1, len(surface)):
-        token = surface[i]
-        if (
-            norm[i] in _STOP_TOKENS
-            or norm[i] in _CONNECTIVE_VERBS
-            or not _HAS_ARABIC_RE.search(token)
-            or len(token) == 1
-        ):
-            cut = i
-            break
-    surface = surface[:cut]
-    while surface and (
-        normalize_arabic(surface[-1]) in _TRAILING_DROP or not _HAS_ARABIC_RE.search(surface[-1])
-    ):
-        surface = surface[:-1]
-    return " ".join(surface)
+    return decompose(" ".join(surface))["name"]
 
 
 def _leads_with_junk(tokens: list[str]) -> bool:
