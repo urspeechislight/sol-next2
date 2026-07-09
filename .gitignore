@@ -4,19 +4,8 @@ node_modules/
 .pnpm-debug.log*
 .npm/
 
-# SvelteKit
-.svelte-kit/
-build/
-.vercel/
-.netlify/
-.output/
-
 # Vite
 .vite/
-
-# Storybook
-storybook-static/
-storybook.log
 
 # Test artifacts
 coverage/
@@ -105,14 +94,6 @@ data/*.db-wal
 data/*.db.bak
 data/books_index.json
 data/toc_index.json
-
-# Design handoff scraps: kept on disk for reference but not tracked. The React
-# prototype that we serve lives at src/frontend/{index.html,app.jsx,*.css}.
-src/frontend/handoff/
-src/frontend/src/
-src/frontend/scraps/
-src/frontend/screenshots/
-src/frontend/uploads/
 
 # Vendored design skills: local tooling, not part of the reader
 .agents/

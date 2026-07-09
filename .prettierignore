@@ -1,5 +1,4 @@
 node_modules
-.svelte-kit
 build
 dist
 
@@ -27,15 +26,6 @@ docs/adr/**
 # point-in-time HTML reports). Same rationale as ADRs — excluded from autofix.
 docs/councils/**
 docs/handoff/**
-
-# Design handoff bundle: Svelte components from a prior export, kept on disk
-# for reference but not used by the React prototype that lives at
-# src/frontend/. Excluded from formatting and from harness lint.
-src/frontend/handoff/**
-src/frontend/src/**
-src/frontend/scraps/**
-src/frontend/screenshots/**
-src/frontend/uploads/**
 
 # Generated index of the upstream book corpus — produced by
 # scripts/ingest_books.py. Not hand-edited; formatting is irrelevant.

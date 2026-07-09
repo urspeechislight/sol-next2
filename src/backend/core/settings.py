@@ -29,7 +29,7 @@ class Settings(BaseSettings):
         default=[
             "http://localhost:8765",
             "http://127.0.0.1:8765",
-            "http://10.0.0.10:8765",
+            "http://10.0.12.10:8765",
         ],
         description="Origins allowed by CORS middleware (the static frontend host).",
     )

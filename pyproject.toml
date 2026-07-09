@@ -23,7 +23,7 @@ dependencies = [
   "pydantic-settings>=2.6",
   "httpx>=0.28",
   "structlog>=24.4",
-  "tenacity>=9.0",
+  "ijson>=3.5.1",
   "pyyaml>=6.0",
   "mcp>=1.27.2",
 ]
@@ -36,10 +36,7 @@ dev = [
   "pytest-cov>=6.0",
   "ruff>=0.8",
   "pyright>=1.1.390",
-  "pyyaml>=6.0",
   "types-pyyaml>=6.0",
-  "freezegun>=1.5",
-  "ijson>=3.5.1",
 ]
 
 # ---------- Build / packaging --------------------------------------------------
