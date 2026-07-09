@@ -64,6 +64,7 @@ _OVER_MERGE_ROOT_MAX: Final[int] = 2
 _OVER_MERGE_PLACE_MAX: Final[int] = 4
 _NAME_ROOT_TOKENS: Final[int] = 2
 _CORROBORATING_TEACHERS: Final[int] = 2
+_DEATH_SPLIT_TOLERANCE: Final[int] = 12
 _THEOPHORIC_KUNYA_TOKENS: Final[int] = 3
 _MAX_VARIANTS: Final[int] = 8
 _MAX_RELIABILITY: Final[int] = 10
@@ -298,6 +299,69 @@ def _remerge_corroborating(clusters: list[list[dict[str, Any]]]) -> list[list[di
     for idx, cluster in enumerate(clusters):
         grouped[root(idx)].extend(cluster)
     return list(grouped.values())
+
+
+def _death_close(a: list[dict[str, Any]], b: list[dict[str, Any]]) -> bool:
+    """True when two clusters attest death years within the split tolerance."""
+    return any(
+        abs(x - y) <= _DEATH_SPLIT_TOLERANCE
+        for x in _cluster_deaths(a)
+        for y in _cluster_deaths(b)
+    )
+
+
+def _cluster_by_death(entries: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    """Group dated entries by death-year proximity; deaths that disagree beyond the
+    tolerance land in separate groups, one per distinct person."""
+    clusters: list[list[dict[str, Any]]] = [[entry] for entry in entries]
+    changed = True
+    while changed and len(clusters) > 1:
+        changed = False
+        for i in range(len(clusters)):
+            for j in range(i + 1, len(clusters)):
+                if _death_close(clusters[i], clusters[j]):
+                    clusters[i].extend(clusters[j])
+                    clusters.pop(j)
+                    changed = True
+                    break
+            if changed:
+                break
+    return clusters
+
+
+def _split_by_death(cluster: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    """Split a bare-name cluster whose entries carry incompatible death-years into
+    one person per distinct death.
+
+    Applied only to the bucket-local (bare ism+father) clusters, never to a
+    nisba- or grandfather-chain-distinguished one: a well-attested named narrator
+    carries a few noisy death-years (Sufyan b. Uyayna dated 198 and, in error, 98),
+    and death-splitting him would fragment one man, whereas a bare name is exactly
+    where the canonical dedup fuses distinct men (7 men, deaths 260-635 AH, under
+    one ``محمد بن عبد الله``). Sources disagree on one man's death by a few years, so
+    deaths within tolerance stay one person; deaths that disagree beyond it are
+    distinct men. Undated entries carry no contradiction: they join the sole dated
+    person, or, when several are present, attach to the one they share a teacher
+    with and otherwise stay together as a single residual. A cluster with at most
+    one distinct death is left untouched.
+    """
+    if len(cluster) <= 1:
+        return [cluster]
+    dated = [entry for entry in cluster if isinstance(entry.get("death_year"), int)]
+    undated = [entry for entry in cluster if not isinstance(entry.get("death_year"), int)]
+    death_clusters = _cluster_by_death(dated)
+    if len(death_clusters) <= 1:
+        return [cluster]
+    residual: list[dict[str, Any]] = []
+    for entry in undated:
+        matches = [dc for dc in death_clusters if _cluster_teachers([entry]) & _cluster_teachers(dc)]
+        if len(matches) == 1:
+            matches[0].append(entry)
+        else:
+            residual.append(entry)
+    if residual:
+        death_clusters.append(residual)
+    return death_clusters
 
 
 def _cluster_by_full_name(entries: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
@@ -637,11 +701,12 @@ def build_person_tables(
             for entry in subcluster:
                 pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
     for cluster, tradition in local_clusters:
-        for subcluster in _cluster_by_full_name(cluster):
-            pid += 1
-            groups.append((pid, subcluster, tradition))
-            for entry in subcluster:
-                pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
+        for named in _cluster_by_full_name(cluster):
+            for subcluster in _split_by_death(named):
+                pid += 1
+                groups.append((pid, subcluster, tradition))
+                for entry in subcluster:
+                    pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
 
     for person_id, cluster, tradition in groups:
         display = _fullest_name(cluster)

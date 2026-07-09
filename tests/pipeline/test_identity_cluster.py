@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from backend.build.authority import _cluster_by_full_name
+from backend.build.authority import _cluster_by_full_name, _split_by_death
 
 
 def _entries(*names: str) -> list[dict[str, str]]:
@@ -64,3 +64,39 @@ def test_should_keep_distinct_men_apart() -> None:
         {"full_name": "أحمد بن محمد بن عيسى العلوي", "teacher_names": ["إبراهيم بن هاشم"]},
     ]
     assert len(_cluster_by_full_name(entries)) == 2
+
+
+def _dated(death: int | None, teachers: tuple[str, ...] = ()) -> dict[str, object]:
+    return {"full_name": "محمد بن عبد الله", "death_year": death, "teacher_names": list(teachers)}
+
+
+def test_should_split_a_bare_cluster_on_incompatible_deaths() -> None:
+    """Same bare name, death-years centuries apart -> distinct men."""
+    assert len(_split_by_death([_dated(177), _dated(450)])) == 2
+
+
+def test_should_keep_a_bare_cluster_within_the_death_tolerance() -> None:
+    """Deaths a few years apart are one man whose sources disagree."""
+    assert len(_split_by_death([_dated(198), _dated(200)])) == 1
+
+
+def test_should_keep_an_undated_bare_cluster_as_one_person() -> None:
+    """With no death-year there is no evidence to split on."""
+    assert len(_split_by_death([_dated(None), _dated(None)])) == 1
+
+
+def test_should_attach_an_undated_entry_to_the_sole_dated_person() -> None:
+    """One dated person plus an undated entry stays one person, not a residual."""
+    assert len(_split_by_death([_dated(200), _dated(None)])) == 1
+
+
+def test_should_route_an_undated_entry_to_its_teacher_match() -> None:
+    """With several dated people an undated entry joins the one it shares a teacher with."""
+    cluster = [_dated(100, ("أ",)), _dated(400, ("ب",)), _dated(None, ("أ",))]
+    assert len(_split_by_death(cluster)) == 2
+
+
+def test_should_pool_an_unplaceable_undated_entry_as_a_residual() -> None:
+    """An undated entry matching no dated person's teachers becomes its own residual."""
+    cluster = [_dated(100, ("أ",)), _dated(400, ("ب",)), _dated(None, ("ج",))]
+    assert len(_split_by_death(cluster)) == 3
