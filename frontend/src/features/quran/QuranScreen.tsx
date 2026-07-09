@@ -14,7 +14,7 @@ import type { LockupMode } from '../../lib/design-system';
 import { getSurah } from '../../lib/api/client';
 import { LANG_OPTIONS } from '../../lib/constants';
 import { SURAH_COUNT, surahName, verseMatches } from '../../lib/surahs';
-import type { SurahName } from '../../lib/surahs';
+import type { SurahName, VerseRef } from '../../lib/surahs';
 import type { Ayah, Surah } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { useTheme } from '../../lib/useTheme';
@@ -51,7 +51,7 @@ export interface QuranScreenProps {
       open sūra's āyāt in place; '' shows the whole sūra. */
   query?: string;
   /** A verse to open focused, e.g. from a citation link in the reader. */
-  focus?: { surah: number; aya: number } | null;
+  focus?: VerseRef | null;
 }
 
 /** The dedicated Qurʾān reader: a surah rail with the shared Qurʾān finder,
@@ -79,7 +79,7 @@ export function QuranScreen({ query = '', focus = null }: QuranScreenProps) {
   // A citation link (or any external focus) opens that sūra with the āya set as
   // the scroll target; keyed on the primitives so it fires once per verse.
   const focusSurah = focus?.surah ?? null;
-  const focusAya = focus?.aya ?? null;
+  const focusAya = focus?.ayah ?? null;
   useEffect(() => {
     if (focusSurah === null || focusAya === null) return;
     setSurahN(clamp(focusSurah, SURAH_MIN, SURAH_MAX));

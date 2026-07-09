@@ -9,6 +9,7 @@ import { useSyncExternalStore } from 'react';
 
 import type { SearchScope } from './api/client';
 import { SEARCH_HISTORY } from './constants';
+import { createSubscribable } from './subscribable';
 
 export interface SearchHistoryEntry {
   query: string;
@@ -42,19 +43,8 @@ export function withRecordedSearch(
   return [{ query: trimmed, scope, at: Date.now() }, ...rest].slice(0, SEARCH_HISTORY.MAX_ENTRIES);
 }
 
-const listeners = new Set<() => void>();
+const { subscribe, notify } = createSubscribable();
 let cache: { raw: string | null; entries: SearchHistoryEntry[] } = { raw: null, entries: [] };
-
-function notify(): void {
-  for (const listener of listeners) listener();
-}
-
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
 
 /** getSnapshot for useSyncExternalStore: must return the SAME reference when
     the stored value hasn't changed, so it caches against the raw string

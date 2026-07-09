@@ -3,6 +3,7 @@
 // in components, the client, or the vite proxy config.
 
 import { SEARCH } from './constants';
+import type { VerseRef } from './surahs';
 import { fromBase64Url, toBase64Url } from './utils';
 
 export const API = {
@@ -68,7 +69,7 @@ export interface RouteState {
   book: string;
   /** Qurʾān deep-link: the verse to open focused (e.g. from a citation link in
       the reader). Only meaningful, and only serialized, when view === 'quran'. */
-  focus: { surah: number; aya: number } | null;
+  focus: VerseRef | null;
 }
 
 function isNavView(value: string): value is NavView {
@@ -135,7 +136,7 @@ export function buildHash(state: RouteState): string {
   }
   if (state.view === 'quran' && state.focus) {
     params.set('s', String(state.focus.surah));
-    params.set('a', String(state.focus.aya));
+    params.set('a', String(state.focus.ayah));
   }
   const qs = params.toString();
   return `#${path}${qs ? `?${qs}` : ''}`;
@@ -152,7 +153,7 @@ export function viewHref(view: NavView): string {
     tab" and its in-place click both resolve through this, so either one lands
     in the reader on that exact āya, with the rest of its sūra around it. */
 export function quranVerseHref(surah: number, aya: number): string {
-  return buildHash({ view: 'quran', ...EMPTY_ROUTE, focus: { surah, aya } });
+  return buildHash({ view: 'quran', ...EMPTY_ROUTE, focus: { surah, ayah: aya } });
 }
 
 /** The canonical href for a reader position, e.g. a search result row: the
@@ -197,6 +198,6 @@ export function parseHash(hash: string): RouteState {
     mode: params.get('mode') ?? SEARCH.DEFAULT_MODE,
     categories: params.getAll('category'),
     book: fromBase64Url(params.get('book') ?? ''),
-    focus: resolved === 'quran' && surah >= 1 && aya >= 1 ? { surah, aya } : null,
+    focus: resolved === 'quran' && surah >= 1 && aya >= 1 ? { surah, ayah: aya } : null,
   };
 }

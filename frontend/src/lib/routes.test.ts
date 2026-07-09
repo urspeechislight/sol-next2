@@ -84,7 +84,7 @@ describe('routes hash SSOT', () => {
   });
 
   test('should round-trip a Qurʾān verse deep-link', () => {
-    const focused: RouteState = { ...home, view: 'quran', focus: { surah: 2, aya: 255 } };
+    const focused: RouteState = { ...home, view: 'quran', focus: { surah: 2, ayah: 255 } };
     expect(buildHash(focused)).toBe('#/quran?s=2&a=255');
     expect(parseHash('#/quran?s=2&a=255')).toEqual(focused);
   });
@@ -151,7 +151,9 @@ describe('readerHref', () => {
   });
 
   test('should carry an optional highlight query, base64url-encoded and trimmed', () => {
-    expect(readerHref('sY-50TSO', 12, 'hadith')).toBe(`#/read/sY-50TSO/12?q=${toBase64Url('hadith')}`);
+    expect(readerHref('sY-50TSO', 12, 'hadith')).toBe(
+      `#/read/sY-50TSO/12?q=${toBase64Url('hadith')}`,
+    );
     expect(readerHref('sY-50TSO', 12, '  ')).toBe('#/read/sY-50TSO/12');
   });
 });

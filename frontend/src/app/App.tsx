@@ -6,6 +6,7 @@ import { EMPTY_ROUTE, parseHash } from '../lib/routes';
 import type { RouteState } from '../lib/routes';
 import { saveReading } from '../lib/reading';
 import { recordSearch } from '../lib/searchHistory';
+import type { VerseRef } from '../lib/surahs';
 import { useHashRoute } from '../lib/useHashRoute';
 import { EMPTY_GRAPH, GraphScreen } from '../features/graph/GraphScreen';
 import type { GraphState } from '../features/graph/GraphScreen';
@@ -59,7 +60,7 @@ interface AppContentProps {
   lib: LibScope;
   graph: GraphState;
   setGraph: (next: GraphState) => void;
-  quranFocus: { surah: number; aya: number } | null;
+  quranFocus: VerseRef | null;
   openVerse: (surah: number, aya: number) => void;
   openReader: (urn: string, page?: number, q?: string) => void;
   contentFilters: ContentFilters;
@@ -181,7 +182,7 @@ export function App() {
     setQuery('');
     setSubmitted('');
     setScope('sura');
-    setQuranFocus({ surah, aya });
+    setQuranFocus({ surah, ayah: aya });
   };
 
   if (reading) {

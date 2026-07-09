@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 import { THEME } from './constants';
+import { createSubscribable } from './subscribable';
 
 // useTheme.ts: the one source of truth for the app theme. The html attribute
 // is what CSS reads, localStorage is what index.html's pre-paint script reads
@@ -9,23 +10,16 @@ import { THEME } from './constants';
 // (the book reader) overrides; a surface without one (the Qurʾan page) takes
 // the derived value.
 
-const listeners = new Set<() => void>();
+const { subscribe, notify } = createSubscribable();
 
 function isDark(): boolean {
   return document.documentElement.getAttribute(THEME.ATTR) === THEME.DARK;
 }
 
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
 function setDark(dark: boolean): void {
   document.documentElement.setAttribute(THEME.ATTR, dark ? THEME.DARK : THEME.LIGHT);
   localStorage.setItem(THEME.STORAGE_KEY, dark ? THEME.DARK : THEME.LIGHT);
-  for (const notify of listeners) notify();
+  notify();
 }
 
 /** The reactive app theme: `dark` re-renders every consumer when any of them
