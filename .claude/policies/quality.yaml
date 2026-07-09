@@ -84,11 +84,16 @@ rules:
     handler: constant_sprawl
     severity: block
     summary: |
-      Module-level constants live in exactly one file. Name re-declarations
-      and value re-aliasing across files are blocked.
+      Module-level constants live in exactly one file. Name re-declarations,
+      value re-aliasing, and a re-enumerated string vocabulary (4+ members,
+      seen through a helper wrapper like _norm_set/frozenset and past a private
+      name) across files are all blocked.
     rationale: |
       "If a constant doesn't exist is the only time you can create one."
-      TIMEOUT=30 in two modules diverges silently when one gets re-tuned.
+      TIMEOUT=30 in two modules diverges silently when one gets re-tuned. The
+      same Arabic particle set typed in two files (authority._LINKS vs
+      name_registry.LINKS) is the same divergence risk, so the string-set check
+      catches derived, private duplicates the literal check cannot see.
     doc: docs/quality-standards.md#ssot-dry
 
   - id: DRY-001

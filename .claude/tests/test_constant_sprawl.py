@@ -25,17 +25,26 @@ def fake_index(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     the scope check is also stubbed.
     """
 
-    def stub(exclude: Path | None) -> tuple[dict[str, Path], dict[object, list[tuple[str, Path]]]]:
-        by_name = {
-            "TIMEOUT_SECONDS": Path("/repo/src/backend/core/constants.py"),
-            "PAGE_SIZE": Path("/repo/src/backend/core/constants.py"),
-        }
+    def stub(
+        exclude: Path | None,
+    ) -> tuple[
+        dict[str, Path],
+        dict[object, list[tuple[str, Path]]],
+        dict[frozenset[str], list[tuple[str, Path]]],
+    ]:
+        home = Path("/repo/src/backend/core/constants.py")
+        by_name = {"TIMEOUT_SECONDS": home, "PAGE_SIZE": home}
         by_value: dict[object, list[tuple[str, Path]]] = {
-            30: [("TIMEOUT_SECONDS", Path("/repo/src/backend/core/constants.py"))],
-            50: [("PAGE_SIZE", Path("/repo/src/backend/core/constants.py"))],
-            "shia": [("SECT_SHIA", Path("/repo/src/backend/core/constants.py"))],
+            30: [("TIMEOUT_SECONDS", home)],
+            50: [("PAGE_SIZE", home)],
+            "shia": [("SECT_SHIA", home)],
         }
-        return by_name, by_value
+        by_string_set: dict[frozenset[str], list[tuple[str, Path]]] = {
+            frozenset({"بن", "ابن", "بنت", "ابنة"}): [
+                ("LINKS", Path("/repo/src/backend/build/name_registry.py"))
+            ],
+        }
+        return by_name, by_value, by_string_set
 
     def always_in_scope(_p: Path | None, *_segs: str) -> bool:
         return True
@@ -92,6 +101,35 @@ def test_should_block_when_string_value_collides(fake_index: None) -> None:
     decision = constant_sprawl.check(_ctx('USER_SECT = "shia"\n'))
     assert decision.severity == "block"
     assert "SECT_SHIA" in decision.why
+
+
+def test_should_block_when_derived_vocabulary_duplicated(fake_index: None) -> None:
+    """A constant enumerating an existing vocabulary is blocked despite a call wrapper.
+
+    This is the case the literal-value check misses: `LINKS = _norm_set((...))` and a
+    new `frozenset({...})` are textually different but the same source of truth.
+    """
+    decision = constant_sprawl.check(_ctx('_DUP = frozenset({"بن", "ابن", "بنت", "ابنة"})\n'))
+    assert decision.severity == "block"
+    assert "LINKS" in decision.why
+
+
+def test_should_block_vocabulary_regardless_of_order_or_wrapper(fake_index: None) -> None:
+    """The match is order-independent and sees through any wrapping helper call."""
+    decision = constant_sprawl.check(_ctx('_X = _norm_set(("ابنة", "بنت", "ابن", "بن"))\n'))
+    assert decision.severity == "block"
+
+
+def test_should_allow_vocabulary_below_the_minimum_size(fake_index: None) -> None:
+    """A short collection is left alone so incidental overlaps do not block."""
+    decision = constant_sprawl.check(_ctx('_SMALL = frozenset({"بن", "ابن", "بنت"})\n'))
+    assert decision.severity == "allow"
+
+
+def test_should_allow_a_distinct_vocabulary(fake_index: None) -> None:
+    """A four-string set that does not match an existing one is allowed."""
+    decision = constant_sprawl.check(_ctx('_NEW = frozenset({"a", "b", "c", "d"})\n'))
+    assert decision.severity == "allow"
 
 
 def test_should_skip_non_production_paths() -> None:
