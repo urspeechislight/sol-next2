@@ -40,13 +40,12 @@ from typing import Any, Final
 import ijson
 
 from backend.build.grade_extract import deep_link, load_book_pages, validate_grade
-from backend.build.name_registry import clean_name, is_person_name
+from backend.build.name_registry import LINKS, clean_name, is_person_name
 from backend.build.transliterate import transliterate
 from backend.patterns import normalize_arabic
 
 _ARABIC_SEP: Final[str] = "_Arabic_"
 _JSON_SUFFIX: Final[str] = ".json"
-_LINKS: Final[frozenset[str]] = frozenset(normalize_arabic(w) for w in ("بن", "ابن", "بنت", "ابنة"))
 _COMPOUND_LEADS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in ("عبد", "عبيد", "أبي", "ابي", "أبو", "ابو", "أم", "ام")
 )
@@ -170,7 +169,7 @@ def reconcile_death(years: Counter[int]) -> tuple[int | None, bool]:
 
 def _name_root(name: str) -> tuple[str, ...]:
     """The ism + father core of a name (its first significant tokens), for identity grouping."""
-    significant = [t for t in normalize_arabic(clean_name(name)).split() if t not in _LINKS]
+    significant = [t for t in normalize_arabic(clean_name(name)).split() if t not in LINKS]
     return tuple(significant[:_NAME_ROOT_TOKENS])
 
 
@@ -228,7 +227,7 @@ def _identity_parse(name: str) -> tuple[tuple[str, ...], bool]:
         return (), False
     j = _leading_unit(toks)
     depth = 0
-    while j < len(toks) and toks[j] in _LINKS:
+    while j < len(toks) and toks[j] in LINKS:
         nxt = j + 1
         j = nxt + 2 if (nxt < len(toks) and toks[nxt] in _COMPOUND_LEADS) else nxt + 1
         depth += 1
@@ -243,20 +242,13 @@ def _identity_parse(name: str) -> tuple[tuple[str, ...], bool]:
 def _identity_tokens(name: str) -> tuple[str, ...]:
     """The normalized tokens naming an entry's PRIMARY person.
 
-    A wāw that joins a co-narrator (``... عيسى وسهل بن زياد``) or a co-kunya
-    (``... وأبي بكر``) ends the name, so the entry is attributed to the first man
-    only, never a fused pair. A wāw after a nasab link (``بن وهب``) or a kunya
-    particle (``أبو وائل``) is part of the name itself and is kept, as is a name
-    whose own first letter is wāw (``واصل``).
+    ``clean_name`` delegates to the name grammar, which already ends the name at
+    the first wāw-joined co-narrator (``... عيسى وسهل`` yields ``عيسى``) while
+    keeping a wāw that belongs to the name itself (``بن وهب``, ``أبو وائل``, or a
+    name whose own first letter is wāw such as ``واصل``). The entry is therefore
+    attributed to the first man by construction, with no second crop needed here.
     """
-    toks = normalize_arabic(clean_name(name)).split()
-    cut = len(toks)
-    for i in range(1, len(toks)):
-        prev = toks[i - 1]
-        if toks[i].startswith("و") and prev not in _LINKS and prev not in _KUNYA_LEADS:
-            cut = i
-            break
-    return tuple(toks[:cut])
+    return tuple(normalize_arabic(clean_name(name)).split())
 
 
 def _cluster_teachers(cluster: list[dict[str, Any]]) -> frozenset[str]:
@@ -409,7 +401,7 @@ def _matched_events(
 ) -> list[dict[str, Any]]:
     """Select history events safe to attribute: a distinctive name, or a death-year match."""
     candidate = hist_events.get(name_norm, [])
-    significant = len([t for t in name_norm.split() if t not in _LINKS])
+    significant = len([t for t in name_norm.split() if t not in LINKS])
     if significant >= _DISTINCTIVE_NAME_TOKENS:
         return [ev for ev, _ in candidate]
     if dyear is not None:

@@ -10,20 +10,24 @@ mis-attributed grades.
 
 This module centralises every such lookup table in one place (the SSOT the
 corpus builder and the pipeline name extractor both validate against) and
-exposes three operations over them:
+exposes two operations over them:
 
-  ``clean_name``     strip a leading connective/verb, a glued ``فـ``/``وـ``, crop
-                     at the first stop token, drop a trailing relative pronoun.
+  ``clean_name``     strip a leading connective/verb/title and a glued
+                     ``فـ``/``وـ``, then delegate to the name grammar
+                     (``decompose``), which keeps ism + nasab + kunya +
+                     nisba/laqab and stops at the first biography-opening token.
   ``is_person_name`` after cleaning, reject a title/book/verb lead, a particle
                      phrase (``للـ``), or a too-short remainder.
-  ``split_persons``  split a wāw-joined list of people (``البخاري ومسلم وأبي داود``)
-                     into individual names.
 
-Precision is load-bearing: a title is only a title when it LEADS (``أبو الشيخ``
-keeps ``الشيخ`` as a kunya tail); a ``فـ``/``وـ`` is only stripped when the
-remainder is a known compound head (``فعبد`` → ``عبد`` but ``فضل``/``وهب`` are
-left whole); wāw only splits before a kunya particle or a corroborated name.
-CENTRAL-002 keeps the one regex here compiled through ``patterns``.
+The cleaning boundary is the name GRAMMAR, never a blocklist of prose words:
+death years, status commentary, and wāw co-narrators drop by construction, so
+no death-year/commentary/punctuation list is maintained. The lookup tables that
+remain are closed linguistic classes for the leading-strip and the rejection
+screen, not reactive per-example lists. Precision is load-bearing: a title is
+only a title when it LEADS (``أبو الشيخ`` keeps ``الشيخ`` as a kunya tail); a
+``فـ``/``وـ`` is only stripped when the remainder is a known compound head
+(``فعبد`` → ``عبد`` but ``فضل``/``وهب`` are left whole). CENTRAL-002 keeps the
+one regex here compiled through ``patterns``.
 """
 
 from __future__ import annotations
@@ -43,10 +47,6 @@ LINKS: Final[frozenset[str]] = _norm_set(("بن", "ابن", "بنت", "ابنة"
 
 _COMPOUND_HEADS: Final[frozenset[str]] = _norm_set(
     ("عبد", "عبيد", "أبو", "ابو", "أبي", "ابي", "أبا", "ابا", "أم", "ام", "ابن")
-)
-
-_KUNYA_LEADS: Final[frozenset[str]] = _norm_set(
-    ("أبو", "ابو", "أبي", "ابي", "أبا", "ابا", "أم", "ام")
 )
 
 _CONNECTIVE_VERBS: Final[frozenset[str]] = _norm_set(
@@ -201,50 +201,3 @@ def is_person_name(name: str) -> bool:
     if any(token.startswith(p) for token in tokens for p in _PARTICLE_PREFIXES):
         return False
     return len(_significant([normalize_arabic(t) for t in tokens])) >= _MIN_SIGNIFICANT_TOKENS
-
-
-def is_name(name: str) -> bool:
-    """A looser name-shape check for a teacher/student edge label (not a chain lead).
-
-    Edge names are already single tokens-of-a-list; this only rejects an obvious
-    connective/verb lead and requires two significant tokens, without the full
-    title/book/particle screening ``is_person_name`` applies to a corpus record.
-    """
-    tokens = [normalize_arabic(t) for t in name.split()]
-    if not tokens or tokens[0] in _CONNECTIVE_VERBS or _TX_STEM_RE.match(tokens[0]):
-        return False
-    return len(_significant(tokens)) >= _MIN_SIGNIFICANT_TOKENS
-
-
-def _is_join_boundary(token: str) -> bool:
-    """True when a wāw-prefixed token opens a new person in a joined list.
-
-    High-confidence only: ``وأبي``/``وأبو``/``وأم`` (a wāw glued to a kunya particle)
-    or ``وابن``. This splits ``... وأبي داود`` off cleanly while leaving names whose
-    own first letter is wāw (``وهب``, ``وكيع``) untouched, since their remainder is
-    not a kunya particle.
-    """
-    if not token.startswith("و"):
-        return False
-    rest = normalize_arabic(token[1:])
-    return rest in _KUNYA_LEADS or rest == normalize_arabic("ابن")
-
-
-def split_persons(name: str) -> list[str]:
-    """Split a wāw-joined list of people into individual cleaned names.
-
-    Only splits at a high-confidence boundary (a wāw glued to a kunya particle),
-    so ``البخاري ومسلم وأبي داود`` yields the run up to each ``وأبي`` boundary while
-    ``عبد الله بن وهب`` stays whole. Each part is cleaned; empties drop out.
-    """
-    surface = name.strip().split()
-    if not surface:
-        return []
-    parts: list[list[str]] = [[]]
-    for token in surface:
-        if _is_join_boundary(token) and parts[-1]:
-            parts.append([token[1:]])
-        else:
-            parts.append(parts.pop() + [token])
-    cleaned = [clean_name(" ".join(part)) for part in parts]
-    return [c for c in cleaned if c]

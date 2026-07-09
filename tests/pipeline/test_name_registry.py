@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from backend.build.name_registry import clean_name, is_name, is_person_name, split_persons
+from backend.build.name_registry import clean_name, is_person_name
 
 
 @pytest.mark.parametrize(
@@ -68,13 +68,22 @@ def test_should_peel_wa_when_name_head() -> None:
     assert clean_name("وهب بن منبه") == "وهب بن منبه"
 
 
-def test_should_split_waw_boundary() -> None:
-    """A wāw glued to a kunya particle opens a new person; a wāw-initial name does not."""
-    assert split_persons("أحمد بن محمد وأبي بكر") == ["أحمد بن محمد", "أبي بكر"]
-    assert split_persons("عبد الله بن وهب") == ["عبد الله بن وهب"]
+@pytest.mark.parametrize(
+    "title",
+    [
+        "الموطأ لمالك",
+        "المستدرك على الصحيحين",
+        "الإصابة في تمييز الصحابة",
+        "الميزان للذهبي",
+        "الضعفاء الكبير",
+    ],
+)
+def test_should_reject_common_book_titles(title: str) -> None:
+    """A work whose title leads with a book word is screened out, not served as a person.
 
-
-def test_should_screen_edge_names() -> None:
-    """is_name is looser than is_person_name but still rejects a connective/verb lead."""
-    assert is_name("محمد بن يحيى") is True
-    assert is_name("سألت زرارة") is False
+    ``al-X al-Y`` book titles (``الضعفاء الكبير``) share the exact shape of real
+    names (``الحسن البصري``), so no structural signal separates them. ``_BOOK_LEADS``
+    is the bounded reference lexicon of book-title lead words that resolves the
+    collision, the same kind of closed lookup as ``_TITLE_LEADS``.
+    """
+    assert is_person_name(title) is False
