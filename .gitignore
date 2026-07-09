@@ -104,6 +104,7 @@ data/*.db-shm
 data/*.db-wal
 data/*.db.bak
 data/books_index.json
+data/toc_index.json
 
 # Design handoff scraps: kept on disk for reference but not tracked. The React
 # prototype that we serve lives at src/frontend/{index.html,app.jsx,*.css}.

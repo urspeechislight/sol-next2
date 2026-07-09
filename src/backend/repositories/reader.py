@@ -20,9 +20,10 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, NamedTuple, cast
 
-from backend.core.constants import READER__SOURCE_CACHE_MAX
+from backend.core.constants import ARTIFACT__TOC_INDEX, READER__SOURCE_CACHE_MAX
 from backend.core.errors import ResourceNotFoundError
 from backend.core.logging import get_logger
+from backend.core.paths import data_path
 from backend.models.reader import BookPage, Footnote, Toc, TocEntry
 from backend.pipeline.text import split_footnote_block
 from backend.repositories import books as books_repo
@@ -154,13 +155,56 @@ def page_rows(book_urn: str) -> list[PageRow]:
     return rows
 
 
+@lru_cache(maxsize=1)
+def _toc_override_index() -> dict[str, Any]:
+    """Load the synthesized/adapted-TOC override index, or {} when not built.
+
+    The index is a built artifact keyed by URN. An absent file is logged and
+    treated as "no overrides" so the reader still serves scraped TOCs; a corrupt
+    file surfaces as a JSON load error rather than masquerading as empty.
+    """
+    path = data_path(ARTIFACT__TOC_INDEX)
+    if not path.exists():
+        _logger.warning("toc-override-index-absent", path=str(path))
+        return {}
+    return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
+
+
+def _override_toc(book_urn: str) -> Toc | None:
+    """Return a synthesized/adapted TOC for ``book_urn`` when one is indexed.
+
+    These override the scraped source TOC for books whose embedded TOC was empty
+    or garbage; each entry is grounded on its real page in our own text.
+    """
+    record = _toc_override_index().get(book_urn)
+    if not isinstance(record, dict):
+        return None
+    rows = record.get("entries")
+    if not isinstance(rows, list):
+        return None
+    entries: list[TocEntry] = []
+    for row in cast(list[Any], rows):
+        if not isinstance(row, dict):
+            continue
+        row_dict = cast(dict[str, Any], row)
+        page = row_dict.get("page")
+        title = str(row_dict.get("title") or "").strip()
+        if isinstance(page, int) and title:
+            entries.append(TocEntry(page=page, title=title))
+    return Toc(book_urn=book_urn, entries=entries) if entries else None
+
+
 def try_get_toc(book_urn: str) -> Toc | None:
     """Return the TOC for ``book_urn``, or None when the book has no TOC section.
 
-    None is the explicit absent-TOC signal so call sites model absence without a
-    try/except. Present-but-corrupt TOC (rows not a list) still raises
-    ReaderSourceError — that is corruption, not absence.
+    A synthesized/adapted TOC in the override index wins over the scraped source
+    TOC. Otherwise None is the explicit absent-TOC signal so call sites model
+    absence without a try/except. Present-but-corrupt TOC (rows not a list) still
+    raises ReaderSourceError — that is corruption, not absence.
     """
+    override = _override_toc(book_urn)
+    if override is not None:
+        return override
     src = books_repo.source_path(book_urn)
     if src is None:
         return None
