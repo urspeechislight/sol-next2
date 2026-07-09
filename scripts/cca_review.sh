@@ -58,9 +58,22 @@ fi
 read -r -d '' prompt <<'PROMPT' || true
 You are reviewing a diff for the sol-next2 repo. Its rules live in CLAUDE.md:
 no silent fallbacks, fail loud, wrong-is-worse-than-absent, design-token SSOT,
-centralization (env/regex/status/routes), backend must not import frontend.
+centralization (env/regex/status/routes), backend must not import frontend, and
+durability (no patchwork).
 Review ONLY the diff below for violations of those principles and for plain
 correctness bugs. Ignore style the lefthook harness already enforces.
+Fail the diff for these durability violations, which the deterministic harness
+cannot catch:
+- Reactive blocklist: a set/list/dict of domain strings extended with more bad
+  examples instead of a structural rule (for example, adding stray words to a
+  name-cleaning lookup rather than parsing by grammar). A hand-maintained lookup
+  is acceptable only when it is a genuinely closed linguistic class, and the
+  diff should say why it is closed.
+- Symptom-masking change: it suppresses a symptom while leaving the root cause,
+  adds a second parallel code path where the old one should have been deleted,
+  or would need a "for now" to justify it.
+- Dead code: a function, constant, or branch the diff adds or leaves in place
+  that nothing calls.
 Respond with a single line of JSON and nothing else:
 {"verdict":"pass"|"fail","blockers":["..."],"notes":["..."]}
 PROMPT

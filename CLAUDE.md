@@ -75,6 +75,41 @@ log why. Uncertainty is not a reason to invent.
 
 ---
 
+## Durability: no patchwork, no reactive blocklists
+
+A fix must resolve the root cause and leave exactly one canonical path. Deleting
+what the fix replaces is part of the fix, not a follow-up. Two forms of the
+opposite are blocked here.
+
+**Self-admitted corner-cuts.** A `band-aid`, `stopgap`, `kludge`, `quick fix`,
+`patchwork`, or anything you would label `for now` is not a fix. The
+`no_patchwork` gate (PATCH-001) blocks that vocabulary in `src/`, and the global
+proper-fix gate blocks the marker forms (`HACK`, `FIXME`, `workaround`). If you
+cannot do it properly now, stop and surface it instead of shipping the patch and
+naming it.
+
+**Reactive blocklists.** When you filter or classify domain data, encode the
+STRUCTURAL rule that decides membership, never an enumeration of bad examples
+grown one bug at a time. The canonical failure in this repo: cleaning narrator
+names by appending each stray word (`سألت`, `طبقة`, `مرفوعا`, ...) to a list as
+it surfaces. The durable form is the name GRAMMAR
+(`backend.build.mizan_names.decompose`), which keeps ism + nasab + kunya +
+nisba/laqab and drops everything else by construction, so no list of bad words
+is maintained. A hand-maintained lookup is legitimate ONLY when it enumerates a
+genuinely closed linguistic class once (honorific titles, demonstratives,
+book-genre words that collide with name shapes), not an open set you keep
+extending. If you reach for a list because "one more example slipped through,"
+that is the signal to find the structural rule instead. When a bounded lexicon
+is genuinely irreducible (no structural signal separates the classes, as with
+`_BOOK_LEADS` where `الضعفاء الكبير` shares the shape of `الحسن البصري`), say so
+in the code and keep it closed.
+
+A regex cannot tell a closed class from a growing patch pile. The push-time AI
+review (`scripts/cca_review.sh`) reads the diff for exactly this and fails a
+push that grows a reactive list without a structural justification.
+
+---
+
 ## Rules summary (the harness will block violations)
 
 **Design system (SSOT/DRY)**
@@ -94,6 +129,8 @@ log why. Uncertainty is not a reason to invent.
   constants.
 - All Python functions need type hints + docstrings.
 - No `print` in non-script code; use `structlog`.
+- No self-admitted patchwork vocabulary in `src/` (`no_patchwork`, PATCH-001);
+  see the durability section above.
 - Test names: `test_should_<verb>_<object>_<condition>`.
 
 ### SSOT / DRY — full taxonomy

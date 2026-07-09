@@ -169,6 +169,23 @@ rules:
       tell a failure from data.
     doc: docs/quality-standards.md#fail-fast
 
+  # ---- Durability (no patchwork) ---------------------------------------------
+  - id: PATCH-001
+    handler: no_patchwork
+    severity: block
+    summary: |
+      Self-admitted patchwork vocabulary in src/ is blocked: band-aid, stopgap,
+      kludge, duct-tape, patchwork, patch-job, quick-fix, quick-and-dirty, hacky,
+      "good enough for now".
+    rationale: |
+      A word that admits a corner-cut names a non-durable fix. Resolve the root
+      cause and delete what it replaces; when filtering domain data, encode the
+      structural or grammatical rule that decides membership, never an
+      enumeration of bad examples grown one bug at a time. This is the mechanical
+      floor: the push-time AI review (scripts/cca_review.sh) and the CLAUDE.md
+      durability directive catch the reactive-blocklist form a regex cannot.
+    doc: docs/quality-standards.md#no-patchwork
+
   # ---- Python typing ---------------------------------------------------------
   - id: PY-001
     handler: typed_python
