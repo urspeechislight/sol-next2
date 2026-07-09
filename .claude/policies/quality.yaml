@@ -1,7 +1,9 @@
-# Declarative policy registry. Mirrors the handlers under .claude/lib/handlers/ for
-# documentation, tooling, and future external policy engines (OPA / Cedar). The
-# Python handlers are the source of truth for enforcement; this file is the
-# reviewable contract.
+# Declarative policy registry: one entry per enforcing handler under
+# .claude/lib/handlers/. The Python handlers are the source of truth for
+# enforcement; this file is the reviewable contract, and docs/ is generated from
+# it plus the handler DOC anchors (see .claude/lib/gen_standards_docs.py). The
+# self-test .claude/tests/test_quality_policy.py enforces that every write-chain
+# handler has an entry here, so the mirror cannot silently drift.
 
 version: 1
 
@@ -33,6 +35,16 @@ rules:
     severity: block
     summary: Status → palette maps live only in variants.ts.
     rationale: Vocabulary spread across files breaks rebrandability.
+    doc: docs/design-system.md#hard-rules
+
+  - id: DS-005
+    handler: no_arbitrary_values
+    severity: block
+    summary: >
+      Tailwind arbitrary values for the spacing / sizing / type scales
+      (text-[14px], p-[7px], w-[200px]) are blocked; only values that resolve to
+      a token (bg-[var(--color-x)]) pass.
+    rationale: no_raw_colors covers color; this closes the same SSOT hole for the spacing and type scales.
     doc: docs/design-system.md#hard-rules
 
   # ---- Boundaries ------------------------------------------------------------
@@ -71,6 +83,15 @@ rules:
     handler: no_silent_except
     severity: block
     summary: 'No bare `except:` or `except: pass`.'
+    doc: docs/quality-standards.md#code-quality
+
+  - id: QUAL-013
+    handler: no_print
+    severity: block
+    summary: >
+      print() is blocked in production Python (src/backend, src/pipeline); log via
+      structlog. scripts/, tests/, .claude/, and __main__ modules are exempt.
+    rationale: print bypasses the structured-logging contract — no level, no context, invisible to log shipping.
     doc: docs/quality-standards.md#code-quality
 
   - id: QUAL-014
@@ -174,6 +195,20 @@ rules:
       tell a failure from data.
     doc: docs/quality-standards.md#fail-fast
 
+  - id: FAILFAST-002
+    handler: no_fallback
+    severity: block
+    summary: |
+      The strict sibling of fail_loud: the word `fallback` / `fall back`, a
+      Python `except` with no `raise`, and a JS/TS `catch` with no `throw` are
+      blocked in src/ and scripts/.
+    rationale: |
+      fail_loud permits "log then return None"; no_fallback rejects any
+      error-recovery that lets the program continue without telling the caller
+      something failed. Absence must be modelled explicitly, not synthesised in a
+      handler.
+    doc: docs/quality-standards.md#fail-fast
+
   # ---- Durability (no patchwork) ---------------------------------------------
   - id: PATCH-001
     handler: no_patchwork
@@ -197,6 +232,59 @@ rules:
     severity: block
     summary: Public Python functions need return-type annotations.
     doc: docs/quality-standards.md#code-quality
+
+  # ---- Helper functions ------------------------------------------------------
+  - id: FUNC-001
+    handler: helper_constraints
+    severity: block
+    summary: >
+      Function names must say what they do: vague names (helper, process,
+      handle), multi-responsibility names (_and_ / _then_ / _or_), and names
+      longer than 40 characters are blocked.
+    rationale: A name that hides the responsibility, or bundles several, is a single-responsibility smell.
+    doc: docs/quality-standards.md#helper-functions
+
+  - id: FUNC-002
+    handler: helper_constraints
+    severity: advisory
+    summary: >
+      More than 5 parameters (excluding self / cls) is an advisory design smell,
+      not a block.
+    rationale: >
+      Hard-blocking the count manufactured transfer dataclasses whose only job
+      was to smuggle the same arguments past the gate, which is worse than a wide
+      signature; the author must weigh it instead.
+    doc: docs/quality-standards.md#helper-functions
+
+  # ---- Docstrings & comments -------------------------------------------------
+  - id: DOC-010
+    handler: docstring_required
+    severity: block
+    summary: >
+      Every public function and class needs a docstring. tests/ and __init__.py
+      are skipped; @overload stubs are exempt.
+    rationale: The public surface documents intent at the point of use.
+    doc: docs/quality-standards.md#docstrings
+
+  - id: DOC-011
+    handler: no_inline_comments
+    severity: block
+    summary: >
+      Code comments, both inline and standalone, are blocked; intent belongs in
+      docstrings and names. Tooling directives (# type:, # noqa, ...), the
+      shebang, section dividers, and unicode-escape annotation lines are exempt.
+    rationale: Comments drift out of sync with the code they describe; docstrings and names do not.
+    doc: docs/quality-standards.md#comments
+
+  # ---- UI centralization -----------------------------------------------------
+  - id: UI-001
+    handler: css_duplication
+    severity: block
+    summary: >
+      An identical CSS selector body defined in two files under frontend/src is
+      blocked; each selector is defined once.
+    rationale: One CSS file per primitive/component; a selector copied into two files drifts silently.
+    doc: docs/quality-standards.md#ui-centralization
 
   # ---- Tests -----------------------------------------------------------------
   - id: TEST-001
