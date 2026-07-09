@@ -8,6 +8,7 @@ import { parseHash, readerHref } from '../../lib/routes';
 import type { PersonEdge, PersonEntry, PersonGrade } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { generationLabel, residenceLabel, stanceHelp, stanceLabel, traditionLabel } from './labels';
+import './PersonDrawer.css';
 
 /** A person's reader-opener: the app callback that opens the book at a page with
     a highlight term, preserving the browse view underneath (unlike a raw hash link). */
@@ -75,14 +76,14 @@ function NameList({ label, edges }: { label: string; edges: PersonEdge[] }) {
       </Text>
       <Inline gap="xs" wrap>
         {edges.map((e, i) => (
-          <Card key={`${e.name}-${i}`} variant="flat" pad="sm">
-            <Stack gap="xs">
+          <Card key={`${e.name}-${i}`} variant="flat" pad="none" className="person-edge">
+            <Stack gap="none">
               {e.name_latin ? (
                 <Text size="xs" tone="muted" weight="semibold">
                   {e.name_latin}
                 </Text>
               ) : null}
-              <Text size="sm" font="arabic" dir="rtl">
+              <Text size="xs" font="arabic" dir="rtl">
                 {e.name}
               </Text>
             </Stack>
