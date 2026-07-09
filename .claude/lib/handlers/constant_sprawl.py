@@ -45,6 +45,8 @@ DOC = "docs/quality-standards.md#ssot-dry"
 
 _PRODUCTION = ("src",)
 
+_SSOT_EXEMPT: tuple[str, ...] = ("src/backend/build/mizan_names.py",)
+
 _TRIVIAL_INT_FLOAT: frozenset[int | float] = frozenset({-1, 0, 1, 2, 100, 200})
 _TRIVIAL_STR: frozenset[str] = frozenset({"", "/", "."})
 _MIN_STRING_SET_MEMBERS: int = 4
@@ -154,9 +156,11 @@ def _module_string_sets(tree: ast.Module) -> list[tuple[str, frozenset[str]]]:
 
 
 def _iter_repo_py(exclude: Path | None) -> Iterable[Path]:
-    """Yield production .py files under src/, skipping the file under edit."""
+    """Yield production .py files under src/, skipping the file under edit and exempt modules."""
     for py in REPO_ROOT.glob("src/**/*.py"):
         if exclude is not None and py.resolve() == exclude:
+            continue
+        if relpath(py) in _SSOT_EXEMPT:
             continue
         yield py
 
@@ -196,6 +200,8 @@ def check(ctx: HookContext) -> Decision:
     if not ctx.is_write or ctx.new_content is None or ctx.suffix != "py":
         return Decision.allow(HANDLER)
     if not is_in(ctx.file_path, *_PRODUCTION):
+        return Decision.allow(HANDLER)
+    if relpath(ctx.file_path) in _SSOT_EXEMPT:
         return Decision.allow(HANDLER)
 
     try:
@@ -281,3 +287,50 @@ def _module_path(file: Path) -> str:
     except ValueError:
         return file.stem
     return ".".join(rel.parts)
+
+
+def repo_wide_collisions(root: Path) -> list[str]:
+    """Every cross-file constant duplication under ``root/src``, as readable lines.
+
+    Runs the same name, value, and string-set indexing that the write-time ``check``
+    uses, but over the whole tree at once, so a duplicate that predates the gate or
+    landed through a bypass is still reported. Exempt modules are skipped as both a
+    home and a source, matching the write-time behaviour. A harness self-test asserts
+    this returns nothing, giving the write-time gate a repo-wide, always-on partner.
+    """
+    names: dict[str, set[str]] = {}
+    values: dict[object, list[tuple[str, str]]] = {}
+    strsets: dict[frozenset[str], list[tuple[str, str]]] = {}
+    for py in sorted(root.glob("src/**/*.py")):
+        rel = py.relative_to(root).as_posix()
+        if rel in _SSOT_EXEMPT:
+            continue
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except (SyntaxError, OSError, UnicodeDecodeError):
+            _log.debug("constant_sprawl: skipping unparseable file %s", py)
+            continue
+        for name, value in _module_constants(tree):
+            names.setdefault(name, set()).add(rel)
+            if value is not None and not _is_trivial(value):
+                try:
+                    values.setdefault(value, []).append((name, rel))
+                except TypeError:
+                    _log.debug("constant_sprawl: unhashable constant value in %s", py)
+        for name, members in _module_string_sets(tree):
+            strsets.setdefault(members, []).append((name, rel))
+    out: list[str] = []
+    for name, files in sorted(names.items()):
+        if len(files) > 1:
+            out.append(f"constant `{name}` defined in {sorted(files)}; pick one home and import it")
+    for value, holders in values.items():
+        homes = sorted({rel for _, rel in holders})
+        if len(homes) > 1:
+            aliases = sorted({name for name, _ in holders})
+            out.append(f"value {value!r} duplicated as {aliases} across {homes}; reuse one constant")
+    for members, holders in strsets.items():
+        homes = sorted({rel for _, rel in holders})
+        if len(homes) > 1:
+            aliases = sorted({name for name, _ in holders})
+            out.append(f"{len(members)}-string vocabulary duplicated as {aliases} across {homes}; hoist to one source")
+    return out
