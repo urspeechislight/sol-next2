@@ -35,6 +35,10 @@ from __future__ import annotations
 from typing import Final
 
 from backend.build.mizan_names import BIO_MARKERS, decompose
+from backend.core.constants import (
+    ARABIC__CONJUNCTION_CLITICS as _STRIPPABLE_PREFIXES,
+    ARABIC__DEFINITE_ARTICLE as _DEFINITE_ARTICLE,
+)
 from backend.patterns import cached_compile, normalize_arabic
 
 
@@ -98,9 +102,7 @@ _HAS_ARABIC_RE = cached_compile(r"[ء-ي]")
 _BIO_LEADS: Final[frozenset[str]] = _norm_set(tuple(BIO_MARKERS))
 
 _MIN_SIGNIFICANT_TOKENS: Final[int] = 2
-_DEFINITE_ARTICLE: Final[str] = "ال"
 _PARTICLE_PREFIXES: Final[tuple[str, ...]] = ("لل",)
-_STRIPPABLE_PREFIXES: Final[tuple[str, ...]] = ("و", "ف")
 
 
 def _significant(tokens: list[str]) -> list[str]:

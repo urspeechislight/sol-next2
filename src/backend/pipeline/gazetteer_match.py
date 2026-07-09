@@ -18,14 +18,17 @@ import re
 from collections.abc import Callable
 from typing import Any, Final
 
-from backend.core.constants import ENTITY__NAME_KEY
+from backend.core.constants import (
+    ARABIC__CONJUNCTION_CLITICS as _CONJUNCTION_CLITICS,
+)
+from backend.core.constants import (
+    ENTITY__NAME_KEY,
+)
 from backend.patterns import CompiledPattern, cached_compile, fold_search
 from backend.pipeline.errors import ExtractError
 
 ENTITY_PREV_KEY: Final[str] = "entity_prev"
 COMMON_PREV_KEY: Final[str] = "common_prev"
-
-_CONJUNCTION_CLITICS: Final[tuple[str, ...]] = ("و", "ف")
 
 type Matcher[T] = tuple[str, CompiledPattern, frozenset[str], frozenset[str], T]
 type ScanHit[T] = tuple[int, int, int, T]

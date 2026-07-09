@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Final
 
-_AL: Final[str] = "ال"
+from backend.core.constants import ARABIC__DEFINITE_ARTICLE as _AL
 
 _CHAR: Final[dict[str, str]] = {
     "ا": "a", "أ": "a", "إ": "i", "آ": "ā", "ب": "b", "ت": "t", "ث": "th",

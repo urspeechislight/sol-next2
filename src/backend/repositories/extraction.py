@@ -23,6 +23,9 @@ from backend.core.constants import (
     QURAN__TITLE_AR,
     QURAN__TITLE_EN,
 )
+from backend.core.constants import (
+    MANUSCRIPT__INDEX_MISSING_HINT as _MISSING_HINT,
+)
 from backend.core.errors import ResourceNotFoundError
 from backend.core.paths import data_path
 from backend.models.extraction import (
@@ -39,10 +42,6 @@ from backend.models.extraction import (
 from backend.patterns import CompiledPattern, cached_compile
 from backend.repositories import books as books_repo
 from backend.repositories._data_loader import open_ro_db
-
-_MISSING_HINT = (
-    "Manuscript index not built; run scripts/build_manuscript_index.py to materialize it"
-)
 
 _SPAN_SUMMARY_QUERY = (
     "SELECT manifestation_id, COUNT(*) AS spans, MIN(page_start) AS first_page, "

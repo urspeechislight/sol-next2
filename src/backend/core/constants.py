@@ -68,6 +68,13 @@ QURAN__SURAH_COUNT: Final[int] = 114
 CALENDAR__HIJRI_MONTHS: Final[int] = 12
 CALENDAR__HIJRI_MONTH_DAY_MAX: Final[int] = 30
 
+ARABIC__DEFINITE_ARTICLE: Final[str] = "ال"
+ARABIC__CONJUNCTION_CLITICS: Final[tuple[str, ...]] = ("و", "ف")
+
+MANUSCRIPT__INDEX_MISSING_HINT: Final[str] = (
+    "Manuscript index not built; run scripts/build_manuscript_index.py to materialize it"
+)
+
 ARTIFACT__CORPUS_DB: Final[str] = "corpus.db"
 ARTIFACT__MANUSCRIPT_DB: Final[str] = "manuscript.db"
 ARTIFACT__REGISTRY_DB: Final[str] = "registry.db"

@@ -23,7 +23,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Final
 
-from backend.core.constants import ENTITY__BOOK_TYPE_KEY, ENTITY__NAME_KEY, EVENT__ENTITY_NAMED
+from backend.core.constants import (
+    ARABIC__CONJUNCTION_CLITICS as _CONJUNCTION_CLITICS,
+)
+from backend.core.constants import (
+    ENTITY__BOOK_TYPE_KEY,
+    ENTITY__NAME_KEY,
+    EVENT__ENTITY_NAMED,
+)
 from backend.patterns import fold_search
 from backend.pipeline.contracts import PHASE_CONTRACTS
 from backend.pipeline.gazetteer_match import Matcher, ScanHit, compile_matchers, scan_gazetteer
@@ -39,7 +46,6 @@ EVENT__INDICATOR_KEY: Final[str] = "indicator"
 
 _CONFIG_SECTION: Final[str] = "event_extraction"
 _PARTICIPATION_KEY: Final[str] = "participation"
-_CONJUNCTION_CLITICS: Final[tuple[str, ...]] = ("و", "ف")
 _PARTICIPATION_WINDOW: Final[int] = 4
 
 type _Payload = tuple[str, str, str]

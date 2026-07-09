@@ -42,6 +42,7 @@ import ijson
 from backend.build.grade_extract import deep_link, load_book_pages, validate_grade
 from backend.build.name_registry import LINKS, clean_name, is_person_name
 from backend.build.transliterate import transliterate
+from backend.core.constants import ARABIC__DEFINITE_ARTICLE as _NISBA_PREFIX
 from backend.patterns import normalize_arabic
 
 _ARABIC_SEP: Final[str] = "_Arabic_"
@@ -52,7 +53,6 @@ _COMPOUND_LEADS: Final[frozenset[str]] = frozenset(
 _KUNYA_LEADS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in ("أبو", "ابو", "أبي", "ابي", "أبا", "ابا", "أم", "ام", "ابن")
 )
-_NISBA_PREFIX: Final[str] = "ال"
 _PROPHET_MARKERS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in ("رسول الله", "النبي", "النبى")
 )

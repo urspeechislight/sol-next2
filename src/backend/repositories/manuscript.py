@@ -38,13 +38,13 @@ from backend.core.constants import (
     NARRATOR_LINK__ORIGIN_PERSON,
     NARRATOR_LINK__ORIGIN_RIJAL,
 )
+from backend.core.constants import (
+    MANUSCRIPT__INDEX_MISSING_HINT as _MISSING_HINT,
+)
 from backend.core.paths import data_path
 from backend.models.reader import Hadith, Narrator
 from backend.repositories._data_loader import open_ro_db
 
-_MISSING_HINT = (
-    "Manuscript index not built; run scripts/build_manuscript_index.py to materialize it"
-)
 _BLANK_GRADE = ""
 _DEFAULT_CHAIN_POSITION = 0
 
