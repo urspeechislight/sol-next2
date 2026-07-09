@@ -77,16 +77,20 @@ def test_should_block_when_constant_name_collides(fake_index: None) -> None:
     assert "TIMEOUT_SECONDS" in decision.why
 
 
-def test_should_block_when_value_already_named(fake_index: None) -> None:
-    """A new constant whose value matches an existing one is blocked."""
+def test_should_allow_numeric_value_coincidence(fake_index: None) -> None:
+    """A number that coincides with an existing constant is not a duplicate.
+
+    Small thresholds recur across unrelated constants, so the value-collision check
+    covers strings and tuples, not plain numbers, even though the fake index holds a
+    constant with value 30.
+    """
     decision = constant_sprawl.check(_ctx("REQUEST_TIMEOUT = 30\n"))
-    assert decision.severity == "block"
-    assert "TIMEOUT_SECONDS" in decision.why
+    assert decision.severity == "allow"
 
 
 def test_should_allow_when_value_is_trivial(fake_index: None) -> None:
-    """Trivial values (0, 1, -1, empty string) may legitimately repeat."""
-    decision = constant_sprawl.check(_ctx("DEFAULT_INDEX = 0\nINITIAL_COUNT = 1\n"))
+    """Empty and single-character trivial strings may repeat without a block."""
+    decision = constant_sprawl.check(_ctx('SEP = "/"\nDOT = "."\nBLANK = ""\n'))
     assert decision.severity == "allow"
 
 

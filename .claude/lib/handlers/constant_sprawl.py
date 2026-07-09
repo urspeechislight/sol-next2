@@ -14,12 +14,16 @@ What this handler does on every Write/Edit to a ``.py`` file under ``src/``:
         a. NAME collision — a constant with the same UPPER_CASE name is
            already defined in a different file. Pick one home and import.
         b. VALUE collision — a constant with a *different* name has the
-           *same* literal value. Reuse the existing one instead of minting
-           a new alias.
+           *same* literal STRING or TUPLE value. Reuse the existing one
+           instead of minting a new alias. Plain numbers are not checked:
+           small thresholds coincide across unrelated constants (a letter
+           minimum of 3 is not the same concept as another 3), so a numeric
+           match is noise, not duplication. Numeric constants are still kept
+           honest by the name-collision check and by centralization rules.
 
 Allowed values that intentionally repeat (and so are excluded from
-value-collision checks): ``-1, 0, 1, 2, 100`` and the empty literals
-``""``, ``[]``, ``{}``, ``()``, ``None``, ``True``, ``False``.
+value-collision checks): the empty literals ``""``, ``[]``, ``{}``, ``()``,
+``None``, ``True``, ``False``, plus the trivial strings ``""``, ``/``, ``.``.
 
 The handler reads files from disk on every invocation. For sol-next2's
 size (low hundreds of .py files), this is sub-100ms. If the index needs to
@@ -184,7 +188,7 @@ def _index_existing(
             continue
         for name, value in _module_constants(tree):
             by_name.setdefault(name, py)
-            if value is not None and not _is_trivial(value):
+            if isinstance(value, (str, tuple)) and not _is_trivial(value):
                 try:
                     by_value.setdefault(value, []).append((name, py))
                 except TypeError:
@@ -232,7 +236,7 @@ def check(ctx: HookContext) -> Decision:
                 ),
                 doc=DOC,
             )
-        if value is None or _is_trivial(value):
+        if not isinstance(value, (str, tuple)) or _is_trivial(value):
             continue
         try:
             collisions = by_value.get(value, [])
@@ -312,7 +316,7 @@ def repo_wide_collisions(root: Path) -> list[str]:
             continue
         for name, value in _module_constants(tree):
             names.setdefault(name, set()).add(rel)
-            if value is not None and not _is_trivial(value):
+            if isinstance(value, (str, tuple)) and not _is_trivial(value):
                 try:
                     values.setdefault(value, []).append((name, rel))
                 except TypeError:
