@@ -54,6 +54,7 @@ _CONNECTIVE_VERBS: Final[frozenset[str]] = _norm_set(
         "حدثه", "أخبرنا", "أخبرني", "أنبأنا", "نبأنا", "قال", "وقال", "فقال", "قالوا",
         "قلت", "وقلت", "قلنا", "روى", "رواه", "يروي", "ذكر", "وذكر", "ذكره", "رأيت",
         "قرأت", "كتب", "أنشدنا", "أنشدني", "زعم", "يقول", "قوله", "انتهى", "اقتصر",
+        "اتهمه", "اتهم", "كذبه", "ضعفه", "وثقه", "رماه", "غمزه", "تركه", "وهاه",
     )
 )
 
@@ -63,10 +64,12 @@ _STOP_TOKENS: Final[frozenset[str]] = _norm_set(
         "مولى", "مولاه", "منسوب", "أخبار", "الجمع", "بهذا", "بهذه", "الاسناد",
         "الإسناد", "قال", "يقول", "سمعت", "أنه", "أنها", "لما", "وكان", "كان",
         "يعرف", "المعروف", "يكنى", "لقبه", "الملقب", "غير", "لم", "به", "منه",
+        "عمن", "عنه", "عنهم", "مرفوعا", "موقوفا", "مسندا", "معلقا", "طبقة",
     )
 )
 
 _TRAILING_DROP: Final[frozenset[str]] = _norm_set(("الذي", "التي", "الذين", "غيره", "وغيره"))
+_HAS_ARABIC_RE = cached_compile(r"[ء-ي]")
 
 _TITLE_LEADS: Final[frozenset[str]] = _norm_set(
     (
@@ -149,9 +152,10 @@ def clean_name(name: str) -> str:
     """Return the person-name core of a raw string, or '' when nothing name-like remains.
 
     Strips a leading connective verb, ungluess a ``فـ``/``وـ`` on the head, crops at
-    the first stop token (``عن``/``ثم``/``مولى`` ...), and drops a trailing relative
-    pronoun. The surface tokens are preserved (only trimmed), so char offsets into a
-    kept slice stay valid for callers that need them.
+    the first stop token (``عن``/``ثم``/``مولى``/``اتهمه`` ...), and drops a trailing
+    relative pronoun, a bare death-year number (``… الأشعري 191``), or an honorific
+    sign - any trailing token with no Arabic letter. The surface tokens are otherwise
+    preserved (only trimmed), so char offsets into a kept slice stay valid.
     """
     surface = name.strip().split()
     if not surface:
@@ -167,7 +171,9 @@ def clean_name(name: str) -> str:
             cut = i
             break
     surface = surface[:cut]
-    while surface and normalize_arabic(surface[-1]) in _TRAILING_DROP:
+    while surface and (
+        normalize_arabic(surface[-1]) in _TRAILING_DROP or not _HAS_ARABIC_RE.search(surface[-1])
+    ):
         surface = surface[:-1]
     return " ".join(surface)
 
