@@ -47,7 +47,7 @@ from backend.models.search import (
     SearchMode,
     VolumeFacet,
 )
-from backend.patterns import fold_search
+from backend.patterns import fold_search, fold_with_offsets
 from backend.repositories import books as books_repo
 from backend.repositories import reader as reader_repo
 from backend.repositories._data_loader import open_ro_db, slice_page
@@ -142,27 +142,16 @@ def _match_expr(windows: list[str]) -> str:
     return " OR ".join(f'"{w}"' for w in windows)
 
 
-def _fold_with_map(text: str) -> tuple[str, list[int]]:
-    """Fold ``text`` for matching while recording, for each folded character,
-    the index of the original character it came from. Folding drops marks and
-    1:1-replaces letters, so each folded position maps to exactly one original
-    position — enough to slice an excerpt of the original around a folded hit."""
-    folded: list[str] = []
-    origin: list[int] = []
-    for i, ch in enumerate(text):
-        f = fold_search(ch)
-        if f:
-            folded.append(f)
-            origin.append(i)
-    return "".join(folded), origin
-
-
 def locate_snippet(content: str, windows: list[str]) -> tuple[bool, str]:
     """Locate the first folded ``windows`` hit in ``content`` and return
     ``(found, snippet)`` — a fold-aware excerpt keeping original orthography, or
     ``(False, head)`` when no window is present. The one place the fold-aware
-    snippet is built; shared by the corpus-wide FTS path and the in-book scan."""
-    folded, origin = _fold_with_map(content)
+    snippet is built; shared by the corpus-wide FTS path and the in-book scan.
+
+    Uses ``patterns.fold_with_offsets`` for the folded→original index map; the
+    match ends after the last folded letter (``origin[hit + len - 1] + 1``), so
+    the trailing sentinel that map carries is never indexed here."""
+    folded, origin = fold_with_offsets(content)
     for needle in windows:
         hit = folded.find(needle)
         if hit < 0:

@@ -21,13 +21,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Final
 
 from backend.core.constants import (
-    ENTITY__BOOK_TYPE_KEY,
     ENTITY__CATEGORY_KEY,
     ENTITY__NAME_KEY,
     QURAN__ENTITY_NAMED,
 )
 from backend.pipeline.contracts import PHASE_CONTRACTS
-from backend.pipeline.gazetteer_match import Matcher, compile_matchers, scan_gazetteer
+from backend.pipeline.gazetteer_match import Matcher, matchers_for_span, scan_gazetteer
 from backend.pipeline.models import Entity, Span, create_entity
 
 if TYPE_CHECKING:
@@ -38,19 +37,6 @@ _CONFIG_SECTION: Final[str] = "quran_extraction"
 _MATCHER_CACHE: dict[int, list[Matcher[tuple[str, str]]]] = {}
 
 
-def _matchers(config: Config) -> list[Matcher[tuple[str, str]]]:
-    """The compiled Qurʾān gazetteer for this config, cached; payload is (category, name)."""
-    gazetteer: dict[str, list[dict[str, Any]]] = config.raw.get(_CONFIG_SECTION, {}).get(
-        "gazetteer", {}
-    )
-    key = id(gazetteer)
-    if key not in _MATCHER_CACHE:
-        _MATCHER_CACHE[key] = compile_matchers(
-            gazetteer, lambda category, entry: (category, entry[ENTITY__NAME_KEY])
-        )
-    return _MATCHER_CACHE[key]
-
-
 def quran_entity_extractor(span: Span, config: Config) -> list[Entity]:
     """Emit a QURAN_ENTITY per named-entity mention in a Qurʾān-genre span.
 
@@ -58,11 +44,16 @@ def quran_entity_extractor(span: Span, config: Config) -> list[Entity]:
     preceding-word rule, range-claiming, and offset anchoring to the shared
     gazetteer scan; each hit's payload carries its category and canonical name.
     """
-    section: dict[str, Any] = config.raw.get(_CONFIG_SECTION, {})
-    genres: frozenset[str] = frozenset(section.get("genres", []))
-    if not genres or span.metadata.get(ENTITY__BOOK_TYPE_KEY) not in genres:
+    matchers = matchers_for_span(
+        span,
+        config,
+        _CONFIG_SECTION,
+        _MATCHER_CACHE,
+        lambda category, entry: (category, entry[ENTITY__NAME_KEY]),
+    )
+    if matchers is None:
         return []
-    _folded, hits = scan_gazetteer(span.text, _matchers(config))
+    _folded, hits = scan_gazetteer(span.text, matchers)
     phase = PHASE_CONTRACTS["extract"].phase_number
     return [_entity(span, config, phase, start, end, payload) for start, end, _ms, payload in hits]
 

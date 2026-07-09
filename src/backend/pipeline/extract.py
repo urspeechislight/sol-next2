@@ -314,19 +314,7 @@ def _atomicize_whole_span(
         span.text = text_ar
     else:
         text_ar = strip_footnote_markers(span.text)
-    return [
-        Unit(
-            unit_id=unit_id,
-            text_ar=text_ar,
-            unit_type=unit_type,
-            behavior=behavior,
-            span_id=span.span_id,
-            page_start=span.page_start,
-            page_end=span.page_end,
-            hierarchy=hierarchy,
-            metadata=unit_metadata,
-        )
-    ]
+    return [_unit(span, unit_id, text_ar, unit_type, behavior, hierarchy, metadata=unit_metadata)]
 
 
 def _atomicize_sanad_matn(

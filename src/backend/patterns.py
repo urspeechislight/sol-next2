@@ -116,6 +116,36 @@ def fold_search(text: str) -> str:
     return _fold_letters(SEARCH_MARKS.sub("", text))
 
 
+def fold_with_offsets(text: str) -> tuple[str, list[int]]:
+    """Fold ``text`` with :func:`fold_search` while recording, for each folded
+    character, the index of the original character it came from.
+
+    ``fold_search`` drops marks and 1:1-replaces letters, so it folds character
+    by character: folding one char at a time reproduces the bulk fold exactly and
+    yields a folded→original index map. The returned list has one entry per folded
+    char plus a trailing sentinel of ``len(text)``, so a folded span ``[fs, fe)``
+    maps to the original window ``[offsets[fs], offsets[fe])`` — the sentinel lets
+    a span ending at ``len(folded)`` resolve, and the window keeps any trailing
+    marks on the last matched letter. Raises if the per-char fold disagrees with
+    the bulk fold, rather than emit a misaligned offset.
+
+    The one fold+offset map: both the corpus snippet locator (which slices the
+    original around a folded hit) and the gazetteer scan (which anchors each name
+    to its original window) build on it.
+    """
+    folded: list[str] = []
+    offsets: list[int] = []
+    for index, char in enumerate(text):
+        for piece in fold_search(char):
+            folded.append(piece)
+            offsets.append(index)
+    result = "".join(folded)
+    if result != fold_search(text):
+        raise ValueError("fold_search is not character-local; offset map cannot be trusted")
+    offsets.append(len(text))
+    return result, offsets
+
+
 def normalize_arabic(text: str) -> str:
     """Fold a name/title for fuzzy comparison: drop harakat + tatweel, fold the
     alef/yaa/taa variants, then collapse whitespace. Used for narrator-name and

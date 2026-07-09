@@ -16,16 +16,20 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from backend.core.constants import (
     ARABIC__CONJUNCTION_CLITICS as _CONJUNCTION_CLITICS,
 )
 from backend.core.constants import (
+    ENTITY__BOOK_TYPE_KEY,
     ENTITY__NAME_KEY,
 )
-from backend.patterns import CompiledPattern, cached_compile, fold_search
-from backend.pipeline.errors import ExtractError
+from backend.patterns import CompiledPattern, cached_compile, fold_search, fold_with_offsets
+from backend.pipeline.models import Span
+
+if TYPE_CHECKING:
+    from backend.pipeline.config import Config
 
 ENTITY_PREV_KEY: Final[str] = "entity_prev"
 COMMON_PREV_KEY: Final[str] = "common_prev"
@@ -42,30 +46,6 @@ def _name_regex(folded_name: str) -> CompiledPattern:
     (و ف ب ك ل). Boundaries forbid mid-word hits.
     """
     return cached_compile(rf"(?<![ء-ي])[وفبكل]?({re.escape(folded_name)}ا?)(?![ء-ي])")
-
-
-def _fold_with_offsets(text: str) -> tuple[str, list[int]]:
-    """Fold ``text`` for search while recording each folded char's source index.
-
-    ``fold_search`` folds character by character (drops marks, folds letter
-    variants), so folding one char at a time reproduces it exactly and yields a
-    folded→original index map. The returned list has one entry per folded char
-    plus a trailing sentinel of ``len(text)``, so a folded span ``[fs, fe)`` maps
-    to the original window ``[offsets[fs], offsets[fe])`` including any trailing
-    diacritics on the last matched letter. Raises if the per-char fold and the
-    bulk fold disagree, rather than emit a misaligned offset.
-    """
-    parts: list[str] = []
-    offsets: list[int] = []
-    for index, char in enumerate(text):
-        for piece in fold_search(char):
-            parts.append(piece)
-            offsets.append(index)
-    folded = "".join(parts)
-    if folded != fold_search(text):
-        raise ExtractError("fold_search is not character-local; offset map cannot be trusted")
-    offsets.append(len(text))
-    return folded, offsets
 
 
 def preceding_word(folded: str, match_start: int) -> str:
@@ -118,6 +98,57 @@ def compile_matchers[T](
     return built
 
 
+def cached_matchers[T](
+    cache: dict[int, list[Matcher[T]]],
+    gazetteer: dict[str, list[dict[str, Any]]],
+    payload: Callable[[str, dict[str, Any]], T],
+) -> list[Matcher[T]]:
+    """Compile ``gazetteer`` into matchers once, memoized in ``cache`` by the
+    gazetteer's identity.
+
+    A parsed Config is held for the process lifetime and each extractor's
+    gazetteer is a distinct sub-dict, so ``id(gazetteer)`` is a stable per-config
+    key and the compile runs once. The one compile-once path every gazetteer
+    extractor shares; the caller owns the typed ``cache`` so each keeps its payload
+    type.
+    """
+    key = id(gazetteer)
+    if key not in cache:
+        cache[key] = compile_matchers(gazetteer, payload)
+    return cache[key]
+
+
+def in_configured_genres(span: Span, section: dict[str, Any]) -> bool:
+    """Whether ``span``'s book type is one of the genres ``section`` configures.
+
+    A gazetteer extractor emits nothing outside its configured genres; this is the
+    one definition of that gate, shared by the Qurʾān and event extractors.
+    """
+    genres = frozenset(section.get("genres", []))
+    return bool(genres) and span.metadata.get(ENTITY__BOOK_TYPE_KEY) in genres
+
+
+def matchers_for_span[T](
+    span: Span,
+    config: Config,
+    section_name: str,
+    cache: dict[int, list[Matcher[T]]],
+    payload: Callable[[str, dict[str, Any]], T],
+) -> list[Matcher[T]] | None:
+    """The compiled gazetteer matchers to scan ``span`` with, or ``None`` when the
+    span's book type is outside the genres ``section_name`` configures.
+
+    The one entry point a gazetteer extractor needs: it applies the genre gate and
+    returns the cached, compiled matchers, so the extractor body reduces to scan +
+    stamp. ``payload(category, entry)`` builds whatever the extractor puts on its
+    entities; ``cache`` is that extractor's own typed matcher cache.
+    """
+    section: dict[str, Any] = config.raw.get(section_name, {})
+    if not in_configured_genres(span, section):
+        return None
+    return cached_matchers(cache, section.get("gazetteer", {}), payload)
+
+
 def scan_gazetteer[T](text: str, matchers: list[Matcher[T]]) -> tuple[str, list[ScanHit[T]]]:
     """Scan ``text`` for every matcher, claiming ranges and applying the rules.
 
@@ -126,7 +157,7 @@ def scan_gazetteer[T](text: str, matchers: list[Matcher[T]]) -> tuple[str, list[
     full match (for a caller that reads more preceding context, e.g.
     participation), and the payload — sorted by position.
     """
-    folded, offsets = _fold_with_offsets(text)
+    folded, offsets = fold_with_offsets(text)
     claimed: list[tuple[int, int]] = []
     hits: list[ScanHit[T]] = []
     for _name, regex, entity_prev, common_prev, payload in matchers:

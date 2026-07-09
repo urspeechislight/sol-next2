@@ -27,13 +27,12 @@ from backend.core.constants import (
     ARABIC__CONJUNCTION_CLITICS as _CONJUNCTION_CLITICS,
 )
 from backend.core.constants import (
-    ENTITY__BOOK_TYPE_KEY,
     ENTITY__NAME_KEY,
     EVENT__ENTITY_NAMED,
 )
 from backend.patterns import fold_search
 from backend.pipeline.contracts import PHASE_CONTRACTS
-from backend.pipeline.gazetteer_match import Matcher, ScanHit, compile_matchers, scan_gazetteer
+from backend.pipeline.gazetteer_match import Matcher, ScanHit, matchers_for_span, scan_gazetteer
 from backend.pipeline.models import Entity, Span, create_entity
 
 if TYPE_CHECKING:
@@ -52,19 +51,6 @@ type _Payload = tuple[str, str, str]
 
 _MATCHER_CACHE: dict[int, list[Matcher[_Payload]]] = {}
 _ROLE_CACHE: dict[int, dict[str, str]] = {}
-
-
-def _matchers(config: Config) -> list[Matcher[_Payload]]:
-    """The compiled event gazetteer, cached; payload is (event_type, event_id, name)."""
-    gazetteer: dict[str, list[dict[str, Any]]] = config.raw.get(_CONFIG_SECTION, {}).get(
-        "gazetteer", {}
-    )
-    key = id(gazetteer)
-    if key not in _MATCHER_CACHE:
-        _MATCHER_CACHE[key] = compile_matchers(
-            gazetteer, lambda etype, entry: (etype, entry[EVENT__ID_KEY], entry[ENTITY__NAME_KEY])
-        )
-    return _MATCHER_CACHE[key]
 
 
 def _role_markers(config: Config) -> dict[str, str]:
@@ -129,11 +115,16 @@ def event_extractor(span: Span, config: Config) -> list[Entity]:
     preceding-word rule, range-claiming, and offset anchoring to the shared
     gazetteer scan, then stamps each event's type, id, and any participation role.
     """
-    section: dict[str, Any] = config.raw.get(_CONFIG_SECTION, {})
-    genres: frozenset[str] = frozenset(section.get("genres", []))
-    if not genres or span.metadata.get(ENTITY__BOOK_TYPE_KEY) not in genres:
+    matchers = matchers_for_span(
+        span,
+        config,
+        _CONFIG_SECTION,
+        _MATCHER_CACHE,
+        lambda etype, entry: (etype, entry[EVENT__ID_KEY], entry[ENTITY__NAME_KEY]),
+    )
+    if matchers is None:
         return []
-    folded, hits = scan_gazetteer(span.text, _matchers(config))
+    folded, hits = scan_gazetteer(span.text, matchers)
     roles = _role_markers(config)
     phase = PHASE_CONTRACTS["extract"].phase_number
     return [_entity(span, config, phase, folded, roles, hit) for hit in hits]
