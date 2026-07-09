@@ -268,13 +268,14 @@ def _generation(categories: list[str], teacher_names: set[str], death_year: int 
     ``تابع التابعين`` a follower's follower; ``تابعي`` a Successor (tābiʿī).
     """
     joined = normalize_arabic(" ".join(categories))
-    if "صحاب" in joined:
+    plausible_companion = death_year is None or death_year <= _COMPANION_DEATH_MAX
+    if "صحاب" in joined and plausible_companion:
         return "companion"
     heard_prophet = any(
         any(marker in normalize_arabic(name) for marker in _PROPHET_MARKERS)
         for name in teacher_names
     )
-    if heard_prophet and (death_year is None or death_year <= _COMPANION_DEATH_MAX):
+    if heard_prophet and plausible_companion:
         return "companion"
     if "تابع التابع" in joined:
         return "successor_of_successors"
