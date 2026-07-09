@@ -10,7 +10,9 @@ import {
   Spinner,
   Text,
 } from '../../lib/design-system';
+import type { LockupMode } from '../../lib/design-system';
 import { getSurah } from '../../lib/api/client';
+import { LANG_OPTIONS } from '../../lib/constants';
 import { SURAH_COUNT, surahName, verseMatches } from '../../lib/surahs';
 import type { SurahName } from '../../lib/surahs';
 import type { Ayah, Surah } from '../../lib/types';
@@ -22,17 +24,11 @@ import { SuraFinder } from './SuraFinder';
 import '../../components/HadithBlock.css';
 import './QuranScreen.css';
 
-type QuranLang = 'ar' | 'both' | 'en';
+type QuranLang = LockupMode;
 type ResearchTab = 'tafsir' | 'lexicon' | 'morphology';
 
 const SURAH_MIN = 1;
 const SURAH_MAX = SURAH_COUNT;
-
-const LANGS = [
-  { value: 'en', label: 'EN' },
-  { value: 'both', label: 'EN | AR' },
-  { value: 'ar', label: 'AR' },
-];
 
 const RESEARCH_TABS = [
   { value: 'tafsir', label: 'Tafsīr' },
@@ -144,7 +140,7 @@ export function QuranScreen({ query = '', focus = null }: QuranScreenProps) {
               surface="reader"
               label="Language"
               value={lang}
-              options={LANGS}
+              options={LANG_OPTIONS}
               onChange={(v) => setLang(v as QuranLang)}
             />
             <Pill surface="reader" active={cards} icon="grid" onClick={() => setCards((c) => !c)}>

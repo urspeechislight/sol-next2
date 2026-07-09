@@ -25,16 +25,12 @@ import {
   Text,
 } from '../../lib/design-system';
 import type { BadgeVariant, ButtonVariant } from '../../lib/design-system';
+import { LANG_OPTIONS } from '../../lib/constants';
 import { viewHref } from '../../lib/routes';
 import { Section, Spec } from './parts';
 
 const BUTTON_VARIANTS: ButtonVariant[] = ['primary', 'secondary', 'gold', 'ghost', 'link'];
 const BADGE_VARIANTS: BadgeVariant[] = ['default', 'success', 'warning', 'danger'];
-const LANG_OPTIONS = [
-  { value: 'en', label: 'EN' },
-  { value: 'both', label: 'EN | AR' },
-  { value: 'ar', label: 'AR' },
-];
 const SCOPE_OPTIONS = [
   { value: 'content', label: 'Content' },
   { value: 'title', label: 'Title' },

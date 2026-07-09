@@ -16,6 +16,7 @@ import { READER } from '../../lib/constants';
 import { matchedMarkers } from '../../lib/footnotes';
 import { useTheme } from '../../lib/useTheme';
 import { buildNarratorIndex, personToRecord, rijalToRecord } from '../../lib/narrators';
+import { emptyPage } from '../../lib/types';
 import type {
   Book,
   BookPage,
@@ -42,7 +43,7 @@ import './IsnadSidebar.css';
 import './NarratorTarjama.css';
 
 const MIN_QUERY = 2;
-const EMPTY_MATCHES: Page<BookSearchMatch> = { items: [], total: 0, limit: 0, offset: 0 };
+const EMPTY_MATCHES = emptyPage<BookSearchMatch>();
 const NO_MARKERS: ReadonlySet<string> = new Set<string>();
 const EMPTY_CITATIONS: QuranCitation[] = [];
 

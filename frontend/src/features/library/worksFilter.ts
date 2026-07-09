@@ -7,6 +7,20 @@ import { byDeathThenTitle, centuryOf, groupByEra, matchesAuthor } from './lib';
 
 export type SortMode = 'canonical' | 'era' | 'title' | 'author' | 'volumes';
 
+// Labels keyed by SortMode so a new sort mode fails to compile until it is labelled.
+const SORT_LABEL: Record<SortMode, string> = {
+  canonical: 'Canonical rank',
+  era: 'By era',
+  title: 'By title',
+  author: 'By author',
+  volumes: 'Largest first',
+};
+
+// Ordered, exhaustive sort options for the works filter menu, the one source of truth.
+export const SORT_OPTIONS: { value: SortMode; label: string }[] = (
+  Object.keys(SORT_LABEL) as SortMode[]
+).map((value) => ({ value, label: SORT_LABEL[value] }));
+
 export interface Filters {
   era: number | null;
   author: string;

@@ -8,13 +8,13 @@ import {
   Segmented,
   TitleLockup,
 } from '../../lib/design-system';
-import type { IconName } from '../../lib/design-system';
-import { READER } from '../../lib/constants';
+import type { IconName, LockupMode } from '../../lib/design-system';
+import { LANG_OPTIONS, READER } from '../../lib/constants';
 import type { Book } from '../../lib/types';
 import { clamp, formatCount } from '../../lib/utils';
 
 export type ReaderTheme = 'dark' | 'classical';
-export type ReaderLang = 'en' | 'both' | 'ar';
+export type ReaderLang = LockupMode;
 export type LeftDrawer = 'contents' | null;
 export type RightDrawer = 'isnad' | 'tarjama' | null;
 
@@ -23,11 +23,6 @@ const CHAPTER_STEP = 10;
 const THEMES: [ReaderTheme, string, IconName][] = [
   ['dark', 'Dark', 'moon'],
   ['classical', 'Classical', 'book'],
-];
-const LANGS: [ReaderLang, string][] = [
-  ['en', 'EN'],
-  ['both', 'EN | AR'],
-  ['ar', 'AR'],
 ];
 
 /** Option label for one sibling volume. Every multi-volume work in the corpus
@@ -44,7 +39,10 @@ function ReaderMeta({
   urn,
   volumes,
   onVolume,
-}: Pick<ReaderToolbarProps, 'categoryLabel' | 'volume' | 'death' | 'urn' | 'volumes' | 'onVolume'>) {
+}: Pick<
+  ReaderToolbarProps,
+  'categoryLabel' | 'volume' | 'death' | 'urn' | 'volumes' | 'onVolume'
+>) {
   if (!categoryLabel && !volume && !death) return null;
   return (
     <div className="reader-meta">
@@ -61,7 +59,11 @@ function ReaderMeta({
           className="reader-badge-menu"
           ariaLabel="Switch volume"
           value={urn}
-          options={volumes.map((b) => ({ value: b.urn, label: volumeOptionLabel(b), icon: 'book' as const }))}
+          options={volumes.map((b) => ({
+            value: b.urn,
+            label: volumeOptionLabel(b),
+            icon: 'book' as const,
+          }))}
           onChange={onVolume}
         />
       ) : volume ? (
@@ -231,7 +233,7 @@ function DrawerGroup(p: ReaderToolbarProps) {
         surface="reader"
         label="Language"
         value={p.lang}
-        options={LANGS.map(([value, label]) => ({ value, label }))}
+        options={LANG_OPTIONS}
         onChange={(v) => p.onLang(v as ReaderLang)}
       />
       <Pill

@@ -1,17 +1,9 @@
 import { FacetChip, Input, Menu } from '../../lib/design-system';
-import type { MenuOption } from '../../lib/design-system';
 import type { Work } from '../../lib/types';
 import { groupByEra } from './lib';
+import { SORT_OPTIONS } from './worksFilter';
 import type { Filters, SortMode } from './worksFilter';
 import './FilterBar.css';
-
-const SORTS: MenuOption[] = [
-  { value: 'canonical', label: 'Canonical rank' },
-  { value: 'era', label: 'By era' },
-  { value: 'title', label: 'By title' },
-  { value: 'author', label: 'By author' },
-  { value: 'volumes', label: 'Largest first' },
-];
 
 export interface FilterBarProps {
   /** The whole scope, unfiltered: the era chips carry its true counts. */
@@ -67,7 +59,7 @@ export function FilterBar({ works, filters, onChange }: FilterBarProps) {
         <span className="fbar__spacer" />
         <Menu
           value={filters.sort}
-          options={SORTS}
+          options={SORT_OPTIONS}
           ariaLabel="Sort works"
           onChange={(v) => set({ sort: v as SortMode })}
         />

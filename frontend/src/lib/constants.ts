@@ -1,7 +1,15 @@
 // constants.ts:non-design, non-path literals. SCREAMING_SNAKE_CASE, grouped.
 // Path / URL constants (API, ROUTES, ASSETS) live in routes.ts (CENTRAL-006).
 
+import type { LockupMode } from './design-system';
 import type { SearchMode } from './types';
+
+// Display-language options for the reader and Qurʾān toolbars; one source used by all.
+export const LANG_OPTIONS: { value: LockupMode; label: string }[] = [
+  { value: 'en', label: 'EN' },
+  { value: 'both', label: 'EN | AR' },
+  { value: 'ar', label: 'AR' },
+];
 
 export const PAGE = {
   defaultLimit: 24,

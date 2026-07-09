@@ -6,11 +6,10 @@ import { searchQuran } from '../../lib/api/client';
 import { PAGE } from '../../lib/constants';
 import { SURAHS, matchSurahs, parseVerseRef, surahName } from '../../lib/surahs';
 import type { VerseRef } from '../../lib/surahs';
+import { emptyPage, type Ayah } from '../../lib/types';
 import { usePaged } from '../../lib/usePaged';
 import { countLabel, cx, formatCount } from '../../lib/utils';
 import './SuraFinder.css';
-
-const EMPTY_PAGE = { items: [], total: 0, limit: 0, offset: 0 };
 
 export interface SuraFinderProps {
   currentSurah: number;
@@ -35,7 +34,9 @@ export function SuraFinder({ currentSurah, onPick, onJump }: SuraFinderProps) {
 
   const verses = usePaged(
     (offset) =>
-      term ? searchQuran(term, { limit: PAGE.defaultLimit, offset }) : Promise.resolve(EMPTY_PAGE),
+      term
+        ? searchQuran(term, { limit: PAGE.defaultLimit, offset })
+        : Promise.resolve(emptyPage<Ayah>()),
     [term],
   );
 

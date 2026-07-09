@@ -27,6 +27,11 @@ export interface Page<T> {
   offset: number;
 }
 
+// A fresh empty page envelope, so the empty-result literal lives in one place.
+export function emptyPage<T>(): Page<T> {
+  return { items: [], total: 0, limit: 0, offset: 0 };
+}
+
 // ---- narrator registry (GET /api/rijal, /api/canonical) ----
 export type RijalEntry = Full<S['RijalEntry']>;
 export type PersonEntry = Full<S['PersonEntry']>;
