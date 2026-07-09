@@ -73,6 +73,11 @@ ARTIFACT__MANUSCRIPT_DB: Final[str] = "manuscript.db"
 ARTIFACT__REGISTRY_DB: Final[str] = "registry.db"
 ARTIFACT__CITATIONS_DB: Final[str] = "citations.db"
 ARTIFACT__BOOKS_INDEX: Final[str] = "books_index.json"
+ARTIFACT__MIZAN_DB: Final[str] = "mizan_registry.db"
+ARTIFACT__MIZAN_JSON: Final[str] = "mizan_registry.json"
+
+MIZAN__BOOK_TITLE: Final[str] = "ميزان الاعتدال"
+MIZAN__HEAD_WINDOW_CHARS: Final[int] = 200
 
 NARRATOR_LINK__METADATA_KEY: Final[str] = "narrator_link"
 NARRATOR_LINK__ORIGIN_KEY: Final[str] = "origin"
