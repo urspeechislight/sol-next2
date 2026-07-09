@@ -5,6 +5,9 @@ import './Badge.css';
 
 export type BadgeVariant = 'default' | 'success' | 'warning' | 'danger';
 
+// Every badge variant in display order, the one list galleries and demos iterate.
+export const BADGE_VARIANTS: BadgeVariant[] = ['default', 'success', 'warning', 'danger'];
+
 const VARIANT_CLASS: Record<BadgeVariant, string> = {
   default: 'ds-badge--default',
   success: 'ds-badge--success',

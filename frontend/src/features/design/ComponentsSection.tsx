@@ -1,5 +1,6 @@
 import {
   Badge,
+  BADGE_VARIANTS,
   IsnadNode,
   MatchRow,
   NarratorLink,
@@ -7,11 +8,8 @@ import {
   TitleLockup,
   TocItem,
 } from '../../lib/design-system';
-import type { BadgeVariant } from '../../lib/design-system';
 import { reliabilityBadge } from '../../lib/variants';
 import { Section } from './parts';
-
-const GRADE_VARIANTS: BadgeVariant[] = ['default', 'success', 'warning', 'danger'];
 
 function ReaderLabel({ children }: { children: string }) {
   return (
@@ -38,7 +36,7 @@ export function ComponentsSection() {
 
         <ReaderLabel>Badge · reader surface · tones + dot</ReaderLabel>
         <div className="ds-doc__reader-row">
-          {GRADE_VARIANTS.map((v) => (
+          {BADGE_VARIANTS.map((v) => (
             <Badge key={v} surface="reader" variant={v}>
               {v}
             </Badge>

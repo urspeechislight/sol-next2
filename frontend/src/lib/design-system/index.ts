@@ -44,7 +44,7 @@ export type { NavArrowProps, NavArrowDirection, NavArrowSize } from './primitive
 export { Card } from './primitives/Card';
 export type { CardProps, CardVariant, CardPad } from './primitives/Card';
 
-export { Badge } from './primitives/Badge';
+export { Badge, BADGE_VARIANTS } from './primitives/Badge';
 export type { BadgeProps, BadgeVariant } from './primitives/Badge';
 
 export { Chip } from './primitives/Chip';

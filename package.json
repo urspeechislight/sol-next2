@@ -23,7 +23,8 @@
     "types:check": "pnpm types:gen && git diff --exit-code -- frontend/openapi.json frontend/src/lib/api/schema.d.ts",
     "fe:test": "pnpm --filter @sol-next2/frontend test",
     "fe:build": "pnpm --filter @sol-next2/frontend build",
-    "ci": "pnpm format:check && pnpm py:check && pnpm py:test && pnpm harness:test && pnpm repo:audit && pnpm types:check && pnpm fe:test && pnpm fe:build",
+    "fe:ssot": "pnpm --filter @sol-next2/frontend ssot",
+    "ci": "pnpm format:check && pnpm py:check && pnpm py:test && pnpm harness:test && pnpm repo:audit && pnpm types:check && pnpm fe:test && pnpm fe:ssot && pnpm fe:build",
     "prepare": "lefthook install || true"
   },
   "devDependencies": {

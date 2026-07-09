@@ -1,8 +1,9 @@
 import { cx } from '../../utils';
 import { ASSETS } from '../../routes';
+import type { IconSize } from './Icon';
 import './Logo.css';
 
-export type LogoSize = 'sm' | 'md' | 'lg' | 'xl';
+export type LogoSize = IconSize;
 
 const SIZE_CLASS: Record<LogoSize, string> = {
   sm: 'ds-logo--sm',
