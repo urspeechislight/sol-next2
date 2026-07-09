@@ -64,6 +64,7 @@ _HISTORY_ID_BASE: Final[int] = 1_000_000
 _OVER_MERGE_ROOT_MAX: Final[int] = 2
 _OVER_MERGE_PLACE_MAX: Final[int] = 4
 _NAME_ROOT_TOKENS: Final[int] = 2
+_CORROBORATING_TEACHERS: Final[int] = 2
 _THEOPHORIC_KUNYA_TOKENS: Final[int] = 3
 _MAX_VARIANTS: Final[int] = 8
 _MAX_RELIABILITY: Final[int] = 10
@@ -237,6 +238,108 @@ def _identity_parse(name: str) -> tuple[tuple[str, ...], bool]:
         key = toks[: j + 1]
         nisba_appended = True
     return tuple(key), (depth >= 2 or nisba_appended)
+
+
+def _identity_tokens(name: str) -> tuple[str, ...]:
+    """The normalized tokens naming an entry's PRIMARY person.
+
+    A wāw that joins a co-narrator (``... عيسى وسهل بن زياد``) or a co-kunya
+    (``... وأبي بكر``) ends the name, so the entry is attributed to the first man
+    only, never a fused pair. A wāw after a nasab link (``بن وهب``) or a kunya
+    particle (``أبو وائل``) is part of the name itself and is kept, as is a name
+    whose own first letter is wāw (``واصل``).
+    """
+    toks = normalize_arabic(clean_name(name)).split()
+    cut = len(toks)
+    for i in range(1, len(toks)):
+        prev = toks[i - 1]
+        if toks[i].startswith("و") and prev not in _LINKS and prev not in _KUNYA_LEADS:
+            cut = i
+            break
+    return tuple(toks[:cut])
+
+
+def _cluster_teachers(cluster: list[dict[str, Any]]) -> frozenset[str]:
+    """The normalized teacher names attested for a cluster, for corroboration.
+
+    Cleaned but not screened by ``is_person_name``: a single-token nisba teacher
+    (``الزهري``) is a valid corroboration signal even though it is too short to be a
+    corpus record. ``clean_name`` still strips a leading verb/title, and the two-shared
+    threshold in ``_remerge_corroborating`` guards against a coincidental single match.
+    """
+    return frozenset(
+        cleaned
+        for entry in cluster
+        for n in (entry.get("teacher_names") or [])
+        if (cleaned := normalize_arabic(clean_name(n)))
+    )
+
+
+def _cluster_deaths(cluster: list[dict[str, Any]]) -> frozenset[int]:
+    """The specific death years attested for a cluster, for corroboration."""
+    return frozenset(e["death_year"] for e in cluster if isinstance(e.get("death_year"), int))
+
+
+def _remerge_corroborating(clusters: list[list[dict[str, Any]]]) -> list[list[dict[str, Any]]]:
+    """Re-merge tail-clusters that are one man recorded under different nisbas.
+
+    A single narrator carries several nisbas at once (tribe الهلالي + towns الكوفي/
+    المكي), which the by-name split wrongly separates. Two clusters are re-merged when
+    they corroborate as the same man: a shared specific death year, or two or more
+    shared teachers (one shared famous teacher is too weak - distinct men share those).
+    Distinct men who merely share a nasab (الأشعري vs العلوي) corroborate on neither and
+    stay apart. Union-find groups the transitive closure.
+    """
+    if len(clusters) < 2:
+        return clusters
+    teachers = [_cluster_teachers(c) for c in clusters]
+    deaths = [_cluster_deaths(c) for c in clusters]
+    parent = list(range(len(clusters)))
+
+    def root(x: int) -> int:
+        """Union-find root of cluster index ``x`` with path halving."""
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for i in range(len(clusters)):
+        for j in range(i + 1, len(clusters)):
+            if (deaths[i] & deaths[j]) or len(teachers[i] & teachers[j]) >= _CORROBORATING_TEACHERS:
+                parent[root(i)] = root(j)
+    grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for idx, cluster in enumerate(clusters):
+        grouped[root(idx)].extend(cluster)
+    return list(grouped.values())
+
+
+def _cluster_by_full_name(entries: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    """Separate distinct men who share a nasab but differ in their fuller name.
+
+    A shorter name merges into a longer one only when it is that longer name's
+    unambiguous token-prefix, so surface-variant records of one man collapse
+    (``…عيسى`` into ``…عيسى الأشعري القمي``) while two incompatible tails stay apart
+    (``الأشعري`` vs ``العلوي الحسيني``). A bare prefix shared by several longer names
+    is too ambiguous to attribute to any of them and forms its own person. The
+    by-name split is then re-merged where a shared death year or teachers show that
+    two nisba-different clusters are actually one man (``_remerge_corroborating``).
+    """
+    by_full: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
+    for entry in entries:
+        by_full[_identity_tokens(entry.get("full_name") or "")].append(entry)
+    by_full.pop((), None)
+    if not by_full:
+        return [entries]
+    reps: list[tuple[str, ...]] = []
+    clusters: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+    for full in sorted(by_full, key=len, reverse=True):
+        containers = [rep for rep in reps if rep[: len(full)] == full]
+        if len(containers) == 1:
+            clusters[containers[0]].extend(by_full[full])
+        else:
+            reps.append(full)
+            clusters[full] = list(by_full[full])
+    return _remerge_corroborating(list(clusters.values()))
 
 
 def _combine_tradition(counter: Counter[str]) -> str:
@@ -523,15 +626,18 @@ def build_person_tables(
     pid_by_name: dict[str, int] = {}
     pid = 0
     for key, cluster in specific_buckets.items():
-        pid += 1
-        groups.append((pid, cluster, _combine_tradition(specific_tradition[key])))
-        for entry in cluster:
-            pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
+        tradition = _combine_tradition(specific_tradition[key])
+        for subcluster in _cluster_by_full_name(cluster):
+            pid += 1
+            groups.append((pid, subcluster, tradition))
+            for entry in subcluster:
+                pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
     for cluster, tradition in local_clusters:
-        pid += 1
-        groups.append((pid, cluster, tradition))
-        for entry in cluster:
-            pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
+        for subcluster in _cluster_by_full_name(cluster):
+            pid += 1
+            groups.append((pid, subcluster, tradition))
+            for entry in subcluster:
+                pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
 
     for person_id, cluster, tradition in groups:
         display = Counter(clean_name(e["full_name"]) for e in cluster).most_common(1)[0][0]
