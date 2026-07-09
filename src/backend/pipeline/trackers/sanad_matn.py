@@ -66,8 +66,3 @@ class SanadMatnTracker(TrackerProtocol):
             return HierarchyPath(path=[], path_ids=[], depth=0)
         label, node_id = self._current
         return HierarchyPath(path=[label], path_ids=[node_id], depth=1)
-
-    def reset(self) -> None:
-        """Reset the entry counter."""
-        self._counter = 0
-        self._current = None

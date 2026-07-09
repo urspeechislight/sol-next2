@@ -145,11 +145,6 @@ TABLES: Final[dict[str, str]] = {
 }
 
 
-def clean_ws(name: str) -> str:
-    """Collapse embedded newlines and runs of whitespace in a display name."""
-    return " ".join(name.split())
-
-
 def reconcile_death(years: Counter[int]) -> tuple[int | None, bool]:
     """Return (death year, conflict). Fold a two-digit year into a 1XX that ends in it."""
     if not years:

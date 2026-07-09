@@ -41,10 +41,6 @@ class TrackerProtocol(Protocol):
         """Return the current hierarchy path from this tracker's state."""
         ...
 
-    def reset(self) -> None:
-        """Reset tracker to initial state."""
-        ...
-
 
 class TrackerOrchestrator:
     """Runs all registered trackers and merges their hierarchy paths.

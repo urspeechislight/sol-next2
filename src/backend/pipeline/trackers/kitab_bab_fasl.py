@@ -73,11 +73,6 @@ class KitabBabFaslTracker(TrackerProtocol):
                 path_ids.append(hid)
         return HierarchyPath(path=path, path_ids=path_ids, depth=len(path))
 
-    def reset(self) -> None:
-        """Reset tracker to initial state."""
-        self._heading_counter = 0
-        self._state.clear()
-
     def _resolve_level(self, heading_line: str) -> str:
         """Match a heading line to its hierarchy level via earliest prefix."""
         best_level = self._level_names[0] if self._level_names else "kitab"

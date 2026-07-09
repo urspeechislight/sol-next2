@@ -57,8 +57,3 @@ class TocHierarchyTracker(TrackerProtocol):
             path.append(title)
             path_ids.append(node_id)
         return HierarchyPath(path=path, path_ids=path_ids, depth=len(path))
-
-    def reset(self) -> None:
-        """Reset tracker to initial state."""
-        self._counter = 0
-        self._state.clear()
