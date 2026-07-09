@@ -342,6 +342,23 @@ def _cluster_by_full_name(entries: list[dict[str, Any]]) -> list[list[dict[str, 
     return _remerge_corroborating(list(clusters.values()))
 
 
+def _fullest_name(cluster: list[dict[str, Any]]) -> str:
+    """The most complete name the sources give this person, for display.
+
+    A person's entries record the name at varying completeness (bare
+    ``أحمد بن محمد بن عيسى`` in an isnad, ``… الأشعري القمي`` in a biography). The
+    display is the LONGEST cleaned form attested (tie-broken by frequency), so the
+    record carries the full name as it exists in the books rather than the shortest
+    surface variant. A cluster whose entries are all bare stays bare (nothing fuller
+    exists to show).
+    """
+    counts = Counter(clean_name(e["full_name"]) for e in cluster if e.get("full_name"))
+    counts.pop("", None)
+    if not counts:
+        return ""
+    return max(counts, key=lambda name: (len(name.split()), counts[name]))
+
+
 def _combine_tradition(counter: Counter[str]) -> str:
     """Fold the traditions of a merged person's source buckets into one label; mixed sunni+shia is ``both``."""
     present = set(counter)
@@ -640,7 +657,7 @@ def build_person_tables(
                 pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
 
     for person_id, cluster, tradition in groups:
-        display = Counter(clean_name(e["full_name"]) for e in cluster).most_common(1)[0][0]
+        display = _fullest_name(cluster)
         row, cluster_edges, cluster_events, cluster_grades = _person_rows(
             person_id, cluster, tradition, display, pid_by_name, hist_events, grade_fn)
         persons.append(row)
