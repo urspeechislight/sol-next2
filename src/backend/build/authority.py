@@ -40,8 +40,9 @@ from typing import Any, Final
 import ijson
 
 from backend.build.grade_extract import deep_link, load_book_pages, validate_grade
+from backend.build.name_registry import clean_name, is_person_name
 from backend.build.transliterate import transliterate
-from backend.patterns import cached_compile, normalize_arabic
+from backend.patterns import normalize_arabic
 
 _ARABIC_SEP: Final[str] = "_Arabic_"
 _JSON_SUFFIX: Final[str] = ".json"
@@ -53,42 +54,12 @@ _KUNYA_LEADS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in ("أبو", "ابو", "أبي", "ابي", "أبا", "ابا", "أم", "ام", "ابن")
 )
 _NISBA_PREFIX: Final[str] = "ال"
-_PHRASE_TOKENS: Final[frozenset[str]] = frozenset(
-    normalize_arabic(w) for w in
-    ("عن", "من", "في", "بين", "إلى", "الى", "مع", "لم", "أخبار", "الجمع", "غير", "منسوب")
-)
-_KINSHIP_TOKENS: Final[frozenset[str]] = frozenset(
-    normalize_arabic(w) for w in
-    ("أخوه", "أخوها", "أخوهما", "أخوهم", "وأخوه", "وأخوهما", "وأخوهم", "أخته", "حفيده",
-     "حفيدها", "حفيدهما", "أبوه", "أبوها", "ابنه", "ابنها", "ابنته", "عمه", "وعمه", "عمته",
-     "جده", "جدها", "بنته", "زوجته", "زوجها", "مولاه", "تلميذه", "وتلميذه", "والده", "والدته")
-)
-_LINEAGE_TOKENS: Final[frozenset[str]] = frozenset(
-    normalize_arabic(w) for w in ("وأمه", "وأمها", "وأمهما", "وأبوه", "وأبوها", "وابنه")
-)
 _PROPHET_MARKERS: Final[frozenset[str]] = frozenset(
     normalize_arabic(w) for w in ("رسول الله", "النبي", "النبى")
 )
-_COMMENTARY_TOKENS: Final[frozenset[str]] = frozenset(
-    normalize_arabic(w) for w in
-    ("سمعت", "يقول", "ذلك", "توقف", "ضعفوا", "ضعف", "غمز", "يترك", "فيترك", "الترك", "أولى",
-     "مطلقا", "شاهدا", "جماعة", "القدماء", "المتأخرين", "هؤلاء", "منهم", "روى", "يروي", "يرويه")
-)
 _COMPANION_DEATH_MAX: Final[int] = 110
-_NOISE_LEADS: Final[frozenset[str]] = frozenset(
-    normalize_arabic(w) for w in
-    ("عن", "عنه", "عنهما", "ثم", "انتهى", "جزم", "لم", "أن", "قال", "اقتصر",
-     "سمعت", "روى", "وكان", "كان", "ذكر", "قلت", "قوله", "منه", "وقال", "فقال", "به")
-)
-_BOOK_LEADS: Final[tuple[str, ...]] = (
-    "الموطأ", "كتاب", "باب", "الجزء", "حديث", "مسند", "فصل", "الفهرست",
-    "رجال", "تاريخ", "طبقات", "الطبقات", "معجم",
-)
-_NON_HEAD: Final[frozenset[str]] = frozenset(normalize_arabic(w) for w in ("الله", "رسول", "النبي", "نبي"))
-_TX_STEM_RE = cached_compile(r"^(?:و|ف)?(?:حدث|اخبر|انبا)")
 
 _DISTINCTIVE_NAME_TOKENS: Final[int] = 4
-_MIN_SIGNIFICANT_TOKENS: Final[int] = 2
 _HISTORY_ID_BASE: Final[int] = 1_000_000
 _OVER_MERGE_ROOT_MAX: Final[int] = 2
 _OVER_MERGE_PLACE_MAX: Final[int] = 4
@@ -174,82 +145,9 @@ TABLES: Final[dict[str, str]] = {
 }
 
 
-def _transmission_forms() -> set[str]:
-    """The closed morphological class of isnad transmission verbs, generated not enumerated.
-
-    Each form is an optional wa-/fa- prefix, a haddatha/akhbara/anbaa stem, and a
-    subject/object pronoun suffix, plus the speech and riwaya verbs. A canonical
-    entry that leads with one of these is an isnad chain fragment, never a person.
-    """
-    stems = ("حدث", "أخبر", "أنبأ", "أنبا", "نبأ")
-    suffixes = ("", "نا", "ني", "ه", "هم", "ناه", "نيه", "هما", "تنا", "تني")
-    prefixes = ("", "و", "ف")
-    forms = {pre + stem + suf for pre in prefixes for stem in stems for suf in suffixes}
-    forms |= {"قال", "قاله", "قالها", "قالت", "قالوا", "قالا", "قالهما", "قلت", "قلنا", "قالوه",
-              "روى", "رواه", "رواها", "رواهما", "يروي", "يرويه", "يرويها", "نروي", "روينا",
-              "رويناه", "رويت", "أروي", "سمعت", "سمعته", "سمعنا", "سمعناه", "ثنا", "نا", "انا",
-              "ابنا", "أبنا", "قرأت", "قرأنا", "قرئ", "أنشدنا", "أنشدني", "ناوله", "وحدث", "وسمعت"}
-    return forms
-
-
-_JUNK_LEADS: Final[frozenset[str]] = frozenset(
-    _NOISE_LEADS | _NON_HEAD
-    | {normalize_arabic(w) for w in _transmission_forms()}
-    | {normalize_arabic(w) for w in _BOOK_LEADS}
-)
-
-
-def is_name(name: str) -> bool:
-    """A name-shaped token sequence usable for a teacher/student edge label."""
-    toks = normalize_arabic(name).split()
-    return bool(toks) and toks[0] not in _NOISE_LEADS and len([t for t in toks if t not in _LINKS]) >= _MIN_SIGNIFICANT_TOKENS
-
-
-def is_person_name(name: str) -> bool:
-    """A real person name: not a chain fragment, digit-led string, or a book/citation phrase.
-
-    A phrase token (a preposition or citation word such as عن / في / بين / أخبار)
-    marks a book title or matn fragment; a real name never contains one. This
-    keeps ``ism + nisba`` names that lack an explicit بن (عبد الله الرومي) while
-    dropping ``الجمع بين رجال الصحيحين`` and ``عيون أخبار الرضا``.
-    """
-    cropped = crop_name(name)
-    if not cropped or cropped[0].isdigit() or cropped[0] in "([":
-        return False
-    toks = normalize_arabic(cropped).split()
-    if not toks or toks[0] in _JUNK_LEADS or toks[0] == "بن" or _TX_STEM_RE.match(toks[0]):
-        return False
-    if any(t in _KINSHIP_TOKENS for t in toks):
-        return False
-    return len([t for t in toks if t not in _LINKS]) >= _MIN_SIGNIFICANT_TOKENS
-
-
 def clean_ws(name: str) -> str:
     """Collapse embedded newlines and runs of whitespace in a display name."""
     return " ".join(name.split())
-
-
-def crop_name(name: str) -> str:
-    """Crop a name at the first chain/citation token, dropping trailing isnad or book context.
-
-    ``فلان بن فلان عن علان`` becomes ``فلان بن فلان`` (a real person with a clean
-    name), while ``عيون أخبار الرضا`` crops to ``عيون`` and then fails the token
-    count in ``is_person_name`` (a book title, not a person). Leading list-item
-    dashes, slashes, and bullets are stripped first (``- أبو عبد الله`` and
-    ``/ إسماعيل`` become clean names).
-    """
-    surface = name.strip().lstrip("-–—•*/\\،").split()
-    norm = normalize_arabic(" ".join(surface)).split()
-    upto = min(len(surface), len(norm))
-    start = 0
-    while start < upto and norm[start] in _KINSHIP_TOKENS:
-        start += 1
-    cut = len(surface)
-    for i in range(start, upto):
-        if norm[i] in _PHRASE_TOKENS or norm[i] in _LINEAGE_TOKENS or norm[i] in _COMMENTARY_TOKENS:
-            cut = i
-            break
-    return " ".join(surface[start:cut])
 
 
 def reconcile_death(years: Counter[int]) -> tuple[int | None, bool]:
@@ -271,7 +169,7 @@ def reconcile_death(years: Counter[int]) -> tuple[int | None, bool]:
 
 def _name_root(name: str) -> tuple[str, ...]:
     """The ism + father core of a name (its first significant tokens), for identity grouping."""
-    significant = [t for t in normalize_arabic(crop_name(name)).split() if t not in _LINKS]
+    significant = [t for t in normalize_arabic(clean_name(name)).split() if t not in _LINKS]
     return tuple(significant[:_NAME_ROOT_TOKENS])
 
 
@@ -324,7 +222,7 @@ def _identity_parse(name: str) -> tuple[tuple[str, ...], bool]:
     entries across canonical buckets. A bare ism+father, a lone kunya, or a title (الشيخ) is NOT
     specific: those keys stay bucket-local so common names and honorifics never fuse into one person.
     """
-    toks = normalize_arabic(crop_name(name)).split()
+    toks = normalize_arabic(clean_name(name)).split()
     if not toks:
         return (), False
     j = _leading_unit(toks)
@@ -420,8 +318,8 @@ def _person_rows(
     nisbas = Counter(e["nisba"] for e in entries if e.get("nisba"))
     births = Counter(e["birth_year"] for e in entries if e.get("birth_year"))
     dyear, conflict = reconcile_death(Counter(e["death_year"] for e in entries if e.get("death_year")))
-    display = crop_name(display_name)
-    variants = list(dict.fromkeys(crop_name(e["full_name"]) for e in entries if e.get("full_name")))[:_MAX_VARIANTS]
+    display = clean_name(display_name)
+    variants = list(dict.fromkeys(clean_name(e["full_name"]) for e in entries if e.get("full_name")))[:_MAX_VARIANTS]
     graded = grade_fn(entries, display)
     reliability = list(dict.fromkeys(f"{g['evaluator']}={g['term']}" for g in graded))
     grades = [(pid, g["evaluator"], g["term"], g["book"], g["page"], g["link"]) for g in graded]
@@ -436,7 +334,7 @@ def _person_rows(
     edges: list[tuple[Any, ...]] = []
     for relation, field in (("teacher", "teacher_names"), ("student", "student_names")):
         for name in dict.fromkeys(n for e in entries for n in (e.get(field) or [])):
-            clean = crop_name(name)
+            clean = clean_name(name)
             clean_norm = normalize_arabic(clean)
             if is_person_name(name) and clean_norm != name_norm:
                 edges.append((pid, relation, clean, pid_by_name.get(clean_norm)))
@@ -627,15 +525,15 @@ def build_person_tables(
         pid += 1
         groups.append((pid, cluster, _combine_tradition(specific_tradition[key])))
         for entry in cluster:
-            pid_by_name[normalize_arabic(crop_name(entry["full_name"]))] = pid
+            pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
     for cluster, tradition in local_clusters:
         pid += 1
         groups.append((pid, cluster, tradition))
         for entry in cluster:
-            pid_by_name[normalize_arabic(crop_name(entry["full_name"]))] = pid
+            pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
 
     for person_id, cluster, tradition in groups:
-        display = Counter(crop_name(e["full_name"]) for e in cluster).most_common(1)[0][0]
+        display = Counter(clean_name(e["full_name"]) for e in cluster).most_common(1)[0][0]
         row, cluster_edges, cluster_events, cluster_grades = _person_rows(
             person_id, cluster, tradition, display, pid_by_name, hist_events, grade_fn)
         persons.append(row)
@@ -648,7 +546,7 @@ def build_person_tables(
         hid += 1
         record_events = list({(e.get("event"), e.get("event_type"), e.get("year_ah"), e.get("marker_keyword")): e
                               for e in record["events"]}.values())
-        display = crop_name(record["name"])
+        display = clean_name(record["name"])
         persons.append((hid, display, normalize_arabic(display), display,
                         record["kunya"], record["nisba"], None, record["death"], 0, "history", "",
                         "[]", "", "", 0, 0, 0, len(record_events), "", "history_person", "",
