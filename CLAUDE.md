@@ -83,10 +83,12 @@ opposite are blocked here.
 
 **Self-admitted corner-cuts.** A `band-aid`, `stopgap`, `kludge`, `quick fix`,
 `patchwork`, or anything you would label `for now` is not a fix. The
-`no_patchwork` gate (PATCH-001) blocks that vocabulary in `src/`, and the global
-proper-fix gate blocks the marker forms (`HACK`, `FIXME`, `workaround`). If you
-cannot do it properly now, stop and surface it instead of shipping the patch and
-naming it.
+`no_patchwork` gate (PATCH-001) blocks that vocabulary across the whole project,
+backend and frontend (`src/` and `frontend/src/`), and the global proper-fix
+gate blocks the marker forms (`HACK`, `FIXME`, `workaround`). If you cannot do
+it properly now, stop and surface it instead of shipping the patch and naming
+it. This applies to every fix in the project, in TypeScript as much as in
+Python.
 
 **Reactive blocklists.** When you filter or classify domain data, encode the
 STRUCTURAL rule that decides membership, never an enumeration of bad examples
@@ -107,6 +109,81 @@ in the code and keep it closed.
 A regex cannot tell a closed class from a growing patch pile. The push-time AI
 review (`scripts/cca_review.sh`) reads the diff for exactly this and fails a
 push that grows a reactive list without a structural justification.
+
+---
+
+## Reuse before you build (one implementation per capability)
+
+The single largest source of drift here is building a capability from scratch
+when one already exists. Before you write ANY capability, first look for an
+existing implementation and reuse or EXTEND it. This covers formatters, stores,
+data fetches, components, parsers, validators, vocabulary and label maps, types,
+and constants. A second implementation of an existing capability is forbidden;
+it is the same violation as a duplicate constant, only larger.
+
+The rule, in order:
+
+1. **Search first.** `git grep` the concept across BOTH `src/` and
+   `frontend/src/` before writing anything: the function name, the label text,
+   the type members, the endpoint, the constant value.
+2. **Reuse the canonical module.** If it exists, import from it. Never copy its
+   body into a new file.
+3. **Extend at the source.** If the capability needs a new case, a new label, a
+   new option, or a new sort mode, add that case IN the canonical module and
+   import it. Never fork a parallel copy. A new case is usually one edit in one
+   file.
+4. **Only then create.** Mint a new module only when nothing fits, and put it
+   where the map below says its kind belongs.
+
+The gates enforce the mechanical half: duplicate constants, string vocabularies,
+functions, and CSS are caught by `constant_sprawl` and its whole-repo partner
+`repo_wide_collisions`, by `DRY-001`, `css_duplication`, jscpd, and the frontend
+SSOT test. The AI review enforces the semantic half: it fails a diff that
+reimplements an existing capability in fresh code. This directive is the
+standard both enforce.
+
+**Where capabilities live. Consult this before building, and keep it current.**
+
+Backend (Python, `src/backend/`):
+
+- Constants live in `core/constants.py` as `CATEGORY__NAME`; env and settings in
+  `core/config.py` and `core/settings.py`.
+- Regex lives in the nearest `patterns.py`; ids in `core/ids.py`; HTTP status
+  via `starlette.status.HTTP_*`.
+- HTTP routes in `api/`; SQL and persistence in `repositories/` and `build/`;
+  auth in `auth/`.
+- Arabic normalization is `patterns.normalize_arabic`; transliteration is
+  `build/transliterate.py`.
+- Narrator name cleaning and validation is `build/name_registry.py`
+  (`clean_name`, `is_person_name`).
+- Name grammar, the ism/nasab/kunya/nisba decomposition, is
+  `build/mizan_names.py` (`decompose`).
+- Person corpus, identity clustering, and grades are `build/authority.py`.
+- Gazetteer and entity matching is `pipeline/gazetteer_match.py`.
+
+Frontend (TypeScript, `frontend/src/`):
+
+- Constants in `lib/constants.ts`; API and domain types, `Page<T>`, and
+  `emptyPage` in `lib/types.ts`.
+- Status to palette or label vocabulary in `lib/variants.ts` only (rule DS-004).
+- Design tokens for color, spacing, radii, shadow, and motion in
+  `lib/design-system/tokens.css` (rule DS-001).
+- Primitives and components (Button, Menu, Segmented, TitleLockup, ...) in
+  `lib/design-system/`.
+- API calls in `lib/api/client.ts`; URL and route paths in `lib/routes.ts`.
+- Number, date, and plural formatting in `lib/utils.ts` (`formatCount`,
+  `deathLabel`, ...); never a raw `toLocaleString()`.
+- Arabic text folding, normalization, and Arabic-Indic digits in `lib/arabic.ts`
+  and `lib/utils.ts`.
+- Paging in `lib/usePaged.ts`; hash routing in `lib/useHashRoute.ts`; theme and
+  history stores in `lib/useTheme.ts` and `lib/searchHistory.ts`.
+- Narrator vocabulary and labels (tradition, stance, generation) in
+  `features/narrators/labels.ts`.
+- Qurʾān sūra table and count in `lib/surahs.ts`; works sort and filter
+  vocabulary in `features/library/worksFilter.ts`.
+
+When you add a capability, add its home to this map so the next session finds it
+instead of building a second copy.
 
 ---
 

@@ -23,21 +23,23 @@ What gets blocked
 The closed confession vocabulary in ``_PATCHWORK_PATTERN`` covers band-aid,
 stopgap, kludge, duct-tape, patchwork, patch-job, quick-fix, quick-and-dirty,
 hacky, "good enough for now", matched whole-word and case-insensitive as a
-comment, string, or identifier anywhere in ``src/**``. Compound admissions
-allow an optional space or hyphen between halves so the spelling variants
-(band aid / band-aid / bandaid) collapse to one alternative. The list is a
-closed class of corner-cut admissions, not an open-ended keyword pile; it
-grows only if a genuinely new admission idiom appears, the same footing as
-the ``fallback`` ban.
+comment, string, or identifier anywhere in application source. Compound
+admissions allow an optional space or hyphen between halves so the spelling
+variants (band aid / band-aid / bandaid) collapse to one alternative. The list
+is a closed class of corner-cut admissions, not an open-ended keyword pile; it
+grows only if a genuinely new admission idiom appears, the same footing as the
+``fallback`` ban.
 
 Scope
 -----
 
-``src/**/*.{py,js,jsx,ts,tsx}`` only. ``scripts/`` is exempt so build and
-review tooling (``cca_review.sh`` names the pattern it hunts) can talk about
-patchwork; ``.claude/``, ``tests/``, and ``docs/`` are exempt so the harness,
-its tests, and the project's own documentation can name the banned words when
-enforcing, testing, or explaining them.
+Application source across the whole project: ``src/**`` (backend and pipeline
+Python) and ``frontend/src/**`` (the React app), for ``.{py,js,jsx,ts,tsx}``
+files. ``scripts/`` is exempt so build and review tooling (``cca_review.sh``
+names the pattern it hunts) can talk about patchwork; ``.claude/``, ``tests/``,
+and ``docs/`` are exempt so the harness, its tests, and the project's own
+documentation can name the banned words when enforcing, testing, or explaining
+them.
 """
 
 from __future__ import annotations
@@ -52,7 +54,7 @@ HANDLER = "no_patchwork"
 RULE_ID = "PATCH-001"
 DOC = "docs/quality-standards.md#no-patchwork"
 
-_APP_SOURCE_ROOT = "src"
+_APP_SOURCE_ROOTS: tuple[str, ...] = ("src", "frontend/src")
 _LANG_SUFFIXES: frozenset[str] = frozenset({"py", "js", "jsx", "ts", "tsx"})
 
 _PATCHWORK_PATTERN = re.compile(
@@ -94,12 +96,12 @@ def _find_admission(content: str) -> tuple[int, str, str] | None:
 
 
 def check(ctx: HookContext) -> Decision:
-    """Hard-block self-admitted patchwork vocabulary in src/."""
+    """Hard-block self-admitted patchwork vocabulary in application source."""
     if not ctx.is_write or ctx.new_content is None or ctx.file_path is None:
         return Decision.allow(HANDLER)
     if ctx.suffix not in _LANG_SUFFIXES:
         return Decision.allow(HANDLER)
-    if not paths.is_in(ctx.file_path, _APP_SOURCE_ROOT):
+    if not paths.is_in(ctx.file_path, *_APP_SOURCE_ROOTS):
         return Decision.allow(HANDLER)
 
     admission = _find_admission(ctx.new_content)

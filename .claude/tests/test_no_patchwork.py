@@ -66,6 +66,17 @@ def test_should_block_patchwork_admission_in_src(
     assert no_patchwork.check(_ctx(target, f"x = 1\n# {term}\n")).severity == "block"
 
 
+@pytest.mark.parametrize("rel", ["frontend/src/features/x.ts", "frontend/src/lib/y.tsx"])
+def test_should_block_patchwork_admission_in_frontend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, rel: str
+) -> None:
+    """The gate covers the frontend app source too, not only backend Python."""
+    repo = _repo(tmp_path, monkeypatch)
+    target = _target(repo, rel)
+    code = "export const clean = () => kludge();\n"
+    assert no_patchwork.check(_ctx(target, code)).severity == "block"
+
+
 def test_should_allow_clean_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Source with no admission vocabulary passes."""
     repo = _repo(tmp_path, monkeypatch)

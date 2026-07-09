@@ -74,6 +74,13 @@ cannot catch:
   or would need a "for now" to justify it.
 - Dead code: a function, constant, or branch the diff adds or leaves in place
   that nothing calls.
+- Reinvention: a formatter, component, store, parser, validator, vocabulary or
+  label map, type, or constant built from scratch when an equivalent already
+  exists in the repo. Reuse or extend the canonical module instead of forking a
+  second copy. Check the usual homes named in CLAUDE.md's capabilities map
+  (lib/utils, lib/design-system, lib/constants, lib/types, core/constants,
+  build/name_registry, build/mizan_names). Reusing what exists keeps the project
+  unified; a parallel implementation is a durability failure even when it works.
 Respond with a single line of JSON and nothing else:
 {"verdict":"pass"|"fail","blockers":["..."],"notes":["..."]}
 PROMPT

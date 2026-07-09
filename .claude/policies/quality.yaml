@@ -179,9 +179,9 @@ rules:
     handler: no_patchwork
     severity: block
     summary: |
-      Self-admitted patchwork vocabulary in src/ is blocked: band-aid, stopgap,
-      kludge, duct-tape, patchwork, patch-job, quick-fix, quick-and-dirty, hacky,
-      "good enough for now".
+      Self-admitted patchwork vocabulary in src/ and frontend/src/ is blocked:
+      band-aid, stopgap, kludge, duct-tape, patchwork, patch-job, quick-fix,
+      quick-and-dirty, hacky, "good enough for now".
     rationale: |
       A word that admits a corner-cut names a non-durable fix. Resolve the root
       cause and delete what it replaces; when filtering domain data, encode the
