@@ -286,7 +286,6 @@ export function getRijalEntry(id: number): Promise<RijalEntry> {
 export interface PersonParams {
   q?: string;
   tradition?: string;
-  stance?: string;
   confidence?: string;
   has_events?: boolean;
   limit?: number;
@@ -298,7 +297,6 @@ export function getPerson(params: PersonParams = {}): Promise<Page<PersonEntry>>
   const qs = query({
     q: params.q ?? '',
     tradition: params.tradition ?? '',
-    stance: params.stance ?? '',
     confidence: params.confidence ?? '',
     has_events: params.has_events ?? false,
     limit: params.limit ?? PAGE.defaultLimit,

@@ -157,7 +157,6 @@ export function personToRecord(e: PersonEntry): NarratorRecord {
     reliability_term: term ?? '',
     evaluator: evaluator ?? '',
     source_label: e.source_books.split(' | ')[0] ?? '',
-    stance: e.stance,
     origin: 'person',
   };
 }

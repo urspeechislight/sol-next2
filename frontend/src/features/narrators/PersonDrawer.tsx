@@ -1,5 +1,5 @@
 // PersonDrawer.tsx: the expandable detail panel under a person card. Lays out the
-// labelled identity (kunya, nisba, tradition, Ahl al-Bayt stance, generation), the
+// labelled identity (kunya, nisba, tradition, generation), the
 // full teacher/student lists, every reliability grade re-validated against its cited
 // source page (each a reader deep-link), the source works, and the biography.
 import { Card, Inline, Link, Stack, Text } from '../../lib/design-system';
@@ -7,7 +7,7 @@ import { getPersonEdges, getPersonGrades } from '../../lib/api/client';
 import { parseHash, readerHref } from '../../lib/routes';
 import type { PersonEdge, PersonEntry, PersonGrade } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
-import { generationLabel, residenceLabel, stanceHelp, stanceLabel, traditionLabel } from './labels';
+import { generationLabel, residenceLabel, traditionLabel } from './labels';
 import './PersonDrawer.css';
 
 /** A person's reader-opener: the app callback that opens the book at a page with
@@ -171,7 +171,6 @@ export function PersonDrawer({
   const all = edges.data ?? [];
   const teachers = all.filter((e) => e.relation === 'teacher');
   const students = all.filter((e) => e.relation === 'student');
-  const stanceValue = entry.stance ? stanceLabel(entry.stance) : 'Not evaluated in the sources';
   const died = entry.death_year
     ? `${entry.death_year} AH${entry.death_conflict ? ' (sources differ)' : ''}`
     : '';
@@ -189,11 +188,6 @@ export function PersonDrawer({
         arabic={Boolean(entry.nisba)}
       />
       <Fact label="Attested in" value={traditionLabel(entry.tradition)} />
-      <Fact
-        label="Ahl al-Bayt stance"
-        value={stanceValue}
-        help={entry.stance ? stanceHelp(entry.stance) : ''}
-      />
       <Fact label="Generation (ṭabaqa)" value={generationLabel(entry.generation)} />
       <Fact label="Died" value={died} />
       <Fact label="Residence" value={entry.places ? residenceLabel(entry.places) : ''} />

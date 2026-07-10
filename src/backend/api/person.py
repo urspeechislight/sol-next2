@@ -22,7 +22,6 @@ async def _list_person(
     page: PageDep,
     q: str = Query(default="", description="Substring match on name / kunya / nisba / variants."),
     tradition: str = Query(default="", description="Filter by tradition (sunni / shia / both)."),
-    stance: str = Query(default="", description="Filter by ahlulbayt stance."),
     confidence: str = Query(default="", description="Filter by record confidence (high / medium)."),
     has_events: bool = Query(default=False, description="Only persons with historical events."),
 ) -> Page[PersonEntry]:
@@ -34,7 +33,6 @@ async def _list_person(
             registry.PersonFilter(
                 q=q,
                 tradition=tradition,
-                stance=stance,
                 confidence=confidence,
                 has_events=has_events,
             ),

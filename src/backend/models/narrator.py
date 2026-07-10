@@ -58,7 +58,6 @@ class PersonEntry(NarratorBase):
     birth_year: int | None = Field(default=None, description="Birth year, Hijri, when known.")
     death_year: int | None = Field(default=None, description="Reconciled Hijri death year.")
     death_conflict: bool = Field(default=False, description="Sources disagree on the death year.")
-    stance: str = Field(default="", description="Position vis-a-vis ahlulbayt, when evaluated.")
     reliability: list[str] = Field(
         default_factory=list, description="Per-evaluator reliability grades (evaluator=term)."
     )

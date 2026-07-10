@@ -40,7 +40,6 @@ FROM person
 WHERE (:q = '' OR full_name LIKE :qlike OR kunya LIKE :qlike OR nisba LIKE :qlike
         OR name_variants LIKE :qlike)
   AND (:tradition = '' OR tradition = :tradition)
-  AND (:stance = '' OR stance = :stance)
   AND (:confidence = '' OR confidence = :confidence)
   AND (:has_events = 0 OR event_count > 0)
 """
@@ -118,7 +117,6 @@ class PersonFilter:
 
     q: str = ""
     tradition: str = ""
-    stance: str = ""
     confidence: str = ""
     has_events: bool = False
 
@@ -155,7 +153,6 @@ def list_person(
         "q": filters.q,
         "qlike": f"%{filters.q}%",
         "tradition": filters.tradition,
-        "stance": filters.stance,
         "confidence": filters.confidence,
         "has_events": int(filters.has_events),
     }

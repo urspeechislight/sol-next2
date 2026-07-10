@@ -1942,12 +1942,6 @@
             "title": "Source Books",
             "type": "string"
           },
-          "stance": {
-            "default": "",
-            "description": "Position vis-a-vis ahlulbayt, when evaluated.",
-            "title": "Stance",
-            "type": "string"
-          },
           "student_count": {
             "description": "Distinct recorded students (person_edge).",
             "minimum": 0.0,
@@ -3234,18 +3228,6 @@
               "default": "",
               "description": "Filter by tradition (sunni / shia / both).",
               "title": "Tradition",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Filter by ahlulbayt stance.",
-            "in": "query",
-            "name": "stance",
-            "required": false,
-            "schema": {
-              "default": "",
-              "description": "Filter by ahlulbayt stance.",
-              "title": "Stance",
               "type": "string"
             }
           },

@@ -8,7 +8,7 @@ import { Badge, Card, Heading, Inline, Stack, Text, UnstyledButton } from '../..
 import type { PersonEntry, RijalEntry } from '../../lib/types';
 import { joinDots } from '../../lib/utils';
 import { reliabilityBadge } from '../../lib/variants';
-import { generationLabel, residenceLabel, stanceLabel, traditionLabel } from './labels';
+import { generationLabel, residenceLabel, traditionLabel } from './labels';
 import { PersonDrawer } from './PersonDrawer';
 
 export type NarratorItem = RijalEntry | PersonEntry;
@@ -64,7 +64,6 @@ function PersonMeta({ entry }: { entry: PersonEntry }) {
           <span dir="rtl">{topGrade}</span>
         </Badge>
       ) : null}
-      {entry.stance ? <Badge>{stanceLabel(entry.stance)}</Badge> : null}
       <Text size="xs" tone="faint" font="mono">
         {facts}
       </Text>

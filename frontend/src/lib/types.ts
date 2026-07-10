@@ -127,7 +127,6 @@ export interface NarratorRecord {
   reliability_grade?: string | null;
   evaluator?: string | null;
   source_label?: string | null;
-  stance?: string | null;
   origin: 'rijal' | 'person';
 }
 

@@ -84,7 +84,6 @@ CREATE TABLE person (
   death_year     INTEGER,
   death_conflict INTEGER NOT NULL DEFAULT 0,
   tradition      TEXT NOT NULL DEFAULT '',
-  stance         TEXT NOT NULL DEFAULT '',
   reliability    TEXT NOT NULL DEFAULT '[]',
   places         TEXT NOT NULL DEFAULT '',
   source_books   TEXT NOT NULL DEFAULT '',
@@ -129,10 +128,10 @@ CREATE INDEX idx_grade_person ON person_grade (person_id);
 
 _PERSON_INSERT: Final[str] = (
     "INSERT INTO person (person_id, full_name, name_norm, name_variants, kunya, nisba,"
-    " birth_year, death_year, death_conflict, tradition, stance, reliability, places,"
+    " birth_year, death_year, death_conflict, tradition, reliability, places,"
     " source_books, n_sources, teacher_count, student_count, event_count, bio, confidence,"
     " generation, name_latin)"
-    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 )
 _EDGE_INSERT: Final[str] = "INSERT INTO person_edge (person_id, relation, name, other_person_id) VALUES (?,?,?,?)"
 _EVENT_INSERT: Final[str] = "INSERT INTO person_event (person_id, event, event_type, year_ah, role) VALUES (?,?,?,?,?)"
@@ -421,15 +420,6 @@ def _combine_tradition(counter: Counter[str]) -> str:
     return ""
 
 
-def _as_stance(value: Any) -> str:
-    """Coerce a raw stance entry (string or dict) to its stance token."""
-    if isinstance(value, str):
-        return value
-    if isinstance(value, dict):
-        return str(value.get("stance"))
-    return str(value)
-
-
 def _generation(categories: list[str], teacher_names: set[str], death_year: int | None) -> str:
     """Derive the narrator generation from source category tags and named teachers.
 
@@ -495,7 +485,6 @@ def _person_rows(
     graded = grade_fn(entries, display)
     reliability = list(dict.fromkeys(f"{g['evaluator']}={g['term']}" for g in graded))
     grades = [(pid, g["evaluator"], g["term"], g["book"], g["page"], g["link"]) for g in graded]
-    stance = Counter(_as_stance(s) for e in entries for s in (e.get("stance") or []))
     places = list(dict.fromkeys(loc if isinstance(loc, str) else str(loc)
                                 for e in entries for loc in (e.get("locations") or [])))
     src = list(dict.fromkeys(e["source"].get("title") for e in entries if e.get("source")))
@@ -512,7 +501,6 @@ def _person_rows(
                 edges.append((pid, relation, clean, pid_by_name.get(clean_norm)))
     teacher_count = sum(1 for edge in edges if edge[1] == "teacher")
     student_count = sum(1 for edge in edges if edge[1] == "student")
-    stance_out = "" if over_merged else (stance.most_common(1)[0][0] if stance else "")
     generation = _generation([c for e in entries for c in (e.get("categories") or [])],
                              {n for e in entries for n in (e.get("teacher_names") or [])}, dyear)
     matched = _matched_events(name_norm, dyear, hist_events)
@@ -525,7 +513,7 @@ def _person_rows(
            kunyas.most_common(1)[0][0] if kunyas else "",
            nisbas.most_common(1)[0][0] if nisbas else "",
            births.most_common(1)[0][0] if births else None, dyear, int(conflict),
-           tradition or "", stance_out,
+           tradition or "",
            json.dumps(reliability[:_MAX_RELIABILITY], ensure_ascii=False),
            " | ".join(places[:_MAX_PLACES]), " | ".join(str(s) for s in src[:_MAX_SOURCE_BOOKS]),
            len(entries), teacher_count, student_count, len(matched), bio[:_MAX_BIO_CHARS],
@@ -645,7 +633,7 @@ def build_person_tables(
 
     ``history_path`` is the optional 3.4 GB history corpus. When absent, persons
     carry no events and no history-only actors are added; the rijal enrichment
-    (kunya, death, reliability, stance, edges) is built either way. ``books_dir`` roots
+    (kunya, death, reliability, edges) is built either way. ``books_dir`` roots
     the source books (``sol-next``'s ``data/books``) so every reliability grade can be
     re-validated against its cited source page before it is served.
     """

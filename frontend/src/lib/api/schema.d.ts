@@ -1965,12 +1965,6 @@ export interface components {
              */
             source_books: string;
             /**
-             * Stance
-             * @description Position vis-a-vis ahlulbayt, when evaluated.
-             * @default
-             */
-            stance: string;
-            /**
              * Student Count
              * @description Distinct recorded students (person_edge).
              */
@@ -2810,8 +2804,6 @@ export interface operations {
                 q?: string;
                 /** @description Filter by tradition (sunni / shia / both). */
                 tradition?: string;
-                /** @description Filter by ahlulbayt stance. */
-                stance?: string;
                 /** @description Filter by record confidence (high / medium). */
                 confidence?: string;
                 /** @description Only persons with historical events. */
