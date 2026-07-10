@@ -363,33 +363,44 @@ def _split_by_death(cluster: list[dict[str, Any]]) -> list[list[dict[str, Any]]]
     return death_clusters
 
 
-def _cluster_by_full_name(entries: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
-    """Separate distinct men who share a nasab but differ in their fuller name.
+def _cluster_by_full_name(
+    entries: list[dict[str, Any]],
+) -> tuple[list[list[dict[str, Any]]], list[list[dict[str, Any]]]]:
+    """Separate distinct men who share a nasab but differ in their fuller name, and
+    set aside the bare-name occurrences that cannot be attributed to any of them.
 
     A shorter name merges into a longer one only when it is that longer name's
     unambiguous token-prefix, so surface-variant records of one man collapse
     (``…عيسى`` into ``…عيسى الأشعري القمي``) while two incompatible tails stay apart
-    (``الأشعري`` vs ``العلوي الحسيني``). A bare prefix shared by several longer names
-    is too ambiguous to attribute to any of them and forms its own person. The
-    by-name split is then re-merged where a shared death year or teachers show that
-    two nisba-different clusters are actually one man (``_remerge_corroborating``).
+    (``الأشعري`` vs ``العلوي الحسيني``). A bare form that prefixes SEVERAL distinct
+    names is un-attributable: isnād chains abbreviate a narrator to his short name
+    (``أحمد بن محمد بن عيسى``, shared by ~20 different men), so pooling those
+    occurrences into a biographical person fuses distinct men and starves the
+    nisba-distinguished records. Such bare-ambiguous occurrences are returned
+    separately, to be served as a low-confidence "bare mention" record rather than a
+    biography. The attributed by-name clusters are then re-merged where a shared
+    death year or teachers show two nisba-different clusters are one man
+    (``_remerge_corroborating``). Returns ``(attributed, unattributed)``.
     """
     by_full: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
     for entry in entries:
         by_full[_identity_tokens(entry.get("full_name") or "")].append(entry)
     by_full.pop((), None)
     if not by_full:
-        return [entries]
+        return [entries], []
     reps: list[tuple[str, ...]] = []
     clusters: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+    unattributed: list[list[dict[str, Any]]] = []
     for full in sorted(by_full, key=len, reverse=True):
         containers = [rep for rep in reps if rep[: len(full)] == full]
         if len(containers) == 1:
             clusters[containers[0]].extend(by_full[full])
+        elif len(containers) > 1:
+            unattributed.append(by_full[full])
         else:
             reps.append(full)
             clusters[full] = list(by_full[full])
-    return _remerge_corroborating(list(clusters.values()))
+    return _remerge_corroborating(list(clusters.values())), unattributed
 
 
 def _fullest_name(cluster: list[dict[str, Any]]) -> str:
@@ -466,6 +477,7 @@ def _person_rows(
     pid_by_name: dict[str, int],
     hist_events: dict[str, list[tuple[dict[str, Any], int | None]]],
     grade_fn: Callable[[list[dict[str, Any]], str], list[dict[str, Any]]],
+    unattributed: bool,
 ) -> tuple[tuple[Any, ...], list[tuple[Any, ...]], list[tuple[Any, ...]], list[tuple[Any, ...]]]:
     """Aggregate one person's entries into (person row, edge rows, event rows, grade rows).
 
@@ -490,7 +502,11 @@ def _person_rows(
     src = list(dict.fromkeys(e["source"].get("title") for e in entries if e.get("source")))
     bio = max((e.get("bio_text") or "" for e in entries), key=len, default="")
     over_merged = is_over_merge(entries)
-    confidence = "low" if over_merged else ("high" if (kunyas or nisbas) and dyear else "medium")
+    confidence = (
+        "low"
+        if (unattributed or over_merged)
+        else ("high" if (kunyas or nisbas) and dyear else "medium")
+    )
     name_norm = normalize_arabic(display)
     edges: list[tuple[Any, ...]] = []
     for relation, field in (("teacher", "teacher_names"), ("student", "student_names")):
@@ -678,28 +694,37 @@ def build_person_tables(
             else:
                 local_clusters.append((cluster, tradition))
 
-    groups: list[tuple[int, list[dict[str, Any]], str]] = []
+    groups: list[tuple[int, list[dict[str, Any]], str, bool]] = []
     pid_by_name: dict[str, int] = {}
     pid = 0
+
+    def _emit_group(subcluster: list[dict[str, Any]], tradition: str, unattributed: bool) -> None:
+        """Assign a person id to a subcluster, record it, and index its names."""
+        nonlocal pid
+        pid += 1
+        groups.append((pid, subcluster, tradition, unattributed))
+        for entry in subcluster:
+            pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
+
     for key, cluster in specific_buckets.items():
         tradition = _combine_tradition(specific_tradition[key])
-        for subcluster in _cluster_by_full_name(cluster):
-            pid += 1
-            groups.append((pid, subcluster, tradition))
-            for entry in subcluster:
-                pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
+        attributed, unattributed_clusters = _cluster_by_full_name(cluster)
+        for subcluster in attributed:
+            _emit_group(subcluster, tradition, unattributed=False)
+        for subcluster in unattributed_clusters:
+            _emit_group(subcluster, tradition, unattributed=True)
     for cluster, tradition in local_clusters:
-        for named in _cluster_by_full_name(cluster):
+        attributed, unattributed_clusters = _cluster_by_full_name(cluster)
+        for named in attributed:
             for subcluster in _split_by_death(named):
-                pid += 1
-                groups.append((pid, subcluster, tradition))
-                for entry in subcluster:
-                    pid_by_name[normalize_arabic(clean_name(entry["full_name"]))] = pid
+                _emit_group(subcluster, tradition, unattributed=False)
+        for subcluster in unattributed_clusters:
+            _emit_group(subcluster, tradition, unattributed=True)
 
-    for person_id, cluster, tradition in groups:
+    for person_id, cluster, tradition, unattributed in groups:
         display = _fullest_name(cluster)
         row, cluster_edges, cluster_events, cluster_grades = _person_rows(
-            person_id, cluster, tradition, display, pid_by_name, hist_events, grade_fn)
+            person_id, cluster, tradition, display, pid_by_name, hist_events, grade_fn, unattributed)
         persons.append(row)
         edges.extend(cluster_edges)
         events.extend(cluster_events)

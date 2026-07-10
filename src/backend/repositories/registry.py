@@ -46,7 +46,9 @@ WHERE (:q = '' OR full_name LIKE :qlike OR kunya LIKE :qlike OR nisba LIKE :qlik
 
 _PERSON_COUNT = "SELECT COUNT(*) " + _PERSON_FILTER
 _PERSON_PAGE = (
-    "SELECT * " + _PERSON_FILTER + " ORDER BY n_sources DESC, person_id LIMIT :limit OFFSET :offset"
+    "SELECT * "
+    + _PERSON_FILTER
+    + " ORDER BY (confidence = 'low'), n_sources DESC, person_id LIMIT :limit OFFSET :offset"
 )
 
 _PERSON_EDGES = (

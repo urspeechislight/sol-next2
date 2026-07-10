@@ -10,22 +10,24 @@ def _entries(*names: str) -> list[dict[str, str]]:
 
 
 def test_should_split_nasab_by_tail() -> None:
-    """Same nasab, incompatible nisbas -> separate men; prefix variants collapse."""
+    """Same nasab, incompatible nisbas separate; prefix variants collapse; the bare
+    form that prefixes several is un-attributable, returned in the second list."""
     entries = _entries(
         "أحمد بن محمد بن عيسى الأشعري القمي",
         "أحمد بن محمد بن عيسى الأشعري",
         "أحمد بن محمد بن عيسى العلوي الحسيني",
         "أحمد بن محمد بن عيسى",
     )
-    clusters = _cluster_by_full_name(entries)
-    names = {tuple(sorted(e["full_name"] for e in c)) for c in clusters}
-    assert len(clusters) == 3
+    attributed, unattributed = _cluster_by_full_name(entries)
+    names = {tuple(sorted(e["full_name"] for e in c)) for c in attributed}
+    assert len(attributed) == 2
     assert (
         "أحمد بن محمد بن عيسى الأشعري",
         "أحمد بن محمد بن عيسى الأشعري القمي",
     ) in names
     assert ("أحمد بن محمد بن عيسى العلوي الحسيني",) in names
-    assert ("أحمد بن محمد بن عيسى",) in names
+    assert len(unattributed) == 1
+    assert unattributed[0][0]["full_name"] == "أحمد بن محمد بن عيسى"
 
 
 def test_should_merge_name_prefixes() -> None:
@@ -35,7 +37,7 @@ def test_should_merge_name_prefixes() -> None:
         "سفيان بن عيينة الهلالي",
         "سفيان بن عيينة الهلالي الكوفي",
     )
-    assert len(_cluster_by_full_name(entries)) == 1
+    assert len(_cluster_by_full_name(entries)[0]) == 1
 
 
 def test_should_crop_waw_co_narrator() -> None:
@@ -44,8 +46,8 @@ def test_should_crop_waw_co_narrator() -> None:
         "أحمد بن محمد بن عيسى الأشعري",
         "أحمد بن محمد بن عيسى وسهل بن زياد",
     )
-    clusters = _cluster_by_full_name(entries)
-    assert len(clusters) == 1
+    attributed, _ = _cluster_by_full_name(entries)
+    assert len(attributed) == 1
 
 
 def test_should_remerge_one_mans_nisbas() -> None:
@@ -54,7 +56,7 @@ def test_should_remerge_one_mans_nisbas() -> None:
         {"full_name": "سفيان بن عيينة الهلالي", "teacher_names": ["الزهري", "عمرو بن دينار"]},
         {"full_name": "سفيان بن عيينة الكوفي", "teacher_names": ["الزهري", "عمرو بن دينار"]},
     ]
-    assert len(_cluster_by_full_name(entries)) == 1
+    assert len(_cluster_by_full_name(entries)[0]) == 1
 
 
 def test_should_keep_distinct_men_apart() -> None:
@@ -63,7 +65,7 @@ def test_should_keep_distinct_men_apart() -> None:
         {"full_name": "أحمد بن محمد بن عيسى الأشعري", "teacher_names": ["الحسين بن سعيد"]},
         {"full_name": "أحمد بن محمد بن عيسى العلوي", "teacher_names": ["إبراهيم بن هاشم"]},
     ]
-    assert len(_cluster_by_full_name(entries)) == 2
+    assert len(_cluster_by_full_name(entries)[0]) == 2
 
 
 def _dated(death: int | None, teachers: tuple[str, ...] = ()) -> dict[str, object]:
@@ -100,3 +102,22 @@ def test_should_pool_an_unplaceable_undated_entry_as_a_residual() -> None:
     """An undated entry matching no dated person's teachers becomes its own residual."""
     cluster = [_dated(100, ("أ",)), _dated(400, ("ب",)), _dated(None, ("ج",))]
     assert len(_split_by_death(cluster)) == 3
+
+
+def test_should_leave_a_bare_name_prefixing_several_men_unattributed() -> None:
+    """The isnād short form shared by several nisba-distinguished men is not fused
+    into a biography: the nisba records are attributed, the bare pool is set aside."""
+    entries = _entries(
+        "أحمد بن محمد بن عيسى الأشعري القمي",
+        "أحمد بن محمد بن عيسى البرتي",
+        "أحمد بن محمد بن عيسى",
+        "أحمد بن محمد بن عيسى",
+        "أحمد بن محمد بن عيسى",
+    )
+    attributed, unattributed = _cluster_by_full_name(entries)
+    assert {c[0]["full_name"] for c in attributed} == {
+        "أحمد بن محمد بن عيسى الأشعري القمي",
+        "أحمد بن محمد بن عيسى البرتي",
+    }
+    assert len(unattributed) == 1
+    assert len(unattributed[0]) == 3
