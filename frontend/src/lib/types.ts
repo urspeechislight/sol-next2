@@ -38,6 +38,10 @@ export type PersonEntry = Full<S['PersonEntry']>;
 export type PersonEdge = Full<S['PersonEdge']>;
 export type PersonGrade = Full<S['PersonGrade']>;
 
+// ---- health (GET /api/health): the subsystem heartbeat ----
+export type HealthReport = Full<S['HealthReport']>;
+export type HealthCheck = Full<S['HealthCheck']>;
+
 // ---- catalog + taxonomy (GET /api/books, /api/domains) ----
 export type Book = Full<S['Book']>;
 export type Category = Full<S['Category']>;

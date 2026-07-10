@@ -16,11 +16,13 @@ from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from backend import health
 from backend.api import api_router
 from backend.core.errors import ResourceNotFoundError
 from backend.core.http import status
 from backend.core.logging import configure_logging, get_logger
 from backend.core.settings import get_settings
+from backend.models.health import HealthReport
 
 
 async def _not_found(_request: Request, exc: Exception) -> JSONResponse:
@@ -80,6 +82,15 @@ def create_app() -> FastAPI:
     app.add_exception_handler(ResourceNotFoundError, _not_found)
     app.include_router(_health_router)
     app.include_router(api_router, prefix="/api")
+    app.add_api_route(
+        "/api/health",
+        health.health,
+        methods=["GET"],
+        response_model=HealthReport,
+        status_code=status.HTTP_200_OK,
+        summary="Probe each major subsystem; ok when all pass, else degraded.",
+        tags=["health"],
+    )
     return app
 
 

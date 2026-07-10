@@ -1,0 +1,20 @@
+.health-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.health-dot--ok {
+  background: var(--color-success);
+}
+
+.health-dot--degraded {
+  background: var(--color-warning);
+}
+
+.health-dot--offline {
+  background: var(--color-danger);
+}

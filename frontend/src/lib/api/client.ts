@@ -16,6 +16,7 @@ import type {
   ExtractionBookSummary,
   ExtractionEntryAudit,
   ExtractionPage,
+  HealthReport,
   Page,
   PersonEdge,
   PersonEntry,
@@ -64,6 +65,13 @@ function query(params: Record<string, QueryValue>): string {
   }
   const qs = search.toString();
   return qs ? `?${qs}` : '';
+}
+
+// ---- health (the heartbeat polls this) ----
+
+/** Probe every major subsystem; used by the 5-second heartbeat. */
+export function getHealth(): Promise<HealthReport> {
+  return get<HealthReport>(API.HEALTH);
 }
 
 // ---- catalog + taxonomy ----

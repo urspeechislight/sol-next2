@@ -315,6 +315,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Probe each major subsystem; ok when all pass, else degraded.
+         * @description Probe every subsystem and report per-subsystem status; returns 200 either way.
+         */
+        get: operations["health_api_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/person": {
         parameters: {
             query?: never;
@@ -1587,6 +1607,44 @@ export interface components {
             urn?: string | null;
         };
         /**
+         * HealthCheck
+         * @description One subsystem's probe result.
+         */
+        HealthCheck: {
+            /**
+             * Error
+             * @description Failure detail when the probe raised.
+             * @default
+             */
+            error: string;
+            /**
+             * Name
+             * @description The subsystem probed (domains, books, rijal, ...).
+             */
+            name: string;
+            /**
+             * Ok
+             * @description True when the probe read succeeded.
+             */
+            ok: boolean;
+        };
+        /**
+         * HealthReport
+         * @description The aggregate result: ``ok`` only when every subsystem answered.
+         */
+        HealthReport: {
+            /**
+             * Checks
+             * @description Per-subsystem probe results.
+             */
+            checks: components["schemas"]["HealthCheck"][];
+            /**
+             * Status
+             * @description 'ok' when every check passed, else 'degraded'.
+             */
+            status: string;
+        };
+        /**
          * HistoryEvent
          * @description One chronicle entry keyed to a Hijri month + day.
          */
@@ -2793,6 +2851,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Domain"][];
+                };
+            };
+        };
+    };
+    health_api_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthReport"];
                 };
             };
         };

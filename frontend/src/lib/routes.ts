@@ -8,6 +8,7 @@ import { fromBase64Url, toBase64Url } from './utils';
 
 export const API = {
   BASE: '/api',
+  HEALTH: '/health',
   RIJAL: '/rijal',
   PERSON: '/person',
   BOOKS: '/books',

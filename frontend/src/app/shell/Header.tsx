@@ -5,6 +5,7 @@ import type { MenuOption } from '../../lib/design-system';
 import type { SearchScope } from '../../lib/api/client';
 import { viewHref } from '../../lib/routes';
 import { useTheme } from '../../lib/useTheme';
+import { HealthDot } from './HealthDot';
 import { SearchHistoryMenu } from './SearchHistoryMenu';
 import { NAV, type NavView } from './nav';
 import './Header.css';
@@ -124,6 +125,7 @@ export function Header({
           }}
         />
       </div>
+      <HealthDot />
       <Button
         variant="ghost"
         size="sm"

@@ -1408,6 +1408,51 @@
         "title": "HadithSource",
         "type": "object"
       },
+      "HealthCheck": {
+        "description": "One subsystem's probe result.",
+        "properties": {
+          "error": {
+            "default": "",
+            "description": "Failure detail when the probe raised.",
+            "title": "Error",
+            "type": "string"
+          },
+          "name": {
+            "description": "The subsystem probed (domains, books, rijal, ...).",
+            "title": "Name",
+            "type": "string"
+          },
+          "ok": {
+            "description": "True when the probe read succeeded.",
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "ok"],
+        "title": "HealthCheck",
+        "type": "object"
+      },
+      "HealthReport": {
+        "description": "The aggregate result: ``ok`` only when every subsystem answered.",
+        "properties": {
+          "checks": {
+            "description": "Per-subsystem probe results.",
+            "items": {
+              "$ref": "#/components/schemas/HealthCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "status": {
+            "description": "'ok' when every check passed, else 'degraded'.",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["status", "checks"],
+        "title": "HealthReport",
+        "type": "object"
+      },
       "HistoryEvent": {
         "description": "One chronicle entry keyed to a Hijri month + day.",
         "properties": {
@@ -3200,6 +3245,26 @@
         },
         "summary": "List all knowledge domains and their categories.",
         "tags": ["domains"]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "description": "Probe every subsystem and report per-subsystem status; returns 200 either way.",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Probe each major subsystem; ok when all pass, else degraded.",
+        "tags": ["health"]
       }
     },
     "/api/person": {
