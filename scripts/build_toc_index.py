@@ -9,6 +9,10 @@ letter-section or numbered-entry structure are written to
 the scraped TOC (``repositories.reader.try_get_toc``). Books with no clean
 structure are left out; the reader keeps serving their scraped TOC or absence.
 
+Curated per-book overrides in ``data/toc_overrides.json`` (``backend.build.toc_overrides``)
+are merged last and win over synthesis, for books whose real TOC the body does not
+spell out in a detectable form.
+
 Run on titan::
 
     uv run python scripts/build_toc_index.py
@@ -21,10 +25,11 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
-from backend.build import toc_synth
+from backend.build import toc_overrides, toc_synth
 from backend.core.constants import (
     ARTIFACT__BOOKS_INDEX,
     ARTIFACT__TOC_INDEX,
+    ARTIFACT__TOC_OVERRIDES,
     TOC_SYNTH__MIN_CONTENT_PAGES,
     TOC_SYNTH__SCRAPED_SPARSE_MAX,
 )
@@ -61,6 +66,15 @@ def _load_doc(path: Path) -> dict[str, Any]:
     return cast(dict[str, Any], doc)
 
 
+def _curated_index() -> dict[str, dict[str, Any]]:
+    """Load and validate the curated per-book TOC overrides, or {} when absent."""
+    path = data_path(ARTIFACT__TOC_OVERRIDES)
+    if not path.exists():
+        return {}
+    source = json.loads(path.read_text(encoding="utf-8"))
+    return toc_overrides.curated_index(source)
+
+
 def _build(out: Path) -> dict[str, int]:
     """Synthesize TOCs for empty/garbage-TOC books and write the override index."""
     books_dir = get_settings().books_dir.resolve()
@@ -84,6 +98,9 @@ def _build(out: Path) -> dict[str, int]:
             continue
         index[urn] = {"source": result["method"], "entries": result["entries"]}
         counts[result["method"]] += 1
+    curated = _curated_index()
+    index.update(curated)
+    counts["curated"] = len(curated)
     out.write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
     return {"books": len(index), **counts}
 

@@ -81,6 +81,7 @@ ARTIFACT__REGISTRY_DB: Final[str] = "registry.db"
 ARTIFACT__CITATIONS_DB: Final[str] = "citations.db"
 ARTIFACT__BOOKS_INDEX: Final[str] = "books_index.json"
 ARTIFACT__TOC_INDEX: Final[str] = "toc_index.json"
+ARTIFACT__TOC_OVERRIDES: Final[str] = "toc_overrides.json"
 
 TOC_SYNTH__LETTER_MIN: Final[int] = 3
 TOC_SYNTH__NUMBERED_MIN: Final[int] = 10
