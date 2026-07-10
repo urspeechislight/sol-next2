@@ -641,6 +641,21 @@ def _grade_validator(
     return validate
 
 
+def _history_only_row(hid: int, record: dict[str, Any], event_count: int) -> tuple[Any, ...]:
+    """Assemble the person row for a history-corpus actor that has no rijal entry.
+
+    A dedicated builder so the column order stays a single positional literal that
+    mirrors ``_PERSON_INSERT`` exactly (``test_should_build_a_history_person_row``
+    pins its arity). History actors carry no reliability, sources, or edges; their
+    confidence is the fixed ``history_person`` marker rather than an evidence grade.
+    """
+    display = clean_name(record["name"])
+    return (hid, display, normalize_arabic(display), display,
+            record["kunya"], record["nisba"], None, record["death"], 0, "history",
+            "[]", "", "", 0, 0, 0, event_count, "", "history_person", "",
+            transliterate(display))
+
+
 def build_person_tables(
     con: sqlite3.Connection, canonical_path: Path, corpus_path: Path, history_path: Path | None,
     books_dir: Path,
@@ -735,11 +750,7 @@ def build_person_tables(
         hid += 1
         record_events = list({(e.get("event"), e.get("event_type"), e.get("year_ah"), e.get("marker_keyword")): e
                               for e in record["events"]}.values())
-        display = clean_name(record["name"])
-        persons.append((hid, display, normalize_arabic(display), display,
-                        record["kunya"], record["nisba"], None, record["death"], 0, "history", "",
-                        "[]", "", "", 0, 0, 0, len(record_events), "", "history_person", "",
-                        transliterate(display)))
+        persons.append(_history_only_row(hid, record, len(record_events)))
         for ev in record_events:
             events.append((hid, ev.get("event") or "", ev.get("event_type") or "",
                            ev.get("year_ah") if isinstance(ev.get("year_ah"), int) else None,

@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from backend.build.authority import _cluster_by_full_name, _split_by_death
+from backend.build.authority import (
+    _PERSON_INSERT,
+    _cluster_by_full_name,
+    _history_only_row,
+    _split_by_death,
+)
 
 
 def _entries(*names: str) -> list[dict[str, str]]:
@@ -121,3 +126,11 @@ def test_should_leave_a_bare_name_prefixing_several_men_unattributed() -> None:
     }
     assert len(unattributed) == 1
     assert len(unattributed[0]) == 3
+
+
+def test_should_build_a_history_person_row_with_the_person_insert_arity() -> None:
+    """A history-only actor row must supply exactly one value per person INSERT column,
+    so removing a column (as the stance removal did) can never again orphan a value."""
+    record = {"name": "المعتصم بالله", "kunya": "", "nisba": "", "death": 227, "events": []}
+    row = _history_only_row(1, record, 0)
+    assert len(row) == _PERSON_INSERT.count("?")
