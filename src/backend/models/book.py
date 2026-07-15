@@ -68,3 +68,11 @@ class Book(BibRecord):
     madhab: str | None = Field(default=None, description="Madhab when applicable.")
     language: str = Field(default="Arabic", description="Primary language of the text.")
     blurb: str | None = Field(default=None, description="One-sentence editorial summary, if any.")
+    foundational: bool = Field(
+        default=False,
+        description='True when the token "foundational" is among the source frontmatter tags.',
+    )
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Tags parsed from the comma-separated frontmatter tag string.",
+    )

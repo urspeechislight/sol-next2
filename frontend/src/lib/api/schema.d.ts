@@ -776,6 +776,12 @@ export interface components {
              */
             death_year_ce?: number | null;
             /**
+             * Foundational
+             * @description True when the token "foundational" is among the source frontmatter tags.
+             * @default false
+             */
+            foundational: boolean;
+            /**
              * Language
              * @description Primary language of the text.
              * @default Arabic
@@ -796,6 +802,11 @@ export interface components {
              * @description Sect tagging (Imami, Sunni, etc.).
              */
             sect?: string | null;
+            /**
+             * Tags
+             * @description Tags parsed from the comma-separated frontmatter tag string.
+             */
+            tags?: string[];
             /**
              * Title Ar
              * @description Arabic title.

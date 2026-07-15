@@ -144,6 +144,21 @@ def _normalize_death_year(raw: Any) -> int | None:
     return year
 
 
+def _parse_tags(raw: Any) -> list[str]:
+    """Split the comma-joined Arabic tags string into a tidy, non-empty list.
+
+    Frontmatter ``tags`` is one string joining tag phrases with the Arabic
+    comma (U+060C); a plain comma is tolerated too. Empty fragments are
+    dropped so a trailing separator never yields a phantom tag, and a
+    non-string value returns an empty list rather than a fabricated tag.
+    """
+    if not isinstance(raw, str):
+        return []
+    joined = raw.replace("\u060c", ",")
+    parts = [p.strip() for p in joined.split(",")]
+    return [p for p in parts if p]
+
+
 def _book_from_frontmatter(fm: dict[str, Any], category: str, urn: str) -> Book | None:
     """Build a ``Book`` from a frontmatter dict. Returns None if unusable.
 
@@ -154,6 +169,7 @@ def _book_from_frontmatter(fm: dict[str, Any], category: str, urn: str) -> Book 
     title_ar = _opt_str(fm.get("title")) or _opt_str(fm.get("short_title"))
     if not title_ar:
         return None
+    tags = _parse_tags(fm.get("tags"))
     return Book(
         urn=urn,
         title_ar=title_ar,
@@ -170,6 +186,8 @@ def _book_from_frontmatter(fm: dict[str, Any], category: str, urn: str) -> Book 
         canonical=_normalize_canonical(fm.get("canonical_status")),
         language=_opt_str(fm.get("language_en")) or "Arabic",
         blurb=None,
+        tags=tags,
+        foundational=any(t.casefold() == "foundational" for t in tags),
     )
 
 
