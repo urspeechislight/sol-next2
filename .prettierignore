@@ -50,3 +50,8 @@ config/sol.yaml
 # Vendored/shared agent skills, symlinked in from the global skills library.
 # They are not project-owned source; don't reformat them.
 .agents/skills/**
+
+# TOC overrides for corpus works — produced by the reader TOC-detection
+# pipeline (Shamela-benchmarked, edition-aware overrides). Not hand-edited;
+# formatting is irrelevant, same as books_index.json and quran_morphology.json.
+data/toc_overrides.json
