@@ -1,8 +1,18 @@
 # ADR-0002: The absorbed producer role, the artifact seam, and the rule split
 
 Date: 2026-07-02
-Status: Accepted
+Status: Accepted, with a noted divergence (2026-07-03) — see update below.
 Supersedes: extends ADR-0001 (storage contract)
+
+> **Update (2026-07-03).** `data/citations.db` (the Qurʾān-citation sidecar
+> served by `src/backend/repositories/citations.py`) is a second producer:
+> it's built by a one-off script living outside this repo
+> (`~/sol-quran-citation-audit-20260703/build_sidecar.py`), not by
+> `backend/build/`. The "one seam, both directions" decision below still holds
+> for the pipeline ↔ serving boundary; it does not yet account for externally
+> produced sidecar artifacts dropped into `data/`. Revisit if a second such
+> sidecar appears — that's the signal to fold sidecar production into
+> `backend/build/` or write a formal artifact-import contract.
 
 ## Context
 

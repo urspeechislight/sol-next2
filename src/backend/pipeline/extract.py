@@ -169,7 +169,7 @@ def _extract_span(span: Span, run: _ExtractRun, unit_counter: int) -> int:
     if not units and span.text.strip():
         raise ExtractError(f"Span {span.span_id} produced zero units")
     if span.footnote_text:
-        for fn_number, fn_text in split_footnote_entries(span.footnote_text):
+        for fn_number, fn_text in split_footnote_entries(span.footnote_text, context=span.span_id):
             fn_unit_id = HADITH__UNIT_ID_FORMAT.format(
                 manifestation_id=run.manuscript.manifestation_id, index=unit_counter
             )

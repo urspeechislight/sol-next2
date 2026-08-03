@@ -23,11 +23,17 @@ and origin tokens live here so a rename cannot desynchronise the two sides.
 same way: the pipeline's person emitter validates against it and the reader's
 narrator projection filters on it, and repositories must never import
 pipeline code, so the strings live here.
+``HADITH__FOOTNOTE_MARKER_MAX_GAP`` bounds the footnote-entry sequential-
+plausibility guard in ``pipeline/text.py::split_footnote_block``, used by
+both the pipeline and the reader; see docs/councils/
+2026-07-03-reader-footnotes-council.md for why it exists.
 """
 
 from __future__ import annotations
 
 from typing import Final
+
+HADITH__FOOTNOTE_MARKER_MAX_GAP: Final[int] = 50
 
 HTTP__DEFAULT_PAGE_SIZE: Final[int] = 24
 HTTP__MAX_PAGE_SIZE: Final[int] = 200

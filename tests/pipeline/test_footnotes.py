@@ -61,3 +61,30 @@ def test_should_project_numbered_entries_only() -> None:
 
     assert split_footnote_entries(block) == [("1", "الأولى")]
     assert split_footnote_entries_to_dict(block) == {"1": "الأولى"}
+
+
+def test_should_fold_implausible_marker_jump_into_previous_entry() -> None:
+    block = "(1) الأولى\n(2) الثانية\n(20856) نص مرجعي تسرب لبداية سطر"
+
+    assert split_footnote_block(block) == [
+        ("1", "الأولى"),
+        ("2", "الثانية (20856) نص مرجعي تسرب لبداية سطر"),
+    ]
+
+
+def test_should_fold_non_increasing_marker_into_previous_entry() -> None:
+    block = "(1) الأولى\n(2) الثانية\n(1) رقم متكرر"
+
+    assert split_footnote_block(block) == [
+        ("1", "الأولى"),
+        ("2", "الثانية (1) رقم متكرر"),
+    ]
+
+
+def test_should_accept_high_first_marker_but_reject_a_later_implausible_jump() -> None:
+    block = "(400) حاشية بترقيم متصل\n(401) التالية\n(99999) مرجع تسرب"
+
+    assert split_footnote_block(block) == [
+        ("400", "حاشية بترقيم متصل"),
+        ("401", "التالية (99999) مرجع تسرب"),
+    ]

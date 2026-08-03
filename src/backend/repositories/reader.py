@@ -344,7 +344,12 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
     text_ar = text_ar_raw if isinstance(text_ar_raw, str) else None
     hadiths = manuscript_repo.hadiths_for_page(book_urn, page_number)
     footnotes = (
-        [Footnote(marker=marker, text=text) for marker, text in split_footnote_block(footnote_text)]
+        [
+            Footnote(marker=marker, text=text)
+            for marker, text in split_footnote_block(
+                footnote_text, context=f"{book_urn}#{page_number}"
+            )
+        ]
         if isinstance(footnote_text, str) and footnote_text
         else []
     )

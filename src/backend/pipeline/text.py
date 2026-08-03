@@ -11,7 +11,11 @@ backend.patterns beside the other Arabic mark classes.
 
 from __future__ import annotations
 
+from backend.core.constants import HADITH__FOOTNOTE_MARKER_MAX_GAP
+from backend.core.logging import get_logger
 from backend.patterns import FOOTNOTE_MARKER, CompiledPattern, cached_compile
+
+_logger = get_logger("shia-library.pipeline.text")
 
 _FOOTNOTE_SPLIT_REGEX: CompiledPattern = cached_compile(rf"(?:^|\n)\s*{FOOTNOTE_MARKER}[ \t]*")
 """Entry-head split: a line-start ``(N)`` followed by horizontal space only.
@@ -24,7 +28,7 @@ _FOOTNOTE_MARKER_STRIP_REGEX: CompiledPattern = cached_compile(rf"\s*{FOOTNOTE_M
 _REPEATED_SPACES_REGEX: CompiledPattern = cached_compile(r" {2,}")
 
 
-def split_footnote_block(footnote_text: str) -> list[tuple[str | None, str]]:
+def split_footnote_block(footnote_text: str, *, context: str = "") -> list[tuple[str | None, str]]:
     """Split a footnote block into ordered (marker, text) entries, losslessly.
 
     The block is shaped ``(1) first\\n(2) second``, optionally led by text
@@ -36,20 +40,47 @@ def split_footnote_block(footnote_text: str) -> list[tuple[str | None, str]]:
     non-empty piece of the block lands in exactly one entry, so a ``None``
     marker always means "the edition printed no number here", never a parse
     failure.
+
+    A split head whose number is not a plausible continuation of the block's
+    own sequence — not strictly increasing, or increasing by more than
+    ``HADITH__FOOTNOTE_MARKER_MAX_GAP`` — is not treated as a new entry: it is
+    a reference number that happened to open a line (the sequential-
+    plausibility guard from docs/councils/2026-07-03-reader-footnotes-
+    council.md). It is logged and folded back into the preceding entry's
+    text, so a rejected number is still preserved verbatim rather than
+    invented as, or silently discarded as, a bogus marker. ``context`` (a
+    book/page or span identifier) tags the log line.
     """
     parts = _FOOTNOTE_SPLIT_REGEX.split(footnote_text)
     entries: list[tuple[str | None, str]] = []
     preamble = parts[0].strip()
     if preamble:
         entries.append((None, preamble))
+    last_accepted: int | None = None
     for index in range(1, len(parts) - 1, 2):
         text = parts[index + 1].strip()
-        if text:
-            entries.append((parts[index], text))
+        if not text:
+            continue
+        marker = parts[index]
+        marker_value = int(marker)
+        if last_accepted is not None and not (
+            last_accepted < marker_value <= last_accepted + HADITH__FOOTNOTE_MARKER_MAX_GAP
+        ):
+            _logger.warning(
+                "footnote-marker-implausible",
+                context=context,
+                marker=marker,
+                previous=last_accepted,
+            )
+            prev_marker, prev_text = entries[-1]
+            entries[-1] = (prev_marker, f"{prev_text} ({marker}) {text}")
+            continue
+        entries.append((marker, text))
+        last_accepted = marker_value
     return entries
 
 
-def split_footnote_entries(footnote_text: str) -> list[tuple[str, str]]:
+def split_footnote_entries(footnote_text: str, *, context: str = "") -> list[tuple[str, str]]:
     """Split a combined footnote block into numbered (number, text) entries.
 
     The numbered projection of :func:`split_footnote_block`: pipeline callers
@@ -57,13 +88,15 @@ def split_footnote_entries(footnote_text: str) -> list[tuple[str, str]]:
     attachment target and is projected out here.
     """
     return [
-        (marker, text) for marker, text in split_footnote_block(footnote_text) if marker is not None
+        (marker, text)
+        for marker, text in split_footnote_block(footnote_text, context=context)
+        if marker is not None
     ]
 
 
-def split_footnote_entries_to_dict(footnote_text: str) -> dict[str, str]:
+def split_footnote_entries_to_dict(footnote_text: str, *, context: str = "") -> dict[str, str]:
     """Split a footnote block into a number -> text mapping for dict callers."""
-    return dict(split_footnote_entries(footnote_text))
+    return dict(split_footnote_entries(footnote_text, context=context))
 
 
 def attach_footnote_text(span_text: str, footnote_entries: dict[str, str]) -> str | None:

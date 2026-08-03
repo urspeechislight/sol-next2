@@ -10,11 +10,12 @@ consists of:
   the `/api` prefix to the backend server-side, so a remote workstation reaches
   it via the host's address (no client-side `localhost` assumption).
 - `src/backend/` — FastAPI service exposing the corpus (domains, books, TOC,
-  pages, daily picks, rijal/canonical narrators, corpus + Qurʾān search) over a
-  read-only `/api`. Backed by curated JSON in `data/` plus read-only SQLite
-  artifacts (`registry.db`, `manuscript.db`) that sol-next2 builds itself from
-  the `SOL_BOOKS_DIR` corpus root, and serves page text from that same root at
-  request time.
+  pages, daily picks, rijal/canonical narrators, corpus + Qurʾān search, page
+  footnote apparatus, verse-verified Qurʾān citations) over a read-only `/api`.
+  Backed by curated JSON in `data/` plus read-only SQLite artifacts
+  (`registry.db`, `manuscript.db`, `citations.db`) that sol-next2 builds itself
+  from the `SOL_BOOKS_DIR` corpus root, and serves page text from that same root
+  at request time.
 - `.claude/` — agent guardrail harness mirrored from sol-next1, with sol-next's
   legacy `validate.sh` chained as a second PreToolUse layer.
 - `lefthook.yml` — git-side mirror of the same rules at commit time.
@@ -22,9 +23,13 @@ consists of:
 `src/frontend/` is the superseded Babel-in-browser handoff prototype; it is not
 served and not wired into the build. The live frontend is `frontend/`.
 
-The NLP pipeline that would produce structured spans, hadith units, and narrator
-links lives in the sibling project `sol-next/`. sol-next2 does **not** run it;
-the reader currently serves raw page text until that structured data exists.
+The segment + extract phases of the NLP pipeline were ported into
+`src/backend/pipeline/` (ADR-0002); sol-next2 builds and serves its own
+structured hadith data (`manuscript.db`) rather than waiting on the sibling
+`sol-next/` project. Pages without structured units still fall back to raw page
+text. `citations.db` is a Qurʾān-citation sidecar produced by a one-off external
+script (not part of this repo's build scripts) and dropped into `data/`; see
+`src/backend/repositories/citations.py`.
 
 **Storage contract:** see
 [`docs/adr/0001-storage-contract.md`](./docs/adr/0001-storage-contract.md).
@@ -42,7 +47,10 @@ Cross-corpus search is proxied to the consolidated Postgres backend
    sol-next/CLAUDE.md. These rules govern the backend.
 2. Section "Rules summary" below — inherited from sol-next1/CLAUDE.md. The
    harness enforces them.
-3. `frontend/src/app/App.tsx` and `frontend/src/lib/routes.ts` — the live app's
+3. [`docs/adr/0002-absorbed-producer-and-rule-split.md`](./docs/adr/0002-absorbed-producer-and-rule-split.md)
+   — the pipeline/build/serving seam, and why size/shape rules are advisory.
+   Read before touching `src/backend/pipeline/` or `src/backend/build/`.
+4. `frontend/src/app/App.tsx` and `frontend/src/lib/routes.ts` — the live app's
    root component and hash-routing SSOT. Read before touching the UI.
    (`src/frontend/` is the dead handoff prototype; ignore it.)
 
@@ -198,9 +206,11 @@ instead of building a second copy.
 
 **Code quality**
 
-- Files: warn ≥400 LOC, **block ≥450 LOC** — at 400 lines, split into
-  submodules.
-- Functions: block ≥80 LOC.
+- Files ≥400 LOC, functions ≥80 LOC, and functions with >5 parameters are
+  **advisory** redesign signals (QUAL-010, QUAL-011, FUNC-002), not blocks — see
+  [ADR-0002](./docs/adr/0002-absorbed-producer-and-rule-split.md). A hard cap
+  here manufactured facades and transfer objects instead of preventing bloat;
+  weigh the signal, don't mechanically split to dodge it.
 - No bare `except:` or `except X: pass` (`no_silent_except`).
 - No magic numbers (literals other than `-1, 0, 1, 2, 100`); use named
   constants.
@@ -318,8 +328,9 @@ adaptations were made:
 - `lib/paths.py::is_design_token_file` accepts both
   `frontend/src/lib/design-system/tokens.css` (the live app) and
   `src/frontend/tokens.css` (the legacy handoff prototype).
-- `pyproject.toml::packages` is `["src/backend"]` — sol-next2 has no pipeline
-  package.
+- `pyproject.toml::packages` is `["src/backend"]` — the pipeline ported from
+  sol-next1 lives at `src/backend/pipeline/`, a subpackage of `backend`, not a
+  separate top-level package.
 - The frontend has a real Vite + TypeScript toolchain (`fe:test`, `fe:build` in
   the root `package.json`; `vite`, `vitest`, `typescript` in `frontend/`).
   SvelteKit-only scripts (svelte-check) were never carried over — this is a
