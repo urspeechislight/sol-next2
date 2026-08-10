@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -12,8 +13,40 @@ SAMPLE_BOOK_URN = "sY-50TSO"
 SAMPLE_FIRST_PAGE = 1
 MIN_TOC_ENTRIES = 1
 MIN_PAGE_BODY_CHARS = 20
-# A word present in the sample book (a grammar text), for in-book search.
 IN_BOOK_QUERY = "النحو"
+_CANNED_PAGE_TEXT = "بسم الله الرحمن الرحيم هذه صفحة فيها نص عربي للتجربة"
+
+
+@pytest.fixture
+def page_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Serve a canned page for the sample book so the reader route needs no live backend.
+
+    The reader route proxies page text through the consolidated backend's
+    ``/api/r/page/{urn}/{n}``; this fixture points that client at a mock transport
+    returning one canned page for the sample book's first page and 404 for any
+    other, so the page-endpoint tests are independent of a co-deployed backend.
+    """
+    sample_path = f"/api/r/page/{SAMPLE_BOOK_URN}/{SAMPLE_FIRST_PAGE}"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        """Return page 1 JSON for the sample URN, 404 for any other page."""
+        if request.url.path == sample_path:
+            return httpx.Response(
+                200,
+                json={
+                    "urn": SAMPLE_BOOK_URN,
+                    "page_number": SAMPLE_FIRST_PAGE,
+                    "text_ar": _CANNED_PAGE_TEXT,
+                    "total_pages": 5,
+                },
+            )
+        return httpx.Response(404)
+
+    client = httpx.Client(
+        base_url="http://backend.test",
+        transport=httpx.MockTransport(handler),
+    )
+    monkeypatch.setattr(reader_repo, "_backend_client", lambda: client)
 
 
 def test_should_return_toc_when_urn_known(client: TestClient) -> None:
@@ -25,13 +58,16 @@ def test_should_return_toc_when_urn_known(client: TestClient) -> None:
     assert len(payload["entries"]) >= MIN_TOC_ENTRIES
 
 
-def test_should_return_404_for_toc_of_unknown_urn(client: TestClient) -> None:
+def test_should_return_404_when_toc_urn_unknown(client: TestClient) -> None:
     """Unknown URN returns 404."""
     response = client.get("/api/books/no-such-book/toc")
     assert response.status_code == 404
 
 
-def test_should_return_first_page_with_content(client: TestClient) -> None:
+def test_should_serve_text_when_first_page(
+    client: TestClient,
+    page_backend: None,  # noqa: ARG001
+) -> None:
     """Page 1 of a real book serves its raw Arabic text; no parsed hadiths yet."""
     response = client.get(f"/api/books/{SAMPLE_BOOK_URN}/pages/{SAMPLE_FIRST_PAGE}")
     assert response.status_code == 200
@@ -43,7 +79,10 @@ def test_should_return_first_page_with_content(client: TestClient) -> None:
     assert any("؀" <= c <= "ۿ" for c in body)
 
 
-def test_should_serve_raw_text_not_a_fabricated_hadith(client: TestClient) -> None:
+def test_should_keep_raw_text_when_no_hadith(
+    client: TestClient,
+    page_backend: None,  # noqa: ARG001
+) -> None:
     """Pre-pipeline corpus pages carry raw text_ar, not a fabricated empty-isnad hadith."""
     response = client.get(f"/api/books/{SAMPLE_BOOK_URN}/pages/{SAMPLE_FIRST_PAGE}")
     payload = response.json()
@@ -52,15 +91,18 @@ def test_should_serve_raw_text_not_a_fabricated_hadith(client: TestClient) -> No
     assert len(payload["text_ar"]) >= MIN_PAGE_BODY_CHARS
 
 
-def test_should_return_404_for_unknown_page(client: TestClient) -> None:
+def test_should_return_404_when_page_unknown(
+    client: TestClient,
+    page_backend: None,  # noqa: ARG001
+) -> None:
     """A page beyond the book returns 404."""
     response = client.get(f"/api/books/{SAMPLE_BOOK_URN}/pages/999999")
     assert response.status_code == 404
 
 
-def test_should_scope_in_book_search_to_the_book(client: TestClient) -> None:
-    """In-book search (the corpus engine scoped by URN) returns page+snippet
-    hits confined to the book, fewer than the same query across the corpus."""
+def test_should_scope_search_to_one_book(client: TestClient) -> None:
+    """In-book search returns page+snippet hits confined to the book, fewer than
+    the same query across the whole corpus."""
     in_book = client.get(f"/api/books/{SAMPLE_BOOK_URN}/search", params={"q": IN_BOOK_QUERY}).json()
     assert in_book["total"] >= 1
     item = in_book["items"][0]
@@ -70,29 +112,28 @@ def test_should_scope_in_book_search_to_the_book(client: TestClient) -> None:
     assert in_book["total"] <= corpus_wide["total"]
 
 
-def test_should_return_empty_in_book_search_when_query_blank(client: TestClient) -> None:
+def test_should_return_empty_when_query_blank(client: TestClient) -> None:
     """A blank in-book query yields no matches rather than the whole book."""
     payload = client.get(f"/api/books/{SAMPLE_BOOK_URN}/search", params={"q": ""}).json()
     assert payload["total"] == 0
     assert payload["items"] == []
 
 
-def test_should_return_validated_page_rows_for_a_known_book() -> None:
-    """page_rows — the one page accessor get_page + the index builder share —
-    yields ordered (page, content) rows for a real book."""
+def test_should_yield_rows_when_book_known() -> None:
+    """page_rows yields ordered (page, content) rows for a real book."""
     rows = reader_repo.page_rows(SAMPLE_BOOK_URN)
     assert rows
     assert rows[0].page >= 1
     assert rows[0].content
 
 
-def test_should_raise_not_found_when_page_rows_for_unknown_book() -> None:
+def test_should_raise_when_book_unknown() -> None:
     """An unknown URN raises rather than returning an empty page list."""
     with pytest.raises(ResourceNotFoundError):
         reader_repo.page_rows("no-such-book")
 
 
-def test_should_raise_when_source_content_is_malformed() -> None:
+def test_should_raise_when_content_malformed() -> None:
     """A present-but-malformed content section raises, not masquerade as empty."""
     with pytest.raises(reader_repo.ReaderSourceError):
         reader_repo._content_rows({"content": "not-an-object"})
@@ -100,12 +141,12 @@ def test_should_raise_when_source_content_is_malformed() -> None:
         reader_repo._content_rows({"content": {"1": "not-a-list"}})
 
 
-def test_should_return_empty_rows_when_source_has_no_content() -> None:
+def test_should_return_empty_when_content_absent() -> None:
     """An absent content section is a legitimately page-less book, yielding []."""
     assert reader_repo._content_rows({}) == []
 
 
-def test_should_raise_when_source_maps_multiple_books() -> None:
+def test_should_raise_when_source_has_many_books() -> None:
     """A source file mapping more than one book is corruption, surfaced loudly."""
     with pytest.raises(reader_repo.ReaderSourceError):
         reader_repo._first_book_key({"1": [], "2": []})

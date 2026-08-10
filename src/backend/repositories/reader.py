@@ -1,15 +1,20 @@
-"""Reader repository — loads TOC + page content lazily from corpus source files.
+"""Reader repository: TOC from corpus source files, page text proxied from the
+consolidated backend.
 
-For each requested URN we look up the source file path via
-``books.source_path(urn)``, open the source JSON, and shape its
-``toc`` / ``content`` blocks into our Pydantic ``Toc`` / ``BookPage``
-models. Source-file reads are cached per (urn, page_number). A row's
-``footnote`` block is split into the page apparatus by the one canonical
-splitter in ``backend.pipeline.text`` and served on every page shape.
+The TOC stays a local concern. The synthesized override index plus the scraped
+source-file TOC shape into the Pydantic ``Toc`` / ``TocEntry`` models. Page
+text, the page count, and the footnote block come from the one consolidated
+backend that owns the page index (``/api/r/page/{urn}/{n}``), so a book added
+there is immediately readable here with no local rebuild. The manuscript extract
+of structured hadiths stays a local overlay, composed onto the proxied text in
+``get_page``. A page's ``footnote`` block is split into the apparatus by the one
+canonical splitter in ``backend.pipeline.text``.
 
-Rich fields (parsed isnad, narrators, English matn, cross-refs, grades)
-are **not populated** for corpus-sourced books — the source files don't
-include them. They will be populated once the upstream ingest pipeline
+``page_rows`` remains the local page accessor that the in-book scan
+(``corpus.search_in_book``) reads; it is no longer the page-text source for
+``get_page``. Rich fields (parsed isnad, narrators, English matn, cross-refs,
+grades) are **not populated** for corpus-sourced books, because the backend page
+carries raw text only. They will be populated once the upstream ingest pipeline
 emits them; see ``docs/adr/0001-storage-contract.md``.
 """
 
@@ -20,10 +25,17 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, NamedTuple, cast
 
-from backend.core.constants import ARTIFACT__TOC_INDEX, READER__SOURCE_CACHE_MAX
+import httpx
+
+from backend.core.constants import (
+    ARTIFACT__TOC_INDEX,
+    HTTP__REQUEST_TIMEOUT_SECONDS,
+    READER__SOURCE_CACHE_MAX,
+)
 from backend.core.errors import ResourceNotFoundError
 from backend.core.logging import get_logger
 from backend.core.paths import data_path
+from backend.core.settings import get_settings
 from backend.models.reader import BookPage, Footnote, Toc, TocEntry
 from backend.pipeline.text import split_footnote_block
 from backend.repositories import books as books_repo
@@ -256,6 +268,57 @@ def _toc_entries_from_rows(book_urn: str, rows: list[Any]) -> list[TocEntry]:
     return entries
 
 
+_NOT_FOUND_STATUS: int = 404
+
+
+@lru_cache(maxsize=1)
+def _backend_client() -> httpx.Client:
+    """Return the process-wide sync client bound to the consolidated backend.
+
+    The backend owns the page index; the reader fetches page text, the page
+    count, and the footnote block from ``/api/r/page/{urn}/{n}`` here. The base
+    URL is the same ``Settings.corpus_search_base_url`` the cross-corpus search
+    proxy uses, so one deployment setting points both at the one co-located
+    backend. Sync, not async, because this repository is a sync stack serving a
+    threadpool route handler with a local sqlite hadith overlay.
+    """
+    return httpx.Client(
+        base_url=get_settings().corpus_search_base_url,
+        timeout=HTTP__REQUEST_TIMEOUT_SECONDS,
+    )
+
+
+def _fetch_page(book_urn: str, page_number: int) -> dict[str, Any]:
+    """GET one page object from the consolidated backend, mapping status to errors.
+
+    The single network seam for page text. A 404 is the backend's clean
+    no-such-page signal and maps to ``ResourceNotFoundError``, a 404 to the
+    client. Every other failure, whether a network error, a non-2xx status, a
+    non-JSON body, or a non-object body, is a backend contract violation and
+    raises ``ReaderSourceError`` so an outage is visible rather than silently
+    swallowed. A missing page on the backend is a
+    real absence, not a reason to read a stale local copy.
+    """
+    path = f"/api/r/page/{book_urn}/{page_number}"
+    try:
+        response = _backend_client().get(path)
+    except httpx.HTTPError as exc:
+        raise ReaderSourceError(
+            f"page backend unreachable for {book_urn}#{page_number}: {exc}"
+        ) from exc
+    if response.status_code == _NOT_FOUND_STATUS:
+        raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
+    if not response.is_success:
+        raise ReaderSourceError(f"page backend {path} returned status {response.status_code}")
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise ReaderSourceError(f"page backend {path} returned non-JSON: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ReaderSourceError(f"page backend {path} returned non-object JSON")
+    return cast(dict[str, Any], data)
+
+
 def get_page(book_urn: str, page_number: int) -> BookPage:
     """Return the requested page or raise ``ResourceNotFoundError``.
 
@@ -270,30 +333,30 @@ def get_page(book_urn: str, page_number: int) -> BookPage:
     carries the page's printed apparatus on both shapes: the notes annotate the
     printed page, not the extraction.
     """
-    rows = page_rows(book_urn)
-    if not rows:
-        raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
-    match = next((r for r in rows if r.page == page_number), None)
-    if match is None:
-        raise ResourceNotFoundError(kind="page", identifier=f"{book_urn}#{page_number}")
+    page = _fetch_page(book_urn, page_number)
+    total_pages = page.get("total_pages")
+    if not isinstance(total_pages, int) or total_pages < 1:
+        raise ReaderSourceError(
+            f"page backend returned no total_pages for {book_urn}#{page_number}"
+        )
+    footnote_text = page.get("footnote_text")
+    text_ar_raw = page.get("text_ar")
+    text_ar = text_ar_raw if isinstance(text_ar_raw, str) else None
     hadiths = manuscript_repo.hadiths_for_page(book_urn, page_number)
     footnotes = (
-        [
-            Footnote(marker=marker, text=text)
-            for marker, text in split_footnote_block(match.footnote)
-        ]
-        if match.footnote
+        [Footnote(marker=marker, text=text) for marker, text in split_footnote_block(footnote_text)]
+        if isinstance(footnote_text, str) and footnote_text
         else []
     )
     return BookPage(
         page_number=page_number,
-        total_pages=len(rows),
+        total_pages=total_pages,
         chapter_title=_chapter_title_at(book_urn, page_number),
         chapter_title_en=None,
         section_title="",
         section_title_en=None,
         hadiths=hadiths,
-        text_ar=None if hadiths else match.content,
+        text_ar=None if hadiths else text_ar,
         text_en=None,
         footnotes=footnotes,
     )
