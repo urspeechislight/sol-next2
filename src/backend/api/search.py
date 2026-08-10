@@ -1,7 +1,7 @@
 """HTTP routes for cross-corpus full-text search + facet lookups.
 
 All routes register via ``add_api_route``. ``/search`` is the content search
-(FTS5 over page text, ``exact``/``broad`` mode, filtered by category -> book ->
+(full-text over page text, ``exact``/``broad`` mode, filtered by category -> book ->
 volume) -> ``Page[CorpusMatch]``. ``/search/facets`` returns the categories/
 books/volumes that have matches. The paginated routes take the shared
 ``PageParams``. Catalog search lives on ``/works?q=`` (volume-folded works);

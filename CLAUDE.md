@@ -11,10 +11,10 @@ consists of:
   it via the host's address (no client-side `localhost` assumption).
 - `src/backend/` — FastAPI service exposing the corpus (domains, books, TOC,
   pages, daily picks, rijal/canonical narrators, corpus + Qurʾān search) over a
-  read-only `/api`. Backed by curated JSON in `data/` plus two read-only SQLite
-  artifacts — `corpus.db` (FTS5) and `registry.db` — that sol-next2 builds
-  itself from the `SOL_BOOKS_DIR` corpus root, and serves page text from that
-  same root at request time.
+  read-only `/api`. Backed by curated JSON in `data/` plus read-only SQLite
+  artifacts (`registry.db`, `manuscript.db`) that sol-next2 builds itself from
+  the `SOL_BOOKS_DIR` corpus root, and serves page text from that same root at
+  request time.
 - `.claude/` — agent guardrail harness mirrored from sol-next1, with sol-next's
   legacy `validate.sh` chained as a second PreToolUse layer.
 - `lefthook.yml` — git-side mirror of the same rules at commit time.
@@ -28,11 +28,11 @@ the reader currently serves raw page text until that structured data exists.
 
 **Storage contract:** see
 [`docs/adr/0001-storage-contract.md`](./docs/adr/0001-storage-contract.md).
-TL;DR: sol-next2 is read-mostly and self-contained. It materializes its own
-read-only SQLite artifacts (FTS5 today; `sqlite-vec` is the planned addition for
-semantic search) from the `SOL_BOOKS_DIR` corpus root and serves them
-read-only/immutable at runtime — no external database services, only stdlib
-`sqlite3`.
+TL;DR: sol-next2 is read-mostly. It materializes its own read-only SQLite
+artifacts (`registry.db`, `manuscript.db`) from the `SOL_BOOKS_DIR` corpus root
+and serves them read-only/immutable at runtime over stdlib `sqlite3`.
+Cross-corpus search is proxied to the consolidated Postgres backend
+(`SOL_CORPUS_SEARCH_BASE_URL`).
 
 ---
 

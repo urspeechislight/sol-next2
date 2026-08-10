@@ -6,8 +6,8 @@ Knowledge-graph reader for classical Arabic manuscripts.
   design system and a single typed API client.
 - `src/backend/` — FastAPI service exposing the corpus (domains, books, TOC,
   pages, daily picks, narrators, search) over a read-only `/api`. Backed by
-  curated JSON in `data/` plus two read-only SQLite artifacts (`corpus.db`,
-  `registry.db`) that sol-next2 builds from the corpus root.
+  curated JSON in `data/` plus read-only SQLite artifacts (`registry.db`,
+  `manuscript.db`) that sol-next2 builds from the corpus root.
 - `.claude/` — agent guardrail harness (see [`CLAUDE.md`](./CLAUDE.md)).
 - `lefthook.yml` — git-side mirror of the same rules at commit time.
 
@@ -33,7 +33,6 @@ corpus changes):
 
 ```bash
 SOL_BOOKS_DIR=/path/to/corpus/books uv run python scripts/ingest_books.py
-SOL_BOOKS_DIR=/path/to/corpus/books uv run python scripts/build_corpus_index.py
 uv run python scripts/build_registry.py
 ```
 

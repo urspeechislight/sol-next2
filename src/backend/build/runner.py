@@ -1,6 +1,6 @@
 """Build layer: the machinery every artifact build shares.
 
-Each read-only artifact (corpus.db, manuscript.db, registry.db,
+Each read-only artifact (manuscript.db, registry.db,
 books_index.json) used to repeat the same shell: wipe-and-recreate the
 output, iterate the catalog, skip-and-log books whose source is missing,
 bulk-insert with periodic commits, and report counts + elapsed time through
@@ -11,7 +11,7 @@ its own argparse/logging arrangement. This module owns that shell once:
   ``build_catalog_artifact`` the catalog iteration loop
   ``run_build_cli``          the argparse/logging/timing shell
 
-The per-artifact modules (``corpus``, ``manuscript``, ``rijal``,
+The per-artifact modules (``manuscript``, ``rijal``,
 ``catalog``) own only their schema, their INSERT statements (as a
 ``tables`` mapping of table name to INSERT SQL), and their row projections.
 CENTRAL-005 permits the artifact SQL in this package.
@@ -53,8 +53,7 @@ def finalize(con: sqlite3.Connection) -> None:
     """Optimize a freshly built artifact (statistics + compaction).
 
     Deliberately opt-in per artifact: VACUUM doubles peak disk, which is
-    fine for the megabyte-scale stores and prohibitive for the 40 GB
-    corpus index.
+    fine for the megabyte-scale stores and prohibitive for larger ones.
     """
     con.execute("ANALYZE")
     con.execute("VACUUM")

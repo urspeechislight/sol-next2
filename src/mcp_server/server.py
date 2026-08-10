@@ -106,7 +106,7 @@ def _search(
 ) -> Any:
     """Full-text search across ALL book content — the fast way to find where a
     word or phrase occurs across the corpus (diacritic- + letter-variant-
-    insensitive, backed by the FTS5 index). Use this to locate passages, not to
+    insensitive, backed by the consolidated search backend). Use this to locate passages, not to
     browse the catalog.
 
     `q` is the Arabic phrase (folded before matching). `mode` is 'exact' (whole

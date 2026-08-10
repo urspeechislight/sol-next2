@@ -1,7 +1,7 @@
 # ADR-0001 — Storage contract between sol-next and sol-next2
 
 **Date:** 2026-05-23
-**Status:** Superseded by implementation divergence (2026-06-30). The consume-only contract below was never built — sol-next2 self-builds its read-only SQLite artifacts. See the update note below; a formal ADR-0002 is pending.
+**Status:** Superseded by implementation divergence (2026-06-30); search consolidated to Postgres (2026-08-10). The consume-only contract below was never built — sol-next2 self-builds its read-only SQLite artifacts. See the update note below; a formal ADR-0002 is pending.
 **Supersedes:** the implicit "sol-next2 ingests JSON into its own SQLite"
 plan that briefly existed earlier in development.
 
@@ -16,6 +16,14 @@ plan that briefly existed earlier in development.
 > intent holds, but the "raw pre-pipeline files never enter sol-next2's storage"
 > carve-out below is **not** honored by the current code. A formal ADR-0002 will
 > record the self-contained contract. The body below is preserved as the
+> original 2026-05-23 record.
+
+> **Update (2026-08-10) — search consolidated to a single Postgres backend.**
+> The local `corpus.db` FTS5 artifact and its build path are retired;
+> cross-corpus search is now proxied to the consolidated Postgres backend
+> (`SOL_CORPUS_SEARCH_BASE_URL`). sol-next2 no longer materializes a search
+> index; `registry.db` and `manuscript.db` remain local SQLite artifacts. A
+> formal ADR-0002 is still pending. The body below is preserved as the
 > original 2026-05-23 record.
 
 ## Context
