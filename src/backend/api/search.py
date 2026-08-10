@@ -68,7 +68,7 @@ async def _search(
     return as_page(
         Page[CorpusMatch],
         page,
-        corpus_repo.search(params.query, limit=page.limit, offset=page.offset),
+        await corpus_repo.search(params.query, limit=page.limit, offset=page.offset),
     )
 
 
@@ -79,7 +79,9 @@ async def _search_facets(
     book: str = Query(default="", description="Book to scope volume facets to."),
 ) -> SearchFacets:
     """Return the categories, books, and volumes that hold matches for ``q``."""
-    return corpus_repo.facets(q=q, mode=mode, categories=_checked_categories(category), book=book)
+    return await corpus_repo.facets(
+        q=q, mode=mode, categories=_checked_categories(category), book=book
+    )
 
 
 get_route(

@@ -58,6 +58,14 @@ class Settings(BaseSettings):
             "not depend on the environment); when off, every request 404s."
         ),
     )
+    corpus_search_base_url: str = Field(
+        default="http://127.0.0.1:8123",
+        description=(
+            "Base URL of the consolidated search backend that owns the page "
+            "index and serves /api/search. The reader proxies cross-corpus "
+            "search here instead of maintaining a local index."
+        ),
+    )
 
 
 @lru_cache(maxsize=1)

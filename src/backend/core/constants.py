@@ -75,7 +75,6 @@ MANUSCRIPT__INDEX_MISSING_HINT: Final[str] = (
     "Manuscript index not built; run scripts/build_manuscript_index.py to materialize it"
 )
 
-ARTIFACT__CORPUS_DB: Final[str] = "corpus.db"
 ARTIFACT__MANUSCRIPT_DB: Final[str] = "manuscript.db"
 ARTIFACT__REGISTRY_DB: Final[str] = "registry.db"
 ARTIFACT__CITATIONS_DB: Final[str] = "citations.db"

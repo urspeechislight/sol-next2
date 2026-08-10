@@ -1,118 +1,228 @@
-"""Tests for ``GET /api/search`` (cross-corpus full-text) + ``/api/search/facets``.
+"""Tests for the proxied cross-corpus search.
 
-Runs against the real ``data/corpus.db`` built by
-``scripts/build_corpus_index.py``, so assertions use floors, not exact counts.
+The reader forwards /api/search and /api/search/facets to the consolidated search
+backend, so these tests fix the backend's JSON shape with a local mock transport
+and assert the proxy maps it onto CorpusMatch / SearchFacets and forwards the
+scope params. Repository-level tests call the proxy directly (async) to assert
+forwarding and mapping free of the HTTP edge; the API-level tests cover the edge
+serialization and the unknown-mode rejection.
 """
 
 from __future__ import annotations
 
+from typing import Any
+
+import httpx
+import pytest
 from fastapi.testclient import TestClient
 
-SAMPLE_LIMIT = 3
-# A phrase present in the corpus (it is the title text on the first page of the
-# alphabetically-first book, sY-50TSO).
-KNOWN_PHRASE = "المصطلح النحوي"
-# A common token that spans many categories + books, for the facet tests.
-FACET_QUERY = "المصطلح"
+from backend.repositories import corpus as corpus_repo
 
 
-def test_should_return_paginated_envelope_when_searching(client: TestClient) -> None:
-    """`/api/search` returns {items, total, limit, offset}."""
-    response = client.get("/api/search", params={"q": KNOWN_PHRASE, "limit": SAMPLE_LIMIT})
-    assert response.status_code == 200
-    assert set(response.json().keys()) == {"items", "total", "limit", "offset"}
+def _hit(**over: Any) -> dict[str, Any]:
+    """One backend SearchHit, with any field overridden by ``over``."""
+    base: dict[str, Any] = {
+        "page_id": 11,
+        "urn": "abc123",
+        "title_ar": "كتاب",
+        "title_en": "Book",
+        "author": "Author",
+        "category": "hadith",
+        "volume": 1,
+        "stem": "abc123",
+        "page_number": 5,
+        "snippet": "…نص…",
+    }
+    base.update(over)
+    return base
 
 
-def test_should_find_a_known_phrase_in_corpus(client: TestClient) -> None:
-    """A phrase that exists in the corpus returns at least one shaped hit."""
-    payload = client.get("/api/search", params={"q": KNOWN_PHRASE}).json()
-    assert payload["total"] >= 1
-    item = payload["items"][0]
-    assert set(item.keys()) >= {"urn", "title_ar", "page", "snippet"}
-    assert item["page"] >= 1
-    assert item["snippet"]
+def _json_page() -> dict[str, Any]:
+    """The canned /api/search response: one hit and a bounded total."""
+    return {"items": [_hit()], "limit": 24, "next_after": None, "total": 7}
 
 
-def test_should_return_empty_when_query_blank(client: TestClient) -> None:
-    """A blank query yields no matches rather than erroring."""
-    payload = client.get("/api/search", params={"q": ""}).json()
-    assert payload["total"] == 0
-    assert payload["items"] == []
+def _json_facets() -> dict[str, Any]:
+    """The canned /api/search/facets response: one of each facet kind."""
+    return {
+        "categories": [{"slug": "hadith", "count": 7}],
+        "books": [{"title": "كتاب", "title_en": "Book", "count": 3}],
+        "volumes": [{"volume": 1, "count": 2}],
+    }
 
 
-def test_should_cap_items_when_limit_given(client: TestClient) -> None:
-    """`?limit=N` caps items at N."""
-    payload = client.get("/api/search", params={"q": KNOWN_PHRASE, "limit": SAMPLE_LIMIT}).json()
-    assert len(payload["items"]) <= SAMPLE_LIMIT
+@pytest.fixture
+def backend(monkeypatch: pytest.MonkeyPatch) -> list[httpx.Request]:
+    """Point the proxy at a mock backend and record every request it sends.
 
+    Returns the captured request list so a test can assert forwarded scope params.
+    ``/api/search`` returns one hit plus a bounded total; ``/api/search/facets``
+    returns one category, one book, one volume.
+    """
+    requests: list[httpx.Request] = []
 
-def test_should_return_drilldown_facets_when_querying(client: TestClient) -> None:
-    """`/api/search/facets` returns categories (books/volumes are empty until
-    their parent filter is set)."""
-    payload = client.get("/api/search/facets", params={"q": FACET_QUERY}).json()
-    assert set(payload.keys()) == {"categories", "books", "volumes"}
-    assert payload["categories"]
-    assert payload["books"] == []
-    assert payload["volumes"] == []
-    facet = payload["categories"][0]
-    assert set(facet.keys()) == {"slug", "count"}
-    assert facet["count"] >= 1
+    def handler(request: httpx.Request) -> httpx.Response:
+        """Record the request and return the canned page or facets JSON for its path."""
+        requests.append(request)
+        if request.url.path == "/api/search":
+            return httpx.Response(200, json=_json_page())
+        return httpx.Response(200, json=_json_facets())
 
-
-def test_should_scope_books_to_category_when_given(client: TestClient) -> None:
-    """Passing a category surfaces the books (works) within it."""
-    cats = client.get("/api/search/facets", params={"q": FACET_QUERY}).json()["categories"]
-    slug = cats[0]["slug"]
-    facets = client.get("/api/search/facets", params={"q": FACET_QUERY, "category": slug}).json()
-    assert facets["books"]
-    assert set(facets["books"][0].keys()) == {"title", "title_en", "count"}
-
-
-def test_should_narrow_total_when_book_filtered(client: TestClient) -> None:
-    """`?category=&book=` restricts results to that one book's pages."""
-    cats = client.get("/api/search/facets", params={"q": FACET_QUERY}).json()["categories"]
-    slug = cats[0]["slug"]
-    books = client.get("/api/search/facets", params={"q": FACET_QUERY, "category": slug}).json()[
-        "books"
-    ]
-    title = books[0]["title"]
-    scoped = client.get(
-        "/api/search", params={"q": FACET_QUERY, "category": slug, "book": title}
-    ).json()
-    in_cat = client.get("/api/search", params={"q": FACET_QUERY, "category": slug}).json()["total"]
-    assert 0 < scoped["total"] <= in_cat
-
-
-def test_should_reject_an_unknown_search_mode_with_422(client: TestClient) -> None:
-    """An out-of-set ?mode= is rejected, not silently treated as exact."""
-    response = client.get("/api/search", params={"q": KNOWN_PHRASE, "mode": "bogus"})
-    assert response.status_code == 422
-
-
-def test_should_union_repeated_category_params(client: TestClient) -> None:
-    """Repeated ?category= values OR together: the union total is bounded by
-    each part and their sum, and every hit's category is in the selected set."""
-    cats = client.get("/api/search/facets", params={"q": FACET_QUERY}).json()["categories"]
-    slugs = [cats[0]["slug"], cats[1]["slug"]]
-    one = client.get("/api/search", params={"q": FACET_QUERY, "category": slugs[0]}).json()
-    both = client.get("/api/search", params={"q": FACET_QUERY, "category": slugs}).json()
-    assert one["total"] <= both["total"] <= cats[0]["count"] + cats[1]["count"]
-    assert all(item["category"] in set(slugs) for item in both["items"])
-
-
-def test_should_scope_book_facets_to_the_selected_category_set(client: TestClient) -> None:
-    """A category set on /search/facets fills the books level across the set."""
-    cats = client.get("/api/search/facets", params={"q": FACET_QUERY}).json()["categories"]
-    slugs = [cats[0]["slug"], cats[1]["slug"]]
-    payload = client.get("/api/search/facets", params={"q": FACET_QUERY, "category": slugs}).json()
-    assert payload["books"]
-    assert payload["books"][0]["count"] >= 1
-
-
-def test_should_reject_an_unknown_category_in_the_set_with_422(client: TestClient) -> None:
-    """One unknown slug among repeated ?category= values is a client error."""
-    cats = client.get("/api/search/facets", params={"q": FACET_QUERY}).json()["categories"]
-    response = client.get(
-        "/api/search", params={"q": KNOWN_PHRASE, "category": [cats[0]["slug"], "not-a-slug"]}
+    client = httpx.AsyncClient(
+        base_url="http://backend.test",
+        transport=httpx.MockTransport(handler),
     )
+    monkeypatch.setattr(corpus_repo, "_client", lambda: client)
+    return requests
+
+
+@pytest.mark.asyncio
+async def test_should_map_hits_and_bounded_total_when_searching(
+    backend: list[httpx.Request],
+) -> None:
+    """search() maps a backend hit onto CorpusMatch (page from page_number) + total."""
+    matches, total = await corpus_repo.search(corpus_repo.SearchQuery(q="نص"))
+    assert total == 7
+    assert len(matches) == 1
+    first = matches[0]
+    assert first.urn == "abc123"
+    assert first.page == 5
+    assert len(backend) == 1
+
+
+@pytest.mark.asyncio
+async def test_should_map_hit_metadata_when_searching(backend: list[httpx.Request]) -> None:
+    """The mapped CorpusMatch carries the backend title/author/category/volume."""
+    matches, _total = await corpus_repo.search(corpus_repo.SearchQuery(q="نص"))
+    first = matches[0]
+    assert first.title_en == "Book"
+    assert first.title_ar == "كتاب"
+    assert first.author == "Author"
+    assert first.category == "hadith"
+    assert first.volume == 1
+    assert len(backend) == 1
+
+
+@pytest.mark.asyncio
+async def test_should_forward_scope_to_backend_when_searching(backend: list[httpx.Request]) -> None:
+    """Query, mode, category set, book, volume, paging, include_count are forwarded."""
+    await corpus_repo.search(
+        corpus_repo.SearchQuery(
+            q="نص", mode="broad", categories=("hadith", "quran"), book="كتاب", volume=2
+        ),
+        limit=5,
+        offset=10,
+    )
+    params = backend[-1].url.params
+    assert params["q"] == "نص"
+    assert params["mode"] == "broad"
+    assert params["book"] == "كتاب"
+    assert params["volume"] == "2"
+    assert params["limit"] == "5"
+    assert params["offset"] == "10"
+    assert params["include_count"] == "true"
+    assert params.get_list("category") == ["hadith", "quran"]
+
+
+@pytest.mark.asyncio
+async def test_should_short_circuit_search_when_query_is_blank(
+    backend: list[httpx.Request],
+) -> None:
+    """A query that folds to nothing returns empty with no backend round-trip."""
+    matches, total = await corpus_repo.search(corpus_repo.SearchQuery(q=""))
+    assert matches == []
+    assert total == 0
+    assert backend == []
+
+
+@pytest.mark.asyncio
+async def test_should_raise_corpus_search_error_when_backend_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A backend failure raises CorpusSearchError rather than returning empty results."""
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        """Always return 503 so the proxy must surface a CorpusSearchError."""
+        return httpx.Response(503)
+
+    broken = httpx.AsyncClient(
+        base_url="http://backend.test",
+        transport=httpx.MockTransport(handler),
+    )
+    monkeypatch.setattr(corpus_repo, "_client", lambda: broken)
+    with pytest.raises(corpus_repo.CorpusSearchError):
+        await corpus_repo.search(corpus_repo.SearchQuery(q="نص"))
+
+
+@pytest.mark.asyncio
+async def test_should_map_and_forward_scope_when_faceting(backend: list[httpx.Request]) -> None:
+    """facets() maps categories/books/volumes and forwards mode, category, book."""
+    facets = await corpus_repo.facets(q="نص", mode="broad", categories=("hadith",), book="كتاب")
+    params = backend[-1].url.params
+    assert params["mode"] == "broad"
+    assert params["book"] == "كتاب"
+    assert params.get_list("category") == ["hadith"]
+    assert [(c.slug, c.count) for c in facets.categories] == [("hadith", 7)]
+    assert [(b.title, b.count) for b in facets.books] == [("كتاب", 3)]
+    assert [(v.volume, v.count) for v in facets.volumes] == [(1, 2)]
+
+
+@pytest.mark.asyncio
+async def test_should_short_circuit_facets_when_query_is_blank(
+    backend: list[httpx.Request],
+) -> None:
+    """A blank facets query returns empty facets with no backend round-trip."""
+    facets = await corpus_repo.facets(q="")
+    assert facets.categories == []
+    assert facets.books == []
+    assert facets.volumes == []
+    assert backend == []
+
+
+def test_should_map_hit_onto_page_for_api_search(
+    client: TestClient, backend: list[httpx.Request]
+) -> None:
+    """/api/search serializes the proxied hit with the reader page field set."""
+    payload = client.get("/api/search", params={"q": "نص"}).json()
+    assert payload["total"] == 7
+    item = payload["items"][0]
+    assert set(item.keys()) == {
+        "urn",
+        "title_ar",
+        "title_en",
+        "author",
+        "category",
+        "volume",
+        "page",
+        "snippet",
+    }
+    assert item["page"] == 5
+    assert len(backend) == 1
+
+
+def test_should_return_empty_page_when_api_query_is_blank(
+    client: TestClient, backend: list[httpx.Request]
+) -> None:
+    """A blank query yields an empty page with no backend round-trip."""
+    payload = client.get("/api/search", params={"q": ""}).json()
+    assert payload["items"] == []
+    assert payload["total"] == 0
+    assert backend == []
+
+
+def test_should_map_facets_onto_response_for_api(
+    client: TestClient, backend: list[httpx.Request]
+) -> None:
+    """/api/search/facets serializes the proxied categories/books/volumes."""
+    payload = client.get("/api/search/facets", params={"q": "نص"}).json()
+    assert set(payload.keys()) == {"categories", "books", "volumes"}
+    assert payload["categories"] == [{"slug": "hadith", "count": 7}]
+    assert payload["books"] == [{"title": "كتاب", "title_en": "Book", "count": 3}]
+    assert payload["volumes"] == [{"volume": 1, "count": 2}]
+    assert len(backend) == 1
+
+
+def test_should_return_422_when_mode_is_unknown(client: TestClient) -> None:
+    """An out-of-set ?mode= is rejected at the edge, not forwarded to the backend."""
+    response = client.get("/api/search", params={"q": "نص", "mode": "bogus"})
     assert response.status_code == 422
