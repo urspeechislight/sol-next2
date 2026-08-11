@@ -25,12 +25,16 @@ def test_should_shape_valid_overrides_into_records(monkeypatch: pytest.MonkeyPat
 def test_should_drop_rows_without_a_page_or_title(monkeypatch: pytest.MonkeyPatch) -> None:
     """Rows missing a positive page or a non-empty title are discarded."""
     monkeypatch.setattr(toc_overrides.books_repo, "source_path", _only_known)
-    source = {"known_01": {"entries": [
-        {"page": 5, "title": "باب"},
-        {"page": 0, "title": "bad"},
-        {"page": 9, "title": "  "},
-        {"title": "no page"},
-    ]}}
+    source = {
+        "known_01": {
+            "entries": [
+                {"page": 5, "title": "باب"},
+                {"page": 0, "title": "bad"},
+                {"page": 9, "title": "  "},
+                {"title": "no page"},
+            ]
+        }
+    }
     index = toc_overrides.curated_index(source)
     assert index["known_01"]["entries"] == [{"page": 5, "title": "باب"}]
 
