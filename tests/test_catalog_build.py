@@ -33,3 +33,38 @@ def test_should_build_authorless_book_when_text_is_anonymous() -> None:
 def test_should_reject_frontmatter_without_a_title() -> None:
     """A titleless record is unusable and is skipped as missing required fields."""
     assert _book_from_frontmatter({"author": "المؤلف"}, category="c", urn="u") is None
+
+
+def test_should_parse_tags_and_set_foundational_when_token_present() -> None:
+    """A foundational-tagged volume exposes parsed tags and foundational True."""
+    book = _book_from_frontmatter(
+        {"title": "كتاب", "author": "المؤلف", "tags": "حديث، foundational، رجال"},
+        category="shia-hadith",
+        urn="Xyz12345",
+    )
+    assert book is not None
+    assert book.tags == ["حديث", "foundational", "رجال"]
+    assert book.foundational is True
+
+
+def test_should_default_to_empty_tags_and_not_foundational_without_tags() -> None:
+    """A volume with no tags field indexes with empty tags and foundational False."""
+    book = _book_from_frontmatter(
+        {"title": "كتاب", "author": "المؤلف"},
+        category="sunni-theology",
+        urn="Xyz12345",
+    )
+    assert book is not None
+    assert book.tags == []
+    assert book.foundational is False
+
+
+def test_should_drop_empty_tag_fragments_from_trailing_separator() -> None:
+    """A trailing Arabic comma never yields a phantom empty tag."""
+    book = _book_from_frontmatter(
+        {"title": "كتاب", "author": "المؤلف", "tags": "حديث،"},
+        category="shia-hadith",
+        urn="Xyz12345",
+    )
+    assert book is not None
+    assert book.tags == ["حديث"]
