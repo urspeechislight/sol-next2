@@ -107,9 +107,16 @@
             "title": "Author"
           },
           "author_ar": {
-            "description": "Author in Arabic.",
-            "title": "Author Ar",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Author in Arabic, or None for anonymous and corporate texts.",
+            "title": "Author Ar"
           },
           "blurb": {
             "anyOf": [
@@ -246,7 +253,7 @@
             "title": "Volume"
           }
         },
-        "required": ["title_ar", "author_ar", "category", "urn"],
+        "required": ["title_ar", "category", "urn"],
         "title": "Book",
         "type": "object"
       },
@@ -2476,9 +2483,16 @@
             "title": "Author"
           },
           "author_ar": {
-            "description": "Author in Arabic.",
-            "title": "Author Ar",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Author in Arabic, or None for anonymous and corporate texts.",
+            "title": "Author Ar"
           },
           "canonical": {
             "anyOf": [
@@ -2606,7 +2620,6 @@
         },
         "required": [
           "title_ar",
-          "author_ar",
           "category",
           "stem",
           "volume_count",

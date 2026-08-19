@@ -43,7 +43,10 @@ class BibRecord(FrozenModel):
     title_ar: str = Field(description="Arabic title.")
     title_en: str | None = Field(default=None, description="English title, if available.")
     author: str | None = Field(default=None, description="Author in romanized form.")
-    author_ar: str = Field(description="Author in Arabic.")
+    author_ar: str | None = Field(
+        default=None,
+        description="Author in Arabic, or None for anonymous and corporate texts.",
+    )
     death_year_ah: int | None = Field(
         default=None,
         ge=1,

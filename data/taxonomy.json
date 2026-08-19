@@ -46,6 +46,12 @@
         "label": "Fiqh Terminology",
         "label_ar": "مصطلح الحديث",
         "count": 9
+      },
+      {
+        "slug": "hadith-polemics",
+        "label": "Hadith Polemics",
+        "label_ar": "الجدل الحديثي",
+        "count": 2
       }
     ]
   },
@@ -286,6 +292,110 @@
         "label": "Manuscripts",
         "label_ar": "المخطوطات",
         "count": 6
+      },
+      {
+        "slug": "almerja-library",
+        "label": "Almerja Library",
+        "label_ar": "مكتبة المرجع",
+        "count": 1
+      },
+      {
+        "slug": "uncategorized",
+        "label": "Uncategorized",
+        "label_ar": "غير مصنف",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "id": "scriptures",
+    "label": "Scripture & Patristics",
+    "label_ar": "الكتب المقدسة والآبائيات",
+    "blurb": "Biblical canons and versions, rabbinic literature, patristic writings, and canon studies.",
+    "categories": [
+      {
+        "slug": "bible-tanakh",
+        "label": "Tanakh",
+        "label_ar": "التناخ",
+        "count": 39
+      },
+      {
+        "slug": "bible-septuagint",
+        "label": "Septuagint",
+        "label_ar": "الترجمة السبعينية",
+        "count": 55
+      },
+      {
+        "slug": "bible-greek-nt",
+        "label": "Greek New Testament",
+        "label_ar": "العهد الجديد باليونانية",
+        "count": 27
+      },
+      {
+        "slug": "bible-peshitta",
+        "label": "Peshitta",
+        "label_ar": "البشيتا",
+        "count": 27
+      },
+      {
+        "slug": "bible-apocrypha",
+        "label": "Old Testament Apocrypha",
+        "label_ar": "الأسفار القانونية الثانية",
+        "count": 1
+      },
+      {
+        "slug": "bible-nt-apocrypha",
+        "label": "New Testament Apocrypha",
+        "label_ar": "أبوكريفا العهد الجديد",
+        "count": 1
+      },
+      {
+        "slug": "bible-pseudepigrapha",
+        "label": "Pseudepigrapha",
+        "label_ar": "الأسفار المنتحلة",
+        "count": 2
+      },
+      {
+        "slug": "bible-talmud",
+        "label": "Talmud",
+        "label_ar": "التلمود",
+        "count": 37
+      },
+      {
+        "slug": "bible-midrash",
+        "label": "Midrash",
+        "label_ar": "المدراش",
+        "count": 24
+      },
+      {
+        "slug": "bible-apostolic-fathers",
+        "label": "Apostolic Fathers",
+        "label_ar": "الآباء الرسوليون",
+        "count": 7
+      },
+      {
+        "slug": "patristics-ante-nicene",
+        "label": "Ante-Nicene Fathers",
+        "label_ar": "الآباء قبل نيقية",
+        "count": 6
+      },
+      {
+        "slug": "patristics-nicene-postnicene",
+        "label": "Nicene & Post-Nicene Fathers",
+        "label_ar": "آباء نيقية وما بعدها",
+        "count": 2
+      },
+      {
+        "slug": "canon-studies",
+        "label": "Canon Studies",
+        "label_ar": "دراسات القانون الكتابي",
+        "count": 5
+      },
+      {
+        "slug": "christian-criticism",
+        "label": "Christian Criticism",
+        "label_ar": "النقد المسيحي",
+        "count": 10
       }
     ]
   }

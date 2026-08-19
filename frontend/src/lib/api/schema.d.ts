@@ -747,9 +747,9 @@ export interface components {
             author?: string | null;
             /**
              * Author Ar
-             * @description Author in Arabic.
+             * @description Author in Arabic, or None for anonymous and corporate texts.
              */
-            author_ar: string;
+            author_ar?: string | null;
             /**
              * Blurb
              * @description One-sentence editorial summary, if any.
@@ -2369,9 +2369,9 @@ export interface components {
             author?: string | null;
             /**
              * Author Ar
-             * @description Author in Arabic.
+             * @description Author in Arabic, or None for anonymous and corporate texts.
              */
-            author_ar: string;
+            author_ar?: string | null;
             /**
              * Canonical
              * @description Editorial rank, or None.

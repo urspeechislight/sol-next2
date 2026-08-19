@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-EXPECTED_DOMAIN_COUNT = 7
-EXPECTED_HADITH_CATEGORY_COUNT = 7
+EXPECTED_DOMAIN_COUNT = 8
+EXPECTED_HADITH_CATEGORY_COUNT = 8
 
 
 def test_should_return_seven_domains_when_listing(client: TestClient) -> None:
-    """The taxonomy ships with exactly seven top-level domains."""
+    """The taxonomy ships with exactly eight top-level domains."""
     response = client.get("/api/domains")
     assert response.status_code == 200
     payload = response.json()
@@ -17,7 +17,7 @@ def test_should_return_seven_domains_when_listing(client: TestClient) -> None:
 
 
 def test_should_include_hadith_domain_when_listing(client: TestClient) -> None:
-    """The first domain is Hadith with seven categories."""
+    """The first domain is Hadith with eight categories."""
     response = client.get("/api/domains")
     payload = response.json()
     hadith = next(d for d in payload if d["id"] == "hadith")

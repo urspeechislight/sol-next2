@@ -13,6 +13,7 @@ stem into works so the Library lists works, not duplicated volumes.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -23,9 +24,27 @@ from backend.core.errors import ResourceNotFoundError
 from backend.core.settings import get_settings
 from backend.models.book import CANONICAL_TIERS, Book, Canonical
 from backend.models.work import Work
-from backend.patterns import normalize_arabic
+from backend.patterns import VOLUME_DESIGNATOR, cached_compile, normalize_arabic
 from backend.repositories import _taxonomy
 from backend.repositories._data_loader import DataLoadError, load_json, slice_page
+
+_VOLUME_DESIGNATOR_RE = cached_compile(VOLUME_DESIGNATOR, re.IGNORECASE)
+
+
+def _base_titles(book: Book) -> frozenset[str]:
+    """The titles of one volume with any trailing volume designator stripped.
+
+    Cataloguers append the designator per volume ("..., Vol. 2"), and a
+    bilingual edition titles the original and the translation each in its
+    own language, so the raw title strings legitimately differ across
+    volumes of one work. The designator-stripped, lower-cased base titles
+    across both title fields are the stable core the fold guard compares.
+    """
+    return frozenset(
+        _VOLUME_DESIGNATOR_RE.sub("", title).strip().lower()
+        for title in (book.title_ar, book.title_en)
+        if title
+    )
 
 
 @lru_cache(maxsize=1)
@@ -69,14 +88,17 @@ def _stem(urn: str) -> str:
 
 
 def _fold_work(stem: str, volumes: list[Book]) -> Work:
-    """Fold one stem's volumes into a Work. The volumes must agree on title +
-    author: a stem shared by genuinely different works (an original and a
-    recension) would otherwise merge into a wrong claim, so a disagreement fails
-    loud rather than guessing."""
+    """Fold one stem's volumes into a Work. The volumes must agree on author
+    and share at least one designator-stripped base title: a stem shared by
+    genuinely different works (an original and a recension) would otherwise
+    merge into a wrong claim, so disjoint base titles fail loud rather than
+    guessing. Per-volume designators and original-versus-translation titling
+    differ legitimately and do not count as disagreement."""
     ordered = sorted(volumes, key=lambda b: b.volume or 1)
     head = ordered[0]
+    head_titles = _base_titles(head)
     for vol in ordered:
-        if vol.title_ar != head.title_ar or vol.author_ar != head.author_ar:
+        if vol.author_ar != head.author_ar or not (_base_titles(vol) & head_titles):
             raise DataLoadError(
                 f"URN stem '{stem}' folds volumes of differing works: "
                 f"'{head.title_ar}' / '{head.author_ar}' vs "

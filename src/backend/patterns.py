@@ -30,6 +30,10 @@ would change which TOC anchors match. Both combining-mark classes are
 codepoint-built deliberately: a retyped literal of combining characters gets
 silently reordered by bidi rendering, which corrupts the ranges.
 
+``VOLUME_DESIGNATOR`` is the one definition of the trailing volume
+marker (", Vol. 2") a cataloguer appends per volume; the work-fold guard
+strips it so per-volume titling never splits one work into many.
+
 ``FOOTNOTE_MARKER`` is the one definition of the inline ``(N)`` footnote
 reference shape; the pipeline's splitter, stripper, and tail regexes all
 derive from it.
@@ -89,6 +93,8 @@ ARABIC_ALEF_MAQSURA: Final[re.Pattern[str]] = re.compile("ى")
 ARABIC_TAA_MARBUTA: Final[re.Pattern[str]] = re.compile("ة")
 WHITESPACE: Final[re.Pattern[str]] = re.compile(r"\s+")
 FOOTNOTE_MARKER: Final[str] = r"\((\d+)\)"
+
+VOLUME_DESIGNATOR: Final[str] = r"\s*[\u060c,]\s*(?:vol(?:ume)?\.?)\s*\d+.*$"
 _HONORIFIC_CPS: Final[tuple[int, ...]] = (
     *range(0xFD40, 0xFD50),
     *range(0xFDF0, 0xFDFE),

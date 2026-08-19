@@ -145,17 +145,21 @@ def _normalize_death_year(raw: Any) -> int | None:
 
 
 def _book_from_frontmatter(fm: dict[str, Any], category: str, urn: str) -> Book | None:
-    """Build a ``Book`` from a frontmatter dict. Returns None if unusable."""
+    """Build a ``Book`` from a frontmatter dict. Returns None if unusable.
+
+    A title is the one required field. Authorless frontmatter (scripture,
+    rabbinic corpora, and other anonymous or corporate texts) still indexes
+    with the author left as None: an honest absence, never a fabricated name.
+    """
     title_ar = _opt_str(fm.get("title")) or _opt_str(fm.get("short_title"))
-    author_ar = _opt_str(fm.get("author"))
-    if not title_ar or not author_ar:
+    if not title_ar:
         return None
     return Book(
         urn=urn,
         title_ar=title_ar,
         title_en=_opt_str(fm.get("title_en")) or _opt_str(fm.get("short_title")),
         author=_opt_str(fm.get("author_en")),
-        author_ar=author_ar,
+        author_ar=_opt_str(fm.get("author")),
         death_year_ah=_normalize_death_year(fm.get("death_year") or fm.get("death_date")),
         death_year_ce=None,
         page_count=_opt_int(fm.get("page_count")),
