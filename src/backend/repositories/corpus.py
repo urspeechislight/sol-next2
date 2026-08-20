@@ -44,7 +44,7 @@ from backend.models.search import (
     SearchMode,
     VolumeFacet,
 )
-from backend.patterns import fold_search
+from backend.patterns import fold_search, fold_with_offsets
 from backend.repositories import reader as reader_repo
 from backend.repositories._data_loader import slice_page
 
@@ -284,3 +284,68 @@ def search_in_book(
         if found:
             matches.append(BookSearchMatch(page=row.page, snippet=snippet))
     return slice_page(matches, limit, offset)
+
+
+_PASSAGE_BOUNDARY_CHARS: Final[str] = ".\n۔"
+_PASSAGE_LEAD_DIVISOR: Final[int] = 4
+
+
+def _snap_left(content: str, raw_left: int, anchor: int) -> int:
+    """Return the position just after the first sentence or section boundary at
+    or after ``raw_left`` so the passage opens at a clean sentence start rather
+    than mid-clause; never advanced past ``anchor``; ``raw_left`` itself when no
+    boundary falls in the window. Trims only the partial sentence at the far
+    edge of the window, keeping nearly all of the requested lead context."""
+    for i in range(raw_left, anchor):
+        if content[i] in _PASSAGE_BOUNDARY_CHARS:
+            return i + 1
+    return raw_left
+
+
+def _snap_right(content: str, raw_right: int, anchor: int) -> int:
+    """Return the position just after the last sentence or section boundary at
+    or before ``raw_right`` so the passage closes at a clean sentence end rather
+    than mid-clause; never pulled before ``anchor``; ``raw_right`` itself when
+    no boundary falls in the window. Trims only the partial sentence at the far
+    edge, keeping nearly all of the requested tail context."""
+    for i in range(raw_right, anchor, -1):
+        if content[i - 1] in _PASSAGE_BOUNDARY_CHARS:
+            return i
+    return raw_right
+
+
+def passage_around(content: str, windows: list[str], chars: int) -> tuple[bool, str]:
+    """Locate the first folded ``windows`` hit in ``content`` and return
+    ``(found, passage)``: a fold-aware excerpt in original orthography of
+    roughly ``chars`` total, spanning the verse hit with about one quarter of
+    the budget as lead-in and three quarters as follow-on (tafsir commentary
+    typically prints after the verse citation), each edge trimmed to the nearest
+    sentence or section boundary. ``(False, head)`` is returned when no window
+    is present, where the head is sized to ``chars`` so the caller still gets a
+    usable page excerpt for the page the FTS engine matched.
+
+    The configurable companion to :func:`locate_snippet`: that function fixes
+    ``CORPUS__SNIPPET_WINDOW_CHARS`` per side for the tight served-search
+    excerpt, while this one serves the build layer with a total-length budget.
+    Both build on the one ``fold_with_offsets`` map, so the fold rule has a
+    single definition."""
+    folded, origin = fold_with_offsets(content)
+    for needle in windows:
+        hit = folded.find(needle)
+        if hit < 0:
+            continue
+        start = origin[hit]
+        end = origin[hit + len(needle) - 1] + 1
+        lead = chars // _PASSAGE_LEAD_DIVISOR
+        tail = chars - lead
+        left = _snap_left(content, max(0, start - lead), start)
+        right = _snap_right(content, min(len(content), end + tail), end)
+        passage_text = content[left:right]
+        prefix = "…" if left > 0 else ""
+        suffix = "…" if right < len(content) else ""
+        return True, prefix + passage_text + suffix
+    head_len = max(chars, CORPUS__SNIPPET_HEAD_CHARS)
+    head = content[:head_len]
+    if len(content) > head_len:
+        return False, head + "…"
+    return False, head

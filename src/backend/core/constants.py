@@ -31,7 +31,7 @@ both the pipeline and the reader; see docs/councils/
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, NamedTuple
 
 HADITH__FOOTNOTE_MARKER_MAX_GAP: Final[int] = 50
 
@@ -101,3 +101,35 @@ NARRATOR_LINK__ORIGIN_KEY: Final[str] = "origin"
 NARRATOR_LINK__ID_KEY: Final[str] = "id"
 NARRATOR_LINK__ORIGIN_RIJAL: Final[str] = "rijal"
 NARRATOR_LINK__ORIGIN_PERSON: Final[str] = "person"
+
+
+class TafsirSource(NamedTuple):
+    """One tafsir or hadith source mined for per-verse commentary candidates.
+
+    The five Shia tafsir and hadith works whose pages are scanned for each
+    verse text. ``prefix`` is the URN stem shared by every volume of the work
+    (used to confirm a hit belongs to its source); ``title`` is the Arabic book
+    title used as the corpus book filter; ``author`` is the romanized author
+    carried into the candidates record.
+    """
+
+    prefix: str
+    title: str
+    author: str
+
+
+ARTIFACT__QURAN_JSON: Final[str] = "quran.json"
+ARTIFACT__QURAN_TAFSIR_JSON: Final[str] = "quran_tafsir.json"
+QURAN__TAFSIR_PASSAGE_CHARS: Final[int] = 1500
+QURAN__TAFSIR_MAX_MATCHES_PER_SOURCE: Final[int] = 3
+QURAN__TAFSIR_SOURCES: Final[tuple[TafsirSource, ...]] = (
+    TafsirSource("sImRzyMh", "تفسير القمي", "Ali Ibn Ibrahim Al-Qummi"),
+    TafsirSource("wt1u7Yp0", "تفسير العياشي", "Muhammad Ibn Masud Al-Ayyashi"),
+    TafsirSource(
+        "vr7Zr2wC",
+        "تفسير كنز الدقائق وبحر الغرائب",
+        "Al-Shaykh Muhammad Ibn Muhammad Rida Al-Qummi Al-Mashhadi",
+    ),
+    TafsirSource("B4x1RjeV", "البرهان في تفسير القرآن", "Al-Sayyid Hashim Al-Bahrani"),
+    TafsirSource("iz32WsFJ", "بحار الأنوار", "Al-Allamah Al-Majlisi"),
+)
