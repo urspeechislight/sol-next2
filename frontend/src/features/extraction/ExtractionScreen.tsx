@@ -50,6 +50,7 @@ interface BookPickerProps {
     book's first extracted page. */
 function BookPicker({ list, picked, onPick }: BookPickerProps) {
   const active = list.find((book) => book.urn === picked) ?? list[0];
+  if (!active) return null;
   return (
     <Stack gap="lg">
       <Inline gap="xs" wrap>

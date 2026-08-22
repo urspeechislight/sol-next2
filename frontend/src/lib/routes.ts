@@ -169,7 +169,7 @@ export function readerHref(urn: string, page: number, query = ''): string {
     default view; this never throws. */
 export function parseHash(hash: string): RouteState {
   const raw = hash.replace(/^#/, '');
-  const [path, queryString] = raw.split('?');
+  const [path = '', queryString] = raw.split('?');
   const segments = path.split('/').filter(Boolean);
   const params = new URLSearchParams(queryString ?? '');
 

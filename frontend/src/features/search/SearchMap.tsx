@@ -1,8 +1,7 @@
 import { useState } from 'react';
 
-import { FacetChip } from '../../lib/design-system';
+import { Apparatus, FacetChip } from '../../lib/design-system';
 import { countLabel } from '../../lib/utils';
-import { Apparatus } from '../library/Apparatus';
 import { groupState } from '../../lib/taxonomySelection';
 import type { FacetRollup } from './facetRollup';
 import './SearchMap.css';

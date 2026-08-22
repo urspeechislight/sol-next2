@@ -53,33 +53,9 @@
 .hday__refs {
   margin-top: var(--space-md);
 }
+/* Layout only — the rule itself is the shared Apparatus component. */
 .hday__refs-rule {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
   margin-bottom: var(--space-md);
-}
-.hday__refs-rule::before,
-.hday__refs-rule::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--color-accent) 30%,
-    var(--color-accent) 70%,
-    transparent
-  );
-  opacity: 0.45;
-}
-.hday__refs-label {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-accent-deep);
-  white-space: nowrap;
 }
 
 .hday__pills {

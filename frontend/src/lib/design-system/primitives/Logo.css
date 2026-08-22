@@ -27,7 +27,7 @@
 .ds-logo__word {
   font-family: var(--font-serif);
   font-weight: var(--weight-semibold);
-  letter-spacing: 0.16em;
+  letter-spacing: var(--tracking-label);
   color: var(--color-text);
 }
 .ds-logo--sm .ds-logo__word {

@@ -1,11 +1,10 @@
-import { UnstyledButton } from '../../lib/design-system';
+import { Apparatus, UnstyledButton } from '../../lib/design-system';
 import { DataView } from '../../lib/DataView';
 import { getWorks } from '../../lib/api/client';
 import { LIBRARY } from '../../lib/constants';
 import type { Category, Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { countLabel } from '../../lib/utils';
-import { Apparatus } from './Apparatus';
 import { dedupeEditions } from './lib';
 import { WorkRecord } from './WorkRecord';
 import './SchoolsSpread.css';

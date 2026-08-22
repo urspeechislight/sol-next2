@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { PageGlow, Spinner, Text } from '../../lib/design-system';
-import { getWorks } from '../../lib/api/client';
-import { PAGE } from '../../lib/constants';
-import type { Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { useDomains } from '../../lib/useDomains';
 import { CategoryPane } from './CategoryPane';
@@ -12,8 +9,8 @@ import { DomainPane } from './DomainPane';
 import { FihristRail } from './FihristRail';
 import { ScopeHead } from './ScopeHead';
 import { WorksQueryResults } from './WorksQueryResults';
-import { domainLabel, labelArOf, labelOf } from './lib';
-import type { TraditionLens } from './lib';
+import { assembleWorks, domainLabel, labelArOf, labelOf } from './lib';
+import type { AssembledWorks, TraditionLens } from './lib';
 import '../screens.css';
 import './LibraryScreen.css';
 
@@ -94,27 +91,13 @@ function useScope(domainOfCat: Map<string, string>, initialCat = '', initialDom 
   };
 }
 
-/** Assemble a whole category (paged fetches of PAGE.facetLimit) so the pane
-    can filter and section it truthfully. Uncapped by design: a capped fetch
-    made seven of nine century counts wrong in the largest scopes, and the
-    full fetch of the biggest category measures ~1s. */
+/** Assemble a whole category through the shared assembleWorks loop (lib.ts),
+    so the pane can filter and section it truthfully. */
 function useCategoryWorks(cat: string, lens: TraditionLens) {
-  return useAsync<{ items: Work[]; total: number } | null>(async () => {
+  return useAsync<AssembledWorks | null>(async () => {
     if (!cat) return null;
     const tradition = lens === 'all' ? '' : lens;
-    const first = await getWorks({ category: cat, tradition, limit: PAGE.facetLimit, offset: 0 });
-    const items = [...first.items];
-    while (items.length < first.total) {
-      const next = await getWorks({
-        category: cat,
-        tradition,
-        limit: PAGE.facetLimit,
-        offset: items.length,
-      });
-      if (next.items.length === 0) break;
-      items.push(...next.items);
-    }
-    return { items, total: first.total };
+    return assembleWorks({ category: cat, tradition });
   }, [cat, lens]);
 }
 

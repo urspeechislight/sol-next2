@@ -12,7 +12,7 @@
   padding: var(--space-2xl) var(--space-xl) var(--space-4xl);
 }
 .view {
-  animation: vfade 0.24s var(--ease-out);
+  animation: vfade var(--duration-gesture) var(--ease-out);
 }
 @keyframes vfade {
   from {

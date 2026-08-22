@@ -95,33 +95,9 @@
 .vhero__tafsir {
   margin-top: var(--space-md);
 }
+/* Layout only — the rule itself is the shared Apparatus component. */
 .vhero__tafsir-rule {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
   margin-bottom: var(--space-md);
-}
-.vhero__tafsir-rule::before,
-.vhero__tafsir-rule::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--color-accent) 30%,
-    var(--color-accent) 70%,
-    transparent
-  );
-  opacity: 0.45;
-}
-.vhero__tafsir-label {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-accent-deep);
-  white-space: nowrap;
 }
 
 .vhero__tafsir-cols {
@@ -176,7 +152,7 @@
 .vhero__excerpt-go {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-meta);
   text-transform: uppercase;
   color: var(--color-accent-deep);
 }

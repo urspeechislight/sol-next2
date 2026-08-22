@@ -19,6 +19,9 @@ const API_TARGET = process.env.SOL_API_TARGET ?? 'http://localhost:8001';
 
 export default defineConfig({
   plugins: [react()],
+  // Match tsconfig ES2022: no point transpiling syntax the compiler already
+  // accepts as native.
+  build: { target: "es2022" },
   server: {
     host: true,
     port: 8765,

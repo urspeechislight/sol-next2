@@ -794,6 +794,19 @@
         "title": "EntrySectionAudit",
         "type": "object"
       },
+      "ErrorEnvelope": {
+        "description": "The body of every non-2xx response the API declares.",
+        "properties": {
+          "detail": {
+            "description": "Human-readable failure description.",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": ["detail"],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
       "ExtractionBookSummary": {
         "description": "Coverage summary for one book present in the manuscript artifact.",
         "properties": {
@@ -3153,6 +3166,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset)."
           }
         },
         "summary": "List the books in the manuscript artifact with extraction coverage.",
@@ -3184,6 +3207,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset)."
           },
           "422": {
             "content": {
@@ -3234,6 +3267,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset)."
           },
           "422": {
             "content": {
@@ -4023,6 +4066,16 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The consolidated search backend is unreachable or answered outside contract."
           }
         },
         "summary": "Full-text search across all book content (diacritic-insensitive).",
@@ -4113,6 +4166,16 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The consolidated search backend is unreachable or answered outside contract."
           }
         },
         "summary": "Category -> book -> volume filters available for a search query.",

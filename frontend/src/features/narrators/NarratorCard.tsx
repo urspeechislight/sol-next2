@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 import { Badge, Card, Heading, Inline, Stack, Text, UnstyledButton } from '../../lib/design-system';
 import type { PersonEntry, RijalEntry } from '../../lib/types';
-import { joinDots } from '../../lib/utils';
+import { deathLabel, joinDots } from '../../lib/utils';
 import { reliabilityBadge } from '../../lib/variants';
 import { generationLabel, residenceLabel, traditionLabel } from './labels';
 import { PersonDrawer } from './PersonDrawer';
@@ -46,7 +46,7 @@ function PersonMeta({ entry }: { entry: PersonEntry }) {
   const topGrade = entry.reliability[0]?.split('=')[1] ?? '';
   const residence = entry.places ? residenceLabel(entry.places) : '';
   const facts = [
-    entry.death_year ? `d. ${entry.death_year} AH` : '',
+    deathLabel(entry.death_year),
     residence,
     `${entry.teacher_count} teachers · ${entry.student_count} students`,
     `${entry.n_sources} sources`,
@@ -106,7 +106,10 @@ export function NarratorCard({
         ) : null}
         {person ? <PersonMeta entry={item} /> : <RijalMeta entry={item} />}
         {person ? (
-          <UnstyledButton onClick={() => setOpen((value) => !value)}>
+          <UnstyledButton
+            onClick={() => setOpen((value) => !value)}
+            ariaExpanded={open}
+          >
             <Text size="xs" tone="accent">
               {open ? 'Hide detail' : 'Show identity, teachers, students, sources, grades'}
             </Text>

@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
+import { Apparatus } from '../../lib/design-system';
 import { LoadMoreFoot } from '../../lib/LoadMoreFoot';
 import { LIBRARY } from '../../lib/constants';
 import type { Work } from '../../lib/types';
 import { countLabel, formatCount } from '../../lib/utils';
-import { Apparatus } from './Apparatus';
 import { FilterBar } from './FilterBar';
 import { WorkRecord } from './WorkRecord';
 import { groupByEra } from './lib';

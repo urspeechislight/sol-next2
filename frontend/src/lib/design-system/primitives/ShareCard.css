@@ -34,12 +34,12 @@
 }
 .ds-sharecard__head .ds-logo__word {
   font-size: 4.6cqi;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--tracking-label);
 }
 .ds-sharecard__kicker {
   font-family: var(--font-mono);
   font-size: 2.7cqi;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-meta);
   text-transform: uppercase;
   color: var(--color-accent-deep);
   text-align: right;

@@ -3,6 +3,7 @@ import { eventForDay } from '../../lib/almanac';
 import { hijriMonthName } from '../../lib/hijri';
 import type { HijriToday } from '../../lib/hijri';
 import type { Almanac } from '../../lib/types';
+import './Band.css';
 import './ChroniclesBand.css';
 
 export interface ChroniclesBandProps {
@@ -16,7 +17,7 @@ export interface ChroniclesBandProps {
 export function ChroniclesBand({ almanac, today }: ChroniclesBandProps) {
   const { event, onThisDay } = eventForDay(almanac, today.month, today.day);
   return (
-    <article className="chband" aria-label="Today in history">
+    <article className="band chband" aria-label="Today in history">
       <header className="chband__head">
         <Eyebrow>
           {onThisDay ? 'On this day · حدث في مثل هذا اليوم' : 'From the chronicles · من التاريخ'}

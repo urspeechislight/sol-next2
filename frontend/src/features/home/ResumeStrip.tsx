@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { UnstyledButton } from '../../lib/design-system';
-import { getBook } from '../../lib/api/client';
+import { getBook, isNotFound } from '../../lib/api/client';
 import { clearReading, lastReading } from '../../lib/reading';
 import type { Book } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
@@ -12,8 +12,10 @@ export interface ResumeStripProps {
 
 /** The re-entry path: when localStorage remembers a reading position, one
     slim bar above the folio resumes it in a tap. Absent for first-timers.
-    A position whose book the catalogue no longer serves is stale local
-    state: it is cleared, and the strip simply does not render. */
+    A position whose book the catalogue no longer serves (404) is stale local
+    state: it is cleared, and the strip simply does not render. Any other
+    failure is transient — the position is kept, and this load renders
+    nothing rather than wiping it. */
 export function ResumeStrip({ onOpenReader }: ResumeStripProps) {
   const position = useMemo(() => lastReading(), []);
   const book = useAsync<Book | null>(
@@ -22,7 +24,7 @@ export function ResumeStrip({ onOpenReader }: ResumeStripProps) {
   );
 
   useEffect(() => {
-    if (book.error) clearReading();
+    if (book.error && isNotFound(book.error)) clearReading();
   }, [book.error]);
 
   if (!position || !book.data) return null;

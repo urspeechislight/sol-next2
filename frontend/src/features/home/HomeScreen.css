@@ -46,13 +46,7 @@
   top: var(--space-md);
   bottom: var(--space-md);
   width: 1px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--color-accent) 25%,
-    var(--color-accent) 75%,
-    transparent
-  );
+  background: var(--rule-gold-fade-v);
   opacity: 0.35;
 }
 
@@ -90,13 +84,7 @@
   translate: -50% 0;
   width: min(52%, 380px);
   height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--color-accent) 30%,
-    var(--color-accent) 70%,
-    transparent
-  );
+  background: var(--rule-gold-fade-h);
   opacity: 0.5;
 }
 .home3__colophon-mark {

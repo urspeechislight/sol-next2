@@ -117,5 +117,7 @@ export type { FacetChipProps } from './primitives/FacetChip';
 
 export { Checkbox } from './primitives/Checkbox';
 export type { CheckboxProps } from './primitives/Checkbox';
+export { Apparatus } from './components/Apparatus';
+export type { ApparatusProps } from './components/Apparatus';
 
-export { useDismiss } from './primitives/useDismiss';
+export { useDismiss, useEscape } from './primitives/useDismiss';

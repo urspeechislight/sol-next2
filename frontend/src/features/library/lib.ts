@@ -4,7 +4,10 @@
 // diverge.
 
 import type { IconName } from '../../lib/design-system';
-import type { Category, Domain, Tradition, Work } from '../../lib/types';
+import { getWorks } from '../../lib/api/client';
+import type { WorkListParams } from '../../lib/api/client';
+import { PAGE } from '../../lib/constants';
+import type { Category, Domain, Page, Tradition, Work } from '../../lib/types';
 
 export type TraditionLens = 'all' | 'sunni' | 'shia';
 
@@ -77,7 +80,7 @@ export function groupByEra(works: Work[]): EraGroup[] {
   return order.map((century) => {
     const group = buckets.get(century) ?? [];
     group.sort(byDeathThenTitle);
-    const label = CENTURY_LABELS[century];
+    const label = CENTURY_LABELS[century] ?? { en: 'Undated', ar: 'بدون تاريخ' };
     return { century, labelEn: label.en, labelAr: label.ar, works: group };
   });
 }
@@ -155,4 +158,31 @@ export function labelArOf(domains: Domain[], slug: string): string {
 
 export function domainLabel(domains: Domain[], id: string): string {
   return domains.find((d) => d.id === id)?.label ?? id;
+}
+
+export interface AssembledWorks {
+  items: Work[];
+  total: number;
+}
+
+/** Assemble every work matching `params` (paged fetches of PAGE.facetLimit)
+    so callers can filter, section, and count truthfully. Uncapped by design:
+    a capped fetch made seven of nine century counts wrong in the largest
+    scopes, and the full fetch of the biggest category measures ~1s. The one
+    assembly loop for the category pane and works search, so neither can
+    drift from the other. `head` may pass an already-fetched first page (the
+    works search probes its total before committing to assembly) to avoid a
+    duplicate round trip. */
+export async function assembleWorks(
+  params: WorkListParams,
+  head?: Page<Work>,
+): Promise<AssembledWorks> {
+  const first = head ?? (await getWorks({ ...params, limit: PAGE.facetLimit, offset: 0 }));
+  const items = [...first.items];
+  while (items.length < first.total) {
+    const next = await getWorks({ ...params, limit: PAGE.facetLimit, offset: items.length });
+    if (next.items.length === 0) break;
+    items.push(...next.items);
+  }
+  return { items, total: first.total };
 }

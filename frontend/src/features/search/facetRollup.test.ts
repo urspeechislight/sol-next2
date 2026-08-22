@@ -33,7 +33,7 @@ describe('rollupByDomain', () => {
       ['hadith', 40],
       ['fiqh', 15],
     ]);
-    expect(rollup.domains[1].categories[0].slug).toBe('hanafi');
+    expect(rollup.domains[1]?.categories[0]?.slug).toBe('hanafi');
   });
 
   it('should omit domains with no matching categories', () => {

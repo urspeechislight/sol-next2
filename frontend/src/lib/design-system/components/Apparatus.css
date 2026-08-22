@@ -11,19 +11,13 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--color-accent) 30%,
-    var(--color-accent) 70%,
-    transparent
-  );
+  background: var(--rule-gold-fade-h);
   opacity: 0.45;
 }
 .apparatus__label {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-accent-deep);
   white-space: nowrap;

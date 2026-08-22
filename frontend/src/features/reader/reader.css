@@ -215,7 +215,7 @@
   padding: var(--space-2xs) var(--space-xs);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-meta);
   text-transform: uppercase;
   color: var(--color-reader-muted);
   border: var(--border-width) dashed var(--color-reader-rule);
@@ -234,7 +234,7 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-micro);
   color: var(--color-reader-muted);
   margin-bottom: var(--space-md);
 }
@@ -273,7 +273,7 @@
 .reader-eyebrow {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-meta);
   text-transform: uppercase;
   color: var(--color-reader-muted);
 }
@@ -342,7 +342,7 @@
   margin: 0 0 var(--space-md);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-meta);
   color: var(--color-reader-muted);
   text-align: right;
 }
@@ -373,7 +373,7 @@
 
 /* Jump feedback: one gold wash that decays; replaying the class restarts it. */
 .fn-pulse {
-  animation: fn-pulse 1.4s ease-out both;
+  animation: fn-pulse 1.4s var(--ease-out) both;
 }
 @keyframes fn-pulse {
   from {

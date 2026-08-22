@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { Eyebrow, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
+import { Apparatus, Eyebrow, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
 import { HOME } from '../../lib/constants';
 import { requestShare } from '../../lib/share';
 import { surahName } from '../../lib/surahs';
@@ -112,7 +112,7 @@ function TafsirApparatus({ tafsirs, onOpenReader }: TafsirApparatusProps) {
   return (
     <div className="vhero__tafsir">
       <div className="vhero__tafsir-rule" aria-hidden="true">
-        <span className="vhero__tafsir-label">Tafsīr · التفسير</span>
+        <Apparatus>Tafsīr · التفسير</Apparatus>
       </div>
       <div className="vhero__tafsir-cols">
         {tafsirs.map((t) => (

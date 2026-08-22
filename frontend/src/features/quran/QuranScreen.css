@@ -165,7 +165,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-micro);
   color: var(--color-reader-muted);
   margin: 0 0 var(--space-2xs);
 }
@@ -232,7 +232,7 @@
 }
 
 /* ---- responsive ------------------------------------------------------------ */
-@media (max-width: 900px) {
+@media (max-width: 920px) {
   .quran {
     grid-template-columns: 1fr;
   }

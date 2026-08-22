@@ -38,7 +38,7 @@
   padding: var(--space-2xs) 10px;
   border-radius: var(--radius-pill);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-micro);
 }
 .ds-badge__dot {
   width: 6px;

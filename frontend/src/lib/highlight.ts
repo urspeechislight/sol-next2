@@ -26,7 +26,9 @@ export function highlightSegments(text: string, query: string): HighlightSegment
   let folded = '';
   const map: number[] = [];
   for (let i = 0; i < text.length; i += 1) {
-    let f = foldSearchChar(text[i]);
+    const ch = text[i];
+    if (ch === undefined) break;
+    let f = foldSearchChar(ch);
     if (!f) continue;
     if (/\s/.test(f)) {
       if (folded.endsWith(' ')) continue;
@@ -43,8 +45,10 @@ export function highlightSegments(text: string, query: string): HighlightSegment
     const hit = folded.indexOf(needle, from);
     if (hit < 0) break;
     const startOrig = map[hit];
+    if (startOrig === undefined) break;
     const lastFolded = hit + needle.length - 1;
-    const endOrig = lastFolded + 1 < map.length ? map[lastFolded + 1] : text.length;
+    const nextOrig = lastFolded + 1 < map.length ? map[lastFolded + 1] : undefined;
+    const endOrig = nextOrig ?? text.length;
     if (startOrig > cursor) segments.push({ text: text.slice(cursor, startOrig), match: false });
     segments.push({ text: text.slice(startOrig, endOrig), match: true });
     cursor = endOrig;

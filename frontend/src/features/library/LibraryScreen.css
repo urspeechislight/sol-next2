@@ -43,7 +43,7 @@
   gap: var(--space-2xs);
 }
 .fih-mast__eyebrow {
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
 }
 .fih-mast__stat {
@@ -195,7 +195,7 @@
 .fih-cat__n {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--color-text-ghost);
+  color: var(--color-text-faint);
   min-width: 3ch;
   text-align: right;
 }
@@ -212,7 +212,7 @@
   gap: var(--space-2xs);
 }
 .works__crumb {
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-micro);
 }
 .works__toolbar {
   display: flex;
@@ -238,7 +238,7 @@
   max-width: 60ch;
 }
 .overview__eyebrow {
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
 }
 
@@ -260,7 +260,7 @@
 }
 
 /* ---- responsive: stack the rail above the pane ---- */
-@media (max-width: 900px) {
+@media (max-width: 920px) {
   .library__grid {
     grid-template-columns: 1fr;
     gap: var(--space-lg);

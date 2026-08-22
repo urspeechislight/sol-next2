@@ -1178,6 +1178,17 @@ export interface components {
             units: number;
         };
         /**
+         * ErrorEnvelope
+         * @description The body of every non-2xx response the API declares.
+         */
+        ErrorEnvelope: {
+            /**
+             * Detail
+             * @description Human-readable failure description.
+             */
+            detail: string;
+        };
+        /**
          * ExtractionBookSummary
          * @description Coverage summary for one book present in the manuscript artifact.
          */
@@ -2781,6 +2792,15 @@ export interface operations {
                     "application/json": components["schemas"]["ExtractionBookSummary"][];
                 };
             };
+            /** @description Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
         };
     };
     entry_audit_api_dev_extraction_books__book_urn__entry_audit_get: {
@@ -2801,6 +2821,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExtractionEntryAudit"];
+                };
+            };
+            /** @description Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -2833,6 +2862,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExtractionPage"];
+                };
+            };
+            /** @description Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -3268,6 +3306,15 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            /** @description The consolidated search backend is unreachable or answered outside contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
         };
     };
     _search_facets_api_search_facets_get: {
@@ -3304,6 +3351,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The consolidated search backend is unreachable or answered outside contract. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };

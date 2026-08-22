@@ -3,7 +3,7 @@
   grid-template-columns: 1fr 300px;
   gap: var(--space-lg);
 }
-@media (max-width: 880px) {
+@media (max-width: 920px) {
   .graph {
     grid-template-columns: 1fr;
   }
@@ -49,6 +49,6 @@
 .graph__label {
   display: block;
   margin-bottom: var(--space-sm);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-meta);
   text-transform: uppercase;
 }

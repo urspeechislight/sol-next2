@@ -9,6 +9,7 @@ import {
   Segmented,
   Spinner,
   Text,
+  useEscape,
 } from '../../lib/design-system';
 import type { LockupMode } from '../../lib/design-system';
 import { getSurah } from '../../lib/api/client';
@@ -216,6 +217,12 @@ function VerseCard({ v, lang, query = '', active, onSelect }: VerseCardProps) {
       className={cx('hadith', active && 'hadith--active')}
       tabIndex={0}
       onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
     >
       <header className="hadith__head">
         <span className="hadith__id">
@@ -253,6 +260,7 @@ interface ResearchDrawerProps {
     structural placeholders until their corpora are ingested; the drawer is the
     contract for where they land. */
 function ResearchDrawer({ verse, name, tab, onTab, onClose }: ResearchDrawerProps) {
+  useEscape(onClose);
   const words = verse.text_plain.split(' ').filter(Boolean);
   return (
     <div

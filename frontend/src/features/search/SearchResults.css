@@ -7,7 +7,7 @@
 .result__section {
   display: block;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-micro);
   margin-bottom: var(--space-sm);
 }
 .result__snip {

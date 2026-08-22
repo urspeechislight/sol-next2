@@ -8,8 +8,10 @@ export interface ApparatusProps {
   marginalia?: ReactNode;
 }
 
-/** The library's section grammar, matching the landing folio: a centered mono
-    label between two fading gold hairlines, with optional marginalia. */
+/** The section grammar, app-wide: a centered mono label between two fading
+    gold hairlines, with optional marginalia. The one rule-with-label markup —
+    the library's sections and the landing folio's bands all rule through it,
+    so no feature re-implements the hairline pair. */
 export function Apparatus({ children, marginalia }: ApparatusProps) {
   return (
     <div className="apparatus">

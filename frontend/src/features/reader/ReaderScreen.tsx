@@ -10,6 +10,7 @@ import {
   getPage,
   getPageCitations,
   getToc,
+  isNotFound,
   searchBook,
 } from '../../lib/api/client';
 import { READER } from '../../lib/constants';
@@ -96,6 +97,21 @@ function Unavailable({ title }: { title: string }) {
       <Text as="p" size="sm" tone="muted">
         {title} has catalogue metadata, but its page content has not been ingested into the corpus
         yet.
+      </Text>
+    </div>
+  );
+}
+
+/** A transient fetch fault (network, backend outage). Distinct from
+    `Unavailable`: the page may well exist — the request simply failed. */
+function LoadError() {
+  return (
+    <div className="reader-unavailable">
+      <Text as="p" size="lg" font="serif">
+        Could not load this page
+      </Text>
+      <Text as="p" size="sm" tone="muted">
+        The corpus service did not respond. Check the connection and try again.
       </Text>
     </div>
   );
@@ -283,7 +299,13 @@ export function ReaderScreen({
         ) : null}
         <main className="reader-main">
           {pageRes.loading ? <Spinner label="Loading page" /> : null}
-          {pageRes.error ? <Unavailable title={title} /> : null}
+          {pageRes.error ? (
+            isNotFound(pageRes.error) ? (
+              <Unavailable title={title} />
+            ) : (
+              <LoadError />
+            )
+          ) : null}
           {pageData ? (
             <article className="reader-article" data-cards={cards ? 'on' : 'off'} ref={articleRef}>
               <PageHead page={pageData} />

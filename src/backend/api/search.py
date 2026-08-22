@@ -13,13 +13,14 @@ with 422 rather than the repo silently defaulting it to ``exact``.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 
 from backend.api._pagination import PageDep
 from backend.api._routes import as_page, get_route
 from backend.api._validation import reject_unknown
+from backend.models.errors import ErrorEnvelope
 from backend.models.pagination import Page
 from backend.models.search import CorpusMatch, SearchFacets, SearchMode
 from backend.repositories import _taxonomy
@@ -84,12 +85,22 @@ async def _search_facets(
     )
 
 
+_SEARCH_503: dict[int | str, dict[str, Any]] = {
+    503: {
+        "model": ErrorEnvelope,
+        "description": "The consolidated search backend is unreachable or answered "
+        "outside contract.",
+    }
+}
+
+
 get_route(
     router,
     "/search",
     _search,
     response_model=Page[CorpusMatch],
     summary="Full-text search across all book content (diacritic-insensitive).",
+    responses=_SEARCH_503,
 )
 get_route(
     router,
@@ -97,4 +108,5 @@ get_route(
     _search_facets,
     response_model=SearchFacets,
     summary="Category -> book -> volume filters available for a search query.",
+    responses=_SEARCH_503,
 )

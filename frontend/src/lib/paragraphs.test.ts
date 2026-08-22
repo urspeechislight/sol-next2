@@ -22,8 +22,8 @@ describe('flowBlocks', () => {
 
   it('should keep a short standalone line as its own block', () => {
     const blocks = flowBlocks(`بسم الله الرحمن الرحيم\n${LONG_A}\n${LONG_B}`);
-    expect(blocks[0].text).toBe('بسم الله الرحمن الرحيم');
-    expect(blocks[1].text).toBe(`${LONG_A}\n${LONG_B}`);
+    expect(blocks[0]?.text).toBe('بسم الله الرحمن الرحيم');
+    expect(blocks[1]?.text).toBe(`${LONG_A}\n${LONG_B}`);
   });
 
   it('should treat a blank line as a paragraph boundary', () => {

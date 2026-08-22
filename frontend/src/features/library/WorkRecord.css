@@ -81,7 +81,7 @@
   text-overflow: ellipsis;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 760px) {
   .wrow {
     grid-template-columns: minmax(0, 1fr) auto;
   }

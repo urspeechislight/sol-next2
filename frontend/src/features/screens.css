@@ -4,7 +4,7 @@
 .scr__eyebrow {
   display: block;
   margin-bottom: var(--space-sm);
-  letter-spacing: 0.16em;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
 }
 .scr__lede {

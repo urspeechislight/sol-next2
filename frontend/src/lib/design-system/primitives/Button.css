@@ -68,8 +68,8 @@
   border-color: var(--color-accent);
 }
 .ds-btn--gold:hover:not(:disabled) {
-  background: var(--color-accent-deep);
-  border-color: var(--color-accent-deep);
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
 }
 
 /* Link variant: a real <button> (an action, not navigation) styled as an
@@ -88,7 +88,7 @@
   text-decoration-color: color-mix(in oklch, var(--color-accent) 40%, transparent);
 }
 .ds-btn--link:hover:not(:disabled) {
-  text-decoration-color: var(--color-accent);
+  text-decoration-color: var(--color-accent-hover);
 }
 
 .ds-btn__label {

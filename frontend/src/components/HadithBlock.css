@@ -9,6 +9,9 @@
   transition: border-color var(--duration-base) var(--ease-out);
   cursor: pointer;
 }
+.hadith:hover:not(.hadith--active) {
+  border-color: color-mix(in oklch, var(--color-reader-honorific) 25%, var(--color-reader-rule));
+}
 .hadith--active {
   background: var(--color-reader-card-active);
   border-color: color-mix(in oklch, var(--color-reader-honorific) 45%, var(--color-reader-rule));
@@ -62,7 +65,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-micro);
   color: var(--color-reader-muted);
 }
 .hadith__isnad {
@@ -126,6 +129,6 @@
   font-size: var(--text-xs);
   color: var(--color-reader-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-micro);
   font-weight: var(--weight-semibold);
 }

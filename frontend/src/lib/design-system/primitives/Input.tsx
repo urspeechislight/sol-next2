@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { cx } from '../../utils';
 import { Icon } from './Icon';
@@ -57,12 +58,16 @@ export function Input({
   clearLabel = 'Clear',
   onFocus,
 }: InputProps) {
+  // A label without an explicit id must still reach the field: generate the
+  // id so htmlFor/`id` associate and the input keeps an accessible name.
+  const autoId = useId();
+  const fieldId = id ?? (label ? autoId : undefined);
   const glyph = icon ? <Icon name={icon} size="sm" className="ds-input__icon" /> : null;
   const body = (
     <>
       {label ? (
         <label
-          htmlFor={id}
+          htmlFor={fieldId}
           className={cx('ds-field__label', hideLabel && 'ds-field__label--hidden')}
         >
           {label}
@@ -78,7 +83,7 @@ export function Input({
         )}
         {leading}
         <input
-          id={id}
+          id={fieldId}
           type={type}
           value={value}
           placeholder={placeholder}

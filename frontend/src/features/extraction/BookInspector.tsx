@@ -5,6 +5,7 @@ import { DataView } from '../../lib/DataView';
 import { Button, Inline, Input, Stack, Text } from '../../lib/design-system';
 import type { ExtractionBookSummary, ExtractionPage } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
+import { clamp } from '../../lib/utils';
 import { behaviorTone } from './behaviors';
 import { SpanCard, UnitRow } from './SpanCard';
 
@@ -12,12 +13,11 @@ import { SpanCard, UnitRow } from './SpanCard';
 export function BookInspector({ book }: { book: ExtractionBookSummary }) {
   const [page, setPage] = useState(book.first_page);
   const result = useAsync(() => getExtractionPage(book.urn, page), [book.urn, page]);
-  const clamp = (next: number) => Math.min(Math.max(next, 1), book.page_end);
   return (
     <Stack gap="md">
       <BookSummary book={book} />
       <EntryAudit urn={book.urn} />
-      <Pager page={page} last={book.page_end} onPage={(next) => setPage(clamp(next))} />
+      <InspectorPager page={page} last={book.page_end} onPage={(next) => setPage(clamp(next, 1, book.page_end))} />
       <DataView
         result={result}
         loadingLabel="Loading the page"
@@ -106,14 +106,16 @@ function EntryAudit({ urn }: { urn: string }) {
   );
 }
 
-interface PagerProps {
+interface InspectorPagerProps {
   page: number;
   last: number;
   onPage: (next: number) => void;
 }
 
-/** Prev/next plus a type-a-number jump; the jump commits on Enter. */
-function Pager({ page, last, onPage }: PagerProps) {
+/** Prev/next plus a type-a-number jump; the jump commits on Enter. Named
+    apart from the design-system's numeric-window Pager — a different
+    interaction for an inspector, composed from the same primitives. */
+function InspectorPager({ page, last, onPage }: InspectorPagerProps) {
   const [draft, setDraft] = useState(String(page));
   useEffect(() => setDraft(String(page)), [page]);
   const commit = () => {

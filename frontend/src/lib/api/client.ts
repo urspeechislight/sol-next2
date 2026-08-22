@@ -42,6 +42,14 @@ class ApiError extends Error {
   }
 }
 
+/** True when `err` is the API's 404 — the resource genuinely does not exist
+    (book no longer served, page not yet ingested, dev tools disabled). The
+    only status a caller may treat as "absent" and fall back on; every other
+    failure is a transient fault that must surface as an error state. */
+export function isNotFound(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 404;
+}
+
 type QueryValue = string | number | boolean | readonly string[];
 
 async function get<T>(path: string): Promise<T> {

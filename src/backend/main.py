@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 
 from backend import health
 from backend.api import api_router
-from backend.core.errors import ResourceNotFoundError
+from backend.core.errors import CorpusSearchError, ResourceNotFoundError
 from backend.core.http import status
 from backend.core.logging import configure_logging, get_logger
 from backend.core.settings import get_settings
@@ -35,6 +35,21 @@ async def _not_found(_request: Request, exc: Exception) -> JSONResponse:
         raise exc
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": str(exc)},
+    )
+
+
+async def _search_unavailable(_request: Request, exc: Exception) -> JSONResponse:
+    """Map a CorpusSearchError to a 503 JSON body.
+
+    The consolidated search backend being down is an expected operating state,
+    not a wiring bug: the route declares this response in its OpenAPI schema,
+    and the body matches the shared ErrorEnvelope shape.
+    """
+    if not isinstance(exc, CorpusSearchError):
+        raise exc
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={"detail": str(exc)},
     )
 
@@ -80,6 +95,7 @@ def create_app() -> FastAPI:
     )
 
     app.add_exception_handler(ResourceNotFoundError, _not_found)
+    app.add_exception_handler(CorpusSearchError, _search_unavailable)
     app.include_router(_health_router)
     app.include_router(api_router, prefix="/api")
     app.add_api_route(

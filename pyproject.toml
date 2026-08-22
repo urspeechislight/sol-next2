@@ -5,17 +5,17 @@
 [project]
 name = "sol-next2"
 version = "0.0.0"
-description = "sol-next2 — knowledge graph reader: React frontend (handed off from claude.ai/design) + FastAPI backend serving sol-next-shaped data."
+description = "sol-next2 — knowledge graph reader: React + Vite frontend and a FastAPI backend serving self-built corpus artifacts."
 requires-python = ">=3.12"
 readme = "README.md"
 
 # Application dependencies. Add here as services need them.
 #
-# sol-next2 has no database. Per docs/adr/0001-storage-contract.md the
-# upstream sol-next pipeline (when Phase 5 is built) will emit a single
-# SQLite artifact that sol-next2 opens read-only. Until then we serve
-# the curated JSON in data/. SQL deps (sqlalchemy, alembic, asyncpg,
-# aiosqlite) intentionally absent.
+# Storage per ADR-0001 (see its dated update banners): the serving corpus is
+# self-built read-only SQLite artifacts in data/ (registry.db,
+# manuscript.db), and full-text search is proxied to a consolidated
+# Postgres backend over HTTP — hence httpx. SQL ORMs (sqlalchemy, alembic)
+# remain intentionally absent: artifacts are opened with stdlib sqlite3.
 dependencies = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.32",

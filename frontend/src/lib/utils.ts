@@ -67,7 +67,7 @@ export function pageWindow(current: number, total: number, size: number): number
 /** Render Western digits in a number/string as Arabic-Indic digits. */
 const ARABIC_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 export function toArabicDigits(value: number | string): string {
-  return String(value).replace(/[0-9]/g, (d) => ARABIC_DIGITS[Number(d)]);
+  return String(value).replace(/[0-9]/g, (d) => ARABIC_DIGITS[Number(d)] ?? d);
 }
 
 /** URL-safe base64 (RFC 4648 §5) of a UTF-8 string: compacts free text bound

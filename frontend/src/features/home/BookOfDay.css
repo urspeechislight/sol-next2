@@ -1,48 +1,7 @@
-/* BookOfDay — an alive editorial shelf band beneath the daily spread:
-   translucent surface, warm wash, gold cornerpieces, hover lift; on wide
-   viewports the lockup, rationale, and action sit side by side. Tokens
-   only. */
-
-.bday {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
-  background:
-    radial-gradient(
-      120% 90% at 50% 0%,
-      color-mix(in srgb, var(--color-accent-wash) 65%, transparent),
-      transparent 70%
-    ),
-    color-mix(in srgb, var(--color-surface) 72%, transparent);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm), var(--shadow-md);
-  transition:
-    box-shadow var(--duration-base) var(--ease-out),
-    translate var(--duration-base) var(--ease-out);
-}
-.bday:hover {
-  translate: 0 -2px;
-  box-shadow: var(--shadow-md), var(--shadow-lg);
-}
-.bday::before,
-.bday::after {
-  content: '✻';
-  position: absolute;
-  color: var(--color-accent);
-  font-size: var(--text-sm);
-  opacity: 0.55;
-}
-.bday::before {
-  top: var(--space-sm);
-  left: var(--space-md);
-}
-.bday::after {
-  bottom: var(--space-sm);
-  right: var(--space-md);
-}
+/* BookOfDay — content styles for the book-of-the-day band; the alive
+   editorial shell (wash, cornerpieces, lift) is the shared Band.css, applied
+   via the .band class alongside .bday. On wide viewports the lockup,
+   rationale, and action sit side by side. Tokens only. */
 
 .bday__head {
   display: flex;
@@ -62,7 +21,7 @@
   min-width: 0;
 }
 
-@media (min-width: 721px) {
+@media (min-width: 761px) {
   .bday__body {
     display: grid;
     grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.6fr) auto;

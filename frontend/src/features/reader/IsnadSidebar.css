@@ -17,7 +17,7 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-micro);
   color: var(--color-reader-muted);
   margin-bottom: var(--space-2xs);
 }

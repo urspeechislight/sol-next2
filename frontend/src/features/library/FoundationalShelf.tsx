@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Dots, NavArrow, UnstyledButton } from '../../lib/design-system';
+import { Apparatus, Dots, NavArrow, UnstyledButton } from '../../lib/design-system';
 import { DataView } from '../../lib/DataView';
-import { getToc, getWorks } from '../../lib/api/client';
+import { getToc, getWorks, isNotFound } from '../../lib/api/client';
 import { PAGE } from '../../lib/constants';
 import type { Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { deathLabel, joinDots, volumesLabel } from '../../lib/utils';
-import { Apparatus } from './Apparatus';
 import { shelfOrder, shelfPolicy } from './shelf';
 import './FoundationalShelf.css';
 
@@ -74,7 +73,10 @@ export function FoundationalShelf({ domain, category, tradition, onOpen }: Found
                 <Dots
                   count={works.length}
                   active={idx}
-                  labelFor={(i) => `Show ${works[i].title_en ?? works[i].title_ar}`}
+                  labelFor={(i) => {
+                    const w = works[i];
+                    return w ? `Show ${w.title_en ?? w.title_ar}` : 'Show work';
+                  }}
                   onPick={setIdx}
                 />
                 <NavArrow direction="forward" label="Next work" onClick={() => go(1)} />
@@ -94,13 +96,17 @@ interface ShelfStageProps {
 
 /** One work standing on the shelf line: the bilingual lockup at display
     scale, sliding in as the rotation turns. Falls back to the book's first
-    page only if its TOC cannot be fetched (page 1 is the default entry, not
-    a guess). */
+    page only when the work genuinely has no TOC (404 — page 1 is the default
+    entry, not a guess); any other failure propagates rather than silently
+    degrading. */
 function ShelfStage({ work, onOpen }: ShelfStageProps) {
   const open = () => {
     void getToc(work.first_urn)
       .then((toc) => onOpen(work.first_urn, toc.entries[0]?.page))
-      .catch(() => onOpen(work.first_urn));
+      .catch((err: unknown) => {
+        if (isNotFound(err)) return onOpen(work.first_urn);
+        throw err;
+      });
   };
   return (
     <div className="shelf__stage" key={work.stem}>

@@ -6,6 +6,7 @@ import { Button } from './Button';
 import { Segmented } from './Segmented';
 import { Icon } from './Icon';
 import { ShareCard } from './ShareCard';
+import { useEscape } from './useDismiss';
 import './ShareSheet.css';
 
 export interface ShareSheetProps {
@@ -17,6 +18,7 @@ export interface ShareSheetProps {
 /** Share popover: live card preview, format switch, platform row, copy/download/QR.
     Presentational: the feature supplies content plus the resolved share response. */
 export function ShareSheet({ content, response, onClose }: ShareSheetProps) {
+  useEscape(onClose);
   const [format, setFormat] = useState<ShareFormat>('square');
   const [showQr, setShowQr] = useState(response.qr.length > 0);
   const [copied, setCopied] = useState(false);

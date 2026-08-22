@@ -61,7 +61,8 @@
   color: var(--color-text);
 }
 .ds-input__field::placeholder {
-  color: var(--color-text-ghost);
+  /* Meaningful text (it names the empty field), so faint, not ghost. */
+  color: var(--color-text-faint);
 }
 
 /* Trailing clear (X), rendered by the primitive only once the field has text. */

@@ -26,5 +26,7 @@ export function eventForDay(almanac: Almanac, month: number, day: number): Today
   const exact = almanac.events.find((e) => e.month === month && e.day === day);
   if (exact) return { event: exact, onThisDay: true };
   const index = (month * ROTOR_STRIDE + day) % almanac.events.length;
-  return { event: almanac.events[index], onThisDay: false };
+  const rotated = almanac.events[index];
+  if (!rotated) throw new Error('almanac has no events to rotate through');
+  return { event: rotated, onThisDay: false };
 }

@@ -1,4 +1,4 @@
-import { Text } from '../../lib/design-system';
+import { Apparatus, Text } from '../../lib/design-system';
 import { DataView, ErrorText } from '../../lib/DataView';
 import { LoadMoreFoot } from '../../lib/LoadMoreFoot';
 import { getWorks } from '../../lib/api/client';
@@ -7,8 +7,8 @@ import type { Work } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { usePaged } from '../../lib/usePaged';
 import { countLabel, formatCount } from '../../lib/utils';
-import { Apparatus } from './Apparatus';
 import { FacetedWorksList } from './FacetedWorksList';
+import { assembleWorks } from './lib';
 import { WorkRecord } from './WorkRecord';
 
 export interface WorksQueryResultsProps {
@@ -36,26 +36,18 @@ export function WorksQueryResults({ q, tradition = '', onOpen }: WorksQueryResul
   const probe = useAsync<Probe | null>(async () => {
     const query = q.trim();
     if (!query) return null;
-    const first = await getWorks({
+    const head = await getWorks({
       q: query,
       tradition,
       sort: 'canonical',
       limit: PAGE.facetLimit,
     });
-    if (first.total > LIBRARY.assembleMax) return { works: null, total: first.total };
-    const items = [...first.items];
-    while (items.length < first.total) {
-      const next = await getWorks({
-        q: query,
-        tradition,
-        sort: 'canonical',
-        limit: PAGE.facetLimit,
-        offset: items.length,
-      });
-      if (next.items.length === 0) break;
-      items.push(...next.items);
-    }
-    return { works: items, total: first.total };
+    if (head.total > LIBRARY.assembleMax) return { works: null, total: head.total };
+    const { items, total } = await assembleWorks(
+      { q: query, tradition, sort: 'canonical' },
+      head,
+    );
+    return { works: items, total };
   }, [q, tradition]);
 
   return (

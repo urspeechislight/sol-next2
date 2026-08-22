@@ -22,7 +22,7 @@
 .resume__label {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--color-accent-deep);
   white-space: nowrap;

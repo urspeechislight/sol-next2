@@ -4,6 +4,7 @@ import { getBook } from '../../lib/api/client';
 import type { Book, DailyBookPick } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { deathLabel, joinDots } from '../../lib/utils';
+import './Band.css';
 import './BookOfDay.css';
 
 export interface BookOfDayProps {
@@ -18,7 +19,7 @@ export interface BookOfDayProps {
 export function BookOfDay({ pick, onOpenReader }: BookOfDayProps) {
   const book = useAsync<Book>(() => getBook(pick.urn), [pick.urn]);
   return (
-    <article className="bday" aria-label="Book of the day">
+    <article className="band bday" aria-label="Book of the day">
       <header className="bday__head">
         <Eyebrow>Book of the day · كتاب اليوم</Eyebrow>
       </header>

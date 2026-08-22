@@ -113,6 +113,9 @@
   --color-text: var(--palette-ink-800);
   --color-text-muted: var(--palette-ink-600);
   --color-text-faint: var(--palette-ink-500);
+  /* Decorative tier only (ornament glyphs, scrollbar thumb, disabled marks):
+     it sits below WCAG AA at caption sizes on purpose. Meaningful text reads
+     through muted or faint, never ghost. */
   --color-text-ghost: var(--palette-ink-400);
   --color-on-accent: var(--palette-paper-0);
 
@@ -125,6 +128,10 @@
   --color-accent-deep: var(--palette-gold-700);
   --color-accent-tint: var(--palette-gold-tint);
   --color-accent-wash: var(--palette-gold-wash);
+  /* The pressed/hover step for accent fills and underlines. Kept apart from
+     --color-accent-deep because the dark theme maps deep onto the accent
+     itself, which made gold-button hover a visual no-op there. */
+  --color-accent-hover: var(--palette-gold-700);
 
   --color-focus-ring: var(--color-accent-deep);
 
@@ -209,6 +216,20 @@
   --text-hero-ar: clamp(38px, 5vw, 60px);
   --text-unwan-ar: clamp(28px, 3.4vw, 42px);
 
+  /* tracking tiers for uppercase micro-type (labels, chips, metadata caps)
+     and display-heading tightening. The Eyebrow scale (label/-wide/section)
+     is the SSOT for section labels; meta/micro cover chips and metadata.
+     Arabic text always resets to --tracking-normal: connected script must
+     never take positive tracking. Body text takes none of these. */
+  --tracking-display: -0.02em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-micro: 0.05em;
+  --tracking-meta: 0.08em;
+  --tracking-label: 0.14em;
+  --tracking-label-wide: 0.18em;
+  --tracking-section: 0.22em;
+
   --leading-tight: 1.15;
   --leading-snug: 1.4;
   --leading-normal: 1.6;
@@ -227,12 +248,42 @@
   --shadow-lg: 0 12px 48px -16px rgba(40, 30, 12, 0.3), 0 2px 8px rgba(40, 30, 12, 0.08);
   --shadow-pop: 0 18px 60px -18px rgba(28, 20, 6, 0.42), 0 4px 14px rgba(28, 20, 6, 0.12);
 
+  /* apparatus rules: the fading gold hairlines behind section labels and
+     ornaments. One gradient definition per axis so every rule in the app
+     fades identically; consumers set their own opacity. */
+  --rule-gold-fade-h: linear-gradient(
+    to right,
+    transparent,
+    var(--color-accent) 30%,
+    var(--color-accent) 70%,
+    transparent
+  );
+  --rule-gold-fade-v: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-accent) 25%,
+    var(--color-accent) 75%,
+    transparent
+  );
+
   /* motion */
   --duration-fast: var(--dur-raw-fast);
   --duration-base: var(--dur-raw-base);
   --duration-slow: var(--dur-raw-slow);
+  /* above the slow tier: gesture (~240ms view transitions) and ceremony
+     (~900ms drawn ornaments). The landing folio's staggered load sequence is
+     a documented one-off composition, not a tier consumer. */
+  --duration-gesture: 240ms;
+  --duration-ceremony: 900ms;
   --ease-out: var(--ease-raw-out);
   --ease-inout: var(--ease-raw-inout);
+
+  /* responsive scale — plain values, not vars: @media cannot read custom
+     properties. Three tiers; new breakpoints must land on one of them.
+       sm 640px · md 760px · lg 920px   (min-width complements: 641 / 761) */
+  --bp-sm: 640px;
+  --bp-md: 760px;
+  --bp-lg: 920px;
 
   /* z-index */
   --z-base: 0;
@@ -270,6 +321,7 @@
   --color-accent: var(--palette-gold-300);
   --color-accent-strong: var(--palette-gold-200);
   --color-accent-deep: var(--palette-gold-300);
+  --color-accent-hover: var(--palette-gold-200);
   --color-accent-tint: color-mix(in oklch, var(--palette-gold-300) 16%, var(--color-surface));
   --color-accent-wash: color-mix(in oklch, var(--palette-gold-300) 10%, var(--color-surface));
 
@@ -312,9 +364,12 @@
 
 /* =============================================================================
    READER THEME LAYER  ([data-reader-theme] on the reader root)
+   Reader tokens are scoped to reader roots only — never :root. A component
+   consuming a --color-reader-* token outside a [data-reader-theme] ancestor
+   gets an undefined variable, which is the loud failure we want; render such
+   components in app chrome via their app-surface variant instead.
    --reader-size is defined once on :root above; reader themes set colors only.
    ============================================================================= */
-:root,
 [data-reader-theme='classical'] {
   --color-reader-bg: #faf7ef;
   --color-reader-fg: #342d20;

@@ -38,7 +38,7 @@
 .unwan__draw circle {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: unwan-draw 900ms var(--ease-out) forwards;
+  animation: unwan-draw var(--duration-ceremony) var(--ease-out) forwards;
 }
 .unwan__rosette circle,
 .unwan__rosette path {

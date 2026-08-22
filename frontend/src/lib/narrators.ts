@@ -29,6 +29,7 @@ export function buildNarratorIndex(records: NarratorRecord[]): NarratorIndex {
     const toks = tokens(record.full_name);
     if (toks.length < 2) continue;
     const key = toks[0];
+    if (key === undefined) continue;
     const bucket = byFirstToken.get(key) ?? [];
     bucket.push({ toks, record });
     byFirstToken.set(key, bucket);
@@ -56,6 +57,7 @@ export function annotateText(text: string, index: NarratorIndex | null): TextSeg
 
   while (i < parts.length) {
     const part = parts[i];
+    if (part === undefined) break;
     if (!isWord(part)) {
       buffer += part;
       i += 1;
@@ -89,7 +91,9 @@ interface Match {
 }
 
 function matchAt(parts: string[], start: number, index: NarratorIndex): Match | null {
-  const firstNorm = normalizeName(parts[start]);
+  const first = parts[start];
+  if (first === undefined) return null;
+  const firstNorm = normalizeName(first);
   const candidates = index.byFirstToken.get(firstNorm);
   if (!candidates) return null;
 

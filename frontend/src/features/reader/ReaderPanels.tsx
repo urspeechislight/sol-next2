@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Badge, IconButton, IsnadNode, Segmented } from '../../lib/design-system';
+import { Badge, IconButton, IsnadNode, Segmented, useEscape } from '../../lib/design-system';
 import type { Hadith, Narrator, NarratorRecord } from '../../lib/types';
 import { joinDots } from '../../lib/utils';
 import { reliabilityBadge } from '../../lib/variants';
@@ -87,6 +87,7 @@ export function TarjamaPanel({
   error: string | null;
   onClose: () => void;
 }) {
+  useEscape(onClose);
   const sub = joinDots(record.kunya, record.nisba);
   const facts: [string, string | number][] = [
     ['Tradition', record.tradition || '—'],

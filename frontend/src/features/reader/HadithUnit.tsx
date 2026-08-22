@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react';
 import { Badge, Highlight, NarratorLink, RefPill } from '../../lib/design-system';
 import { annotateText } from '../../lib/narrators';
 import type { NarratorIndex } from '../../lib/narrators';
@@ -41,8 +42,19 @@ export function HadithUnit({
   onNarrator,
 }: HadithUnitProps) {
   const segs = annotateText(h.isnad_ar, index);
+  const activate = (e: KeyboardEvent<HTMLElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect();
+    }
+  };
   return (
-    <section className={cx('hadith', active && 'hadith--active')} tabIndex={0} onClick={onSelect}>
+    <section
+      className={cx('hadith', active && 'hadith--active')}
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={activate}
+    >
       <header className="hadith__head">
         <span className="hadith__id">
           <span className="hadith__num">{toArabicDigits(h.n)}</span>

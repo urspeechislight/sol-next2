@@ -26,8 +26,14 @@ def get_route(
     *,
     response_model: Any,
     summary: str,
+    responses: dict[int | str, dict[str, Any]] | None = None,
 ) -> None:
-    """Register ``endpoint`` at ``path`` with the project's GET/200 idiom."""
+    """Register ``endpoint`` at ``path`` with the project's GET/200 idiom.
+
+    ``responses`` declares the route's expected failure responses (e.g. a 503
+    from the search proxy) so they appear in the exported OpenAPI schema and
+    the generated frontend types. Shaped as FastAPI's OpenAPI response dict:
+    status -> {model, description}."""
     router.add_api_route(
         path,
         endpoint,
@@ -35,6 +41,7 @@ def get_route(
         response_model=response_model,
         status_code=status.HTTP_200_OK,
         summary=summary,
+        responses=responses,
     )
 
 

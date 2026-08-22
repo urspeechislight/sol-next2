@@ -1,0 +1,45 @@
+/* Band — the alive editorial shelf-band shell shared by the landing folio's
+   bands (book of the day, chronicles): translucent warm-washed surface, gold
+   cornerpieces, hover lift. Features own their internal layout only; the
+   shell cannot drift between bands. Tokens only. */
+
+.band {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  background:
+    radial-gradient(
+      120% 90% at 50% 0%,
+      color-mix(in srgb, var(--color-accent-wash) 65%, transparent),
+      transparent 70%
+    ),
+    color-mix(in srgb, var(--color-surface) 72%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm), var(--shadow-md);
+  transition:
+    box-shadow var(--duration-base) var(--ease-out),
+    translate var(--duration-base) var(--ease-out);
+}
+.band:hover {
+  translate: 0 -2px;
+  box-shadow: var(--shadow-md), var(--shadow-lg);
+}
+.band::before,
+.band::after {
+  content: '✻';
+  position: absolute;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  opacity: 0.55;
+}
+.band::before {
+  top: var(--space-sm);
+  left: var(--space-md);
+}
+.band::after {
+  bottom: var(--space-sm);
+  right: var(--space-md);
+}

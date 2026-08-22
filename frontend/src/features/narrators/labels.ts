@@ -2,7 +2,7 @@
 // (and short descriptions), shared by the registry card, the person drawer, and the
 // registry filters so tradition/generation/residence vocabulary lives in one spot.
 
-const TRADITION_LABEL: Record<string, string> = {
+const TRADITION_LABEL = {
   both: 'Sunnī + Shīʿī',
   sunni: 'Sunnī',
   shia: 'Shīʿī',
@@ -11,7 +11,7 @@ const TRADITION_LABEL: Record<string, string> = {
 
 /** Human label for the corpus a narrator is attested in. */
 export function traditionLabel(tradition: string): string {
-  return TRADITION_LABEL[tradition] ?? tradition;
+  return (TRADITION_LABEL as Record<string, string>)[tradition] ?? tradition;
 }
 
 /** Human label for a derived narrator generation (ṭabaqa). */

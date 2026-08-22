@@ -19,3 +19,13 @@
   color: var(--color-reader-muted);
   font-family: var(--font-mono);
 }
+/* App-surface variant: for citations rendered outside a [data-reader-theme]
+   scope (home folio). Reader tokens are scoped to reader roots, so app chrome
+   must resolve through the semantic palette instead. */
+.ds-refpill--app {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+.ds-refpill--app .ds-refpill__pg {
+  color: var(--color-text-faint);
+}

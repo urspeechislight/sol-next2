@@ -59,7 +59,7 @@
 .ds-idxrow__meta {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-micro);
   color: var(--color-text-muted);
   white-space: nowrap;
 }
@@ -72,7 +72,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 760px) {
   .ds-idxrow {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-rows: auto auto;

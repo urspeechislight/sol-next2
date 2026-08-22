@@ -1,4 +1,4 @@
-import { Badge, Eyebrow, RefPill, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
+import { Apparatus, Badge, Eyebrow, RefPill, ShareButton, Text, UnstyledButton } from '../../lib/design-system';
 import { requestShare } from '../../lib/share';
 import type { DailyHadith } from '../../lib/types';
 import { hadithBadge } from '../../lib/variants';
@@ -44,7 +44,7 @@ export function HadithOfDay({ hadith, onOpenReader }: HadithOfDayProps) {
 
       <div className="hday__refs">
         <div className="hday__refs-rule" aria-hidden="true">
-          <span className="hday__refs-label">Read it in · اقرأه في</span>
+          <Apparatus>Read it in · اقرأه في</Apparatus>
         </div>
         <div className="hday__pills">
           <SourcePill
@@ -99,7 +99,7 @@ function SourcePill({ bookAr, n, urn, page, onOpenReader }: SourcePillProps) {
       disabled={!urn}
       title={urn ? 'Open in the reader' : 'Not yet in the corpus'}
     >
-      <RefPill ar={bookAr} label={`№ ${n}`} />
+      <RefPill ar={bookAr} label={`№ ${n}`} surface="app" />
     </UnstyledButton>
   );
 }

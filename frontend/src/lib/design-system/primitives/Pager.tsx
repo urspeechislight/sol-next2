@@ -25,7 +25,7 @@ export function Pager({ page, totalPages, onPage, className }: PagerProps) {
         disabled={page <= 1}
         onClick={() => onPage(page - 1)}
       />
-      {window[0] > 1 ? <span className="ds-pager__gap">…</span> : null}
+      {(window[0] ?? 0) > 1 ? <span className="ds-pager__gap">…</span> : null}
       {window.map((p) => (
         <button
           key={p}
@@ -37,7 +37,9 @@ export function Pager({ page, totalPages, onPage, className }: PagerProps) {
           {p}
         </button>
       ))}
-      {window[window.length - 1] < totalPages ? <span className="ds-pager__gap">…</span> : null}
+      {(window[window.length - 1] ?? page) < totalPages ? (
+        <span className="ds-pager__gap">…</span>
+      ) : null}
       <Button
         variant="ghost"
         size="sm"

@@ -37,7 +37,7 @@
   margin-left: auto;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-meta);
   color: var(--color-text-faint);
 }
 .calcard__gregorian {
@@ -116,7 +116,7 @@
 .calcard__row-tag {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-meta);
   text-transform: uppercase;
   color: var(--color-accent-deep);
   flex: none;

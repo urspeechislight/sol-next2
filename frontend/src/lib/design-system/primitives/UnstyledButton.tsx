@@ -9,6 +9,8 @@ export interface UnstyledButtonProps {
   ariaLabel?: string;
   /** Toggle state; 'mixed' marks a partially-applied group toggle. */
   ariaPressed?: boolean | 'mixed';
+  /** Disclosure state for expand/collapse triggers. */
+  ariaExpanded?: boolean;
   title?: string;
   tabIndex?: number;
   style?: CSSProperties;
@@ -25,6 +27,7 @@ export function UnstyledButton({
   disabled = false,
   ariaLabel,
   ariaPressed,
+  ariaExpanded,
   title,
   tabIndex,
   style,
@@ -38,6 +41,7 @@ export function UnstyledButton({
       disabled={disabled}
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}
+      aria-expanded={ariaExpanded}
       title={title}
       tabIndex={tabIndex}
       style={style}

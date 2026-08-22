@@ -1,6 +1,5 @@
-import { Heading, IndexRow, Text } from '../../lib/design-system';
+import { Apparatus, Heading, IndexRow, Text } from '../../lib/design-system';
 import type { Domain } from '../../lib/types';
-import { Apparatus } from './Apparatus';
 import { sumCount } from '../../lib/taxonomy';
 import { countLabel } from '../../lib/utils';
 import { visibleCategories } from './lib';

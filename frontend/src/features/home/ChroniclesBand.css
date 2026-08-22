@@ -1,48 +1,7 @@
-/* ChroniclesBand — a full-width chronicle band beneath the daily spread and
-   before the book of the day, on the same alive editorial surface as the book
-   band: warm wash, gold cornerpieces, hover lift. On wide viewports the event
-   lockup and its detail sit side by side. Tokens only. */
-
-.chband {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
-  background:
-    radial-gradient(
-      120% 90% at 50% 0%,
-      color-mix(in srgb, var(--color-accent-wash) 65%, transparent),
-      transparent 70%
-    ),
-    color-mix(in srgb, var(--color-surface) 72%, transparent);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm), var(--shadow-md);
-  transition:
-    box-shadow var(--duration-base) var(--ease-out),
-    translate var(--duration-base) var(--ease-out);
-}
-.chband:hover {
-  translate: 0 -2px;
-  box-shadow: var(--shadow-md), var(--shadow-lg);
-}
-.chband::before,
-.chband::after {
-  content: '✻';
-  position: absolute;
-  color: var(--color-accent);
-  font-size: var(--text-sm);
-  opacity: 0.55;
-}
-.chband::before {
-  top: var(--space-sm);
-  left: var(--space-md);
-}
-.chband::after {
-  bottom: var(--space-sm);
-  right: var(--space-md);
-}
+/* ChroniclesBand — content styles for the chronicle band; the alive
+   editorial shell (wash, cornerpieces, lift) is the shared Band.css, applied
+   via the .band class alongside .chband. On wide viewports the event lockup
+   and its detail sit side by side. Tokens only. */
 
 .chband__head {
   display: flex;
@@ -62,7 +21,7 @@
   min-width: 0;
 }
 
-@media (min-width: 721px) {
+@media (min-width: 761px) {
   .chband__body {
     display: grid;
     grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.6fr);
@@ -78,7 +37,7 @@
   margin: 0;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-micro);
   text-transform: uppercase;
   color: var(--color-text-faint);
 }
