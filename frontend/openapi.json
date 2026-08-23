@@ -3175,7 +3175,7 @@
                 }
               }
             },
-            "description": "Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset)."
+            "description": "Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset); declared so generated client types represent what callers actually see."
           }
         },
         "summary": "List the books in the manuscript artifact with extraction coverage.",
@@ -3216,7 +3216,7 @@
                 }
               }
             },
-            "description": "Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset)."
+            "description": "Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset); declared so generated client types represent what callers actually see."
           },
           "422": {
             "content": {
@@ -3276,7 +3276,7 @@
                 }
               }
             },
-            "description": "Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset)."
+            "description": "Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset); declared so generated client types represent what callers actually see."
           },
           "422": {
             "content": {

@@ -2792,7 +2792,7 @@ export interface operations {
                     "application/json": components["schemas"]["ExtractionBookSummary"][];
                 };
             };
-            /** @description Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset). */
+            /** @description Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset); declared so generated client types represent what callers actually see. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2823,7 +2823,7 @@ export interface operations {
                     "application/json": components["schemas"]["ExtractionEntryAudit"];
                 };
             };
-            /** @description Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset). */
+            /** @description Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset); declared so generated client types represent what callers actually see. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2864,7 +2864,7 @@ export interface operations {
                     "application/json": components["schemas"]["ExtractionPage"];
                 };
             };
-            /** @description Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset). */
+            /** @description Dev tools are disabled on this deployment (SOL_DEV_TOOLS unset); declared so generated client types represent what callers actually see. */
             404: {
                 headers: {
                     [name: string]: unknown;
