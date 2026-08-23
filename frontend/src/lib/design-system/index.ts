@@ -17,7 +17,7 @@ export type { StackProps, Gap, Align, Justify } from './primitives/Stack';
 export { Inline } from './primitives/Inline';
 export type { InlineProps } from './primitives/Inline';
 
-export { Button } from './primitives/Button';
+export { Button, BUTTON_VARIANTS } from './primitives/Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './primitives/Button';
 
 export { Eyebrow } from './primitives/Eyebrow';

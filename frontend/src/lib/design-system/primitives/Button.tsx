@@ -5,6 +5,9 @@ import type { IconName } from '../internal/icons';
 import './Button.css';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'gold' | 'ghost' | 'link';
+
+// Every button variant in display order, the one list galleries and demos iterate.
+export const BUTTON_VARIANTS: ButtonVariant[] = ['primary', 'secondary', 'gold', 'ghost', 'link'];
 export type ButtonSize = 'sm' | 'md';
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {

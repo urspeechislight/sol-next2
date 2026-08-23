@@ -1,9 +1,17 @@
 // Frontend SSOT guard: the TypeScript counterpart of the backend's
-// constant_sprawl.repo_wide_collisions. Fails when a string-literal union type or
-// a literal constant value (array or object) is enumerated in two or more files,
-// so a vocabulary or shape that should live in one module cannot silently fork.
-// Runs in CI via `pnpm fe:ssot`. Below jscpd's copy-paste floor, which is why it
-// exists separately.
+// constant_sprawl.repo_wide_collisions. Fails when a vocabulary or constant
+// value that should live in one module is enumerated identically in two or
+// more files — kind-agnostically, so a string-literal union forked as an
+// all-string array constant is still one vocabulary (and one violation).
+// Runs in CI via `pnpm fe:ssot`. Below jscpd's copy-paste floor, which is why
+// it exists separately.
+//
+// Scope is deliberately exact-identity only. Subset-overlap and
+// same-object-key-shape detection were tried (2026-08) and rejected: the
+// design system intentionally re-declares shared size/gap vocabularies
+// across primitives (IconSize ⊂ TextSize, PAD_CLASS ⊂ GAP_CLASS), and those
+// relationships are reuse, not drift. What this guard catches is the fork
+// that cannot be intentional: the same full vocabulary written twice.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,13 +43,16 @@ function collect(file) {
   const items = [];
   const visit = (node) => {
     if (ts.isTypeAliasDeclaration(node) && ts.isUnionTypeNode(node.type)) {
-      const lits = node.type.types.filter(
-        (t) => ts.isLiteralTypeNode(t) && ts.isStringLiteral(t.literal),
-      );
-      if (lits.length >= MIN_UNION_MEMBERS && lits.length === node.type.types.length) {
-        const members = lits.map((t) => t.literal.text).sort();
+      const members = [];
+      for (const t of node.type.types) {
+        if (ts.isLiteralTypeNode(t) && ts.isStringLiteral(t.literal)) members.push(t.literal.text);
+        else if (ts.isLiteralTypeNode(t) && ts.isNumericLiteral(t.literal))
+          members.push(t.literal.text);
+        else members.push(null);
+      }
+      if (members.length >= MIN_UNION_MEMBERS && members.every((m) => m !== null)) {
         items.push({
-          key: `union|${members.join('|')}`,
+          key: `vocab|${[...members].sort().join('|')}`,
           name: node.name.text,
           rel,
           kind: 'string-literal union type',
@@ -53,12 +64,23 @@ function collect(file) {
         if (!decl.initializer || !ts.isIdentifier(decl.name)) continue;
         const init = decl.initializer;
         if (ts.isArrayLiteralExpression(init) && init.elements.length >= MIN_LITERAL_ELEMENTS) {
-          items.push({
-            key: `array|${normalize(init.getText(sf))}`,
-            name: decl.name.text,
-            rel,
-            kind: 'array constant value',
-          });
+          const texts = init.elements.map((el) => (ts.isStringLiteral(el) ? el.text : null));
+          if (texts.every((t) => t !== null)) {
+            // An all-string array IS a vocabulary: same identity as a union.
+            items.push({
+              key: `vocab|${[...texts].sort().join('|')}`,
+              name: decl.name.text,
+              rel,
+              kind: 'array constant value',
+            });
+          } else {
+            items.push({
+              key: `array|${normalize(init.getText(sf))}`,
+              name: decl.name.text,
+              rel,
+              kind: 'array constant value',
+            });
+          }
         } else if (
           ts.isObjectLiteralExpression(init) &&
           init.properties.length >= MIN_LITERAL_ELEMENTS
