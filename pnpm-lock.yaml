@@ -26,6 +26,24 @@ importers:
 
   frontend:
     dependencies:
+      '@fontsource/amiri':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/ibm-plex-mono':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/ibm-plex-sans':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/newsreader':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/noto-naskh-arabic':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/scheherazade-new':
+        specifier: ^5.3.0
+        version: 5.3.0
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -33,6 +51,9 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
     devDependencies:
+      '@types/node':
+        specifier: ^26.2.0
+        version: 26.2.0
       '@types/react':
         specifier: ^18.3.12
         version: 18.3.31
@@ -41,16 +62,16 @@ importers:
         version: 18.3.7(@types/react@18.3.31)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.7.0(vite@6.4.3(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.7.0(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
       vite:
         specifier: ^6.0.7
-        version: 6.4.3(jiti@2.7.0)(yaml@2.9.0)
+        version: 6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)
       vitest:
         specifier: ^4.1.9
-        version: 4.1.9(vite@6.4.3(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.9(@types/node@26.2.0)(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
 
 packages:
 
@@ -307,6 +328,24 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource/amiri@5.3.0':
+    resolution: {integrity: sha512-i4SWJnVIphj8556EdVzNrEG/Qu82k6JXjXTtSUIohx3tHmo2GHw1Kv60TWo+xjk7Yf1Etb2Gskh0lUFclTKyUw==}
+
+  '@fontsource/ibm-plex-mono@5.3.0':
+    resolution: {integrity: sha512-eTgnZjZEGk1QtD3ZstF+Vclo2HLAni8YMy34/DxllwZvyz1lR/1RF/xTiAquOBO7MvqBx8D2Ig2WCPMVfdZu7Q==}
+
+  '@fontsource/ibm-plex-sans@5.3.0':
+    resolution: {integrity: sha512-CbE4CbbEEZJX860XyUiRpsksXIQR8Rp2XDva2VO53NJox9tVNtusrysd2x5YkUEY3ErQ66W1IiiQL8/wihhw5w==}
+
+  '@fontsource/newsreader@5.3.0':
+    resolution: {integrity: sha512-AFR6ZKY89GNL+9qBI2P2+66NhD5bhOj/v6fsLnFYLM4E0JnMB1yKb+Ro8cA64i1hwAWoBfTq5CHJGWH1toLDkw==}
+
+  '@fontsource/noto-naskh-arabic@5.3.0':
+    resolution: {integrity: sha512-S/GDgQ6mh/PKo4mz5+eXNYbEarvpI7yh6eCdOz8tTVbeM7+OUiacIEscaYEibr/+egDtGbO2ZB00sjy1bJC1kQ==}
+
+  '@fontsource/scheherazade-new@5.3.0':
+    resolution: {integrity: sha512-ITPWHoj0LLfikl6X4XS4nEQpP9p6iByRoUypqlAyO4NvgLbYpHTVdo7K199Alc+Uhm3xAnYtXvqRcuVAz2zBBw==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -711,6 +750,9 @@ packages:
 
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
+
+  '@types/node@26.2.0':
+    resolution: {integrity: sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==}
 
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
@@ -1159,6 +1201,9 @@ packages:
     resolution: {integrity: sha512-1ajSo3813sDoVIHx4inJdUS4l5L2ic5cFiddemPiyjb/PZEoBAhFwHtbaEdRDFxbAKy7FCG7s5ww3/uCFawuIA==}
     engines: {node: '>=14'}
 
+  undici-types@8.3.0:
+    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
+
   update-browserslist-db@1.2.3:
     resolution: {integrity: sha512-Js0m9cx+qOgDxo0eMiFGEueWztz+d4+M3rGlmKPT+T4IS/jP4ylw3Nwpu6cpTTP8R1MAC1kF4VbdLt3ARf209w==}
     hasBin: true
@@ -1495,6 +1540,18 @@ snapshots:
   '@esbuild/win32-x64@0.25.12':
     optional: true
 
+  '@fontsource/amiri@5.3.0': {}
+
+  '@fontsource/ibm-plex-mono@5.3.0': {}
+
+  '@fontsource/ibm-plex-sans@5.3.0': {}
+
+  '@fontsource/newsreader@5.3.0': {}
+
+  '@fontsource/noto-naskh-arabic@5.3.0': {}
+
+  '@fontsource/scheherazade-new@5.3.0': {}
+
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -1792,6 +1849,10 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
+  '@types/node@26.2.0':
+    dependencies:
+      undici-types: 8.3.0
+
   '@types/prop-types@15.7.15': {}
 
   '@types/react-dom@18.3.7(@types/react@18.3.31)':
@@ -1803,7 +1864,7 @@ snapshots:
       '@types/prop-types': 15.7.15
       csstype: 3.2.3
 
-  '@vitejs/plugin-react@4.7.0(vite@6.4.3(jiti@2.7.0)(yaml@2.9.0))':
+  '@vitejs/plugin-react@4.7.0(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/plugin-transform-react-jsx-self': 7.29.7(@babel/core@7.29.7)
@@ -1811,7 +1872,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.4.3(jiti@2.7.0)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -1824,13 +1885,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.9(vite@6.4.3(jiti@2.7.0)(yaml@2.9.0))':
+  '@vitest/mocker@4.1.9(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 6.4.3(jiti@2.7.0)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)
 
   '@vitest/pretty-format@4.1.9':
     dependencies:
@@ -2263,6 +2324,8 @@ snapshots:
 
   unbash@4.0.1: {}
 
+  undici-types@8.3.0: {}
+
   update-browserslist-db@1.2.3(browserslist@4.28.4):
     dependencies:
       browserslist: 4.28.4
@@ -2271,7 +2334,7 @@ snapshots:
 
   uri-js-replace@1.0.1: {}
 
-  vite@6.4.3(jiti@2.7.0)(yaml@2.9.0):
+  vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.4)
@@ -2280,14 +2343,15 @@ snapshots:
       rollup: 4.62.2
       tinyglobby: 0.2.17
     optionalDependencies:
+      '@types/node': 26.2.0
       fsevents: 2.3.3
       jiti: 2.7.0
       yaml: 2.9.0
 
-  vitest@4.1.9(vite@6.4.3(jiti@2.7.0)(yaml@2.9.0)):
+  vitest@4.1.9(@types/node@26.2.0)(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.9
-      '@vitest/mocker': 4.1.9(vite@6.4.3(jiti@2.7.0)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.9(vite@6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.9
       '@vitest/runner': 4.1.9
       '@vitest/snapshot': 4.1.9
@@ -2304,8 +2368,10 @@ snapshots:
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vite: 6.4.3(jiti@2.7.0)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@26.2.0)(jiti@2.7.0)(yaml@2.9.0)
       why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@types/node': 26.2.0
     transitivePeerDependencies:
       - msw
 
