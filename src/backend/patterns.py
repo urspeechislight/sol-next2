@@ -40,8 +40,8 @@ derive from it.
 
 ``HONORIFIC_SIGNS`` is the one definition of the Arabic honorific ligature
 characters: the Quranic honorifics block (U+FD40..FD4F, the ﵇/﵈/﵉ salutations
-printed after the Imams' names) and the ligature block carrying ﷺ and ﷿
-(U+FDF0..FDFD). Codepoint-built for the same bidi reason as the mark classes.
+printed after the Imams' names) and the ligature block carrying ﷺ ﷻ ﷾ ﷿
+(U+FDF0..U+FDFF). Codepoint-built for the same bidi reason as the mark classes.
 Consumed by the pipeline's name cleaner (a trailing honorific is not part of
 a narrator's name) and by the matn mention extractor (an honorific after a
 titled word is a strong person signal).
@@ -97,7 +97,7 @@ FOOTNOTE_MARKER: Final[str] = r"\((\d+)\)"
 VOLUME_DESIGNATOR: Final[str] = r"\s*[\u060c,]\s*(?:vol(?:ume)?\.?)\s*\d+.*$"
 _HONORIFIC_CPS: Final[tuple[int, ...]] = (
     *range(0xFD40, 0xFD50),
-    *range(0xFDF0, 0xFDFE),
+    *range(0xFDF0, 0xFE00),
 )
 HONORIFIC_SIGNS: Final[str] = "".join(chr(c) for c in _HONORIFIC_CPS)
 NAME_LEADING_PARTICLE: Final[re.Pattern[str]] = re.compile(r"^(?:(?:عن|في|من|إلى|على|له|به)\s+)+")
@@ -180,8 +180,10 @@ def strip_tashkeel(text: str) -> str:
     return TASHKEEL_MARKS.sub("", text)
 
 
-_HONORIFIC_INNER_MARKS: Final[str] = r"[ؐ-ًؚ-ٰٟۖ-ۭـ]*"
+_HONORIFIC_INNER_MARKS: Final[str] = r"[ؐ-ًؚ-ٰٟۖ-ۭـ]*"
 _HONORIFIC_PHRASES: Final[tuple[tuple[str, str], ...]] = (
+    ("عز وجل", "﷿"),
+    ("سبحانه وتعالى", "﷾"),
     ("صلى الله عليه وآله وسلم", "﵌"),
     ("صلى الله عليه واله وسلم", "﵌"),
     ("صلى الله عليه وآله", "﵆"),
@@ -228,7 +230,8 @@ def normalize_honorifics(text: str) -> str:
     """Replace spelled-out honorific phrases with their single ligature sign.
 
     ``صلى الله عليه وسلم`` -> ``ﷺ``, ``رضي الله عنه`` -> ``﵁``, ``عليه السلام`` ->
-    ``﵇``, and so on, tashkeel and all (``صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ`` matches too).
+    ``﵇``, ``عز وجل`` -> ``﷿``, ``سبحانه وتعالى`` -> ``﷾``, and so on,
+    tashkeel and all (``صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ`` and ``عَزَّ وَجَلَّ`` match too).
     Standardizing to the ligature is what lets the whole pipeline treat honorifics
     one way: the name cleaner already cuts a name at the first ligature sign, so a
     spelled-out salutation no longer runs into a narrator's name. Phrases are
