@@ -100,6 +100,10 @@ export function SearchResults({
           Search · بحث
         </Text>
         <Heading level={1}>Results for “{q}”</Heading>
+        <Text as="p" size="sm" tone="faint" className="scr__hint">
+          One phrase by default · join required phrases with + · exclude with NOT · Arabic matches
+          without diacritics · Qurʾān also matches English
+        </Text>
       </header>
       {scope === 'content' ? (
         <ContentScope q={q} onOpenReader={onOpenReader} filters={contentFilters} />

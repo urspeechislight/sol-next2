@@ -23,6 +23,7 @@ from backend.core.http import status
 from backend.core.logging import configure_logging, get_logger
 from backend.core.settings import get_settings
 from backend.models.health import HealthReport
+from backend.query_language import QueryLanguageError
 
 
 async def _not_found(_request: Request, exc: Exception) -> JSONResponse:
@@ -35,6 +36,16 @@ async def _not_found(_request: Request, exc: Exception) -> JSONResponse:
         raise exc
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": str(exc)},
+    )
+
+
+async def _bad_query(_request: Request, exc: Exception) -> JSONResponse:
+    """Map a boolean-grammar violation to a 422 the caller can act on."""
+    if not isinstance(exc, QueryLanguageError):
+        raise exc
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"detail": str(exc)},
     )
 
@@ -96,6 +107,7 @@ def create_app() -> FastAPI:
 
     app.add_exception_handler(ResourceNotFoundError, _not_found)
     app.add_exception_handler(CorpusSearchError, _search_unavailable)
+    app.add_exception_handler(QueryLanguageError, _bad_query)
     app.include_router(_health_router)
     app.include_router(api_router, prefix="/api")
     app.add_api_route(

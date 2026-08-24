@@ -35,6 +35,7 @@ from backend.core.constants import (
     HTTP__REQUEST_TIMEOUT_SECONDS,
 )
 from backend.core.errors import CorpusSearchError
+from backend.core.http import status
 from backend.core.settings import get_settings
 from backend.models.reader import BookSearchMatch
 from backend.models.search import (
@@ -46,6 +47,7 @@ from backend.models.search import (
     VolumeFacet,
 )
 from backend.patterns import fold_search, fold_with_offsets
+from backend.query_language import BooleanQuery, QueryLanguageError, parse_query
 from backend.repositories import reader as reader_repo
 from backend.repositories._data_loader import slice_page
 
@@ -70,11 +72,18 @@ async def _fetch_json(path: str, params: dict[str, Any]) -> dict[str, Any]:
     """GET one JSON object from the search backend, surfacing any failure.
 
     The single network seam: every backend call goes through here, so the mapping
-    functions stay pure and tests swap behavior by replacing ``_client``.
+    functions stay pure and tests swap behavior by replacing ``_client``. A 422
+    is the caller's error (a boolean-grammar violation), not the backend's, so it
+    passes through as ``QueryLanguageError`` rather than being masked as a 503.
     """
     try:
         response = await _client().get(path, params=params)
         response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY:
+            detail = exc.response.json().get("detail", str(exc))
+            raise QueryLanguageError(str(detail)) from exc
+        raise CorpusSearchError(f"search backend {path} request failed: {exc}") from exc
     except httpx.HTTPError as exc:
         raise CorpusSearchError(f"search backend {path} request failed: {exc}") from exc
     try:
@@ -268,6 +277,9 @@ def search_in_book(
     cross-corpus backend. Shares ``search_windows`` + ``locate_snippet`` with the
     proxied path so the fold and snippet logic lives once.
     """
+    parsed = parse_query(q)
+    if parsed is not None:
+        return _search_in_book_boolean(book_urn, parsed, limit, offset)
     windows = search_windows(q, "exact")
     if not windows:
         return [], 0
@@ -276,6 +288,29 @@ def search_in_book(
         found, snippet = locate_snippet(row.content, windows)
         if found:
             matches.append(BookSearchMatch(page=row.page, snippet=snippet))
+    return slice_page(matches, limit, offset)
+
+
+def _search_in_book_boolean(
+    book_urn: str, parsed: BooleanQuery, limit: int, offset: int
+) -> tuple[list[BookSearchMatch], int]:
+    """The boolean in-book scan: every include phrase present, none of the
+    excludes. The page folds once per row; the snippet anchors on the first
+    include hit, so the excerpt shows what the page matched, never an
+    excluded term."""
+    includes = [w for w in (fold_search(c) for c in parsed.includes) if w]
+    if not includes:
+        return [], 0
+    excludes = [w for w in (fold_search(c) for c in parsed.excludes) if w]
+    matches: list[BookSearchMatch] = []
+    for row in reader_repo.page_rows(book_urn):
+        folded, _ = _fold_with_map(row.content)
+        if not all(w in folded for w in includes):
+            continue
+        if any(w in folded for w in excludes):
+            continue
+        _, snippet = locate_snippet(row.content, includes)
+        matches.append(BookSearchMatch(page=row.page, snippet=snippet))
     return slice_page(matches, limit, offset)
 
 
