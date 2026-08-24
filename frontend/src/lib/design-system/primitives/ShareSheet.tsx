@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import type { ShareContent, ShareResponse } from '../../types';
 import { SHARE_FORMATS, SHARE_PLATFORMS, type ShareFormat } from '../../constants';
 import type { IconName } from '../internal/icons';
@@ -6,7 +7,7 @@ import { Button } from './Button';
 import { Segmented } from './Segmented';
 import { Icon } from './Icon';
 import { ShareCard } from './ShareCard';
-import { useEscape } from './useDismiss';
+import { FOCUSABLE, useEscape, useFocusScope } from './useDismiss';
 import './ShareSheet.css';
 
 export interface ShareSheetProps {
@@ -19,6 +20,24 @@ export interface ShareSheetProps {
     Presentational: the feature supplies content plus the resolved share response. */
 export function ShareSheet({ content, response, onClose }: ShareSheetProps) {
   useEscape(onClose);
+  const sheet = useRef<HTMLDivElement>(null);
+  useFocusScope(sheet, true);
+
+  /** Modal Tab discipline: focus cycles inside the sheet, never past it. */
+  const trapTab = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab' || !sheet.current) return;
+    const items = [...sheet.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (!first || !last) return;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
   const [format, setFormat] = useState<ShareFormat>('square');
   const [showQr, setShowQr] = useState(response.qr.length > 0);
   const [copied, setCopied] = useState(false);
@@ -42,10 +61,12 @@ export function ShareSheet({ content, response, onClose }: ShareSheetProps) {
   return (
     <div className="ds-sheet-scrim" onClick={onClose}>
       <div
+        ref={sheet}
         className="ds-sheet"
         role="dialog"
         aria-label="Share"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={trapTab}
       >
         <div className="ds-sheet__head">
           <span className="ds-sheet__title">Share</span>

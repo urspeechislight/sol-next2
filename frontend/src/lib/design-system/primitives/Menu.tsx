@@ -46,6 +46,7 @@ export function Menu({
   const root = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLUListElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const typeahead = useRef<{ text: string; at: number }>({ text: '', at: 0 });
   const current = options.find((o) => o.value === value);
   const closeAndRefocus = useCallback(() => {
     setOpen(false);
@@ -97,6 +98,21 @@ export function Menu({
     } else if (e.key === 'Escape') {
       e.preventDefault();
       closeAndRefocus();
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // ARIA typeahead: printable keys jump focus to the first option whose
+      // label starts with the accumulated prefix (reset after a pause).
+      // Space on a focused option falls through to native activation.
+      if (e.key === ' ' && idx >= 0) return;
+      const now = Date.now();
+      const acc = now - typeahead.current.at < 600 ? typeahead.current.text : '';
+      typeahead.current = { text: acc + e.key.toLowerCase(), at: now };
+      const match = opts.find((o) =>
+        o.textContent?.trim().toLowerCase().startsWith(typeahead.current.text),
+      );
+      if (match) {
+        e.preventDefault();
+        match.focus();
+      }
     }
   };
 

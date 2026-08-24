@@ -120,4 +120,4 @@ export type { CheckboxProps } from './primitives/Checkbox';
 export { Apparatus } from './components/Apparatus';
 export type { ApparatusProps } from './components/Apparatus';
 
-export { useDismiss, useEscape } from './primitives/useDismiss';
+export { useDismiss, useEscape, useFocusScope, FOCUSABLE } from './primitives/useDismiss';
