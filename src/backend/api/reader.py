@@ -14,14 +14,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from backend.api._pagination import PageParams, page_params
-from backend.api._routes import as_page, get_route
+from backend.api._routes import NOT_FOUND_404, as_page, get_route
 from backend.core.constants import READER__SEARCH_DEFAULT_LIMIT
 from backend.models.pagination import Page
 from backend.models.reader import BookPage, BookSearchMatch, Toc
 from backend.repositories import corpus as corpus_repo
 from backend.repositories import reader as reader_repo
 
-router = APIRouter(tags=["reader"])
+router = APIRouter(tags=["reader"], responses=NOT_FOUND_404)
 
 _reader_page_params = page_params(
     default_limit=READER__SEARCH_DEFAULT_LIMIT,

@@ -13,12 +13,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Query
 
 from backend.api._pagination import PageDep
-from backend.api._routes import as_page, get_route
+from backend.api._routes import NOT_FOUND_404, as_page, get_route
 from backend.models.pagination import Page
 from backend.models.quran import Ayah, Surah
 from backend.repositories import quran as quran_repo
 
-router = APIRouter(tags=["quran"])
+router = APIRouter(tags=["quran"], responses=NOT_FOUND_404)
 
 
 async def _search_verses(

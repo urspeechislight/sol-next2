@@ -11,12 +11,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Query
 
 from backend.api._pagination import PageDep
-from backend.api._routes import as_page, get_route
+from backend.api._routes import NOT_FOUND_404, as_page, get_route
 from backend.models.book import Book
 from backend.models.pagination import Page
 from backend.repositories import books as books_repo
 
-router = APIRouter(tags=["books"])
+router = APIRouter(tags=["books"], responses=NOT_FOUND_404)
 
 
 async def _list_books(

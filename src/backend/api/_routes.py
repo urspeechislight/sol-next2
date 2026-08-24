@@ -4,7 +4,10 @@ Every route in this API is a GET returning 200 with an explicit response
 model; ``get_route`` states that convention once instead of every router
 repeating ``methods=["GET"]`` and ``status_code``. ``as_page`` wraps a
 repository's ``(slice, total)`` tuple into the parametrized ``Page`` envelope
-that every list handler used to assemble by hand.
+that every list handler used to assemble by hand. ``NOT_FOUND_404`` lets a
+router whose routes can answer ResourceNotFoundError declare the shared 404
+once at router level (APIRouter responses merge into every route), so the
+contract says what the handler actually does without per-route repetition.
 """
 
 from __future__ import annotations
@@ -16,7 +19,15 @@ from fastapi import APIRouter
 
 from backend.api._pagination import PageParams
 from backend.core.http import status
+from backend.models.errors import ErrorEnvelope
 from backend.models.pagination import Page
+
+NOT_FOUND_404: dict[int | str, dict[str, Any]] = {
+    404: {
+        "model": ErrorEnvelope,
+        "description": "The requested resource does not exist (unknown urn, id, surah, or ayah).",
+    }
+}
 
 
 def get_route(

@@ -2748,6 +2748,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2797,6 +2807,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
           },
           "422": {
             "content": {
@@ -2878,6 +2898,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2919,6 +2949,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -2959,6 +2999,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
           },
           "422": {
             "content": {
@@ -3014,6 +3064,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3058,6 +3118,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
           },
           "422": {
             "content": {
@@ -3112,6 +3182,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
           },
           "422": {
             "content": {
@@ -3429,6 +3509,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3469,6 +3559,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
           },
           "422": {
             "content": {
@@ -3515,6 +3615,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3560,6 +3670,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3604,6 +3724,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
           },
           "422": {
             "content": {
@@ -3676,6 +3806,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3716,6 +3856,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
           },
           "422": {
             "content": {
@@ -3766,6 +3916,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
           },
           "422": {
             "content": {
@@ -3886,6 +4046,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3926,6 +4096,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
           },
           "422": {
             "content": {
@@ -4366,33 +4546,9 @@
         "tags": ["works"]
       }
     },
-    "/health": {
-      "get": {
-        "description": "Container health probe \u2014 succeeds when the process is up.",
-        "operationId": "_health_health_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response  Health Health Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": " Health",
-        "tags": ["health"]
-      }
-    },
     "/livez": {
       "get": {
-        "description": "Kubernetes liveness probe.",
+        "description": "Kubernetes liveness probe \u2014 succeeds when the process is up.",
         "operationId": "_livez_livez_get",
         "responses": {
           "200": {

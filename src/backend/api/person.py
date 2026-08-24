@@ -10,12 +10,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Query
 
 from backend.api._pagination import PageDep
-from backend.api._routes import as_page, get_route
+from backend.api._routes import NOT_FOUND_404, as_page, get_route
 from backend.models.narrator import PersonEdge, PersonEntry, PersonEvent, PersonGrade
 from backend.models.pagination import Page
 from backend.repositories import registry
 
-router = APIRouter(tags=["person"])
+router = APIRouter(tags=["person"], responses=NOT_FOUND_404)
 
 
 async def _list_person(

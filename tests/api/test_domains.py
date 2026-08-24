@@ -44,8 +44,8 @@ def test_should_set_cors_headers_for_frontend_origin(client: TestClient) -> None
     assert response.headers.get("access-control-allow-origin") == "http://127.0.0.1:8765"
 
 
-def test_should_return_ok_for_health_probe(client: TestClient) -> None:
-    """`/health` returns 200 and a status payload."""
-    response = client.get("/health")
+def test_should_return_alive_for_liveness_probe(client: TestClient) -> None:
+    """`/livez` returns 200 and a status payload (the canonical infra probe)."""
+    response = client.get("/livez")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {"status": "alive"}

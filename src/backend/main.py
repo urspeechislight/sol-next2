@@ -1,8 +1,10 @@
 """FastAPI application entry point.
 
 Wires up:
-  * health/liveness/readiness endpoints (the only routes permitted here
-    by CENTRAL-017),
+  * the health probes: /livez + /readyz for the deployment platform, and
+    /api/health, the deep subsystem aggregate the app heartbeat polls (the
+    only routes permitted here by CENTRAL-017). There is intentionally no
+    plain /health: it was a third, redundant surface,
   * CORS so the Vite frontend on :8765 can call this API on :8001,
   * the API router from ``src.backend.api`` once endpoints exist.
 
@@ -65,13 +67,8 @@ async def _search_unavailable(_request: Request, exc: Exception) -> JSONResponse
     )
 
 
-async def _health() -> dict[str, str]:
-    """Container health probe — succeeds when the process is up."""
-    return {"status": "ok"}
-
-
 async def _livez() -> dict[str, str]:
-    """Kubernetes liveness probe."""
+    """Kubernetes liveness probe — succeeds when the process is up."""
     return {"status": "alive"}
 
 
@@ -81,7 +78,7 @@ async def _readyz() -> dict[str, str]:
 
 
 _health_router = APIRouter(tags=["health"])
-for _path, _endpoint in (("/health", _health), ("/livez", _livez), ("/readyz", _readyz)):
+for _path, _endpoint in (("/livez", _livez), ("/readyz", _readyz)):
     _health_router.add_api_route(_path, _endpoint, methods=["GET"], status_code=status.HTTP_200_OK)
 
 

@@ -12,12 +12,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from backend.api._pagination import PageDep
-from backend.api._routes import as_page, get_route
+from backend.api._routes import NOT_FOUND_404, as_page, get_route
 from backend.models.narrator import RijalEntry
 from backend.models.pagination import Page
 from backend.repositories import registry
 
-router = APIRouter(tags=["rijal"])
+router = APIRouter(tags=["rijal"], responses=NOT_FOUND_404)
 
 
 class RijalFilterParams:

@@ -9,12 +9,12 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from backend.api._routes import get_route
+from backend.api._routes import NOT_FOUND_404, get_route
 from backend.core.constants import QURAN__SURAH_COUNT
 from backend.models.citation import Citation
 from backend.repositories import citations as citations_repo
 
-router = APIRouter(tags=["citations"])
+router = APIRouter(tags=["citations"], responses=NOT_FOUND_404)
 
 
 async def _page_citations(urn: str, page: int) -> list[Citation]:
