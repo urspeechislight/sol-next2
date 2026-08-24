@@ -14,7 +14,7 @@
 
 /* ---- surah rail ----------------------------------------------------------- */
 .quran__rail {
-  z-index: 1;
+  z-index: var(--z-raised);
   position: sticky;
   top: calc(var(--header-height) + var(--space-lg));
   display: flex;
@@ -72,7 +72,7 @@
 /* ---- main column ---------------------------------------------------------- */
 .quran__main {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-raised);
   min-width: 0;
   max-width: 820px;
 }

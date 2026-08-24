@@ -28,7 +28,7 @@
 }
 .graph__placeholder {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-raised);
   display: flex;
   flex-direction: column;
   align-items: center;

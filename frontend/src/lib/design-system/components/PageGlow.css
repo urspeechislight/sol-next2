@@ -8,7 +8,7 @@
   left: calc(50% - 50vw);
   right: calc(50% - 50vw);
   pointer-events: none;
-  z-index: 0;
+  z-index: var(--z-base);
   overflow: hidden;
 }
 .ds-pageglow__halo {

@@ -55,7 +55,8 @@
   border-radius: var(--radius-pill);
   display: inline-grid;
   place-items: center;
-  background: var(--color-reader-honorific);
+  /* honorific darkened one step: the numeral must clear WCAG AA at 16px */
+  background: color-mix(in oklch, var(--color-reader-honorific) 80%, var(--color-reader-fg));
   color: var(--color-reader-bg);
   font-family: var(--font-ar-display);
   font-weight: var(--weight-semibold);

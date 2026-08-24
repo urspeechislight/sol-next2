@@ -9,7 +9,7 @@
 }
 .library__grid {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-raised);
   display: grid;
   grid-template-columns: minmax(252px, 312px) minmax(0, 1fr);
   gap: var(--space-xl);

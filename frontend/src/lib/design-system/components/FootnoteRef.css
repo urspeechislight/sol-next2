@@ -22,8 +22,8 @@
   text-underline-offset: 2px;
 }
 .ds-fnref:focus-visible {
-  outline: var(--border-width) solid var(--color-reader-honorific);
-  outline-offset: 1px;
+  outline: 2px solid var(--color-reader-honorific);
+  outline-offset: 2px;
   border-radius: var(--radius-xs);
 }
 .ds-fnref--entry {

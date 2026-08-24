@@ -49,6 +49,9 @@
   --palette-red-500: #c0463e;
   --palette-red-300: #dd6a62;
 
+  /* app chrome: a cool neutral the header composites from (light theme only) */
+  --palette-chrome: #fbfbfc;
+
   /* near-black grounds for dark theme */
   --palette-night-900: #100d08;
   --palette-night-800: #15110b;
@@ -108,7 +111,7 @@
   /* App chrome: the sticky header bar. Cool neutral so the top of every view
      reads as clean chrome, not warm-pink, sitting over the parchment canvas.
      (At 86% over blur this composites to ~#f9f8f8, R~B, perceptually neutral.) */
-  --color-app-bar: #fbfbfc;
+  --color-app-bar: var(--palette-chrome);
 
   --color-text: var(--palette-ink-800);
   --color-text-muted: var(--palette-ink-600);
@@ -287,6 +290,7 @@
 
   /* z-index */
   --z-base: 0;
+  --z-raised: 1;
   --z-sticky: 100;
   --z-header: 200;
   --z-drawer: 300;
@@ -399,7 +403,9 @@
   --color-reader-pill-bg: var(--palette-night-600);
   --color-reader-pill-fg: var(--palette-sand-100);
   --color-reader-card: var(--palette-night-800);
-  --color-reader-card-active: var(--palette-night-700);
+  /* one step above the toolbar bg (night-700): the volume badge must not
+     flatten into its backdrop */
+  --color-reader-card-active: var(--palette-night-600);
   --color-reader-quote-bg: var(--palette-night-800);
   --color-reader-honorific: var(--palette-gold-300);
   --color-reader-progress: var(--palette-gold-300);
