@@ -31,7 +31,7 @@ def _hit(**over: Any) -> dict[str, Any]:
         "volume": 1,
         "stem": "abc123",
         "page_number": 5,
-        "snippet": "…نص…",
+        "snippet": "…<b>نص</b>…",
     }
     base.update(over)
     return base
@@ -100,6 +100,16 @@ async def test_should_map_hit_metadata_when_searching(backend: list[httpx.Reques
     assert first.author == "Author"
     assert first.category == "hadith"
     assert first.volume == 1
+    assert len(backend) == 1
+
+
+@pytest.mark.asyncio
+async def test_should_strip_markup_tags_from_backend_snippets(
+    backend: list[httpx.Request],
+) -> None:
+    """The mapped snippet is plain text; FTS markup is the reader's job."""
+    matches, _total = await corpus_repo.search(corpus_repo.SearchQuery(q="نص"))
+    assert matches[0].snippet == "…نص…"
     assert len(backend) == 1
 
 

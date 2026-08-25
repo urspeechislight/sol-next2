@@ -46,7 +46,7 @@ from backend.models.search import (
     SearchMode,
     VolumeFacet,
 )
-from backend.patterns import fold_search, fold_with_offsets
+from backend.patterns import MARKUP_TAGS, fold_search, fold_with_offsets
 from backend.query_language import BooleanQuery, QueryLanguageError, parse_query
 from backend.repositories import reader as reader_repo
 from backend.repositories._data_loader import slice_page
@@ -162,6 +162,18 @@ def locate_snippet(content: str, windows: list[str]) -> tuple[bool, str]:
     return False, head
 
 
+def _strip_markup(text: str) -> str:
+    """Remove HTML tags (FTS5 highlight marks) from a backend snippet.
+
+    The consolidated backend highlights hits with ``<b>…</b>`` markup, but a
+    snippet in the API contract is plain text: presentation highlighting is
+    the reader's (design-system ``Highlight``), so the proxy strips tags at
+    this one boundary and both paths — proxied and in-book — deliver clean
+    text.
+    """
+    return MARKUP_TAGS.sub("", text)
+
+
 @dataclass(frozen=True, slots=True)
 class SearchQuery:
     """The query text + scope filters for a cross-corpus content search."""
@@ -212,7 +224,7 @@ async def search(
             category=item.get("category") or "",
             volume=item.get("volume"),
             page=item["page_number"],
-            snippet=item["snippet"],
+            snippet=_strip_markup(item["snippet"]),
         )
         for item in items
         if isinstance(item, dict)

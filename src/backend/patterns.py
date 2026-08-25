@@ -92,6 +92,7 @@ ARABIC_ALEF: Final[re.Pattern[str]] = re.compile("[أإآ]")
 ARABIC_ALEF_MAQSURA: Final[re.Pattern[str]] = re.compile("ى")
 ARABIC_TAA_MARBUTA: Final[re.Pattern[str]] = re.compile("ة")
 WHITESPACE: Final[re.Pattern[str]] = re.compile(r"\s+")
+MARKUP_TAGS: Final[re.Pattern[str]] = re.compile(r"</?[A-Za-z][^>]*>")
 FOOTNOTE_MARKER: Final[str] = r"\((\d+)\)"
 
 VOLUME_DESIGNATOR: Final[str] = r"\s*[\u060c,]\s*(?:vol(?:ume)?\.?)\s*\d+.*$"
