@@ -583,6 +583,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search/semantic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * LLM-planned search: a freeform question in, corpus matches out.
+         * @description Wrap the semantic repo's (slice, total) into the shared Page envelope.
+         *
+         *     The response model is the corpus search's own ``Page[CorpusMatch]``: a
+         *     semantic hit and a keyword hit are the same object by construction. A
+         *     blank query is the caller's error (422), matching the boolean-grammar
+         *     guard's contract.
+         */
+        get: operations["_search_semantic_api_search_semantic_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/works": {
         parameters: {
             query?: never;
@@ -603,26 +628,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Health
-         * @description Container health probe — succeeds when the process is up.
-         */
-        get: operations["_health_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/livez": {
         parameters: {
             query?: never;
@@ -632,7 +637,7 @@ export interface paths {
         };
         /**
          * Livez
-         * @description Kubernetes liveness probe.
+         * @description Kubernetes liveness probe — succeeds when the process is up.
          */
         get: operations["_livez_livez_get"];
         put?: never;
@@ -2514,6 +2519,15 @@ export interface operations {
                     "application/json": components["schemas"]["Page_Book_"];
                 };
             };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -2544,6 +2558,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BookPage"];
+                };
+            };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -2584,6 +2607,15 @@ export interface operations {
                     "application/json": components["schemas"]["Page_BookSearchMatch_"];
                 };
             };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -2615,6 +2647,15 @@ export interface operations {
                     "application/json": components["schemas"]["Toc"];
                 };
             };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -2644,6 +2685,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Book"];
+                };
+            };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -2678,6 +2728,15 @@ export interface operations {
                     "application/json": components["schemas"]["Citation"][];
                 };
             };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -2707,6 +2766,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Book"][];
+                };
+            };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -2741,6 +2809,15 @@ export interface operations {
                     "application/json": {
                         [key: string]: number;
                     };
+                };
+            };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -2955,6 +3032,15 @@ export interface operations {
                     "application/json": components["schemas"]["Page_PersonEntry_"];
                 };
             };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -2984,6 +3070,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PersonEntry"];
+                };
+            };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -3017,6 +3112,15 @@ export interface operations {
                     "application/json": components["schemas"]["PersonEdge"][];
                 };
             };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3048,6 +3152,15 @@ export interface operations {
                     "application/json": components["schemas"]["PersonEvent"][];
                 };
             };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3077,6 +3190,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PersonGrade"][];
+                };
+            };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -3115,6 +3237,15 @@ export interface operations {
                     "application/json": components["schemas"]["Page_Ayah_"];
                 };
             };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3144,6 +3275,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Surah"];
+                };
+            };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -3176,6 +3316,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Ayah"];
+                };
+            };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -3222,6 +3371,15 @@ export interface operations {
                     "application/json": components["schemas"]["Page_RijalEntry_"];
                 };
             };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3251,6 +3409,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RijalEntry"];
+                };
+            };
+            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             /** @description Validation Error */
@@ -3364,6 +3531,60 @@ export interface operations {
             };
         };
     };
+    _search_semantic_api_search_semantic_get: {
+        parameters: {
+            query?: {
+                /** @description Freeform query, usually English; planned by the LLM, executed by the corpus engine. */
+                q?: string;
+                /** @description Records per page. */
+                limit?: number;
+                /** @description Records to skip. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_CorpusMatch_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The LLM planner failed, answered outside contract, or produced no usable plan. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description LLM search is not configured (SOL_LLM_API_KEY missing) or the consolidated search backend is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     _list_works_api_works_get: {
         parameters: {
             query?: {
@@ -3408,28 +3629,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    _health_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
                 };
             };
         };

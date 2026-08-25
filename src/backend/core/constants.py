@@ -12,6 +12,16 @@ window cannot be located. ``QURAN__SURAH_COUNT`` is the canonical chapter
 count, the upper bound of every surah-number field; the ``CALENDAR__*``
 bounds validate Hijri month/day references in the almanac.
 
+``HTTP__LLM_TIMEOUT_SECONDS`` is the LLM planner's own, more patient client
+timeout: planning is one short JSON completion, but LLM latency tails run
+longer than engine latency tails. ``CORPUS__BACKEND_PAGE_LIMIT`` is the
+consolidated search backend's page cap (one tier below this API's declared
+``HTTP__MAX_PAGE_SIZE``): consumers that fan out over the engine directly —
+the semantic planner's per-phrase fetch — must not exceed it or the backend
+answers 422. The ``SEMANTIC__*`` bounds shape the LLM planner in
+``repositories/semantic.py``: plan size caps, the planner completion budget,
+and the bounded per-query plan cache.
+
 ``ARTIFACT__*`` names the build artifacts under ``data/``. Each filename is
 the coupling point between the script that writes the artifact and the
 repository that reads it, so it is declared once here and imported by both
@@ -38,6 +48,13 @@ HADITH__FOOTNOTE_MARKER_MAX_GAP: Final[int] = 50
 HTTP__DEFAULT_PAGE_SIZE: Final[int] = 24
 HTTP__MAX_PAGE_SIZE: Final[int] = 200
 HTTP__REQUEST_TIMEOUT_SECONDS: Final[int] = 30
+HTTP__LLM_TIMEOUT_SECONDS: Final[int] = 45
+
+SEMANTIC__MAX_QUERIES: Final[int] = 4
+SEMANTIC__MAX_CATEGORIES: Final[int] = 6
+SEMANTIC__PLANNER_MAX_TOKENS: Final[int] = 512
+SEMANTIC__PLAN_CACHE_TTL_SECONDS: Final[int] = 3600
+SEMANTIC__PLAN_CACHE_SIZE: Final[int] = 256
 
 READER__SOURCE_CACHE_MAX: Final[int] = 128
 
@@ -67,6 +84,7 @@ SEARCH__PATTERN_CACHE_MAX: Final[int] = 512
 
 CORPUS__SNIPPET_WINDOW_CHARS: Final[int] = 48
 CORPUS__SNIPPET_HEAD_CHARS: Final[int] = 160
+CORPUS__BACKEND_PAGE_LIMIT: Final[int] = 50
 BUILD__COMMIT_EVERY: Final[int] = 400
 
 QURAN__SURAH_COUNT: Final[int] = 114

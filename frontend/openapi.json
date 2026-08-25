@@ -4362,6 +4362,97 @@
         "tags": ["search"]
       }
     },
+    "/api/search/semantic": {
+      "get": {
+        "description": "Wrap the semantic repo's (slice, total) into the shared Page envelope.\n\nThe response model is the corpus search's own ``Page[CorpusMatch]``: a\nsemantic hit and a keyword hit are the same object by construction. A\nblank query is the caller's error (422), matching the boolean-grammar\nguard's contract.",
+        "operationId": "_search_semantic_api_search_semantic_get",
+        "parameters": [
+          {
+            "description": "Freeform query, usually English; planned by the LLM, executed by the corpus engine.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Freeform query, usually English; planned by the LLM, executed by the corpus engine.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Records per page.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "description": "Records per page.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Records to skip.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Records to skip.",
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CorpusMatch_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The LLM planner failed, answered outside contract, or produced no usable plan."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "LLM search is not configured (SOL_LLM_API_KEY missing) or the consolidated search backend is unreachable."
+          }
+        },
+        "summary": "LLM-planned search: a freeform question in, corpus matches out.",
+        "tags": ["search"]
+      }
+    },
     "/api/works": {
       "get": {
         "description": "Wrap the repo's (slice, total) of works into a Page[Work] envelope.",

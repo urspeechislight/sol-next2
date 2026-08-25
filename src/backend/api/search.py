@@ -23,8 +23,10 @@ from backend.api._validation import reject_unknown
 from backend.models.errors import ErrorEnvelope
 from backend.models.pagination import Page
 from backend.models.search import CorpusMatch, SearchFacets, SearchMode
+from backend.query_language import QueryLanguageError
 from backend.repositories import _taxonomy
 from backend.repositories import corpus as corpus_repo
+from backend.repositories import semantic as semantic_repo
 
 router = APIRouter(tags=["search"])
 
@@ -109,4 +111,51 @@ get_route(
     response_model=SearchFacets,
     summary="Category -> book -> volume filters available for a search query.",
     responses=_SEARCH_503,
+)
+
+_SEMANTIC_RESPONSES: dict[int | str, dict[str, Any]] = {
+    502: {
+        "model": ErrorEnvelope,
+        "description": "The LLM planner failed, answered outside contract, or "
+        "produced no usable plan.",
+    },
+    503: {
+        "model": ErrorEnvelope,
+        "description": "LLM search is not configured (SOL_LLM_API_KEY missing) "
+        "or the consolidated search backend is unreachable.",
+    },
+}
+
+
+async def _search_semantic(
+    page: PageDep,
+    q: str = Query(
+        default="",
+        description="Freeform query, usually English; planned by the LLM, "
+        "executed by the corpus engine.",
+    ),
+) -> Page[CorpusMatch]:
+    """Wrap the semantic repo's (slice, total) into the shared Page envelope.
+
+    The response model is the corpus search's own ``Page[CorpusMatch]``: a
+    semantic hit and a keyword hit are the same object by construction. A
+    blank query is the caller's error (422), matching the boolean-grammar
+    guard's contract.
+    """
+    if not q.strip():
+        raise QueryLanguageError("a semantic search needs a non-empty query")
+    return as_page(
+        Page[CorpusMatch],
+        page,
+        await semantic_repo.search_planned(q, limit=page.limit, offset=page.offset),
+    )
+
+
+get_route(
+    router,
+    "/search/semantic",
+    _search_semantic,
+    response_model=Page[CorpusMatch],
+    summary="LLM-planned search: a freeform question in, corpus matches out.",
+    responses=_SEMANTIC_RESPONSES,
 )

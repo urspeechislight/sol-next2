@@ -159,10 +159,10 @@ export function searchBook(
   return get<Page<BookSearchMatch>>(`${API.BOOKS}/${encodeURIComponent(urn)}${API.SEARCH}${qs}`);
 }
 
-// ---- search (one query, four global scopes plus the Qurʾān reader's own
+// ---- search (one query, five global scopes plus the Qurʾān reader's own
 // in-place "this sūra" filter over the currently open sūra) ----
 
-export const SEARCH_SCOPES = ['content', 'works', 'narrator', 'quran', 'sura'] as const;
+export const SEARCH_SCOPES = ['content', 'works', 'narrator', 'quran', 'semantic', 'sura'] as const;
 export type SearchScope = (typeof SEARCH_SCOPES)[number];
 
 /** The match modes in display order. `satisfies` locks every member to the
@@ -210,6 +210,17 @@ export function searchFacets(
 ): Promise<SearchFacets> {
   const qs = query({ q, mode, category: categories, book });
   return get<SearchFacets>(`${API.SEARCH}${API.FACETS}${qs}`);
+}
+
+/** Freeform (usually English) query: the backend's LLM planner turns it into
+    category scopes + Arabic phrases, the corpus engine executes them, and the
+    page shape is the corpus search's own — a semantic hit IS a keyword hit. */
+export function searchSemantic(
+  q: string,
+  params: { limit?: number; offset?: number } = {},
+): Promise<Page<CorpusMatch>> {
+  const qs = query({ q, limit: params.limit ?? PAGE.defaultLimit, offset: params.offset ?? 0 });
+  return get<Page<CorpusMatch>>(`${API.SEARCH}${API.SEMANTIC}${qs}`);
 }
 
 // ---- dev extraction inspection ----

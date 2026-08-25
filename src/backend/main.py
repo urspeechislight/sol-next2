@@ -20,7 +20,12 @@ from fastapi.responses import JSONResponse
 
 from backend import health
 from backend.api import api_router
-from backend.core.errors import CorpusSearchError, ResourceNotFoundError
+from backend.core.errors import (
+    CorpusSearchError,
+    ResourceNotFoundError,
+    SemanticNotConfiguredError,
+    SemanticSearchError,
+)
 from backend.core.http import status
 from backend.core.logging import configure_logging, get_logger
 from backend.core.settings import get_settings
@@ -67,6 +72,35 @@ async def _search_unavailable(_request: Request, exc: Exception) -> JSONResponse
     )
 
 
+async def _semantic_failed(_request: Request, exc: Exception) -> JSONResponse:
+    """Map a SemanticSearchError to a 502 JSON body.
+
+    The LLM planner failing or answering outside contract is an expected
+    operating state for an external dependency: declared in the route's
+    OpenAPI schema, surfaced with the shared ErrorEnvelope shape.
+    """
+    if not isinstance(exc, SemanticSearchError):
+        raise exc
+    return JSONResponse(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": str(exc)},
+    )
+
+
+async def _semantic_unconfigured(_request: Request, exc: Exception) -> JSONResponse:
+    """Map a SemanticNotConfiguredError to a 503 JSON body.
+
+    A deployment without SOL_LLM_API_KEY stays in this state by design; the
+    detail names the setting so the operator can act on it.
+    """
+    if not isinstance(exc, SemanticNotConfiguredError):
+        raise exc
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": str(exc)},
+    )
+
+
 async def _livez() -> dict[str, str]:
     """Kubernetes liveness probe — succeeds when the process is up."""
     return {"status": "alive"}
@@ -105,6 +139,8 @@ def create_app() -> FastAPI:
     app.add_exception_handler(ResourceNotFoundError, _not_found)
     app.add_exception_handler(CorpusSearchError, _search_unavailable)
     app.add_exception_handler(QueryLanguageError, _bad_query)
+    app.add_exception_handler(SemanticSearchError, _semantic_failed)
+    app.add_exception_handler(SemanticNotConfiguredError, _semantic_unconfigured)
     app.include_router(_health_router)
     app.include_router(api_router, prefix="/api")
     app.add_api_route(

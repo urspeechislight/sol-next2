@@ -4,25 +4,16 @@ import { Button, Input, Link, Logo, Menu, useDismiss } from '../../lib/design-sy
 import type { MenuOption } from '../../lib/design-system';
 import type { SearchScope } from '../../lib/api/client';
 import { viewHref } from '../../lib/routes';
+import { SCOPE_OPTIONS } from '../../lib/scopes';
 import { useTheme } from '../../lib/useTheme';
 import { HealthDot } from './HealthDot';
 import { SearchHistoryMenu } from './SearchHistoryMenu';
 import { NAV, type NavView } from './nav';
 import './Header.css';
 
-// Scope -> primitive icon mapping from the design audit. Works is the one
-// catalog scope: a folded works search matches titles and authors together,
-// so nobody has to classify their query before typing it.
-const SCOPES: MenuOption[] = [
-  { value: 'content', label: 'Content', icon: 'scroll' },
-  { value: 'works', label: 'Works', icon: 'book' },
-  { value: 'narrator', label: 'Narrator', icon: 'network' },
-  { value: 'quran', label: 'Qurʾān', icon: 'reader' },
-];
-
-/** Only offered while the Qurʾān reader is open (prepended ahead of SCOPES,
-    so it's the default pick on landing there): filters the currently open
-    sūra in place instead of searching the whole corpus. */
+/** Only offered while the Qurʾān reader is open (prepended ahead of
+    SCOPE_OPTIONS, so it's the default pick on landing there): filters the
+    currently open sūra in place instead of searching the whole corpus. */
 const SURA_SCOPE: MenuOption = { value: 'sura', label: 'This Sūra', icon: 'bookmark' };
 
 const PLACEHOLDER: Record<SearchScope, string> = {
@@ -30,6 +21,7 @@ const PLACEHOLDER: Record<SearchScope, string> = {
   works: 'Search works by title or author…',
   narrator: 'Search narrators…',
   quran: 'A word, or Surah:Ayah like 68:4',
+  semantic: 'Ask in plain English…',
   sura: 'Search this sūra…',
 };
 
@@ -64,7 +56,8 @@ export function Header({
   // Recent searches are cross-scope by nature: while the Qurʾān page's
   // in-place sūra filter is active, or once the field has text, it stays hidden.
   const showHistory = historyOpen && scope !== 'sura' && !query.trim();
-  const scopeOptions = active === 'quran' ? [SURA_SCOPE, ...SCOPES] : SCOPES;
+  const scopeOptions: MenuOption[] =
+    active === 'quran' ? [SURA_SCOPE, ...SCOPE_OPTIONS] : [...SCOPE_OPTIONS];
 
   return (
     <header className="app-header">
@@ -118,7 +111,7 @@ export function Header({
         />
         <SearchHistoryMenu
           open={showHistory}
-          scopes={SCOPES}
+          scopes={[...SCOPE_OPTIONS]}
           onPick={(q, s) => {
             setHistoryOpen(false);
             onPickHistory(q, s);

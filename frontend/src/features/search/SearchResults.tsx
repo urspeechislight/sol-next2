@@ -14,6 +14,7 @@ import { ContentScope } from './ContentScope';
 import type { ContentFilters } from './ContentScope';
 import { QuranScope } from './QuranScope';
 import { ResultsFrame } from './ResultsFrame';
+import { SemanticScope } from './SemanticScope';
 import '../screens.css';
 import './SearchResults.css';
 
@@ -81,7 +82,7 @@ export interface SearchResultsProps {
   contentFilters: ContentFilters;
 }
 
-/** The search overlay: one query, four scopes. Works is the catalog primitive
+/** The search overlay: one query, five scopes. Works is the catalog primitive
     (volume-folded, canonical-ranked, the library's own faceted grammar);
     content / quran are the passage primitives; narrator searches the rijal
     registry. Every scope pages honestly; none caps silently. */
@@ -115,6 +116,7 @@ export function SearchResults({
         <WorksQueryResults q={q} onOpen={(urn, page) => onOpenReader(urn, page ?? 1, '')} />
       ) : null}
       {scope === 'narrator' ? <NarratorScope q={q} onOpenReader={onOpenReader} /> : null}
+      {scope === 'semantic' ? <SemanticScope q={q} onOpenReader={onOpenReader} /> : null}
     </section>
   );
 }

@@ -21,6 +21,7 @@ export const API = {
   VOLUMES: '/volumes',
   CITATIONS: '/citations',
   SEARCH: '/search',
+  SEMANTIC: '/semantic',
   FACETS: '/facets',
   QURAN: '/quran',
   DEV_EXTRACTION: '/dev/extraction',

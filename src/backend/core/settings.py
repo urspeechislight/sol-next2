@@ -66,6 +66,23 @@ class Settings(BaseSettings):
             "search here instead of maintaining a local index."
         ),
     )
+    llm_api_key: str = Field(
+        default="",
+        description=(
+            "API key for the LLM retrieval planner behind /api/search/semantic "
+            "(Anthropic-messages protocol). Empty disables the planner: the "
+            "route answers 503 naming this setting; failures propagate, never "
+            "a silent empty result."
+        ),
+    )
+    llm_base_url: str = Field(
+        default="https://api.z.ai/api/anthropic",
+        description="Base URL of the LLM planner's Anthropic-compatible endpoint.",
+    )
+    llm_model: str = Field(
+        default="glm-5.3",
+        description="Planner model id sent to the LLM endpoint.",
+    )
 
 
 @lru_cache(maxsize=1)
