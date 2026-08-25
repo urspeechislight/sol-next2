@@ -134,6 +134,8 @@ async def _search_semantic(
         description="Freeform query, usually English; planned by the LLM, "
         "executed by the corpus engine.",
     ),
+    category: Annotated[list[str] | None, Query(description=_CATEGORY_DESC)] = None,
+    book: Annotated[str, Query(description="Restrict the plan to a book title.")] = "",
 ) -> Page[CorpusMatch]:
     """Wrap the semantic repo's (slice, total) into the shared Page envelope.
 
@@ -147,7 +149,13 @@ async def _search_semantic(
     return as_page(
         Page[CorpusMatch],
         page,
-        await semantic_repo.search_planned(q, limit=page.limit, offset=page.offset),
+        await semantic_repo.search_planned(
+            q,
+            limit=page.limit,
+            offset=page.offset,
+            categories=_checked_categories(category),
+            book=book,
+        ),
     )
 
 
@@ -157,5 +165,31 @@ get_route(
     _search_semantic,
     response_model=Page[CorpusMatch],
     summary="LLM-planned search: a freeform question in, corpus matches out.",
+    responses=_SEMANTIC_RESPONSES,
+)
+
+
+async def _semantic_facets(
+    q: str = Query(
+        default="",
+        description="The semantic query whose executed plan is faceted.",
+    ),
+    category: Annotated[list[str] | None, Query(description=_CATEGORY_DESC)] = None,
+    book: Annotated[str, Query(description="Book to scope book facets to.")] = "",
+) -> SearchFacets:
+    """Drill-down facets for an executed semantic plan (categories, books)."""
+    if not q.strip():
+        raise QueryLanguageError("a semantic facets lookup needs a non-empty query")
+    return await semantic_repo.planned_facets(
+        q, categories=_checked_categories(category), book=book
+    )
+
+
+get_route(
+    router,
+    "/search/semantic/facets",
+    _semantic_facets,
+    response_model=SearchFacets,
+    summary="Category -> book filters available for an LLM-planned search.",
     responses=_SEMANTIC_RESPONSES,
 )

@@ -213,14 +213,36 @@ export function searchFacets(
 }
 
 /** Freeform (usually English) query: the backend's LLM planner turns it into
-    category scopes + Arabic phrases, the corpus engine executes them, and the
-    page shape is the corpus search's own — a semantic hit IS a keyword hit. */
+    category scopes + named works + Arabic phrases, the corpus engine executes
+    them, and the page shape is the corpus search's own — a semantic hit IS a
+    keyword hit. The category/book filters intersect the plan server-side. */
 export function searchSemantic(
   q: string,
-  params: { limit?: number; offset?: number } = {},
+  params: {
+    categories?: string[];
+    book?: string;
+    limit?: number;
+    offset?: number;
+  } = {},
 ): Promise<Page<CorpusMatch>> {
-  const qs = query({ q, limit: params.limit ?? PAGE.defaultLimit, offset: params.offset ?? 0 });
+  const qs = query({
+    q,
+    category: params.categories ?? [],
+    book: params.book ?? '',
+    limit: params.limit ?? PAGE.defaultLimit,
+    offset: params.offset ?? 0,
+  });
   return get<Page<CorpusMatch>>(`${API.SEARCH}${API.SEMANTIC}${qs}`);
+}
+
+/** Drill-down facets for an executed semantic plan: same streams, same merge
+    as the result rows (mode is fixed broad by the planner, so not a param). */
+export function searchFacetsSemantic(
+  q: string,
+  categories: readonly string[] = [],
+): Promise<SearchFacets> {
+  const qs = query({ q, category: categories });
+  return get<SearchFacets>(`${API.SEARCH}${API.SEMANTIC}${API.FACETS}${qs}`);
 }
 
 // ---- dev extraction inspection ----

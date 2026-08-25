@@ -36,6 +36,7 @@ import httpx
 from backend.core.constants import (
     CORPUS__BACKEND_PAGE_LIMIT,
     HTTP__LLM_TIMEOUT_SECONDS,
+    SEMANTIC__MAX_BOOKS,
     SEMANTIC__MAX_CATEGORIES,
     SEMANTIC__MAX_QUERIES,
     SEMANTIC__PLAN_CACHE_SIZE,
@@ -47,6 +48,7 @@ from backend.core.settings import get_settings
 from backend.models.search import CorpusMatch
 from backend.patterns import fold_search
 from backend.repositories import _taxonomy
+from backend.repositories import books as books_repo
 from backend.repositories import corpus as corpus_repo
 
 _PLANNER_SYSTEM: Final[str] = """You are the retrieval planner for a digital library of \
@@ -55,7 +57,7 @@ answer the question and never supply content: you translate the user's freeform 
 into a search plan the library's full-text engine can execute.
 
 Respond with STRICT JSON only — no prose, no markdown fences:
-{"categories": ["<slug>", ...], "queries": ["<Arabic phrase>", ...]}
+{"categories": ["<slug>", ...], "queries": ["<Arabic phrase>", ...], "books": ["<work title>", ...]}
 
 Rules:
 - "categories": 0-6 slugs copied EXACTLY from the list below, matching the corpus the \
@@ -70,6 +72,9 @@ with the definite article when natural (e.g. "الطلاق", "الخيار", "ا
 The engine matches it anywhere in scope, so the plan can never come back empty. \
 Phrases 2-4 then narrow with precise classical constructions — but verify their \
 wording is how books actually head the discussion, not your own paraphrase.
+- "books": 0-4 work titles the question explicitly names ("in Sahih al-Bukhari", "per \
+Muslim") — copy the work's common name as the catalogue would spell it. Omit entirely when \
+the question names no specific work.
 - If the question is vague, plan for its most likely scholarly reading."""
 
 
@@ -79,6 +84,7 @@ class SemanticPlan:
 
     categories: tuple[str, ...]
     queries: tuple[str, ...]
+    books: tuple[str, ...]
 
 
 @lru_cache(maxsize=1)
@@ -156,9 +162,12 @@ def parse_plan(data: dict[str, Any]) -> SemanticPlan:
     _, raw_queries = _string_list(data, "queries")
     if not raw_queries:
         raise SemanticSearchError("LLM planner produced no search phrases")
+    _, raw_books = _string_list(data, "books")
+    resolved_books = books_repo.resolve_work_titles(raw_books[:SEMANTIC__MAX_BOOKS])
     return SemanticPlan(
         categories=tuple(known[:SEMANTIC__MAX_CATEGORIES]),
         queries=tuple(raw_queries[:SEMANTIC__MAX_QUERIES]),
+        books=tuple(resolved_books[:SEMANTIC__MAX_BOOKS]),
     )
 
 
@@ -253,27 +262,37 @@ async def plan(q: str) -> SemanticPlan:
     return parsed
 
 
-async def search_planned(q: str, limit: int, offset: int) -> tuple[list[CorpusMatch], int]:
+async def search_planned(
+    q: str,
+    limit: int,
+    offset: int,
+    categories: tuple[str, ...] = (),
+    book: str = "",
+) -> tuple[list[CorpusMatch], int]:
     """Plan ``q`` and execute it on the corpus engine; return (slice, total).
 
     Each phrase runs as its own broad-mode engine query over the plan's
     categories (one round of ``asyncio.gather``), fetched to the engine's max
-    page so the merged window is deep enough to page honestly. Hits merge
-    round-robin across phrases (no single wording dominates), dedupe by
+    page so the merged window is deep enough to page honestly. A plan that
+    named works restricts every query to those books (phrase x book fan-out,
+    the engine's single-title ``book`` filter); caller filters (a facet
+    category click, a book drill-in) intersect the plan the same way. Hits
+    merge round-robin across phrases (no single wording dominates), dedupe by
     (urn, page), and slice to the requested page. Every hit — snippet included
     — comes from the corpus engine, so the content path is titan end-to-end.
     """
     semantic_plan = await plan(q)
+    categories = tuple(dict.fromkeys((*semantic_plan.categories, *categories)))
+    books = (book,) if book else semantic_plan.books
     outcomes = await asyncio.gather(
         *(
             corpus_repo.search(
-                corpus_repo.SearchQuery(
-                    q=phrase, mode="broad", categories=semantic_plan.categories
-                ),
+                corpus_repo.SearchQuery(q=phrase, mode="broad", categories=categories, book=title),
                 limit=CORPUS__BACKEND_PAGE_LIMIT,
                 offset=0,
             )
             for phrase in semantic_plan.queries
+            for title in (books or ("",))
         )
     )
     merged: list[CorpusMatch] = []
@@ -290,3 +309,49 @@ async def search_planned(q: str, limit: int, offset: int) -> tuple[list[CorpusMa
             seen.add(key)
             merged.append(hit)
     return merged[offset : offset + limit], len(merged)
+
+
+async def planned_facets(
+    q: str,
+    categories: tuple[str, ...] = (),
+    book: str = "",
+) -> corpus_repo.SearchFacets:
+    """Drill-down facets for the executed plan: same streams, same merge.
+
+    Each (phrase, book) stream's facet scan is fetched (the engine counts a
+    whole match-set per scan, independent of paging) and summed per key —
+    categories first, books within the merged scope — mirroring how
+    ``search_planned`` merges the streams, so the facet counts and the result
+    rows can never disagree about the match-set they describe.
+    """
+    semantic_plan = await plan(q)
+    scope_categories = tuple(dict.fromkeys((*semantic_plan.categories, *categories)))
+    books = (book,) if book else semantic_plan.books
+    outcomes = await asyncio.gather(
+        *(
+            corpus_repo.facets(q=phrase, mode="broad", categories=scope_categories, book=title)
+            for phrase in semantic_plan.queries
+            for title in (books or ("",))
+        )
+    )
+    per_category: dict[str, int] = {}
+    for facets_result in outcomes:
+        for facet in facets_result.categories:
+            per_category[facet.slug] = per_category.get(facet.slug, 0) + facet.count
+    per_book: dict[str, int] = {}
+    titles: dict[str, str | None] = {}
+    for facets_result in outcomes:
+        for facet in facets_result.books:
+            per_book[facet.title] = per_book.get(facet.title, 0) + facet.count
+            titles[facet.title] = facet.title_en
+    return corpus_repo.SearchFacets(
+        categories=[
+            corpus_repo.CategoryFacet(slug=slug, count=count)
+            for slug, count in sorted(per_category.items(), key=lambda kv: -kv[1])
+        ],
+        books=[
+            corpus_repo.BookFacet(title=title, title_en=titles[title], count=count)
+            for title, count in sorted(per_book.items(), key=lambda kv: -kv[1])
+        ],
+        volumes=[],
+    )

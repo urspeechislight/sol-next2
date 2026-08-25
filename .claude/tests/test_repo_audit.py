@@ -172,6 +172,16 @@ def test_should_pass_a_search_scope_using_results_frame(tmp_path: Path) -> None:
     assert check_scope_frame(tmp_path) == []
 
 
+def test_should_pass_a_scope_delegating_to_corpus_results(tmp_path: Path) -> None:
+    _write(
+        tmp_path,
+        "frontend/src/features/search/BindingScope.tsx",
+        "import { CorpusResults } from './CorpusResults';\n"
+        "export function X() { searchBooks('q'); return <CorpusResults />; }\n",
+    )
+    assert check_scope_frame(tmp_path) == []
+
+
 def test_should_ignore_search_files_that_do_not_fetch(tmp_path: Path) -> None:
     _write(tmp_path, "frontend/src/features/search/SearchFilters.tsx", "export const F = 1;\n")
     assert check_scope_frame(tmp_path) == []

@@ -7,6 +7,21 @@ Every check is deterministic and encodes facts about this repo's SSOT roles, so
 a green run is a real ratchet and a violation is unambiguous. Clone detection
 (jscpd) + dead-export detection (knip) layer on via the ``repo:audit`` script;
 this module owns the rules no off-the-shelf tool knows about.
+
+Module conventions for the constant tables below:
+
+* ``_DS_SCAN_DIRS`` / ``_RAW_INTERACTIVE_RE`` / ``_RAW_INTERACTIVE_BASELINE`` —
+  the design-system SSOT scan: feature/app code builds interactive controls from
+  design-system primitives, never raw intrinsics; the ratchet baseline is the
+  per-file count still tolerated, and it is empty (no raw element anywhere).
+* ``_PRIMITIVES_GLOB`` / ``_CONTROL_PRIMITIVES`` / ``_TOKENS_CSS`` /
+  ``_DARK_BLOCKS`` / ``_RAW_THEME_COLOR_RE`` — the deterministic gates for the
+  forks a visual review surfaced (control shape, dark palette, search-scope
+  framing): classes invisible to per-file harnesses and to jscpd because the
+  scopes diverged in text rather than by copy-paste. ``_CONTROL_PRIMITIVES``
+  lists the controls whose shape is SSOT via ``--radius-control`` (Spinner stays
+  a pill and is deliberately absent); ``_RAW_THEME_COLOR_RE`` matches a raw
+  colour literal (hex or oklch(), not the colour-space keyword).
 """
 
 from __future__ import annotations
@@ -23,7 +38,6 @@ _MAX_SAME_SUPPRESSION: Final[int] = 3
 _SCAN_EXT: Final[tuple[str, ...]] = (".py", ".ts", ".tsx")
 _SCAN_DIRS: Final[tuple[str, ...]] = ("src", "frontend/src", "scripts")
 
-# SSOT modules: each glob must resolve to exactly one file (a second copy = fork).
 _CANONICAL: Final[dict[str, str]] = {
     "frontend/src/**/routes.ts": "frontend path/URL SSOT",
     "frontend/src/**/constants.ts": "frontend constants SSOT",
@@ -34,7 +48,6 @@ _CANONICAL: Final[dict[str, str]] = {
     "src/backend/core/paths.py": "repo-path SSOT",
 }
 
-# Capabilities that must be DEFINED exactly once. (label, glob, def-regex)
 _SINGLE_DEF: Final[tuple[tuple[str, str, str], ...]] = (
     ("fold_search", "src/backend/**/*.py", r"(?m)^def fold_search\b"),
     ("normalize_arabic", "src/backend/**/*.py", r"(?m)^def normalize_arabic\b"),
@@ -62,20 +75,12 @@ _SUPPRESSION_RE: Final[re.Pattern[str]] = re.compile(
 )
 _SYSPATH_RE: Final[re.Pattern[str]] = re.compile(r"\bsys\.path\.(?:insert|append)\b")
 
-# Design-system SSOT: feature/app code builds interactive controls from
-# design-system primitives, never raw intrinsic elements. The scan covers the
-# product surface but not the design system itself (where the raw elements live).
 _DS_SCAN_DIRS: Final[tuple[str, ...]] = (
     "frontend/src/features",
     "frontend/src/app",
     "frontend/src/components",
 )
 _RAW_INTERACTIVE_RE: Final[re.Pattern[str]] = re.compile(r"<(?:button|input|select|textarea)\b")
-# Ratchet baseline: the per-file count of raw interactive elements still tolerated,
-# each one debt pending a design-system component. New raw elements anywhere fail;
-# a baseline that drifts below its count is flagged so the allowance only shrinks.
-# Every reader-domain control now has a component, so the baseline is empty: no raw
-# interactive element is tolerated anywhere in the product surface.
 _RAW_INTERACTIVE_BASELINE: Final[dict[str, int]] = {}
 
 
@@ -249,14 +254,7 @@ def check_no_raw_interactive(root: Path) -> list[Violation]:
     return out
 
 
-# ---- design-system consistency: the forks a visual review surfaced ----------
-# These three classes (control shape, dark palette, search-scope framing) were
-# invisible to the per-file harness AND to jscpd (the scopes diverged in text
-# rather than being copy-pasted), so they are gated deterministically here.
-
 _PRIMITIVES_GLOB: Final[str] = "frontend/src/lib/design-system/primitives/*.css"
-# Interactive controls whose shape is SSOT via --radius-control. Spinner is the
-# one primitive that stays a pill (a circle), so it is deliberately not listed.
 _CONTROL_PRIMITIVES: Final[frozenset[str]] = frozenset(
     {
         "Button.css",
@@ -271,8 +269,6 @@ _CONTROL_PRIMITIVES: Final[frozenset[str]] = frozenset(
 )
 _TOKENS_CSS: Final[str] = "frontend/src/lib/design-system/tokens.css"
 _DARK_BLOCKS: Final[tuple[str, ...]] = ("[data-theme='dark']", "[data-reader-theme='dark']")
-# A raw colour literal: a hex value or an oklch() function. color-mix(in oklch, …)
-# is the colour-space keyword, not a literal, so it does not match.
 _RAW_THEME_COLOR_RE: Final[re.Pattern[str]] = re.compile(r"#[0-9a-fA-F]{3,8}\b|oklch\(")
 _SEARCH_GLOB: Final[str] = "frontend/src/features/search/*.tsx"
 _SEARCH_FETCH_RE: Final[re.Pattern[str]] = re.compile(
@@ -346,14 +342,17 @@ def check_dark_palette(root: Path) -> list[Violation]:
 
 def check_scope_frame(root: Path) -> list[Violation]:
     """Every search scope that fetches results renders them through the shared
-    ResultsFrame, never a hand-rolled count + record list. Closes the gap jscpd
-    cannot see: scopes that diverged in text instead of sharing the frame."""
+    ResultsFrame, never a hand-rolled count + record list. A scope may also
+    delegate wholesale to the shared CorpusResults engine (a fetcher binding,
+    as ContentScope and SemanticScope do) — a real JSX usage, not a comment
+    mention, satisfies the rule. Closes the gap jscpd cannot see: scopes that
+    diverged in text instead of sharing the frame."""
     out: list[Violation] = []
     for path in sorted(root.glob(_SEARCH_GLOB)):
         text = path.read_text(encoding="utf-8")
         if not _SEARCH_FETCH_RE.search(text):
             continue
-        if "ResultsFrame" not in text:
+        if "ResultsFrame" not in text and "<CorpusResults" not in text:
             rel = str(path.relative_to(root))
             out.append(
                 Violation(

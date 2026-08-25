@@ -4380,6 +4380,39 @@
             }
           },
           {
+            "description": "Restrict to these category slugs (repeatable; values OR together).",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to these category slugs (repeatable; values OR together).",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "Restrict the plan to a book title.",
+            "in": "query",
+            "name": "book",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Restrict the plan to a book title.",
+              "title": "Book",
+              "type": "string"
+            }
+          },
+          {
             "description": "Records per page.",
             "in": "query",
             "name": "limit",
@@ -4450,6 +4483,103 @@
           }
         },
         "summary": "LLM-planned search: a freeform question in, corpus matches out.",
+        "tags": ["search"]
+      }
+    },
+    "/api/search/semantic/facets": {
+      "get": {
+        "description": "Drill-down facets for an executed semantic plan (categories, books).",
+        "operationId": "_semantic_facets_api_search_semantic_facets_get",
+        "parameters": [
+          {
+            "description": "The semantic query whose executed plan is faceted.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "The semantic query whose executed plan is faceted.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Restrict to these category slugs (repeatable; values OR together).",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to these category slugs (repeatable; values OR together).",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "Book to scope book facets to.",
+            "in": "query",
+            "name": "book",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Book to scope book facets to.",
+              "title": "Book",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchFacets"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The LLM planner failed, answered outside contract, or produced no usable plan."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "LLM search is not configured (SOL_LLM_API_KEY missing) or the consolidated search backend is unreachable."
+          }
+        },
+        "summary": "Category -> book filters available for an LLM-planned search.",
         "tags": ["search"]
       }
     },

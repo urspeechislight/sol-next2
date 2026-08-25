@@ -7,7 +7,9 @@ same swap-the-seam approach the corpus proxy tests use.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Coroutine
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -83,7 +85,7 @@ def test_should_reject_reply_with_invalid_json() -> None:
 
 def test_should_replay_cached_plan_until_expiry(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(semantic, "_PLAN_CACHE", {})
-    plan = SemanticPlan(categories=(), queries=("الطلاق",))
+    plan = SemanticPlan(categories=(), queries=("الطلاق",), books=())
     semantic._cache_put("key", plan)
     assert semantic._cache_get("key") == plan
     # An expired entry is dropped on read, not served.
@@ -95,16 +97,19 @@ def test_should_replay_cached_plan_until_expiry(monkeypatch: pytest.MonkeyPatch)
 def test_should_evict_oldest_entry_past_size_cap(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(semantic, "_PLAN_CACHE", {})
     monkeypatch.setattr(semantic, "SEMANTIC__PLAN_CACHE_SIZE", 2)
-    semantic._cache_put("a", SemanticPlan((), ("a",)))
-    semantic._cache_put("b", SemanticPlan((), ("b",)))
-    semantic._cache_put("c", SemanticPlan((), ("c",)))
+    semantic._cache_put("a", SemanticPlan((), ("a",), ()))
+    semantic._cache_put("b", SemanticPlan((), ("b",), ()))
+    semantic._cache_put("c", SemanticPlan((), ("c",), ()))
     assert set(semantic._PLAN_CACHE) == {"b", "c"}
 
 
 # ---- search: plan -> parallel engine fan-out -> merged page ----------------
 
 
-def _fake_engine(hits: dict[str, list[CorpusMatch]]):
+EngineFn = Callable[..., Coroutine[Any, Any, tuple[list[CorpusMatch], int]]]
+
+
+def _fake_engine(hits: dict[str, list[CorpusMatch]]) -> tuple[EngineFn, list[tuple[str, str]]]:
     """An engine seam keyed by phrase: returns that phrase's hit list."""
 
     async def search(
@@ -114,9 +119,11 @@ def _fake_engine(hits: dict[str, list[CorpusMatch]]):
         offset: int,  # noqa: ARG001 — part of the engine signature being mocked
     ) -> tuple[list[CorpusMatch], int]:
         items = hits[query.q]
+        seen.append((query.q, query.book))
         return items[:limit], len(items)
 
-    return search
+    seen: list[tuple[str, str]] = []
+    return search, seen
 
 
 def _plan_seam(plan: SemanticPlan):
@@ -135,9 +142,9 @@ async def test_should_merge_phrases_round_robin_with_dedupe(
         "الطلاق": [_hit("bookA", 1), _hit("bookA", 2), _hit("bookB", 5)],
         "النكاح": [_hit("bookA", 1), _hit("bookC", 9)],
     }
-    engine = _fake_engine(hits)
+    engine, _seen = _fake_engine(hits)
     monkeypatch.setattr(
-        semantic, "plan", _plan_seam(SemanticPlan(("sunni-hadith-general",), tuple(hits)))
+        semantic, "plan", _plan_seam(SemanticPlan(("sunni-hadith-general",), tuple(hits), ()))
     )
     monkeypatch.setattr(semantic.corpus_repo, "search", engine)
 
@@ -153,13 +160,65 @@ async def test_should_merge_phrases_round_robin_with_dedupe(
 
 async def test_should_slice_merged_window_for_paging(monkeypatch: pytest.MonkeyPatch) -> None:
     hits = {"الطلاق": [_hit("bookA", page) for page in range(1, 6)]}
-    engine = _fake_engine(hits)
-    monkeypatch.setattr(semantic, "plan", _plan_seam(SemanticPlan((), tuple(hits))))
+    engine, _seen = _fake_engine(hits)
+    monkeypatch.setattr(semantic, "plan", _plan_seam(SemanticPlan((), tuple(hits), ())))
     monkeypatch.setattr(semantic.corpus_repo, "search", engine)
 
     items, total = await semantic.search_planned("divorce", limit=2, offset=3)
     assert [(m.urn, m.page) for m in items] == [("bookA", 4), ("bookA", 5)]
     assert total == 5
+
+
+async def test_should_restrict_streams_to_named_books_when_planned(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A plan naming works fans out (phrase x book); the engine sees each
+    stream's book filter, and caller book drill-in overrides the plan's set."""
+    hits = {"الطلاق": [_hit("bookA", 1)]}
+    engine, seen = _fake_engine(hits)
+    monkeypatch.setattr(
+        semantic, "plan", _plan_seam(SemanticPlan((), ("الطلاق",), ("صحيح البخاري",)))
+    )
+    monkeypatch.setattr(semantic.corpus_repo, "search", engine)
+
+    await semantic.search_planned("divorce in bukhari", limit=2, offset=0)
+    assert seen == [("الطلاق", "صحيح البخاري")]
+
+    seen.clear()
+    await semantic.search_planned("divorce in bukhari", limit=2, offset=0, book="صحيح مسلم")
+    assert seen == [("الطلاق", "صحيح مسلم")]
+
+
+async def test_should_sum_facets_across_plan_streams_when_faceting(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """planned_facets sums each stream's facet scan per key, mirroring the
+    result merge, so facet counts describe the same match-set as the rows."""
+
+    async def fake_facets(
+        q: str,
+        mode: str,
+        categories: tuple[str, ...],  # noqa: ARG001 — engine signature being mocked
+        book: str,
+    ) -> corpus_repo.SearchFacets:
+        assert mode == "broad" and book == "" and q in {"الطلاق", "النكاح"}
+        return corpus_repo.SearchFacets(
+            categories=[corpus_repo.CategoryFacet(slug="sunni-hadith-general", count=3)],
+            books=[corpus_repo.BookFacet(title="صحيح البخاري", title_en=None, count=3)],
+            volumes=[],
+        )
+
+    monkeypatch.setattr(
+        semantic,
+        "plan",
+        _plan_seam(SemanticPlan(("sunni-hadith-general",), ("الطلاق", "النكاح"), ())),
+    )
+    monkeypatch.setattr(semantic.corpus_repo, "facets", fake_facets)
+
+    result = await semantic.planned_facets("marriage and divorce")
+    assert [(c.slug, c.count) for c in result.categories] == [("sunni-hadith-general", 6)]
+    assert [(b.title, b.count) for b in result.books] == [("صحيح البخاري", 6)]
+    assert result.volumes == []
 
 
 # ---- route contract: blank query 422, unconfigured planner 503 --------------

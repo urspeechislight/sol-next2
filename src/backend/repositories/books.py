@@ -255,6 +255,30 @@ def list_works(
     return slice_page(_order_works(works, query.sort), limit, offset)
 
 
+def resolve_work_titles(names: list[str]) -> list[str]:
+    """Resolve freeform work names to matching Arabic titles, the engine's book key.
+
+    Each name is matched with the catalogue's own title/author hit rule
+    (``_hit`` over the volume-folded works): a planner-named work like
+    "Sahih al-Bukhari" resolves to every edition's ``title_ar``. Unresolved
+    names drop silently — the plan stays valid on its phrases alone — because
+    an LLM paraphrasing a title must not 500 the search.
+    """
+    out: list[str] = []
+    for name in names:
+        needle = name.strip()
+        if not needle:
+            continue
+        fold = normalize_arabic(needle)
+        low = needle.lower()
+        out.extend(
+            w.title_ar
+            for w in _works()
+            if _hit((w.title_ar, w.title_en), fold, low) and w.title_ar not in out
+        )
+    return out
+
+
 @lru_cache(maxsize=1)
 def category_stats() -> dict[str, tuple[int, int]]:
     """Map each category slug to ``(work_count, volume_count)`` from the live
