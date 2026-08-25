@@ -14,6 +14,7 @@ stem into works so the Library lists works, not duplicated volumes.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -253,6 +254,18 @@ def list_works(
             w for w in works if _hit((w.title_ar, w.title_en, w.author, w.author_ar), fold, low)
         ]
     return slice_page(_order_works(works, query.sort), limit, offset)
+
+
+def categories_of_titles(titles: Sequence[str]) -> list[str]:
+    """The catalogue categories of works with these Arabic titles.
+
+    The engine's facet scan scopes by category only (its ``book`` filter does
+    not reach the facet axes), so a book-restricted plan scopes its facet
+    scan through the categories its books live in and then filters the books
+    axis to the plan's titles.
+    """
+    wanted = set(titles)
+    return list({w.category for w in _works() if w.title_ar in wanted})
 
 
 def resolve_work_titles(names: list[str]) -> list[str]:

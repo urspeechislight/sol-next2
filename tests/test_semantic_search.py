@@ -196,12 +196,11 @@ async def test_should_sum_facets_across_plan_streams_when_faceting(
     result merge, so facet counts describe the same match-set as the rows."""
 
     async def fake_facets(
-        q: str,
+        q: str,  # noqa: ARG001 — engine signature being mocked
         mode: str,
-        categories: tuple[str, ...],  # noqa: ARG001 — engine signature being mocked
-        book: str,
+        categories: tuple[str, ...],
     ) -> corpus_repo.SearchFacets:
-        assert mode == "broad" and book == "" and q in {"الطلاق", "النكاح"}
+        assert mode == "broad" and categories == ("sunni-hadith-general",)
         return corpus_repo.SearchFacets(
             categories=[corpus_repo.CategoryFacet(slug="sunni-hadith-general", count=3)],
             books=[corpus_repo.BookFacet(title="صحيح البخاري", title_en=None, count=3)],
