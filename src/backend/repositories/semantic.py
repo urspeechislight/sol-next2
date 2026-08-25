@@ -327,21 +327,12 @@ async def planned_facets(
     semantic_plan = await plan(q)
     scope_categories = tuple(dict.fromkeys((*semantic_plan.categories, *categories)))
     book_filter = (book,) if book else semantic_plan.books
-    facet_categories = scope_categories
-    if book_filter and not categories:
-        facet_categories = tuple(
-            dict.fromkeys((*scope_categories, *books_repo.categories_of_titles(book_filter)))
-        )
     outcomes = await asyncio.gather(
         *(
-            corpus_repo.facets(q=phrase, mode="broad", categories=facet_categories)
+            corpus_repo.facets(q=phrase, mode="broad", categories=scope_categories)
             for phrase in semantic_plan.queries
         )
     )
-    per_category: dict[str, int] = {}
-    for facets_result in outcomes:
-        for facet in facets_result.categories:
-            per_category[facet.slug] = per_category.get(facet.slug, 0) + facet.count
     plan_set = set(book_filter) if book_filter else None
     per_book: dict[str, int] = {}
     titles: dict[str, str | None] = {}
@@ -351,6 +342,12 @@ async def planned_facets(
                 continue
             per_book[facet.title] = per_book.get(facet.title, 0) + facet.count
             titles[facet.title] = facet.title_en
+    category_of = books_repo.categories_of_titles(list(per_book))
+    per_category: dict[str, int] = {}
+    for title, count in per_book.items():
+        slug = category_of.get(title)
+        if slug is not None:
+            per_category[slug] = per_category.get(slug, 0) + count
     return corpus_repo.SearchFacets(
         categories=[
             corpus_repo.CategoryFacet(slug=slug, count=count)

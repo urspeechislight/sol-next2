@@ -215,7 +215,7 @@ async def test_should_sum_facets_across_plan_streams_when_faceting(
     monkeypatch.setattr(semantic.corpus_repo, "facets", fake_facets)
 
     result = await semantic.planned_facets("marriage and divorce")
-    assert [(c.slug, c.count) for c in result.categories] == [("sunni-hadith-general", 6)]
+    assert [(c.slug, c.count) for c in result.categories] == [("sunni-hadith-fiqh", 6)]
     assert [(b.title, b.count) for b in result.books] == [("صحيح البخاري", 6)]
     assert result.volumes == []
 

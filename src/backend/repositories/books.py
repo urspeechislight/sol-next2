@@ -256,16 +256,17 @@ def list_works(
     return slice_page(_order_works(works, query.sort), limit, offset)
 
 
-def categories_of_titles(titles: Sequence[str]) -> list[str]:
-    """The catalogue categories of works with these Arabic titles.
+def categories_of_titles(titles: Sequence[str]) -> dict[str, str]:
+    """Map Arabic work titles to their catalogue categories (title -> slug).
 
-    The engine's facet scan scopes by category only (its ``book`` filter does
-    not reach the facet axes), so a book-restricted plan scopes its facet
-    scan through the categories its books live in and then filters the books
-    axis to the plan's titles.
+    The engine's facet scan ignores its book filter on every axis (categories
+    stay the whole-corpus drill-down picker; books appear only under a chosen
+    category), so a scoped plan derives its category counts by grouping the
+    already-scoped books facet through this map instead of trusting the
+    engine's unscoped categories axis.
     """
     wanted = set(titles)
-    return list({w.category for w in _works() if w.title_ar in wanted})
+    return {w.title_ar: w.category for w in _works() if w.title_ar in wanted}
 
 
 def resolve_work_titles(names: list[str]) -> list[str]:
