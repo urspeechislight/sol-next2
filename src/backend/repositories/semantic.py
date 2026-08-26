@@ -222,6 +222,7 @@ async def _post_plan(q: str) -> dict[str, Any]:
     payload = {
         "model": settings.llm_model,
         "max_tokens": SEMANTIC__PLANNER_MAX_TOKENS,
+        "thinking": {"type": "disabled"},
         "system": f"{_PLANNER_SYSTEM}\n\nCategory list:\n{_taxonomy_catalog()}",
         "messages": [{"role": "user", "content": q}],
     }
