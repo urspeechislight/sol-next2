@@ -71,7 +71,11 @@ synonym; the engine matches them as partial phrase windows and folds diacritics.
 with the definite article when natural (e.g. "الطلاق", "الخيار", "العتق", "الجهاد"). \
 The engine matches it anywhere in scope, so the plan can never come back empty. \
 Phrases 2-4 then narrow with precise classical constructions — but verify their \
-wording is how books actually head the discussion, not your own paraphrase.
+wording is how books actually head the discussion, not your own paraphrase. Every \
+phrase must be DISCRIMINATIVE: it includes the question's core topical term or a \
+technical construction around it. Never a bare famous name, patronymic, or isnad \
+("علي بن ابي طالب", "عائشة بنت ابي بكر") — those match a fifth of the corpus and \
+drown the plan; the scope categories already narrow by tradition and domain.
 - "books": 0-4 work titles the question explicitly names ("in Sahih al-Bukhari", "per \
 Muslim") — copy the work's common name as the catalogue would spell it. Omit entirely when \
 the question names no specific work.
