@@ -1,0 +1,14 @@
+/* Alias mini-cards: a tight two-line lockup (Arabic spelling over the source
+   work) kept small so a long variant list stays dense. Card's own pad steps
+   start at --space-md, which reads too large here, so the card uses pad="none"
+   and this compact padding instead. */
+.narrator-alias {
+  padding: var(--space-2xs) var(--space-xs);
+}
+/* Tarjama snippets: biographical prose in Arabic, given air and a quiet rule
+   so the block reads as the entry's own text, not UI chrome. */
+.narrator-tarjama {
+  line-height: var(--leading-arabic);
+  padding-block: var(--space-2xs);
+  border-block-start: var(--border-width) solid var(--color-border-hair);
+}

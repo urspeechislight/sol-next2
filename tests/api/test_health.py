@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-_EXPECTED = {"domains", "books", "rijal", "person", "quran", "daily", "almanac", "citations"}
+_EXPECTED = {
+    "domains",
+    "books",
+    "narrators",
+    "quran",
+    "daily",
+    "almanac",
+    "citations",
+}
 
 
 def test_should_probe_every_subsystem_and_return_200(client: TestClient) -> None:

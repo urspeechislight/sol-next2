@@ -17,12 +17,11 @@ import type {
   ExtractionEntryAudit,
   ExtractionPage,
   HealthReport,
+  NarratorDetail,
+  NarratorEntry,
+  NarratorGraph,
   Page,
-  PersonEdge,
-  PersonEntry,
-  PersonGrade,
   QuranCitation,
-  RijalEntry,
   SearchFacets,
   SearchMode,
   Surah,
@@ -108,8 +107,8 @@ export interface WorkListParams {
 
 /** Volume-folded works for the Library: one entry per work, scoped by
     category, domain, and/or tradition, optionally narrowed to one canonical
-    rank (the landmark rotations ask for primary_reference), or resolved to
-    an exact set of volume URNs (a content-search hit window's book set). */
+    rank (the landmark rotations ask for primary_reference), or resolved to an
+    exact set of volume URNs (a content-search hit window's book set). */
 export function getWorks(params: WorkListParams = {}): Promise<Page<Work>> {
   const qs = query({
     category: params.category ?? '',
@@ -302,69 +301,46 @@ export function getAlmanac(): Promise<Almanac> {
   return get<Almanac>(API.ALMANAC);
 }
 
-// ---- narrator registries ----
+// ---- narrator registry ----
 
-export interface RijalParams {
+export interface NarratorListParams {
   q?: string;
-  tradition?: string;
   category?: string;
-  has_teachers?: boolean;
-  has_reliability?: boolean;
-  limit?: number;
-  offset?: number;
-}
-
-export function getRijal(params: RijalParams = {}): Promise<Page<RijalEntry>> {
-  const qs = query({
-    q: params.q ?? '',
-    tradition: params.tradition ?? '',
-    category: params.category ?? '',
-    has_teachers: params.has_teachers ?? false,
-    has_reliability: params.has_reliability ?? false,
-    limit: params.limit ?? PAGE.defaultLimit,
-    offset: params.offset ?? 0,
-  });
-  return get<Page<RijalEntry>>(`${API.RIJAL}${qs}`);
-}
-
-/** Fetch one rijal entry by id — the reader's tarjama detail for a linked narrator. */
-export function getRijalEntry(id: number): Promise<RijalEntry> {
-  return get<RijalEntry>(`${API.RIJAL}/${id}`);
-}
-
-export interface PersonParams {
-  q?: string;
   tradition?: string;
-  confidence?: string;
-  has_events?: boolean;
   limit?: number;
   offset?: number;
 }
 
-/** List enriched narrator persons — the Graph browser's person registry. */
-export function getPerson(params: PersonParams = {}): Promise<Page<PersonEntry>> {
+/** The registry list the Graph browser and the narrator search scope read:
+    one row per narrator, filtered by name, tradition, and entry class. */
+export function getNarrators(params: NarratorListParams = {}): Promise<Page<NarratorEntry>> {
   const qs = query({
     q: params.q ?? '',
+    category: params.category ?? '',
     tradition: params.tradition ?? '',
-    confidence: params.confidence ?? '',
-    has_events: params.has_events ?? false,
     limit: params.limit ?? PAGE.defaultLimit,
     offset: params.offset ?? 0,
   });
-  return get<Page<PersonEntry>>(`${API.PERSON}${qs}`);
+  return get<Page<NarratorEntry>>(`${API.NARRATORS}${qs}`);
 }
 
-/** Fetch one enriched person by id — the reader's tarjama detail for a narrator. */
-export function getPersonEntry(id: number): Promise<PersonEntry> {
-  return get<PersonEntry>(`${API.PERSON}/${id}`);
+/** Fetch one narrator's full record by id — the reader's tarjama detail and
+    the registry card's expandable drawer (aliases, grades, stances, tarjama). */
+export function getNarratorEntry(id: number): Promise<NarratorDetail> {
+  return get<NarratorDetail>(`${API.NARRATORS}/${id}`);
 }
 
-/** A person's teacher/student relations, linked to a person id when known. */
-export function getPersonEdges(id: number): Promise<PersonEdge[]> {
-  return get<PersonEdge[]>(`${API.PERSON}/${id}/edges`);
-}
+export type NarratorGraphDirection = 'students' | 'teachers';
 
-/** A person's source-validated reliability grades, each with a relative reader deep-link. */
-export function getPersonGrades(id: number): Promise<PersonGrade[]> {
-  return get<PersonGrade[]>(`${API.PERSON}/${id}/grades`);
+/** A narrator's bounded teacher or student expansion: the ego graph's data.
+    ``truncated`` is true when the backend's node cap stopped the walk early. */
+export function getNarratorGraph(
+  id: number,
+  opts: { direction?: NarratorGraphDirection; depth?: number } = {},
+): Promise<NarratorGraph> {
+  const qs = query({
+    direction: opts.direction ?? 'students',
+    depth: opts.depth ?? 1,
+  });
+  return get<NarratorGraph>(`${API.NARRATORS}/${id}${API.GRAPH}${qs}`);
 }

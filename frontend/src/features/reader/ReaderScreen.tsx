@@ -5,8 +5,7 @@ import { Spinner, Text } from '../../lib/design-system';
 import {
   getBook,
   getBookVolumes,
-  getPersonEntry,
-  getRijalEntry,
+  getNarratorEntry,
   getPage,
   getPageCitations,
   getToc,
@@ -16,7 +15,7 @@ import {
 import { READER } from '../../lib/constants';
 import { matchedMarkers } from '../../lib/footnotes';
 import { useTheme } from '../../lib/useTheme';
-import { buildNarratorIndex, personToRecord, rijalToRecord } from '../../lib/narrators';
+import { buildNarratorIndex, narratorToRecord } from '../../lib/narrators';
 import { emptyPage } from '../../lib/types';
 import type {
   Book,
@@ -49,21 +48,25 @@ const NO_MARKERS: ReadonlySet<string> = new Set<string>();
 const EMPTY_CITATIONS: QuranCitation[] = [];
 
 /** Promote a served narrator to a registry-shaped record. A linked narrator
-    carries its registry id (resolved at build time); the click handler then
-    fetches the full biography. An unlinked one shows name-only (id -1). */
+    carries its registry narrator_id (resolved at build time); the click
+    handler then fetches the full biography. An unlinked one shows name-only
+    (id -1). The served grade is the extraction's English verdict; it stands
+    in for the tier until the registry detail replaces it. */
 function recordFromNarrator(n: Narrator): NarratorRecord {
   return {
-    id: n.rijal_id ?? n.person_id ?? -1,
-    full_name: n.name_ar || n.name,
+    id: n.narrator_id ?? -1,
+    narrator_id: n.narrator_id,
+    primary_name_ar: n.name_ar || n.name,
+    primary_name_en: n.name,
     kunya: '',
     nisba: '',
     tradition: '',
-    birth_year: '',
-    death_year: n.d ? String(n.d) : '',
+    birth_year_ah: null,
+    death_year_ah: n.d,
+    death_year_ce: '',
     teacher_count: 0,
     student_count: 0,
-    reliability_term: n.grade,
-    origin: n.person_id != null ? 'person' : 'rijal',
+    tier: n.grade || null,
   };
 }
 
@@ -212,20 +215,14 @@ export function ReaderScreen({
     setNarratorError(null);
     setRight('tarjama');
     if (record.id < 0) return;
-    const detail =
-      record.origin === 'person'
-        ? getPersonEntry(record.id).then(personToRecord)
-        : getRijalEntry(record.id).then(rijalToRecord);
-    detail
+    getNarratorEntry(record.id)
+      .then(narratorToRecord)
       .then((full) =>
-        setNarrator((current) =>
-          current && current.id === record.id && current.origin === record.origin ? full : current,
-        ),
+        setNarrator((current) => (current && current.id === record.id ? full : current)),
       )
       .catch((err: unknown) =>
         setNarratorError({
           id: record.id,
-          origin: record.origin,
           message: err instanceof Error ? err.message : String(err),
         }),
       );
@@ -319,7 +316,7 @@ export function ReaderScreen({
                       active={i === activeHadith}
                       lang={lang}
                       index={index}
-                      activeNarrator={narrator?.full_name ?? ''}
+                      activeNarrator={narrator?.primary_name_ar ?? ''}
                       highlight={highlight}
                       onSelect={() => setActiveHadith(i)}
                       onNarrator={openRecord}
@@ -353,13 +350,7 @@ export function ReaderScreen({
         {right === 'tarjama' && narrator ? (
           <TarjamaPanel
             record={narrator}
-            error={
-              narratorError &&
-              narratorError.id === narrator.id &&
-              narratorError.origin === narrator.origin
-                ? narratorError.message
-                : null
-            }
+            error={narratorError && narratorError.id === narrator.id ? narratorError.message : null}
             onClose={() => {
               setRight(null);
               setNarrator(null);

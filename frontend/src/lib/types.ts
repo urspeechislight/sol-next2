@@ -32,11 +32,16 @@ export function emptyPage<T>(): Page<T> {
   return { items: [], total: 0, limit: 0, offset: 0 };
 }
 
-// ---- narrator registry (GET /api/rijal, /api/canonical) ----
-export type RijalEntry = Full<S['RijalEntry']>;
-export type PersonEntry = Full<S['PersonEntry']>;
-export type PersonEdge = Full<S['PersonEdge']>;
-export type PersonGrade = Full<S['PersonGrade']>;
+// ---- narrator registry (GET /api/narrators) ----
+export type NarratorEntry = Full<S['NarratorEntry']>;
+export type NarratorDetail = Full<S['NarratorDetail']>;
+export type NarratorAlias = Full<S['NarratorAliasOut']>;
+export type NarratorGrade = Full<S['NarratorGradeOut']>;
+/** One ALID stance claim: {predicate, value_text} pairs served as a string map. */
+export type NarratorStance = NarratorDetail['stances'][number];
+export type NarratorGraph = Full<S['NarratorGraph']>;
+export type NarratorGraphNode = Full<S['NarratorGraphNode']>;
+export type NarratorGraphEdge = Full<S['NarratorGraphEdge']>;
 
 // ---- health (GET /api/health): the subsystem heartbeat ----
 export type HealthReport = Full<S['HealthReport']>;
@@ -114,24 +119,29 @@ export type Surah = Full<S['Surah']>;
 export type QuranCitation = Full<S['Citation']>;
 
 // ---- narrator tarjama (DERIVED view-type) ----
-// Reading text carries no narrator IDs, so narrators are joined to the rijāl /
-// person registries BY NAME. NarratorRecord is the merged shape the reader
-// surfaces; it is composed client-side from RijalEntry + PersonEntry.
+// Reading text joins narrators to the registry by NAME (the served Narrator
+// carries a build-time narrator_id link, but the page text does not).
+// NarratorRecord is the merged shape the reader surfaces: the in-text
+// narrator (name + death year + link) overlaid by NarratorDetail when the
+// registry knows the narrator. id -1 marks an unlinked text narrator.
 export interface NarratorRecord {
+  /** Registry id; -1 when the text's narrator has no registry entry. */
   id: number;
-  full_name: string;
+  /** The served Narrator's link, echoed so linked and fetched records stay
+      distinguishable; null when the text carried no link. */
+  narrator_id: number | null;
+  primary_name_ar: string;
+  primary_name_en: string;
   kunya: string;
   nisba: string;
   tradition: string;
-  birth_year: string;
-  death_year: string;
+  birth_year_ah: number | null;
+  death_year_ah: number | null;
+  death_year_ce: string;
   teacher_count: number;
   student_count: number;
-  reliability_term?: string | null;
-  reliability_grade?: string | null;
-  evaluator?: string | null;
-  source_label?: string | null;
-  origin: 'rijal' | 'person';
+  /** Top reliability tier (thiqa, saduq, …) when any grade is recorded. */
+  tier: string | null;
 }
 
 // ---- share (UI feature, generic; not backend-bound) ----

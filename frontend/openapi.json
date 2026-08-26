@@ -1552,7 +1552,7 @@
             "title": "Name Ar",
             "type": "string"
           },
-          "person_id": {
+          "narrator_id": {
             "anyOf": [
               {
                 "type": "integer"
@@ -1561,20 +1561,8 @@
                 "type": "null"
               }
             ],
-            "description": "Registry link: id in /api/person, when the name resolved to an enriched person instead of a rijal entry. Mutually exclusive with rijal_id.",
-            "title": "Person Id"
-          },
-          "rijal_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Registry link: id in /api/rijal, resolved at build time by normalized-name match. None when the registry does not know this narrator; the reader shows the name unlinked rather than guessing.",
-            "title": "Rijal Id"
+            "description": "Registry link: id in /api/narrators, resolved at build time by normalized-name match. None when the registry does not know this narrator; the reader shows the name unlinked rather than guessing.",
+            "title": "Narrator Id"
           },
           "role": {
             "description": "Role / position in the chain (companion, transmitter, ...).",
@@ -1584,6 +1572,453 @@
         },
         "required": ["name", "name_ar", "role", "grade"],
         "title": "Narrator",
+        "type": "object"
+      },
+      "NarratorAliasOut": {
+        "description": "One recorded name variant of a narrator.",
+        "properties": {
+          "name_ar": {
+            "description": "The variant spelling, Arabic, as recorded.",
+            "title": "Name Ar",
+            "type": "string"
+          },
+          "name_role": {
+            "default": "",
+            "description": "primary / variant / kunya / nisba.",
+            "title": "Name Role",
+            "type": "string"
+          },
+          "source_label": {
+            "default": "",
+            "description": "Human label of the source work.",
+            "title": "Source Label",
+            "type": "string"
+          }
+        },
+        "required": ["name_ar"],
+        "title": "NarratorAliasOut",
+        "type": "object"
+      },
+      "NarratorDetail": {
+        "description": "One narrator with its full served record: aliases, claims, and relations.",
+        "properties": {
+          "alias_count": {
+            "description": "Recorded name variants (narrator_alias).",
+            "minimum": 0.0,
+            "title": "Alias Count",
+            "type": "integer"
+          },
+          "aliases": {
+            "description": "Name variants.",
+            "items": {
+              "$ref": "#/components/schemas/NarratorAliasOut"
+            },
+            "title": "Aliases",
+            "type": "array"
+          },
+          "birth_year_ah": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Birth year, Hijri, when known.",
+            "title": "Birth Year Ah"
+          },
+          "category": {
+            "default": "clean",
+            "description": "Data-quality class (clean, long_entry).",
+            "title": "Category",
+            "type": "string"
+          },
+          "death_place": {
+            "default": "",
+            "description": "Place of death, when recorded.",
+            "title": "Death Place",
+            "type": "string"
+          },
+          "death_year_ah": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Death year, Hijri, when known.",
+            "title": "Death Year Ah"
+          },
+          "death_year_ce": {
+            "default": "",
+            "description": "Death year, Common Era, as recorded.",
+            "title": "Death Year Ce",
+            "type": "string"
+          },
+          "grades": {
+            "description": "Reliability grades.",
+            "items": {
+              "$ref": "#/components/schemas/NarratorGradeOut"
+            },
+            "title": "Grades",
+            "type": "array"
+          },
+          "id": {
+            "description": "Narrator id, also the detail-route key.",
+            "minimum": 1.0,
+            "title": "Id",
+            "type": "integer"
+          },
+          "kunya": {
+            "default": "",
+            "description": "Teknonym (Abu/Umm ...), when recorded.",
+            "title": "Kunya",
+            "type": "string"
+          },
+          "living_city": {
+            "default": "",
+            "description": "City the narrator lived in, when recorded.",
+            "title": "Living City",
+            "type": "string"
+          },
+          "nisba": {
+            "default": "",
+            "description": "Attributive name (tribe/place), when recorded.",
+            "title": "Nisba",
+            "type": "string"
+          },
+          "primary_name_ar": {
+            "description": "Primary name in Arabic.",
+            "title": "Primary Name Ar",
+            "type": "string"
+          },
+          "primary_name_en": {
+            "default": "",
+            "description": "Primary name in English, when recorded.",
+            "title": "Primary Name En",
+            "type": "string"
+          },
+          "stances": {
+            "description": "Stance claims ({predicate, value_text} pairs).",
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Stances",
+            "type": "array"
+          },
+          "student_count": {
+            "description": "Distinct recorded students (narrator_edge).",
+            "minimum": 0.0,
+            "title": "Student Count",
+            "type": "integer"
+          },
+          "tabaqa": {
+            "default": "",
+            "description": "Generation class (\u0645\u0646 \u0627\u0644\u062a\u0627\u0633\u0639\u0629, ...).",
+            "title": "Tabaqa",
+            "type": "string"
+          },
+          "tarjama": {
+            "description": "Biographical snippets (TARJAMA claim texts).",
+            "items": {
+              "type": "string"
+            },
+            "title": "Tarjama",
+            "type": "array"
+          },
+          "teacher_count": {
+            "description": "Distinct recorded teachers (narrator_edge).",
+            "minimum": 0.0,
+            "title": "Teacher Count",
+            "type": "integer"
+          },
+          "tradition": {
+            "default": "",
+            "description": "School of law (imami / shafii / ...).",
+            "title": "Tradition",
+            "type": "string"
+          }
+        },
+        "required": ["id", "primary_name_ar", "alias_count", "teacher_count", "student_count"],
+        "title": "NarratorDetail",
+        "type": "object"
+      },
+      "NarratorEntry": {
+        "description": "One narrator in the registry list row.",
+        "properties": {
+          "alias_count": {
+            "description": "Recorded name variants (narrator_alias).",
+            "minimum": 0.0,
+            "title": "Alias Count",
+            "type": "integer"
+          },
+          "birth_year_ah": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Birth year, Hijri, when known.",
+            "title": "Birth Year Ah"
+          },
+          "category": {
+            "default": "clean",
+            "description": "Data-quality class (clean, long_entry).",
+            "title": "Category",
+            "type": "string"
+          },
+          "death_place": {
+            "default": "",
+            "description": "Place of death, when recorded.",
+            "title": "Death Place",
+            "type": "string"
+          },
+          "death_year_ah": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Death year, Hijri, when known.",
+            "title": "Death Year Ah"
+          },
+          "death_year_ce": {
+            "default": "",
+            "description": "Death year, Common Era, as recorded.",
+            "title": "Death Year Ce",
+            "type": "string"
+          },
+          "id": {
+            "description": "Narrator id, also the detail-route key.",
+            "minimum": 1.0,
+            "title": "Id",
+            "type": "integer"
+          },
+          "kunya": {
+            "default": "",
+            "description": "Teknonym (Abu/Umm ...), when recorded.",
+            "title": "Kunya",
+            "type": "string"
+          },
+          "living_city": {
+            "default": "",
+            "description": "City the narrator lived in, when recorded.",
+            "title": "Living City",
+            "type": "string"
+          },
+          "nisba": {
+            "default": "",
+            "description": "Attributive name (tribe/place), when recorded.",
+            "title": "Nisba",
+            "type": "string"
+          },
+          "primary_name_ar": {
+            "description": "Primary name in Arabic.",
+            "title": "Primary Name Ar",
+            "type": "string"
+          },
+          "primary_name_en": {
+            "default": "",
+            "description": "Primary name in English, when recorded.",
+            "title": "Primary Name En",
+            "type": "string"
+          },
+          "student_count": {
+            "description": "Distinct recorded students (narrator_edge).",
+            "minimum": 0.0,
+            "title": "Student Count",
+            "type": "integer"
+          },
+          "tabaqa": {
+            "default": "",
+            "description": "Generation class (\u0645\u0646 \u0627\u0644\u062a\u0627\u0633\u0639\u0629, ...).",
+            "title": "Tabaqa",
+            "type": "string"
+          },
+          "teacher_count": {
+            "description": "Distinct recorded teachers (narrator_edge).",
+            "minimum": 0.0,
+            "title": "Teacher Count",
+            "type": "integer"
+          },
+          "tradition": {
+            "default": "",
+            "description": "School of law (imami / shafii / ...).",
+            "title": "Tradition",
+            "type": "string"
+          }
+        },
+        "required": ["id", "primary_name_ar", "alias_count", "teacher_count", "student_count"],
+        "title": "NarratorEntry",
+        "type": "object"
+      },
+      "NarratorGradeOut": {
+        "description": "One reliability grade issued by a critic, with its provenance.",
+        "properties": {
+          "evaluator": {
+            "default": "",
+            "description": "Critic who issued the verdict.",
+            "title": "Evaluator",
+            "type": "string"
+          },
+          "source_book": {
+            "default": "",
+            "description": "Source book id in the extraction record.",
+            "title": "Source Book",
+            "type": "string"
+          },
+          "source_label": {
+            "default": "",
+            "description": "Human label of the source work.",
+            "title": "Source Label",
+            "type": "string"
+          },
+          "source_locator": {
+            "default": "",
+            "description": "Locator (page/entry) in the source book.",
+            "title": "Source Locator",
+            "type": "string"
+          },
+          "term": {
+            "description": "Verdict term as recorded (\u062b\u0642\u0629, \u0645\u062c\u0647\u0648\u0644, ...).",
+            "title": "Term",
+            "type": "string"
+          },
+          "tier": {
+            "default": "",
+            "description": "Normalized tier (thiqa, ...).",
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": ["term"],
+        "title": "NarratorGradeOut",
+        "type": "object"
+      },
+      "NarratorGraph": {
+        "description": "A breadth-limited teacher or student expansion around one narrator.",
+        "properties": {
+          "depth": {
+            "description": "Maximum hops from the root actually expanded.",
+            "minimum": 1.0,
+            "title": "Depth",
+            "type": "integer"
+          },
+          "direction": {
+            "description": "students (descendants) or teachers (ancestors).",
+            "title": "Direction",
+            "type": "string"
+          },
+          "edges": {
+            "description": "The traversed relations.",
+            "items": {
+              "$ref": "#/components/schemas/NarratorGraphEdge"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "nodes": {
+            "description": "The root plus every reached narrator.",
+            "items": {
+              "$ref": "#/components/schemas/NarratorGraphNode"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "root_id": {
+            "description": "The narrator the expansion is rooted at.",
+            "minimum": 1.0,
+            "title": "Root Id",
+            "type": "integer"
+          },
+          "truncated": {
+            "description": "True when the node cap stopped the expansion early.",
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": ["root_id", "direction", "depth", "nodes", "edges", "truncated"],
+        "title": "NarratorGraph",
+        "type": "object"
+      },
+      "NarratorGraphEdge": {
+        "description": "One teacher\u2192student relation edge in the expansion.",
+        "properties": {
+          "from_id": {
+            "description": "Teacher narrator id.",
+            "minimum": 1.0,
+            "title": "From Id",
+            "type": "integer"
+          },
+          "source_label": {
+            "description": "Human label of the source the edge was read from.",
+            "title": "Source Label",
+            "type": "string"
+          },
+          "to_id": {
+            "description": "Student narrator id.",
+            "minimum": 1.0,
+            "title": "To Id",
+            "type": "integer"
+          }
+        },
+        "required": ["from_id", "to_id", "source_label"],
+        "title": "NarratorGraphEdge",
+        "type": "object"
+      },
+      "NarratorGraphNode": {
+        "description": "One node in an isnad relation expansion.",
+        "properties": {
+          "death_year_ah": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Death year, Hijri, when known.",
+            "title": "Death Year Ah"
+          },
+          "depth": {
+            "description": "Hops from the root narrator (0 for the root).",
+            "minimum": 0.0,
+            "title": "Depth",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Narrator id.",
+            "minimum": 1.0,
+            "title": "Id",
+            "type": "integer"
+          },
+          "primary_name_ar": {
+            "description": "Primary name in Arabic.",
+            "title": "Primary Name Ar",
+            "type": "string"
+          },
+          "primary_name_en": {
+            "default": "",
+            "description": "Primary name in English, when recorded.",
+            "title": "Primary Name En",
+            "type": "string"
+          }
+        },
+        "required": ["id", "primary_name_ar", "depth"],
+        "title": "NarratorGraphNode",
         "type": "object"
       },
       "Observance": {
@@ -1768,12 +2203,12 @@
         "title": "Page[CorpusMatch]",
         "type": "object"
       },
-      "Page_PersonEntry_": {
+      "Page_NarratorEntry_": {
         "properties": {
           "items": {
             "description": "Records in this slice.",
             "items": {
-              "$ref": "#/components/schemas/PersonEntry"
+              "$ref": "#/components/schemas/NarratorEntry"
             },
             "title": "Items",
             "type": "array"
@@ -1798,40 +2233,7 @@
           }
         },
         "required": ["items", "total", "limit", "offset"],
-        "title": "Page[PersonEntry]",
-        "type": "object"
-      },
-      "Page_RijalEntry_": {
-        "properties": {
-          "items": {
-            "description": "Records in this slice.",
-            "items": {
-              "$ref": "#/components/schemas/RijalEntry"
-            },
-            "title": "Items",
-            "type": "array"
-          },
-          "limit": {
-            "description": "Slice size requested.",
-            "minimum": 1.0,
-            "title": "Limit",
-            "type": "integer"
-          },
-          "offset": {
-            "description": "Number of records skipped before this slice.",
-            "minimum": 0.0,
-            "title": "Offset",
-            "type": "integer"
-          },
-          "total": {
-            "description": "Total records matching the query, across all pages.",
-            "minimum": 0.0,
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": ["items", "total", "limit", "offset"],
-        "title": "Page[RijalEntry]",
+        "title": "Page[NarratorEntry]",
         "type": "object"
       },
       "Page_Work_": {
@@ -1865,367 +2267,6 @@
         },
         "required": ["items", "total", "limit", "offset"],
         "title": "Page[Work]",
-        "type": "object"
-      },
-      "PersonEdge": {
-        "description": "A teacher or student relation of a person, linked to a person id when known.",
-        "properties": {
-          "name": {
-            "description": "The related narrator's name as recorded (Arabic).",
-            "title": "Name",
-            "type": "string"
-          },
-          "name_latin": {
-            "default": "",
-            "description": "Latin (ALA-LC-style) reading of the name.",
-            "title": "Name Latin",
-            "type": "string"
-          },
-          "other_person_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Resolved person id of the relation, or null when unlinked.",
-            "title": "Other Person Id"
-          },
-          "relation": {
-            "description": "'teacher' or 'student'.",
-            "title": "Relation",
-            "type": "string"
-          }
-        },
-        "required": ["relation", "name"],
-        "title": "PersonEdge",
-        "type": "object"
-      },
-      "PersonEntry": {
-        "description": "An authoritative narrator identity, cross-checked across its source entries.",
-        "properties": {
-          "bio": {
-            "default": "",
-            "description": "Longest available biographical snippet.",
-            "title": "Bio",
-            "type": "string"
-          },
-          "birth_year": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Birth year, Hijri, when known.",
-            "title": "Birth Year"
-          },
-          "confidence": {
-            "default": "medium",
-            "description": "Record confidence (high/medium).",
-            "title": "Confidence",
-            "type": "string"
-          },
-          "death_conflict": {
-            "default": false,
-            "description": "Sources disagree on the death year.",
-            "title": "Death Conflict",
-            "type": "boolean"
-          },
-          "death_year": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Reconciled Hijri death year.",
-            "title": "Death Year"
-          },
-          "event_count": {
-            "description": "Historical events attributed to this person.",
-            "minimum": 0.0,
-            "title": "Event Count",
-            "type": "integer"
-          },
-          "full_name": {
-            "description": "Full name in Arabic.",
-            "title": "Full Name",
-            "type": "string"
-          },
-          "generation": {
-            "default": "",
-            "description": "companion / successor, when derivable.",
-            "title": "Generation",
-            "type": "string"
-          },
-          "kunya": {
-            "default": "",
-            "description": "Teknonym (Abu/Umm ...), if recorded.",
-            "title": "Kunya",
-            "type": "string"
-          },
-          "n_sources": {
-            "description": "Raw corpus entries merged into this identity.",
-            "minimum": 0.0,
-            "title": "N Sources",
-            "type": "integer"
-          },
-          "name_latin": {
-            "default": "",
-            "description": "Approximate ALA-LC transliteration of the name.",
-            "title": "Name Latin",
-            "type": "string"
-          },
-          "name_variants": {
-            "default": "",
-            "description": "Distinct spellings, pipe-separated.",
-            "title": "Name Variants",
-            "type": "string"
-          },
-          "nisba": {
-            "default": "",
-            "description": "Attributive name (tribe/place), if recorded.",
-            "title": "Nisba",
-            "type": "string"
-          },
-          "person_id": {
-            "description": "Stable person identity id + detail-route key.",
-            "minimum": 0.0,
-            "title": "Person Id",
-            "type": "integer"
-          },
-          "places": {
-            "default": "",
-            "description": "Associated places, pipe-separated.",
-            "title": "Places",
-            "type": "string"
-          },
-          "reliability": {
-            "description": "Per-evaluator reliability grades (evaluator=term).",
-            "items": {
-              "type": "string"
-            },
-            "title": "Reliability",
-            "type": "array"
-          },
-          "source_books": {
-            "default": "",
-            "description": "Source works, pipe-separated.",
-            "title": "Source Books",
-            "type": "string"
-          },
-          "student_count": {
-            "description": "Distinct recorded students (person_edge).",
-            "minimum": 0.0,
-            "title": "Student Count",
-            "type": "integer"
-          },
-          "teacher_count": {
-            "description": "Distinct recorded teachers (person_edge).",
-            "minimum": 0.0,
-            "title": "Teacher Count",
-            "type": "integer"
-          },
-          "tradition": {
-            "default": "",
-            "description": "Sunni / shia / both, when classified.",
-            "title": "Tradition",
-            "type": "string"
-          }
-        },
-        "required": [
-          "full_name",
-          "person_id",
-          "n_sources",
-          "teacher_count",
-          "student_count",
-          "event_count"
-        ],
-        "title": "PersonEntry",
-        "type": "object"
-      },
-      "PersonEvent": {
-        "description": "A historical event attributed to a person.",
-        "properties": {
-          "event": {
-            "default": "",
-            "description": "Event name (battle, conquest, ...).",
-            "title": "Event",
-            "type": "string"
-          },
-          "event_type": {
-            "default": "",
-            "description": "Event category (BATTLE, CONQUEST, ...).",
-            "title": "Event Type",
-            "type": "string"
-          },
-          "role": {
-            "default": "",
-            "description": "Marker keyword linking person to event.",
-            "title": "Role",
-            "type": "string"
-          },
-          "year_ah": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Hijri year of the event, when dated.",
-            "title": "Year Ah"
-          }
-        },
-        "title": "PersonEvent",
-        "type": "object"
-      },
-      "PersonGrade": {
-        "description": "One reliability grade re-validated against its cited source page.\n\nEach grade names the critic (``evaluator``), the verdict term as it appears in that\ncritic's segment of the narrator's own entry, and the source book + page it was read\nfrom; ``link`` is a relative, URL-independent reader deep-link to exactly that page.\nGrades that could not be located in their cited page are not built, so every row here\nis one a reader can open and confirm.",
-        "properties": {
-          "book": {
-            "default": "",
-            "description": "Source work the verdict was read from.",
-            "title": "Book",
-            "type": "string"
-          },
-          "evaluator": {
-            "default": "",
-            "description": "Critic who issued the verdict.",
-            "title": "Evaluator",
-            "type": "string"
-          },
-          "link": {
-            "default": "",
-            "description": "Relative reader deep-link to where it is recorded.",
-            "title": "Link",
-            "type": "string"
-          },
-          "page": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Cited page number in the source work.",
-            "title": "Page"
-          },
-          "term": {
-            "default": "",
-            "description": "Verdict term, verbatim from the critic's segment.",
-            "title": "Term",
-            "type": "string"
-          }
-        },
-        "title": "PersonGrade",
-        "type": "object"
-      },
-      "RijalEntry": {
-        "description": "One narrator in the rijal registry (reliability-graded).",
-        "properties": {
-          "birth_year": {
-            "default": "",
-            "description": "Birth year as recorded (Hijri, free-form).",
-            "title": "Birth Year",
-            "type": "string"
-          },
-          "book_path": {
-            "default": "",
-            "description": "Relative path of the source corpus file.",
-            "title": "Book Path",
-            "type": "string"
-          },
-          "category": {
-            "default": "clean",
-            "description": "Data-quality class (clean, editorial).",
-            "title": "Category",
-            "type": "string"
-          },
-          "death_year": {
-            "default": "",
-            "description": "Death year as recorded (Hijri, free-form).",
-            "title": "Death Year",
-            "type": "string"
-          },
-          "evaluator": {
-            "default": "",
-            "description": "Critic who issued the reliability term.",
-            "title": "Evaluator",
-            "type": "string"
-          },
-          "full_name": {
-            "description": "Full name in Arabic.",
-            "title": "Full Name",
-            "type": "string"
-          },
-          "id": {
-            "description": "Stable corpus index, also the detail-route key.",
-            "minimum": 0.0,
-            "title": "Id",
-            "type": "integer"
-          },
-          "kunya": {
-            "default": "",
-            "description": "Teknonym (Abu/Umm ...), if recorded.",
-            "title": "Kunya",
-            "type": "string"
-          },
-          "nisba": {
-            "default": "",
-            "description": "Attributive name (tribe/place), if recorded.",
-            "title": "Nisba",
-            "type": "string"
-          },
-          "reliability_grade": {
-            "default": "",
-            "description": "Numeric reliability grade, as text.",
-            "title": "Reliability Grade",
-            "type": "string"
-          },
-          "reliability_term": {
-            "default": "",
-            "description": "Primary reliability term (thiqa, ...).",
-            "title": "Reliability Term",
-            "type": "string"
-          },
-          "source_label": {
-            "default": "",
-            "description": "Human label of the source work + volume.",
-            "title": "Source Label",
-            "type": "string"
-          },
-          "student_count": {
-            "description": "Number of recorded students.",
-            "minimum": 0.0,
-            "title": "Student Count",
-            "type": "integer"
-          },
-          "teacher_count": {
-            "description": "Number of recorded teachers.",
-            "minimum": 0.0,
-            "title": "Teacher Count",
-            "type": "integer"
-          },
-          "tradition": {
-            "default": "",
-            "description": "Sunni / shia / both, when classified.",
-            "title": "Tradition",
-            "type": "string"
-          }
-        },
-        "required": ["full_name", "id", "teacher_count", "student_count"],
-        "title": "RijalEntry",
         "type": "object"
       },
       "SearchFacets": {
@@ -3417,59 +3458,11 @@
         "tags": ["health"]
       }
     },
-    "/api/person": {
+    "/api/narrators": {
       "get": {
-        "description": "Wrap the repo's (slice, total) into a Page[PersonEntry] envelope.",
-        "operationId": "_list_person_api_person_get",
+        "description": "Wrap the repo's (slice, total) into a Page[NarratorEntry] envelope.",
+        "operationId": "_list_narrators_api_narrators_get",
         "parameters": [
-          {
-            "description": "Substring match on name / kunya / nisba / variants.",
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "default": "",
-              "description": "Substring match on name / kunya / nisba / variants.",
-              "title": "Q",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Filter by tradition (sunni / shia / both).",
-            "in": "query",
-            "name": "tradition",
-            "required": false,
-            "schema": {
-              "default": "",
-              "description": "Filter by tradition (sunni / shia / both).",
-              "title": "Tradition",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Filter by record confidence (high / medium).",
-            "in": "query",
-            "name": "confidence",
-            "required": false,
-            "schema": {
-              "default": "",
-              "description": "Filter by record confidence (high / medium).",
-              "title": "Confidence",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Only persons with historical events.",
-            "in": "query",
-            "name": "has_events",
-            "required": false,
-            "schema": {
-              "default": false,
-              "description": "Only persons with historical events.",
-              "title": "Has Events",
-              "type": "boolean"
-            }
-          },
           {
             "description": "Records per page.",
             "in": "query",
@@ -3496,6 +3489,42 @@
               "title": "Offset",
               "type": "integer"
             }
+          },
+          {
+            "description": "Substring match on the narrator's names. Matched against the normalized alias store (diacritics stripped, letter variants folded, \u0627\u0628\u0646 folded to \u0628\u0646) and, as a second pass, the raw primary Arabic name.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Substring match on the narrator's names. Matched against the normalized alias store (diacritics stripped, letter variants folded, \u0627\u0628\u0646 folded to \u0628\u0646) and, as a second pass, the raw primary Arabic name.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by data-quality category (clean, long_entry).",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Filter by data-quality category (clean, long_entry).",
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by tradition (imami / shafii / hanafi / ...).",
+            "in": "query",
+            "name": "tradition",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Filter by tradition (imami / shafii / hanafi / ...).",
+              "title": "Tradition",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -3503,7 +3532,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_PersonEntry_"
+                  "$ref": "#/components/schemas/Page_NarratorEntry_"
                 }
               }
             },
@@ -3530,21 +3559,21 @@
             "description": "Validation Error"
           }
         },
-        "summary": "List enriched narrator persons with pagination + filters.",
-        "tags": ["person"]
+        "summary": "List narrators with pagination + filters.",
+        "tags": ["narrators"]
       }
     },
-    "/api/person/{person_id}": {
+    "/api/narrators/{narrator_id}": {
       "get": {
-        "description": "Return one enriched person by id, or raise ``ResourceNotFoundError``.",
-        "operationId": "get_person_api_person__person_id__get",
+        "description": "Return one narrator's full served record, or raise ``ResourceNotFoundError``.",
+        "operationId": "get_narrator_api_narrators__narrator_id__get",
         "parameters": [
           {
             "in": "path",
-            "name": "person_id",
+            "name": "narrator_id",
             "required": true,
             "schema": {
-              "title": "Person Id",
+              "title": "Narrator Id",
               "type": "integer"
             }
           }
@@ -3554,7 +3583,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PersonEntry"
+                  "$ref": "#/components/schemas/NarratorDetail"
                 }
               }
             },
@@ -3581,21 +3610,48 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Get a single enriched person by id.",
-        "tags": ["person"]
+        "summary": "Get a single narrator's full record by id.",
+        "tags": ["narrators"]
       }
     },
-    "/api/person/{person_id}/edges": {
+    "/api/narrators/{narrator_id}/graph": {
       "get": {
-        "description": "Return a person's teacher/student relations, each split out and transliterated.\n\nA stored edge name may be a comma-joined list of several narrators (Arabic ``\u060c``\nor ASCII ``,``); each is emitted as its own edge so the reader sees one card per\nperson, and each carries a Latin reading from the one shared transliterator\n(the same function that builds ``PersonEntry.name_latin`` at build time).",
-        "operationId": "get_person_edges_api_person__person_id__edges_get",
+        "description": "Clamp and delegate: the recursive-CTE walk lives in the repository.",
+        "operationId": "_graph_api_narrators__narrator_id__graph_get",
         "parameters": [
           {
             "in": "path",
-            "name": "person_id",
+            "name": "narrator_id",
             "required": true,
             "schema": {
-              "title": "Person Id",
+              "title": "Narrator Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "'students' (taught by the narrator) or 'teachers' (taught him).",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "students",
+              "description": "'students' (taught by the narrator) or 'teachers' (taught him).",
+              "pattern": "^(students|teachers)$",
+              "title": "Direction",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Relation hops to expand from the root.",
+            "in": "query",
+            "name": "depth",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "Relation hops to expand from the root.",
+              "maximum": 3,
+              "minimum": 1,
+              "title": "Depth",
               "type": "integer"
             }
           }
@@ -3605,11 +3661,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PersonEdge"
-                  },
-                  "title": "Response Get Person Edges Api Person  Person Id  Edges Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/NarratorGraph"
                 }
               }
             },
@@ -3636,118 +3688,8 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Get a person's teacher/student relations.",
-        "tags": ["person"]
-      }
-    },
-    "/api/person/{person_id}/events": {
-      "get": {
-        "description": "Return the historical events attributed to a person.",
-        "operationId": "get_person_events_api_person__person_id__events_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "person_id",
-            "required": true,
-            "schema": {
-              "title": "Person Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PersonEvent"
-                  },
-                  "title": "Response Get Person Events Api Person  Person Id  Events Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Get the historical events attributed to a person.",
-        "tags": ["person"]
-      }
-    },
-    "/api/person/{person_id}/grades": {
-      "get": {
-        "description": "Return a person's source-validated reliability grades, each with its reader deep-link.",
-        "operationId": "get_person_grades_api_person__person_id__grades_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "person_id",
-            "required": true,
-            "schema": {
-              "title": "Person Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PersonGrade"
-                  },
-                  "title": "Response Get Person Grades Api Person  Person Id  Grades Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Get a person's source-validated reliability grades with reader links.",
-        "tags": ["person"]
+        "summary": "Expand a narrator's student or teacher relations to a bounded depth.",
+        "tags": ["narrators"]
       }
     },
     "/api/quran/search": {
@@ -3940,186 +3882,6 @@
         },
         "summary": "Resolve a Qur\u02be\u0101n verse by surah:ayah reference.",
         "tags": ["quran"]
-      }
-    },
-    "/api/rijal": {
-      "get": {
-        "description": "Wrap the repo's (slice, total) into a Page[RijalEntry] envelope.",
-        "operationId": "_list_rijal_api_rijal_get",
-        "parameters": [
-          {
-            "description": "Records per page.",
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "default": 24,
-              "description": "Records per page.",
-              "maximum": 200,
-              "minimum": 1,
-              "title": "Limit",
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Records to skip.",
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "description": "Records to skip.",
-              "minimum": 0,
-              "title": "Offset",
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Substring match on name / kunya / nisba.",
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "default": "",
-              "description": "Substring match on name / kunya / nisba.",
-              "title": "Q",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Filter by tradition (sunni / shia / both).",
-            "in": "query",
-            "name": "tradition",
-            "required": false,
-            "schema": {
-              "default": "",
-              "description": "Filter by tradition (sunni / shia / both).",
-              "title": "Tradition",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Filter by data-quality category.",
-            "in": "query",
-            "name": "category",
-            "required": false,
-            "schema": {
-              "default": "",
-              "description": "Filter by data-quality category.",
-              "title": "Category",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Only entries with at least one teacher.",
-            "in": "query",
-            "name": "has_teachers",
-            "required": false,
-            "schema": {
-              "default": false,
-              "description": "Only entries with at least one teacher.",
-              "title": "Has Teachers",
-              "type": "boolean"
-            }
-          },
-          {
-            "description": "Only entries carrying a reliability term.",
-            "in": "query",
-            "name": "has_reliability",
-            "required": false,
-            "schema": {
-              "default": false,
-              "description": "Only entries carrying a reliability term.",
-              "title": "Has Reliability",
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Page_RijalEntry_"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "List rijal narrators with pagination + filters.",
-        "tags": ["rijal"]
-      }
-    },
-    "/api/rijal/{entry_id}": {
-      "get": {
-        "description": "Return one rijal entry by id, or raise ``ResourceNotFoundError``.",
-        "operationId": "get_rijal_api_rijal__entry_id__get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "entry_id",
-            "required": true,
-            "schema": {
-              "title": "Entry Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RijalEntry"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "The requested resource does not exist (unknown urn, id, surah, or ayah)."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Get a single rijal entry by id.",
-        "tags": ["rijal"]
       }
     },
     "/api/search": {

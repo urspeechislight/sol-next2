@@ -47,12 +47,6 @@ export const HOME = {
   TAFSIR_ROTATE_MS: 8000,
 } as const;
 
-// the narrator registries that the graph browses
-export const REGISTRY = {
-  RIJAL: 'rijal',
-  PERSON: 'person',
-} as const;
-
 export const THEME = {
   ATTR: 'data-theme',
   LIGHT: 'light',

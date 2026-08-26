@@ -10,6 +10,9 @@ Two distinct fold capabilities live here, each with one definition:
   taa-marbuta spelling. The frontend mirrors it in ``lib/arabic.ts`` (foldSearch).
 * ``normalize_arabic`` — the name/title fold used for fuzzy matching of
   narrator names and book titles, where whitespace is also collapsed.
+* ``normalize_narrator_name`` — the registry fold: ``normalize_arabic`` plus
+  the nasab-link collapse (ابن → بن), matching how sol-next3 built the
+  ``name_normalized`` values stored in ``data/registry.db``.
 
 Both share ``_fold_letters`` so the letter-folding rule exists once.
 ``strip_diacritics`` is display-only (verse bare form); it folds nothing.
@@ -158,6 +161,26 @@ def normalize_arabic(text: str) -> str:
     alef/yaa/taa variants, then collapse whitespace. Used for narrator-name and
     book-title matching, not content search (see :func:`fold_search`)."""
     folded = _fold_letters(ARABIC_MARKS.sub("", text))
+    return WHITESPACE.sub(" ", folded).strip()
+
+
+_NASAB_LINK: Final[re.Pattern[str]] = re.compile(r"(?<!\S)ابن(?!\S)")
+
+
+def normalize_narrator_name(text: str) -> str:
+    """Fold a narrator name exactly as sol-next3 built ``name_normalized``:
+    drop harakat + tatweel, fold the alef/yaa/taa variants, collapse the nasab
+    link ابن to بن, then collapse whitespace.
+
+    The nasab link is one word spelled either ابن or بن, so a standalone ابن
+    token folds to بن and both spellings of a chain compare equal. The fold
+    runs after the letter variants so the hamza spellings أبن/إبن reach it as
+    ابن, and its whitespace lookarounds leave embedded words like ابنه
+    untouched. The query side of every narrator_alias.name_normalized match
+    (the /api/narrators?q= filter and the build-time linker) goes through
+    this fold so it compares against the stored values as-written.
+    """
+    folded = _NASAB_LINK.sub("بن", _fold_letters(ARABIC_MARKS.sub("", text)))
     return WHITESPACE.sub(" ", folded).strip()
 
 

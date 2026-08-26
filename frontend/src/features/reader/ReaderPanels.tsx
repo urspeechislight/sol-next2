@@ -4,6 +4,7 @@ import { Badge, IconButton, IsnadNode, Segmented, useEscape } from '../../lib/de
 import type { Hadith, Narrator, NarratorRecord } from '../../lib/types';
 import { joinDots } from '../../lib/utils';
 import { reliabilityBadge } from '../../lib/variants';
+import { gradeLabel, traditionLabel } from '../narrators/labels';
 
 const ISNAD_VIEWS = [
   { value: 'tree', label: 'Tree' },
@@ -67,12 +68,11 @@ export function IsnadPanel({
 
 function narratorSource(record: NarratorRecord): string {
   if (record.id < 0) return 'Extracted from the text · no registry entry';
-  return record.origin === 'person' ? 'Enriched person registry' : 'Rijāl registry';
+  return 'Narrator registry';
 }
 
 export interface NarratorFetchError {
   id: number;
-  origin: NarratorRecord['origin'];
   message: string;
 }
 
@@ -88,14 +88,16 @@ export function TarjamaPanel({
   onClose: () => void;
 }) {
   useEscape(onClose);
-  const sub = joinDots(record.kunya, record.nisba);
+  const sub = joinDots(record.kunya, record.nisba, record.primary_name_en);
+  const died = joinDots(
+    record.death_year_ah != null ? `d. ${record.death_year_ah} AH` : '',
+    record.death_year_ce,
+  );
   const facts: [string, string | number][] = [
-    ['Tradition', record.tradition || '—'],
-    ['Died', record.death_year || '—'],
+    ['Tradition', record.tradition ? traditionLabel(record.tradition) : '—'],
+    ['Died', died || '—'],
     ['Teachers', record.teacher_count],
     ['Students', record.student_count],
-    ...(record.evaluator ? ([['Evaluator', record.evaluator]] as [string, string][]) : []),
-    ['Source', record.source_label || '—'],
   ];
   return (
     <aside className="narrator" aria-label="Narrator biography">
@@ -104,17 +106,17 @@ export function TarjamaPanel({
         <IconButton surface="reader" size="sm" label="Close" icon="close" onClick={onClose} />
       </div>
       <p className="narrator__name" dir="rtl">
-        {record.full_name}
+        {record.primary_name_ar}
       </p>
       {sub ? (
         <p className="narrator__sub" dir="rtl">
           {sub}
         </p>
       ) : null}
-      {record.reliability_term ? (
+      {record.tier ? (
         <div className="narrator__grade">
-          <Badge surface="reader" variant={reliabilityBadge(record.reliability_term)} dir="rtl">
-            {record.reliability_term}
+          <Badge surface="reader" variant={reliabilityBadge(record.tier)}>
+            {gradeLabel(record.tier)}
           </Badge>
         </div>
       ) : null}

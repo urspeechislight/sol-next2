@@ -83,6 +83,14 @@ class Settings(BaseSettings):
         default="glm-5.3",
         description="Planner model id sent to the LLM endpoint.",
     )
+    rijal_pg_dsn: str | None = Field(
+        default=None,
+        description=(
+            "Read-only Postgres DSN of sol-next3's narrator store — the "
+            "extraction source for scripts/build_registry.py. No default: the "
+            "build aborts loudly without it (or an explicit --pg-dsn)."
+        ),
+    )
 
 
 @lru_cache(maxsize=1)
