@@ -75,7 +75,7 @@ export function HadithUnit({
             s.type === 'narrator' ? (
               <NarratorLink
                 key={i}
-                active={activeNarrator === s.record.full_name}
+                active={activeNarrator === s.record.primary_name_ar}
                 onActivate={() => onNarrator(s.record)}
               >
                 {s.value}

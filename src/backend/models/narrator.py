@@ -1,118 +1,98 @@
-"""Pydantic DTOs for the narrator registry: rijal entries and enriched persons.
+"""Pydantic DTOs for the narrator registry served from ``data/registry.db``.
 
-These mirror the served columns of ``data/registry.db`` (built by
-``scripts/build_registry.py`` from sol-next's corpus) and are the SSOT the
-frontend's narrator types bind to. The reader links isnad text to these
-records by name; the graph screens browse them directly. ``PersonEntry`` is the
-authoritative per-narrator identity (junk-excluded, over-merge-split,
-death-reconciled) built by ``backend.build.authority``; ``RijalEntry`` remains
-the raw per-source-entry view.
+These mirror the served columns of the artifact built by
+``scripts/build_registry.py`` from sol-next3's Postgres narrator store and are
+the SSOT the frontend's narrator types bind to. ``NarratorEntry`` is the list
+row; ``NarratorDetail`` adds the per-narrator aliases, grades, stances, and
+tarjama claims; ``NarratorGraph`` carries the teacher/student relation
+expansion the graph screens browse.
 """
 
 from __future__ import annotations
 
-import json
-from typing import Any
-
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from backend.models._base import FrozenModel
 
 
-class NarratorBase(FrozenModel):
-    """Identity fields shared by a raw rijal entry and an enriched person.
+class NarratorEntry(FrozenModel):
+    """One narrator in the registry list row."""
 
-    Only the fields whose semantics are identical on both sides live here; the
-    teacher/student count fields stay per-model because they mean different
-    things (counts recorded on one source entry vs. the union across the
-    entries merged into one identity).
-    """
-
-    full_name: str = Field(description="Full name in Arabic.")
-    kunya: str = Field(default="", description="Teknonym (Abu/Umm ...), if recorded.")
-    nisba: str = Field(default="", description="Attributive name (tribe/place), if recorded.")
-    tradition: str = Field(default="", description="Sunni / shia / both, when classified.")
-
-
-class RijalEntry(NarratorBase):
-    """One narrator in the rijal registry (reliability-graded)."""
-
-    id: int = Field(ge=0, description="Stable corpus index, also the detail-route key.")
-    death_year: str = Field(default="", description="Death year as recorded (Hijri, free-form).")
-    birth_year: str = Field(default="", description="Birth year as recorded (Hijri, free-form).")
-    category: str = Field(default="clean", description="Data-quality class (clean, editorial).")
-    teacher_count: int = Field(ge=0, description="Number of recorded teachers.")
-    student_count: int = Field(ge=0, description="Number of recorded students.")
-    reliability_term: str = Field(default="", description="Primary reliability term (thiqa, ...).")
-    reliability_grade: str = Field(default="", description="Numeric reliability grade, as text.")
-    evaluator: str = Field(default="", description="Critic who issued the reliability term.")
-    source_label: str = Field(default="", description="Human label of the source work + volume.")
-    book_path: str = Field(default="", description="Relative path of the source corpus file.")
+    id: int = Field(ge=1, description="Narrator id, also the detail-route key.")
+    primary_name_ar: str = Field(description="Primary name in Arabic.")
+    primary_name_en: str = Field(default="", description="Primary name in English, when recorded.")
+    kunya: str = Field(default="", description="Teknonym (Abu/Umm ...), when recorded.")
+    nisba: str = Field(default="", description="Attributive name (tribe/place), when recorded.")
+    tradition: str = Field(default="", description="School of law (imami / shafii / ...).")
+    birth_year_ah: int | None = Field(default=None, description="Birth year, Hijri, when known.")
+    death_year_ah: int | None = Field(default=None, description="Death year, Hijri, when known.")
+    death_year_ce: str = Field(default="", description="Death year, Common Era, as recorded.")
+    tabaqa: str = Field(default="", description="Generation class (من التاسعة, ...).")
+    living_city: str = Field(default="", description="City the narrator lived in, when recorded.")
+    death_place: str = Field(default="", description="Place of death, when recorded.")
+    category: str = Field(default="clean", description="Data-quality class (clean, long_entry).")
+    alias_count: int = Field(ge=0, description="Recorded name variants (narrator_alias).")
+    teacher_count: int = Field(ge=0, description="Distinct recorded teachers (narrator_edge).")
+    student_count: int = Field(ge=0, description="Distinct recorded students (narrator_edge).")
 
 
-class PersonEntry(NarratorBase):
-    """An authoritative narrator identity, cross-checked across its source entries."""
+class NarratorAliasOut(FrozenModel):
+    """One recorded name variant of a narrator."""
 
-    person_id: int = Field(ge=0, description="Stable person identity id + detail-route key.")
-    name_variants: str = Field(default="", description="Distinct spellings, pipe-separated.")
-    birth_year: int | None = Field(default=None, description="Birth year, Hijri, when known.")
-    death_year: int | None = Field(default=None, description="Reconciled Hijri death year.")
-    death_conflict: bool = Field(default=False, description="Sources disagree on the death year.")
-    reliability: list[str] = Field(
-        default_factory=list, description="Per-evaluator reliability grades (evaluator=term)."
-    )
-    places: str = Field(default="", description="Associated places, pipe-separated.")
-    source_books: str = Field(default="", description="Source works, pipe-separated.")
-    n_sources: int = Field(ge=0, description="Raw corpus entries merged into this identity.")
-    teacher_count: int = Field(ge=0, description="Distinct recorded teachers (person_edge).")
-    student_count: int = Field(ge=0, description="Distinct recorded students (person_edge).")
-    event_count: int = Field(ge=0, description="Historical events attributed to this person.")
-    bio: str = Field(default="", description="Longest available biographical snippet.")
-    confidence: str = Field(default="medium", description="Record confidence (high/medium).")
-    generation: str = Field(default="", description="companion / successor, when derivable.")
-    name_latin: str = Field(
-        default="", description="Approximate ALA-LC transliteration of the name."
-    )
-
-    @field_validator("reliability", mode="before")
-    @classmethod
-    def _parse_reliability(cls, value: Any) -> Any:
-        """Decode the stored JSON array of reliability grades into a list."""
-        return json.loads(value) if isinstance(value, str) else value
+    name_ar: str = Field(description="The variant spelling, Arabic, as recorded.")
+    name_role: str = Field(default="", description="primary / variant / kunya / nisba.")
+    source_label: str = Field(default="", description="Human label of the source work.")
 
 
-class PersonEdge(FrozenModel):
-    """A teacher or student relation of a person, linked to a person id when known."""
+class NarratorGradeOut(FrozenModel):
+    """One reliability grade issued by a critic, with its provenance."""
 
-    relation: str = Field(description="'teacher' or 'student'.")
-    name: str = Field(description="The related narrator's name as recorded (Arabic).")
-    name_latin: str = Field(default="", description="Latin (ALA-LC-style) reading of the name.")
-    other_person_id: int | None = Field(
-        default=None, description="Resolved person id of the relation, or null when unlinked."
-    )
-
-
-class PersonEvent(FrozenModel):
-    """A historical event attributed to a person."""
-
-    event: str = Field(default="", description="Event name (battle, conquest, ...).")
-    event_type: str = Field(default="", description="Event category (BATTLE, CONQUEST, ...).")
-    year_ah: int | None = Field(default=None, description="Hijri year of the event, when dated.")
-    role: str = Field(default="", description="Marker keyword linking person to event.")
-
-
-class PersonGrade(FrozenModel):
-    """One reliability grade re-validated against its cited source page.
-
-    Each grade names the critic (``evaluator``), the verdict term as it appears in that
-    critic's segment of the narrator's own entry, and the source book + page it was read
-    from; ``link`` is a relative, URL-independent reader deep-link to exactly that page.
-    Grades that could not be located in their cited page are not built, so every row here
-    is one a reader can open and confirm.
-    """
-
+    term: str = Field(description="Verdict term as recorded (ثقة, مجهول, ...).")
+    tier: str = Field(default="", description="Normalized tier (thiqa, ...).")
     evaluator: str = Field(default="", description="Critic who issued the verdict.")
-    term: str = Field(default="", description="Verdict term, verbatim from the critic's segment.")
-    book: str = Field(default="", description="Source work the verdict was read from.")
-    page: int | None = Field(default=None, description="Cited page number in the source work.")
-    link: str = Field(default="", description="Relative reader deep-link to where it is recorded.")
+    source_label: str = Field(default="", description="Human label of the source work.")
+    source_book: str = Field(default="", description="Source book id in the extraction record.")
+    source_locator: str = Field(default="", description="Locator (page/entry) in the source book.")
+
+
+class NarratorDetail(NarratorEntry):
+    """One narrator with its full served record: aliases, claims, and relations."""
+
+    aliases: list[NarratorAliasOut] = Field(default_factory=list, description="Name variants.")
+    grades: list[NarratorGradeOut] = Field(default_factory=list, description="Reliability grades.")
+    stances: list[dict[str, str]] = Field(
+        default_factory=list,
+        description="Stance claims ({predicate, value_text} pairs).",
+    )
+    tarjama: list[str] = Field(
+        default_factory=list, description="Biographical snippets (TARJAMA claim texts)."
+    )
+
+
+class NarratorGraphNode(FrozenModel):
+    """One node in an isnad relation expansion."""
+
+    id: int = Field(ge=1, description="Narrator id.")
+    primary_name_ar: str = Field(description="Primary name in Arabic.")
+    primary_name_en: str = Field(default="", description="Primary name in English, when recorded.")
+    death_year_ah: int | None = Field(default=None, description="Death year, Hijri, when known.")
+    depth: int = Field(ge=0, description="Hops from the root narrator (0 for the root).")
+
+
+class NarratorGraphEdge(FrozenModel):
+    """One teacher→student relation edge in the expansion."""
+
+    from_id: int = Field(ge=1, description="Teacher narrator id.")
+    to_id: int = Field(ge=1, description="Student narrator id.")
+    source_label: str = Field(description="Human label of the source the edge was read from.")
+
+
+class NarratorGraph(FrozenModel):
+    """A breadth-limited teacher or student expansion around one narrator."""
+
+    root_id: int = Field(ge=1, description="The narrator the expansion is rooted at.")
+    direction: str = Field(description="students (descendants) or teachers (ancestors).")
+    depth: int = Field(ge=1, description="Maximum hops from the root actually expanded.")
+    nodes: list[NarratorGraphNode] = Field(description="The root plus every reached narrator.")
+    edges: list[NarratorGraphEdge] = Field(description="The traversed relations.")
+    truncated: bool = Field(description="True when the node cap stopped the expansion early.")

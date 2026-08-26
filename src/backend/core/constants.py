@@ -118,8 +118,11 @@ TOC_SYNTH__MIN_CONTENT_PAGES: Final[int] = 20
 NARRATOR_LINK__METADATA_KEY: Final[str] = "narrator_link"
 NARRATOR_LINK__ORIGIN_KEY: Final[str] = "origin"
 NARRATOR_LINK__ID_KEY: Final[str] = "id"
-NARRATOR_LINK__ORIGIN_RIJAL: Final[str] = "rijal"
-NARRATOR_LINK__ORIGIN_PERSON: Final[str] = "person"
+NARRATOR_LINK__ORIGIN_NARRATOR: Final[str] = "narrator"
+
+NARRATORS__GRAPH_MAX_NODES: Final[int] = 400
+NARRATORS__GRAPH_MAX_DEPTH: Final[int] = 3
+NARRATORS__GRAPH_DEFAULT_DEPTH: Final[int] = 1
 
 
 class TafsirSource(NamedTuple):

@@ -104,9 +104,7 @@ function AppContent({
         />
       ) : null}
       {view === 'quran' ? <QuranScreen query={submitted} focus={quranFocus} /> : null}
-      {view === 'graph' ? (
-        <GraphScreen state={graph} onState={setGraph} onOpenReader={openReader} />
-      ) : null}
+      {view === 'graph' ? <GraphScreen state={graph} onState={setGraph} /> : null}
       {view === 'design' ? <DesignSystemScreen /> : null}
       {view === 'extraction' ? <ExtractionScreen /> : null}
     </>

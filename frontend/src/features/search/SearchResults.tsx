@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 
 import { Heading, Text } from '../../lib/design-system';
-import { getRijal } from '../../lib/api/client';
+import { getNarrators } from '../../lib/api/client';
 import type { SearchScope } from '../../lib/api/client';
 import { PAGE } from '../../lib/constants';
 import { byCategory, categoryFacets } from '../../lib/facets';
-import type { Page, RijalEntry } from '../../lib/types';
+import type { NarratorEntry, Page } from '../../lib/types';
 import { useAsync } from '../../lib/useAsync';
 import { useCategoryLabels } from '../../lib/useCategoryLabels';
 import { WorksQueryResults } from '../library/WorksQueryResults';
@@ -21,14 +21,8 @@ import './SearchResults.css';
 /** The narrator scope has no server facet endpoint: fetch one page, derive the
     category filter from the returned rows (categoryFacets), apply it on the
     client, and render through the shared ResultsFrame. */
-function NarratorScope({
-  q,
-  onOpenReader,
-}: {
-  q: string;
-  onOpenReader: (urn: string, page: number, query: string) => void;
-}) {
-  const res = useAsync<Page<RijalEntry>>(() => getRijal({ q, limit: PAGE.facetLimit }), [q]);
+function NarratorScope({ q }: { q: string }) {
+  const res = useAsync<Page<NarratorEntry>>(() => getNarrators({ q, limit: PAGE.facetLimit }), [q]);
   const labelOf = useCategoryLabels();
   const [category, setCategory] = useState('');
   useEffect(() => setCategory(''), [q]);
@@ -61,7 +55,7 @@ function NarratorScope({
       {res.data ? (
         <div className="ds-records">
           {shown.map((e) => (
-            <NarratorCard key={e.id} item={e} onOpenReader={onOpenReader} />
+            <NarratorCard key={e.id} item={e} />
           ))}
         </div>
       ) : null}
@@ -115,7 +109,7 @@ export function SearchResults({
       {scope === 'works' ? (
         <WorksQueryResults q={q} onOpen={(urn, page) => onOpenReader(urn, page ?? 1, '')} />
       ) : null}
-      {scope === 'narrator' ? <NarratorScope q={q} onOpenReader={onOpenReader} /> : null}
+      {scope === 'narrator' ? <NarratorScope q={q} /> : null}
       {scope === 'semantic' ? <SemanticScope q={q} onOpenReader={onOpenReader} /> : null}
     </section>
   );

@@ -96,8 +96,9 @@ def capture_golden(client: TestClient) -> dict[str, object]:
         ("search_books", "/api/search/books", {"q": QUERY, "limit": 3}),
         ("quran_search", "/api/quran/search", {"q": QUERY, "limit": 3}),
         ("quran_verse", "/api/quran/1/1", {}),
-        ("rijal", "/api/rijal", {"limit": 3}),
-        ("canonical", "/api/canonical", {"limit": 3}),
+        ("narrators", "/api/narrators", {"limit": 3}),
+        ("narrator_detail", "/api/narrators/3596438", {}),
+        ("narrator_graph", "/api/narrators/3596788/graph", {}),
         ("missing_book_404", "/api/books/urn:does-not-exist", {}),
     ]
     golden: dict[str, object] = {}

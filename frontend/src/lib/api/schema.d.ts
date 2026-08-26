@@ -335,7 +335,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/person": {
+    "/api/narrators": {
         parameters: {
             query?: never;
             header?: never;
@@ -343,10 +343,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List enriched narrator persons with pagination + filters.
-         * @description Wrap the repo's (slice, total) into a Page[PersonEntry] envelope.
+         * List narrators with pagination + filters.
+         * @description Wrap the repo's (slice, total) into a Page[NarratorEntry] envelope.
          */
-        get: operations["_list_person_api_person_get"];
+        get: operations["_list_narrators_api_narrators_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -355,7 +355,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/person/{person_id}": {
+    "/api/narrators/{narrator_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -363,10 +363,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get a single enriched person by id.
-         * @description Return one enriched person by id, or raise ``ResourceNotFoundError``.
+         * Get a single narrator's full record by id.
+         * @description Return one narrator's full served record, or raise ``ResourceNotFoundError``.
          */
-        get: operations["get_person_api_person__person_id__get"];
+        get: operations["get_narrator_api_narrators__narrator_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -375,7 +375,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/person/{person_id}/edges": {
+    "/api/narrators/{narrator_id}/graph": {
         parameters: {
             query?: never;
             header?: never;
@@ -383,55 +383,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get a person's teacher/student relations.
-         * @description Return a person's teacher/student relations, each split out and transliterated.
-         *
-         *     A stored edge name may be a comma-joined list of several narrators (Arabic ``،``
-         *     or ASCII ``,``); each is emitted as its own edge so the reader sees one card per
-         *     person, and each carries a Latin reading from the one shared transliterator
-         *     (the same function that builds ``PersonEntry.name_latin`` at build time).
+         * Expand a narrator's student or teacher relations to a bounded depth.
+         * @description Clamp and delegate: the recursive-CTE walk lives in the repository.
          */
-        get: operations["get_person_edges_api_person__person_id__edges_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/person/{person_id}/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get the historical events attributed to a person.
-         * @description Return the historical events attributed to a person.
-         */
-        get: operations["get_person_events_api_person__person_id__events_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/person/{person_id}/grades": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get a person's source-validated reliability grades with reader links.
-         * @description Return a person's source-validated reliability grades, each with its reader deep-link.
-         */
-        get: operations["get_person_grades_api_person__person_id__grades_get"];
+        get: operations["_graph_api_narrators__narrator_id__graph_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -495,46 +450,6 @@ export interface paths {
          * @description Resolve a surah:ayah reference to its verse text (both pointed + bare).
          */
         get: operations["get_verse_api_quran__surah___ayah__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/rijal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List rijal narrators with pagination + filters.
-         * @description Wrap the repo's (slice, total) into a Page[RijalEntry] envelope.
-         */
-        get: operations["_list_rijal_api_rijal_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/rijal/{entry_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get a single rijal entry by id.
-         * @description Return one rijal entry by id, or raise ``ResourceNotFoundError``.
-         */
-        get: operations["get_rijal_api_rijal__entry_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1737,20 +1652,380 @@ export interface components {
              */
             name_ar: string;
             /**
-             * Person Id
-             * @description Registry link: id in /api/person, when the name resolved to an enriched person instead of a rijal entry. Mutually exclusive with rijal_id.
+             * Narrator Id
+             * @description Registry link: id in /api/narrators, resolved at build time by normalized-name match. None when the registry does not know this narrator; the reader shows the name unlinked rather than guessing.
              */
-            person_id?: number | null;
-            /**
-             * Rijal Id
-             * @description Registry link: id in /api/rijal, resolved at build time by normalized-name match. None when the registry does not know this narrator; the reader shows the name unlinked rather than guessing.
-             */
-            rijal_id?: number | null;
+            narrator_id?: number | null;
             /**
              * Role
              * @description Role / position in the chain (companion, transmitter, ...).
              */
             role: string;
+        };
+        /**
+         * NarratorAliasOut
+         * @description One recorded name variant of a narrator.
+         */
+        NarratorAliasOut: {
+            /**
+             * Name Ar
+             * @description The variant spelling, Arabic, as recorded.
+             */
+            name_ar: string;
+            /**
+             * Name Role
+             * @description primary / variant / kunya / nisba.
+             * @default
+             */
+            name_role: string;
+            /**
+             * Source Label
+             * @description Human label of the source work.
+             * @default
+             */
+            source_label: string;
+        };
+        /**
+         * NarratorDetail
+         * @description One narrator with its full served record: aliases, claims, and relations.
+         */
+        NarratorDetail: {
+            /**
+             * Alias Count
+             * @description Recorded name variants (narrator_alias).
+             */
+            alias_count: number;
+            /**
+             * Aliases
+             * @description Name variants.
+             */
+            aliases?: components["schemas"]["NarratorAliasOut"][];
+            /**
+             * Birth Year Ah
+             * @description Birth year, Hijri, when known.
+             */
+            birth_year_ah?: number | null;
+            /**
+             * Category
+             * @description Data-quality class (clean, long_entry).
+             * @default clean
+             */
+            category: string;
+            /**
+             * Death Place
+             * @description Place of death, when recorded.
+             * @default
+             */
+            death_place: string;
+            /**
+             * Death Year Ah
+             * @description Death year, Hijri, when known.
+             */
+            death_year_ah?: number | null;
+            /**
+             * Death Year Ce
+             * @description Death year, Common Era, as recorded.
+             * @default
+             */
+            death_year_ce: string;
+            /**
+             * Grades
+             * @description Reliability grades.
+             */
+            grades?: components["schemas"]["NarratorGradeOut"][];
+            /**
+             * Id
+             * @description Narrator id, also the detail-route key.
+             */
+            id: number;
+            /**
+             * Kunya
+             * @description Teknonym (Abu/Umm ...), when recorded.
+             * @default
+             */
+            kunya: string;
+            /**
+             * Living City
+             * @description City the narrator lived in, when recorded.
+             * @default
+             */
+            living_city: string;
+            /**
+             * Nisba
+             * @description Attributive name (tribe/place), when recorded.
+             * @default
+             */
+            nisba: string;
+            /**
+             * Primary Name Ar
+             * @description Primary name in Arabic.
+             */
+            primary_name_ar: string;
+            /**
+             * Primary Name En
+             * @description Primary name in English, when recorded.
+             * @default
+             */
+            primary_name_en: string;
+            /**
+             * Stances
+             * @description Stance claims ({predicate, value_text} pairs).
+             */
+            stances?: {
+                [key: string]: string;
+            }[];
+            /**
+             * Student Count
+             * @description Distinct recorded students (narrator_edge).
+             */
+            student_count: number;
+            /**
+             * Tabaqa
+             * @description Generation class (من التاسعة, ...).
+             * @default
+             */
+            tabaqa: string;
+            /**
+             * Tarjama
+             * @description Biographical snippets (TARJAMA claim texts).
+             */
+            tarjama?: string[];
+            /**
+             * Teacher Count
+             * @description Distinct recorded teachers (narrator_edge).
+             */
+            teacher_count: number;
+            /**
+             * Tradition
+             * @description School of law (imami / shafii / ...).
+             * @default
+             */
+            tradition: string;
+        };
+        /**
+         * NarratorEntry
+         * @description One narrator in the registry list row.
+         */
+        NarratorEntry: {
+            /**
+             * Alias Count
+             * @description Recorded name variants (narrator_alias).
+             */
+            alias_count: number;
+            /**
+             * Birth Year Ah
+             * @description Birth year, Hijri, when known.
+             */
+            birth_year_ah?: number | null;
+            /**
+             * Category
+             * @description Data-quality class (clean, long_entry).
+             * @default clean
+             */
+            category: string;
+            /**
+             * Death Place
+             * @description Place of death, when recorded.
+             * @default
+             */
+            death_place: string;
+            /**
+             * Death Year Ah
+             * @description Death year, Hijri, when known.
+             */
+            death_year_ah?: number | null;
+            /**
+             * Death Year Ce
+             * @description Death year, Common Era, as recorded.
+             * @default
+             */
+            death_year_ce: string;
+            /**
+             * Id
+             * @description Narrator id, also the detail-route key.
+             */
+            id: number;
+            /**
+             * Kunya
+             * @description Teknonym (Abu/Umm ...), when recorded.
+             * @default
+             */
+            kunya: string;
+            /**
+             * Living City
+             * @description City the narrator lived in, when recorded.
+             * @default
+             */
+            living_city: string;
+            /**
+             * Nisba
+             * @description Attributive name (tribe/place), when recorded.
+             * @default
+             */
+            nisba: string;
+            /**
+             * Primary Name Ar
+             * @description Primary name in Arabic.
+             */
+            primary_name_ar: string;
+            /**
+             * Primary Name En
+             * @description Primary name in English, when recorded.
+             * @default
+             */
+            primary_name_en: string;
+            /**
+             * Student Count
+             * @description Distinct recorded students (narrator_edge).
+             */
+            student_count: number;
+            /**
+             * Tabaqa
+             * @description Generation class (من التاسعة, ...).
+             * @default
+             */
+            tabaqa: string;
+            /**
+             * Teacher Count
+             * @description Distinct recorded teachers (narrator_edge).
+             */
+            teacher_count: number;
+            /**
+             * Tradition
+             * @description School of law (imami / shafii / ...).
+             * @default
+             */
+            tradition: string;
+        };
+        /**
+         * NarratorGradeOut
+         * @description One reliability grade issued by a critic, with its provenance.
+         */
+        NarratorGradeOut: {
+            /**
+             * Evaluator
+             * @description Critic who issued the verdict.
+             * @default
+             */
+            evaluator: string;
+            /**
+             * Source Book
+             * @description Source book id in the extraction record.
+             * @default
+             */
+            source_book: string;
+            /**
+             * Source Label
+             * @description Human label of the source work.
+             * @default
+             */
+            source_label: string;
+            /**
+             * Source Locator
+             * @description Locator (page/entry) in the source book.
+             * @default
+             */
+            source_locator: string;
+            /**
+             * Term
+             * @description Verdict term as recorded (ثقة, مجهول, ...).
+             */
+            term: string;
+            /**
+             * Tier
+             * @description Normalized tier (thiqa, ...).
+             * @default
+             */
+            tier: string;
+        };
+        /**
+         * NarratorGraph
+         * @description A breadth-limited teacher or student expansion around one narrator.
+         */
+        NarratorGraph: {
+            /**
+             * Depth
+             * @description Maximum hops from the root actually expanded.
+             */
+            depth: number;
+            /**
+             * Direction
+             * @description students (descendants) or teachers (ancestors).
+             */
+            direction: string;
+            /**
+             * Edges
+             * @description The traversed relations.
+             */
+            edges: components["schemas"]["NarratorGraphEdge"][];
+            /**
+             * Nodes
+             * @description The root plus every reached narrator.
+             */
+            nodes: components["schemas"]["NarratorGraphNode"][];
+            /**
+             * Root Id
+             * @description The narrator the expansion is rooted at.
+             */
+            root_id: number;
+            /**
+             * Truncated
+             * @description True when the node cap stopped the expansion early.
+             */
+            truncated: boolean;
+        };
+        /**
+         * NarratorGraphEdge
+         * @description One teacher→student relation edge in the expansion.
+         */
+        NarratorGraphEdge: {
+            /**
+             * From Id
+             * @description Teacher narrator id.
+             */
+            from_id: number;
+            /**
+             * Source Label
+             * @description Human label of the source the edge was read from.
+             */
+            source_label: string;
+            /**
+             * To Id
+             * @description Student narrator id.
+             */
+            to_id: number;
+        };
+        /**
+         * NarratorGraphNode
+         * @description One node in an isnad relation expansion.
+         */
+        NarratorGraphNode: {
+            /**
+             * Death Year Ah
+             * @description Death year, Hijri, when known.
+             */
+            death_year_ah?: number | null;
+            /**
+             * Depth
+             * @description Hops from the root narrator (0 for the root).
+             */
+            depth: number;
+            /**
+             * Id
+             * @description Narrator id.
+             */
+            id: number;
+            /**
+             * Primary Name Ar
+             * @description Primary name in Arabic.
+             */
+            primary_name_ar: string;
+            /**
+             * Primary Name En
+             * @description Primary name in English, when recorded.
+             * @default
+             */
+            primary_name_en: string;
         };
         /**
          * Observance
@@ -1873,36 +2148,13 @@ export interface components {
              */
             total: number;
         };
-        /** Page[PersonEntry] */
-        Page_PersonEntry_: {
+        /** Page[NarratorEntry] */
+        Page_NarratorEntry_: {
             /**
              * Items
              * @description Records in this slice.
              */
-            items: components["schemas"]["PersonEntry"][];
-            /**
-             * Limit
-             * @description Slice size requested.
-             */
-            limit: number;
-            /**
-             * Offset
-             * @description Number of records skipped before this slice.
-             */
-            offset: number;
-            /**
-             * Total
-             * @description Total records matching the query, across all pages.
-             */
-            total: number;
-        };
-        /** Page[RijalEntry] */
-        Page_RijalEntry_: {
-            /**
-             * Items
-             * @description Records in this slice.
-             */
-            items: components["schemas"]["RijalEntry"][];
+            items: components["schemas"]["NarratorEntry"][];
             /**
              * Limit
              * @description Slice size requested.
@@ -1941,312 +2193,6 @@ export interface components {
              * @description Total records matching the query, across all pages.
              */
             total: number;
-        };
-        /**
-         * PersonEdge
-         * @description A teacher or student relation of a person, linked to a person id when known.
-         */
-        PersonEdge: {
-            /**
-             * Name
-             * @description The related narrator's name as recorded (Arabic).
-             */
-            name: string;
-            /**
-             * Name Latin
-             * @description Latin (ALA-LC-style) reading of the name.
-             * @default
-             */
-            name_latin: string;
-            /**
-             * Other Person Id
-             * @description Resolved person id of the relation, or null when unlinked.
-             */
-            other_person_id?: number | null;
-            /**
-             * Relation
-             * @description 'teacher' or 'student'.
-             */
-            relation: string;
-        };
-        /**
-         * PersonEntry
-         * @description An authoritative narrator identity, cross-checked across its source entries.
-         */
-        PersonEntry: {
-            /**
-             * Bio
-             * @description Longest available biographical snippet.
-             * @default
-             */
-            bio: string;
-            /**
-             * Birth Year
-             * @description Birth year, Hijri, when known.
-             */
-            birth_year?: number | null;
-            /**
-             * Confidence
-             * @description Record confidence (high/medium).
-             * @default medium
-             */
-            confidence: string;
-            /**
-             * Death Conflict
-             * @description Sources disagree on the death year.
-             * @default false
-             */
-            death_conflict: boolean;
-            /**
-             * Death Year
-             * @description Reconciled Hijri death year.
-             */
-            death_year?: number | null;
-            /**
-             * Event Count
-             * @description Historical events attributed to this person.
-             */
-            event_count: number;
-            /**
-             * Full Name
-             * @description Full name in Arabic.
-             */
-            full_name: string;
-            /**
-             * Generation
-             * @description companion / successor, when derivable.
-             * @default
-             */
-            generation: string;
-            /**
-             * Kunya
-             * @description Teknonym (Abu/Umm ...), if recorded.
-             * @default
-             */
-            kunya: string;
-            /**
-             * N Sources
-             * @description Raw corpus entries merged into this identity.
-             */
-            n_sources: number;
-            /**
-             * Name Latin
-             * @description Approximate ALA-LC transliteration of the name.
-             * @default
-             */
-            name_latin: string;
-            /**
-             * Name Variants
-             * @description Distinct spellings, pipe-separated.
-             * @default
-             */
-            name_variants: string;
-            /**
-             * Nisba
-             * @description Attributive name (tribe/place), if recorded.
-             * @default
-             */
-            nisba: string;
-            /**
-             * Person Id
-             * @description Stable person identity id + detail-route key.
-             */
-            person_id: number;
-            /**
-             * Places
-             * @description Associated places, pipe-separated.
-             * @default
-             */
-            places: string;
-            /**
-             * Reliability
-             * @description Per-evaluator reliability grades (evaluator=term).
-             */
-            reliability?: string[];
-            /**
-             * Source Books
-             * @description Source works, pipe-separated.
-             * @default
-             */
-            source_books: string;
-            /**
-             * Student Count
-             * @description Distinct recorded students (person_edge).
-             */
-            student_count: number;
-            /**
-             * Teacher Count
-             * @description Distinct recorded teachers (person_edge).
-             */
-            teacher_count: number;
-            /**
-             * Tradition
-             * @description Sunni / shia / both, when classified.
-             * @default
-             */
-            tradition: string;
-        };
-        /**
-         * PersonEvent
-         * @description A historical event attributed to a person.
-         */
-        PersonEvent: {
-            /**
-             * Event
-             * @description Event name (battle, conquest, ...).
-             * @default
-             */
-            event: string;
-            /**
-             * Event Type
-             * @description Event category (BATTLE, CONQUEST, ...).
-             * @default
-             */
-            event_type: string;
-            /**
-             * Role
-             * @description Marker keyword linking person to event.
-             * @default
-             */
-            role: string;
-            /**
-             * Year Ah
-             * @description Hijri year of the event, when dated.
-             */
-            year_ah?: number | null;
-        };
-        /**
-         * PersonGrade
-         * @description One reliability grade re-validated against its cited source page.
-         *
-         *     Each grade names the critic (``evaluator``), the verdict term as it appears in that
-         *     critic's segment of the narrator's own entry, and the source book + page it was read
-         *     from; ``link`` is a relative, URL-independent reader deep-link to exactly that page.
-         *     Grades that could not be located in their cited page are not built, so every row here
-         *     is one a reader can open and confirm.
-         */
-        PersonGrade: {
-            /**
-             * Book
-             * @description Source work the verdict was read from.
-             * @default
-             */
-            book: string;
-            /**
-             * Evaluator
-             * @description Critic who issued the verdict.
-             * @default
-             */
-            evaluator: string;
-            /**
-             * Link
-             * @description Relative reader deep-link to where it is recorded.
-             * @default
-             */
-            link: string;
-            /**
-             * Page
-             * @description Cited page number in the source work.
-             */
-            page?: number | null;
-            /**
-             * Term
-             * @description Verdict term, verbatim from the critic's segment.
-             * @default
-             */
-            term: string;
-        };
-        /**
-         * RijalEntry
-         * @description One narrator in the rijal registry (reliability-graded).
-         */
-        RijalEntry: {
-            /**
-             * Birth Year
-             * @description Birth year as recorded (Hijri, free-form).
-             * @default
-             */
-            birth_year: string;
-            /**
-             * Book Path
-             * @description Relative path of the source corpus file.
-             * @default
-             */
-            book_path: string;
-            /**
-             * Category
-             * @description Data-quality class (clean, editorial).
-             * @default clean
-             */
-            category: string;
-            /**
-             * Death Year
-             * @description Death year as recorded (Hijri, free-form).
-             * @default
-             */
-            death_year: string;
-            /**
-             * Evaluator
-             * @description Critic who issued the reliability term.
-             * @default
-             */
-            evaluator: string;
-            /**
-             * Full Name
-             * @description Full name in Arabic.
-             */
-            full_name: string;
-            /**
-             * Id
-             * @description Stable corpus index, also the detail-route key.
-             */
-            id: number;
-            /**
-             * Kunya
-             * @description Teknonym (Abu/Umm ...), if recorded.
-             * @default
-             */
-            kunya: string;
-            /**
-             * Nisba
-             * @description Attributive name (tribe/place), if recorded.
-             * @default
-             */
-            nisba: string;
-            /**
-             * Reliability Grade
-             * @description Numeric reliability grade, as text.
-             * @default
-             */
-            reliability_grade: string;
-            /**
-             * Reliability Term
-             * @description Primary reliability term (thiqa, ...).
-             * @default
-             */
-            reliability_term: string;
-            /**
-             * Source Label
-             * @description Human label of the source work + volume.
-             * @default
-             */
-            source_label: string;
-            /**
-             * Student Count
-             * @description Number of recorded students.
-             */
-            student_count: number;
-            /**
-             * Teacher Count
-             * @description Number of recorded teachers.
-             */
-            teacher_count: number;
-            /**
-             * Tradition
-             * @description Sunni / shia / both, when classified.
-             * @default
-             */
-            tradition: string;
         };
         /**
          * SearchFacets
@@ -3021,21 +2967,19 @@ export interface operations {
             };
         };
     };
-    _list_person_api_person_get: {
+    _list_narrators_api_narrators_get: {
         parameters: {
             query?: {
-                /** @description Substring match on name / kunya / nisba / variants. */
-                q?: string;
-                /** @description Filter by tradition (sunni / shia / both). */
-                tradition?: string;
-                /** @description Filter by record confidence (high / medium). */
-                confidence?: string;
-                /** @description Only persons with historical events. */
-                has_events?: boolean;
                 /** @description Records per page. */
                 limit?: number;
                 /** @description Records to skip. */
                 offset?: number;
+                /** @description Substring match on the narrator's names. Matched against the normalized alias store (diacritics stripped, letter variants folded, ابن folded to بن) and, as a second pass, the raw primary Arabic name. */
+                q?: string;
+                /** @description Filter by data-quality category (clean, long_entry). */
+                category?: string;
+                /** @description Filter by tradition (imami / shafii / hanafi / ...). */
+                tradition?: string;
             };
             header?: never;
             path?: never;
@@ -3049,7 +2993,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Page_PersonEntry_"];
+                    "application/json": components["schemas"]["Page_NarratorEntry_"];
                 };
             };
             /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
@@ -3072,12 +3016,12 @@ export interface operations {
             };
         };
     };
-    get_person_api_person__person_id__get: {
+    get_narrator_api_narrators__narrator_id__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                person_id: number;
+                narrator_id: number;
             };
             cookie?: never;
         };
@@ -3089,7 +3033,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PersonEntry"];
+                    "application/json": components["schemas"]["NarratorDetail"];
                 };
             };
             /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
@@ -3112,12 +3056,17 @@ export interface operations {
             };
         };
     };
-    get_person_edges_api_person__person_id__edges_get: {
+    _graph_api_narrators__narrator_id__graph_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 'students' (taught by the narrator) or 'teachers' (taught him). */
+                direction?: string;
+                /** @description Relation hops to expand from the root. */
+                depth?: number;
+            };
             header?: never;
             path: {
-                person_id: number;
+                narrator_id: number;
             };
             cookie?: never;
         };
@@ -3129,87 +3078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PersonEdge"][];
-                };
-            };
-            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_person_events_api_person__person_id__events_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                person_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PersonEvent"][];
-                };
-            };
-            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_person_grades_api_person__person_id__grades_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                person_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PersonGrade"][];
+                    "application/json": components["schemas"]["NarratorGraph"];
                 };
             };
             /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
@@ -3336,99 +3205,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Ayah"];
-                };
-            };
-            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    _list_rijal_api_rijal_get: {
-        parameters: {
-            query?: {
-                /** @description Records per page. */
-                limit?: number;
-                /** @description Records to skip. */
-                offset?: number;
-                /** @description Substring match on name / kunya / nisba. */
-                q?: string;
-                /** @description Filter by tradition (sunni / shia / both). */
-                tradition?: string;
-                /** @description Filter by data-quality category. */
-                category?: string;
-                /** @description Only entries with at least one teacher. */
-                has_teachers?: boolean;
-                /** @description Only entries carrying a reliability term. */
-                has_reliability?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_RijalEntry_"];
-                };
-            };
-            /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorEnvelope"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_rijal_api_rijal__entry_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entry_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RijalEntry"];
                 };
             };
             /** @description The requested resource does not exist (unknown urn, id, surah, or ayah). */

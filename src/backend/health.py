@@ -31,8 +31,7 @@ _ERROR_DETAIL_MAX: Final[int] = 200
 _PROBES: Final[tuple[tuple[str, Callable[[], object]], ...]] = (
     ("domains", domains_repo.list_domains),
     ("books", lambda: books_repo.list_books(limit=1)),
-    ("rijal", lambda: registry.list_rijal(registry.RijalFilter(), limit=1)),
-    ("person", lambda: registry.list_person(registry.PersonFilter(), limit=1)),
+    ("narrators", lambda: registry.list_narrators(registry.NarratorFilter(), limit=1)),
     ("quran", lambda: quran_repo.get_surah(1)),
     ("daily", daily_repo.get_today),
     ("almanac", almanac_repo.get_almanac),

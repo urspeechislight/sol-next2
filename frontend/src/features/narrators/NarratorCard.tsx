@@ -1,100 +1,50 @@
 // NarratorCard.tsx:the one narrator-record card, shared by the Graph browser
-// and the narrator search scope. Renders a rijāl OR enriched person entry as
-// name + tradition + a kind-specific meta row; a person card also expands into
-// a detail drawer (identity, teachers, students, sources, grades, bio).
+// and the narrator search scope. Renders the registry entry as primary name
+// (Arabic + Latin) + tradition + dates + relation counts, and expands into a
+// detail drawer (aliases by role, gradings by evaluator, stances, tarjama)
+// whose fetch also derives the top-grade chip shown in the meta row.
 import { useState } from 'react';
 
 import { Badge, Card, Heading, Inline, Stack, Text, UnstyledButton } from '../../lib/design-system';
-import type { PersonEntry, RijalEntry } from '../../lib/types';
+import { getNarratorEntry } from '../../lib/api/client';
+import type { NarratorDetail, NarratorEntry } from '../../lib/types';
+import { useAsync } from '../../lib/useAsync';
 import { deathLabel, joinDots } from '../../lib/utils';
-import { reliabilityBadge } from '../../lib/variants';
-import { generationLabel, residenceLabel, traditionLabel } from './labels';
-import { PersonDrawer } from './PersonDrawer';
+import { reliabilityBadge, topTier } from '../../lib/variants';
+import { gradeLabel, traditionLabel } from './labels';
+import { NarratorDrawer } from './NarratorDrawer';
 
-export type NarratorItem = RijalEntry | PersonEntry;
-
-/** Opens a source book at a page with a highlight term (App's reader opener),
-    threaded to the grade rows in the person drawer. */
-type OpenReader = (urn: string, page: number, query: string) => void;
-
-/** True when a narrator item is an enriched person record (vs a raw rijāl entry). */
-export function isPerson(item: NarratorItem): item is PersonEntry {
-  return 'person_id' in item;
-}
-
-function RijalMeta({ entry }: { entry: RijalEntry }) {
-  return (
-    <Inline gap="xs" align="center">
-      {entry.reliability_term ? (
-        <Badge variant={reliabilityBadge(entry.reliability_term)}>
-          <span dir="rtl">{entry.reliability_term}</span>
-        </Badge>
-      ) : null}
-      <Text size="xs" tone="faint" font="mono">
-        {entry.teacher_count} teachers · {entry.student_count} students
-      </Text>
-      {entry.source_label ? (
-        <Text size="xs" tone="faint">
-          {entry.source_label}
-        </Text>
-      ) : null}
-    </Inline>
-  );
-}
-
-function PersonMeta({ entry }: { entry: PersonEntry }) {
-  const topGrade = entry.reliability[0]?.split('=')[1] ?? '';
-  const residence = entry.places ? residenceLabel(entry.places) : '';
-  const facts = [
-    deathLabel(entry.death_year),
-    residence,
-    `${entry.teacher_count} teachers · ${entry.student_count} students`,
-    `${entry.n_sources} sources`,
-    entry.event_count ? `${entry.event_count} events` : '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
-  return (
-    <Inline gap="xs" align="center">
-      {entry.generation ? (
-        <Badge variant="success">{generationLabel(entry.generation)}</Badge>
-      ) : null}
-      {topGrade ? (
-        <Badge variant={reliabilityBadge(topGrade)}>
-          <span dir="rtl">{topGrade}</span>
-        </Badge>
-      ) : null}
-      <Text size="xs" tone="faint" font="mono">
-        {facts}
-      </Text>
-    </Inline>
-  );
-}
-
-/** One narrator record card (rijāl or person): name + tradition + meta + detail. */
-export function NarratorCard({
-  item,
-  onOpenReader,
-}: {
-  item: NarratorItem;
-  onOpenReader: OpenReader;
-}) {
+/** One narrator record card: name + tradition + meta + expandable detail. */
+export function NarratorCard({ item }: { item: NarratorEntry }) {
   const [open, setOpen] = useState(false);
+  const [graph, setGraph] = useState(false);
+  // The detail is fetched only when the drawer opens (null while closed);
+  // the top-grade chip in the meta row reads from this same fetch — the
+  // NarratorEntry list row carries no grade, so the chip appears with the
+  // detail, never fabricated from the list shape.
+  const detail = useAsync<NarratorDetail | null>(
+    () => (open ? getNarratorEntry(item.id) : Promise.resolve(null)),
+    [open, item.id],
+  );
+  const tier = topTier((detail.data?.grades ?? []).map((g) => g.tier));
   const sub = joinDots(item.kunya, item.nisba);
-  const person = isPerson(item);
-  const latin = isPerson(item) ? item.name_latin : '';
+  const meta = joinDots(
+    deathLabel(item.death_year_ah),
+    item.death_year_ce,
+    `${item.teacher_count} teachers · ${item.student_count} students`,
+  );
   return (
     <Card variant="flat" pad="md">
       <Stack gap="xs">
         <Inline gap="sm" align="start" justify="between">
           <Stack gap="xs">
-            {latin ? (
+            {item.primary_name_en ? (
               <Text size="sm" weight="semibold">
-                {latin}
+                {item.primary_name_en}
               </Text>
             ) : null}
             <Heading level={4} font="arabic" dir="rtl">
-              {item.full_name}
+              {item.primary_name_ar}
             </Heading>
           </Stack>
           {item.tradition ? <Badge>{traditionLabel(item.tradition)}</Badge> : null}
@@ -104,18 +54,25 @@ export function NarratorCard({
             {sub}
           </Text>
         ) : null}
-        {person ? <PersonMeta entry={item} /> : <RijalMeta entry={item} />}
-        {person ? (
-          <UnstyledButton
-            onClick={() => setOpen((value) => !value)}
-            ariaExpanded={open}
-          >
-            <Text size="xs" tone="accent">
-              {open ? 'Hide detail' : 'Show identity, teachers, students, sources, grades'}
-            </Text>
-          </UnstyledButton>
+        <Inline gap="xs" align="center">
+          {tier ? <Badge variant={reliabilityBadge(tier)}>{gradeLabel(tier)}</Badge> : null}
+          <Text size="xs" tone="faint" font="mono">
+            {meta}
+          </Text>
+        </Inline>
+        <UnstyledButton onClick={() => setOpen((value) => !value)} ariaExpanded={open}>
+          <Text size="xs" tone="accent">
+            {open ? 'Hide detail' : 'Show names, gradings, stances, tarjama'}
+          </Text>
+        </UnstyledButton>
+        {open ? (
+          <NarratorDrawer
+            entryId={item.id}
+            detail={detail}
+            graphOpen={graph}
+            onOpenGraph={() => setGraph((value) => !value)}
+          />
         ) : null}
-        {person && open ? <PersonDrawer entry={item} onOpenReader={onOpenReader} /> : null}
       </Stack>
     </Card>
   );

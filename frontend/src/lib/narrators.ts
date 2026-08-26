@@ -1,13 +1,14 @@
-// narrators.ts:narrator-name linkage. Reading units carry no narrator IDs, so
-// we join reading text to the rijāl/canonical registries BY NAME, using the
-// name fold from lib/arabic.ts (normalizeName):
+// narrators.ts:narrator-name linkage. Reading text carries no narrator IDs,
+// so we join reading text to the narrator registry BY NAME, using the name
+// fold from lib/arabic.ts (normalizeName):
 //   1. buildNarratorIndex:token-keyed lookup over NarratorRecord[].
 //   2. annotateText:split a string into plain + narrator segments (longest,
 //      non-overlapping, >=2-token match for precision).
 // Pure functions only; no DOM, no fetch.
 
 import { normalizeName } from './arabic';
-import type { NarratorRecord, PersonEntry, RijalEntry } from './types';
+import type { NarratorDetail, NarratorRecord } from './types';
+import { topTier } from './variants';
 
 const STOP = new Set(['بن', 'ابن', 'بنت', 'عن', 'ابي', 'ابو', 'ال', 'عبد', 'حدثنا', 'اخبرنا']);
 
@@ -26,7 +27,7 @@ export function buildNarratorIndex(records: NarratorRecord[]): NarratorIndex {
   const byFirstToken = new Map<string, { toks: string[]; record: NarratorRecord }[]>();
   let size = 0;
   for (const record of records) {
-    const toks = tokens(record.full_name);
+    const toks = tokens(record.primary_name_ar);
     if (toks.length < 2) continue;
     const key = toks[0];
     if (key === undefined) continue;
@@ -126,41 +127,21 @@ function matchAt(parts: string[], start: number, index: NarratorIndex): Match | 
   return null;
 }
 
-// ---- record mappers (RijalEntry / PersonEntry -> NarratorRecord) ----
-export function rijalToRecord(e: RijalEntry): NarratorRecord {
+// ---- record mapper (NarratorDetail -> NarratorRecord) ----
+export function narratorToRecord(e: NarratorDetail): NarratorRecord {
   return {
     id: e.id,
-    full_name: e.full_name,
+    narrator_id: e.id,
+    primary_name_ar: e.primary_name_ar,
+    primary_name_en: e.primary_name_en,
     kunya: e.kunya,
     nisba: e.nisba,
     tradition: e.tradition,
-    birth_year: e.birth_year,
-    death_year: e.death_year,
+    birth_year_ah: e.birth_year_ah,
+    death_year_ah: e.death_year_ah,
+    death_year_ce: e.death_year_ce,
     teacher_count: e.teacher_count,
     student_count: e.student_count,
-    reliability_term: e.reliability_term,
-    reliability_grade: e.reliability_grade,
-    evaluator: e.evaluator,
-    source_label: e.source_label,
-    origin: 'rijal',
-  };
-}
-
-export function personToRecord(e: PersonEntry): NarratorRecord {
-  const [evaluator, term] = (e.reliability[0] ?? '').split('=');
-  return {
-    id: e.person_id,
-    full_name: e.full_name,
-    kunya: e.kunya,
-    nisba: e.nisba,
-    tradition: e.tradition,
-    birth_year: String(e.birth_year ?? ''),
-    death_year: String(e.death_year ?? ''),
-    teacher_count: e.teacher_count,
-    student_count: e.student_count,
-    reliability_term: term ?? '',
-    evaluator: evaluator ?? '',
-    source_label: e.source_books.split(' | ')[0] ?? '',
-    origin: 'person',
+    tier: topTier(e.grades.map((g) => g.tier)) || null,
   };
 }

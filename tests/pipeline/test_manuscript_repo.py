@@ -29,8 +29,7 @@ def test_should_reshape_isnad_matn_and_narrators_into_hadith() -> None:
             text_ar="مالك",
             role_in_context="narrator",
             chain_position=0,
-            rijal_id=None,
-            person_id=None,
+            narrator_id=None,
         ),
     ]
 
@@ -56,16 +55,14 @@ def test_should_order_narrators_by_chain_position() -> None:
             text_ar="الثاني",
             role_in_context="narrator",
             chain_position=1,
-            rijal_id=None,
-            person_id=None,
+            narrator_id=None,
         ),
         _EntityRow(
             span_id="s1",
             text_ar="الأول",
             role_in_context="narrator",
             chain_position=0,
-            rijal_id=None,
-            person_id=None,
+            narrator_id=None,
         ),
     ]
 

@@ -56,20 +56,12 @@ class Narrator(FrozenModel):
     role: str = Field(description="Role / position in the chain (companion, transmitter, ...).")
     grade: str = Field(description="Biographical evaluation (Trustworthy, Reliable, ...).")
     d: int | None = Field(default=None, description="Death year, Hijri.")
-    rijal_id: int | None = Field(
+    narrator_id: int | None = Field(
         default=None,
         description=(
-            "Registry link: id in /api/rijal, resolved at build time by "
+            "Registry link: id in /api/narrators, resolved at build time by "
             "normalized-name match. None when the registry does not know this "
             "narrator; the reader shows the name unlinked rather than guessing."
-        ),
-    )
-    person_id: int | None = Field(
-        default=None,
-        description=(
-            "Registry link: id in /api/person, when the name resolved to an "
-            "enriched person instead of a rijal entry. Mutually exclusive "
-            "with rijal_id."
         ),
     )
 

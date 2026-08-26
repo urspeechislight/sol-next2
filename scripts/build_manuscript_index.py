@@ -12,6 +12,13 @@ shell live in ``backend.build.runner``. Pilot a subset with ``--limit N``::
 
     uv run python scripts/build_manuscript_index.py --limit 5
     uv run python scripts/build_manuscript_index.py --quran
+
+``--restamp-narrator-links`` skips the full rebuild entirely: it opens the
+existing ``data/manuscript.db``, re-resolves every PERSON entity's registry
+link against the current ``data/registry.db`` (the alias-based linker), and
+rewrites only the entity metadata in place::
+
+    uv run python scripts/build_manuscript_index.py --restamp-narrator-links
 """
 
 from __future__ import annotations
@@ -22,7 +29,7 @@ from typing import Any
 
 from backend.build import manuscript as manuscript_build
 from backend.build import runner
-from backend.build.narrator_link import NarratorLinker, annotate_manuscript
+from backend.build.narrator_link import NarratorLinker, annotate_manuscript, restamp
 from backend.core.constants import ARTIFACT__MANUSCRIPT_DB
 from backend.core.paths import data_path
 from backend.models.book import Book
@@ -129,12 +136,26 @@ def _build(args: argparse.Namespace) -> dict[str, object]:
     )
 
 
+def _restamp_only() -> dict[str, object]:
+    """Open the existing manuscript artifact and re-link its narrator metadata."""
+    con = sqlite3.connect(data_path(ARTIFACT__MANUSCRIPT_DB))
+    con.row_factory = sqlite3.Row
+    try:
+        with con:
+            linked = restamp(con)
+    finally:
+        con.close()
+    return {"restamped_narrator_links": linked}
+
+
 def _add_args(parser: argparse.ArgumentParser) -> None:
-    """Offer ``--urn`` (repeatable) and ``--quran``.
+    """Offer ``--urn`` (repeatable), ``--quran``, and ``--restamp-narrator-links``.
 
     ``--urn`` builds exactly those catalog entries — the targeted-validation
     path over one named book, inspected through the dev extraction API.
     ``--quran`` builds the Qurʾān manifestation alone, skipping the catalog.
+    ``--restamp-narrator-links`` does no rebuilding at all: it rewrites the
+    PERSON entities' narrator metadata on the existing artifact in place.
     """
     parser.add_argument(
         "--urn",
@@ -149,6 +170,18 @@ def _add_args(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="build only the Qurʾān manifestation (skip the book catalog)",
     )
+    parser.add_argument(
+        "--restamp-narrator-links",
+        action="store_true",
+        help="re-link narrator metadata on the existing manuscript.db in place",
+    )
+
+
+def _build_dispatch(args: argparse.Namespace) -> dict[str, object]:
+    """Route to the restamp-only path or the full build."""
+    if args.restamp_narrator_links:
+        return _restamp_only()
+    return _build(args)
 
 
 def main() -> None:
@@ -156,7 +189,7 @@ def main() -> None:
     runner.run_build_cli(
         "Build the manuscript span/entity/unit store via segment+extract.",
         data_path(ARTIFACT__MANUSCRIPT_DB),
-        _build,
+        _build_dispatch,
         add_args=_add_args,
     )
 

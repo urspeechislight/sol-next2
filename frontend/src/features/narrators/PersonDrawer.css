@@ -1,7 +1,0 @@
-/* Teacher/student mini-cards: a tight two-line lockup (Latin over Arabic) kept
-   small so a long relation list stays dense. Card's own pad steps start at
-   --space-md, which reads too large here, so the card uses pad="none" and this
-   compact padding instead. */
-.person-edge {
-  padding: var(--space-2xs) var(--space-xs);
-}
